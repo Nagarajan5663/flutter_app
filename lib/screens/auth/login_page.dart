@@ -1,4 +1,3 @@
-```dart
 import 'package:flutter/material.dart';
 
 import '../dashboard/dashboard_page.dart';
@@ -247,4 +246,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-``` 

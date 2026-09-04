@@ -81,11 +81,11 @@ class _SummaryCardState extends State<SummaryCard> {
                 height: 50,
 
                 decoration: BoxDecoration(
-                  color: _mainColor.withOpacity(0.15),
+                  color: _mainColor.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
 
                   border: Border.all(
-                    color: _mainColor.withOpacity(0.35),
+                    color: _mainColor.withValues(alpha: 0.35),
                   ),
                 ),
 
@@ -110,7 +110,7 @@ class _SummaryCardState extends State<SummaryCard> {
                       overflow: TextOverflow.ellipsis,
 
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.80),
+                        color: Colors.white.withValues(alpha: 0.80),
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
