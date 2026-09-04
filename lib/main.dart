@@ -12,29 +12,19 @@ class CodexiaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // Remove the debug banner from the top-right corner.
       debugShowCheckedModeBanner: false,
-
-      // Application name.
       title: 'Codexia',
 
-      // Global theme for the application.
       theme: ThemeData(
         useMaterial3: true,
-
-        // Main font.
         fontFamily: 'Arial',
-
-        // Default background.
         scaffoldBackgroundColor: CodexiaColors.navy,
 
-        // Application color scheme.
         colorScheme: ColorScheme.fromSeed(
           seedColor: CodexiaColors.gold,
           brightness: Brightness.dark,
         ),
 
-        // Default button theme.
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: CodexiaColors.gold,
@@ -46,7 +36,6 @@ class CodexiaApp extends StatelessWidget {
         ),
       ),
 
-      // First page shown when the app starts.
       home: const HomePage(),
     );
   }
