@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/home/home_page.dart';
+import 'screens/dashboard/dashboard_page.dart';
 import 'theme/app_colors.dart';
 
 void main() {
@@ -36,7 +36,7 @@ class CodexiaApp extends StatelessWidget {
         ),
       ),
 
-      home: const HomePage(),
+      home: const DashboardPage(),
     );
   }
 }

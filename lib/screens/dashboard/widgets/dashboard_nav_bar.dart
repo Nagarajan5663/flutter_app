@@ -1,21 +1,31 @@
 import 'package:flutter/material.dart';
 
 class DashboardNavBar extends StatelessWidget {
-  const DashboardNavBar({super.key});
+  final String selectedMenu;
+  final ValueChanged<String> onMenuSelected;
+
+  const DashboardNavBar({
+    super.key,
+    required this.selectedMenu,
+    required this.onMenuSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Drawer(
-      backgroundColor: Colors.black,
+    return Container(
+      width: 270,
+      height: double.infinity,
+      color: Colors.black,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          // =========================
-          // ORGANIZATION HEADER
-          // Same gradient as dashboard
-          // =========================
+          // ======================================================
+          // HEADER
+          // ======================================================
+
           Container(
             height: 160,
+            padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -26,7 +36,6 @@ class DashboardNavBar extends StatelessWidget {
                 ],
               ),
             ),
-            padding: const EdgeInsets.all(16),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -49,30 +58,19 @@ class DashboardNavBar extends StatelessWidget {
             ),
           ),
 
-          // =========================
+          // ======================================================
           // DASHBOARD
-          // =========================
-          ListTile(
-            leading: const Icon(
-              Icons.dashboard,
-              color: Colors.white,
-            ),
-            title: const Text(
-              'Dashboard',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
-            selected: true,
-            selectedTileColor: Colors.white12,
-            onTap: () {
-              Navigator.pop(context);
-            },
+          // ======================================================
+
+          _mainMenuItem(
+            icon: Icons.dashboard,
+            title: 'Dashboard',
           ),
 
-          // =========================
+          // ======================================================
           // ITEMS
-          // =========================
+          // ======================================================
+
           ExpansionTile(
             leading: const Icon(
               Icons.inventory_2,
@@ -92,9 +90,10 @@ class DashboardNavBar extends StatelessWidget {
             ],
           ),
 
-          // =========================
+          // ======================================================
           // INVENTORY
-          // =========================
+          // ======================================================
+
           ExpansionTile(
             leading: const Icon(
               Icons.warehouse,
@@ -115,9 +114,10 @@ class DashboardNavBar extends StatelessWidget {
             ],
           ),
 
-          // =========================
+          // ======================================================
           // SALES
-          // =========================
+          // ======================================================
+
           ExpansionTile(
             leading: const Icon(
               Icons.trending_up,
@@ -142,9 +142,10 @@ class DashboardNavBar extends StatelessWidget {
             ],
           ),
 
-          // =========================
+          // ======================================================
           // PURCHASE
-          // =========================
+          // ======================================================
+
           ExpansionTile(
             leading: const Icon(
               Icons.shopping_cart,
@@ -167,16 +168,17 @@ class DashboardNavBar extends StatelessWidget {
             ],
           ),
 
-          // =========================
+          // ======================================================
           // ACCOUNTS
-          // =========================
+          // ======================================================
+
           ExpansionTile(
             leading: const Icon(
               Icons.account_balance,
               color: Colors.white,
             ),
             title: const Text(
-              'Accounts',
+              'Accountant',
               style: TextStyle(
                 color: Colors.white,
               ),
@@ -193,42 +195,30 @@ class DashboardNavBar extends StatelessWidget {
             ],
           ),
 
-          // =========================
-          // DIVIDER
-          // =========================
           const Divider(
             color: Colors.grey,
-            thickness: 1,
             height: 1,
           ),
 
-          // =========================
-          // REPORTS
-          // =========================
+          // ======================================================
+          // OTHER MENU
+          // ======================================================
+
           _mainMenuItem(
             icon: Icons.description,
             title: 'Reports',
           ),
 
-          // =========================
-          // FLUXA HUB
-          // =========================
           _mainMenuItem(
             icon: Icons.hub,
             title: 'Fluxa Hub',
           ),
 
-          // =========================
-          // SETTINGS
-          // =========================
           _mainMenuItem(
             icon: Icons.settings,
             title: 'Settings',
           ),
 
-          // =========================
-          // MY ACCOUNT
-          // =========================
           _mainMenuItem(
             icon: Icons.account_circle,
             title: 'My Account',
@@ -238,36 +228,54 @@ class DashboardNavBar extends StatelessWidget {
     );
   }
 
-  // =========================
+  // ============================================================
   // MAIN MENU ITEM
-  // =========================
+  // ============================================================
+
   Widget _mainMenuItem({
     required IconData icon,
     required String title,
   }) {
+    final bool isSelected = selectedMenu == title;
+
     return ListTile(
+      selected: isSelected,
+      selectedTileColor: Colors.white12,
+
       leading: Icon(
         icon,
         color: Colors.white,
       ),
+
       title: Text(
         title,
         style: const TextStyle(
           color: Colors.white,
+          fontSize: 15,
         ),
       ),
-      onTap: () {},
+
+      onTap: () {
+        onMenuSelected(title);
+      },
     );
   }
 
-  // =========================
+  // ============================================================
   // SUB MENU ITEM
-  // =========================
+  // ============================================================
+
   Widget _subMenuItem(String title) {
+    final bool isSelected = selectedMenu == title;
+
     return ListTile(
       contentPadding: const EdgeInsets.only(
         left: 72,
       ),
+
+      selected: isSelected,
+      selectedTileColor: Colors.white12,
+
       leading: const Text(
         '•',
         style: TextStyle(
@@ -275,13 +283,21 @@ class DashboardNavBar extends StatelessWidget {
           fontSize: 18,
         ),
       ),
+
       title: Text(
         title,
         style: const TextStyle(
           color: Colors.white,
+          fontSize: 14,
         ),
       ),
-      onTap: () {},
+
+      onTap: () {
+        // IMPORTANT:
+        // We do NOT Navigator.push().
+        // We only change the content on the right.
+        onMenuSelected(title);
+      },
     );
   }
 }
