@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-
 import 'dashboard_metric_card.dart';
-import 'dashboard_section_header.dart';
 
 class SalesPurchaseSection extends StatelessWidget {
   const SalesPurchaseSection({super.key});
@@ -9,93 +7,189 @@ class SalesPurchaseSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const DashboardSectionHeader(
-          title: 'Sales, Purchase & Customers',
-          icon: Icons.show_chart,
-        ),
+        // ====================================================================
+        // TITLE
+        // ====================================================================
 
-        const SizedBox(height: 20),
-
-        DashboardMetricGrid(
-          children: const [
-            DashboardMetricCard(
-              title: 'Current Outstanding',
-              value: '₹0',
-              icon: Icons.request_quote_outlined,
-              iconColor: Color(0xFFFFC107),
-              iconBackground: Color(0xFFFFF8DD),
-              valueColor: Color(0xFFFFB300),
+        const Row(
+          children: [
+            Icon(
+              Icons.point_of_sale_outlined,
+              color: Colors.white,
+              size: 22,
             ),
 
-            DashboardMetricCard(
-              title: 'Overdue Outstanding',
-              value: '₹0',
-              icon: Icons.access_time_filled,
-              iconColor: Color(0xFFE63E50),
-              iconBackground: Color(0xFFFCEAEC),
-              valueColor: Color(0xFFE63E50),
-            ),
+            SizedBox(width: 8),
 
-            DashboardMetricCard(
-              title: 'New Customers',
-              value: '0',
-              icon: Icons.person_add_alt_1,
-              iconColor: Color(0xFF1688E5),
-              iconBackground: Color(0xFFE7F3FE),
-              valueColor: Color(0xFF1688E5),
-            ),
-
-            DashboardMetricCard(
-              title: 'Current Payables',
-              value: '₹0',
-              icon: Icons.receipt_long,
-              iconColor: Color(0xFFFF8300),
-              iconBackground: Color(0xFFFFF0E4),
-              valueColor: Color(0xFFFF8300),
-            ),
-
-            DashboardMetricCard(
-              title: 'Overdue Payables',
-              value: '₹0',
-              icon: Icons.event_busy,
-              iconColor: Color(0xFFE63E50),
-              iconBackground: Color(0xFFFCEAEC),
-              valueColor: Color(0xFFE63E50),
+            Text(
+              'Sales, Purchase & Customers',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
 
-        const SizedBox(height: 30),
+        const SizedBox(height: 10),
+
+        const Divider(
+          height: 1,
+          thickness: 1,
+          color: Colors.white38,
+        ),
+
+        const SizedBox(height: 20),
+
+        // ====================================================================
+        // TOP METRIC CARDS
+        // ====================================================================
+
+        const DashboardMetricGrid(
+          children: [
+            // ----------------------------------------------------------------
+            // CURRENT OUTSTANDING
+            // ----------------------------------------------------------------
+
+            DashboardMetricCard(
+              title: 'Current Outstanding',
+              value: '₹0.00',
+              icon: Icons.schedule_outlined,
+              iconColor: Color(0xFFF59E0B),
+              iconBackground: Color(0xFFFEF3C7),
+              valueColor: Color(0xFFF59E0B),
+            ),
+
+            // ----------------------------------------------------------------
+            // OVERDUE OUTSTANDING
+            // ----------------------------------------------------------------
+
+            DashboardMetricCard(
+              title: 'Overdue Outstanding',
+              value: '₹0.00',
+              icon: Icons.warning_amber_rounded,
+              iconColor: Color(0xFFEF4444),
+              iconBackground: Color(0xFFFEE2E2),
+              valueColor: Color(0xFFEF4444),
+            ),
+
+            // ----------------------------------------------------------------
+            // NEW CUSTOMERS
+            // ----------------------------------------------------------------
+
+            DashboardMetricCard(
+              title: 'New Customers',
+              value: '0',
+              icon: Icons.person_add_alt_1_outlined,
+              iconColor: Color(0xFF3B82F6),
+              iconBackground: Color(0xFFDBEAFE),
+              valueColor: Color(0xFF3B82F6),
+            ),
+
+            // ----------------------------------------------------------------
+            // CURRENT PAYABLES
+            // ----------------------------------------------------------------
+
+            DashboardMetricCard(
+              title: 'Current Payables',
+              value: '₹0.00',
+              icon: Icons.receipt_long_outlined,
+              iconColor: Color(0xFF8B5CF6),
+              iconBackground: Color(0xFFEDE9FE),
+              valueColor: Color(0xFF8B5CF6),
+            ),
+
+            // ----------------------------------------------------------------
+            // OVERDUE PAYABLES
+            // ----------------------------------------------------------------
+
+            DashboardMetricCard(
+              title: 'Overdue Payables',
+              value: '₹0.00',
+              icon: Icons.error_outline_rounded,
+              iconColor: Color(0xFFEF4444),
+              iconBackground: Color(0xFFFEE2E2),
+              valueColor: Color(0xFFEF4444),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+
+        // ====================================================================
+        // SALES + PURCHASE OUTSTANDING PANELS
+        // ====================================================================
 
         LayoutBuilder(
           builder: (context, constraints) {
-            if (constraints.maxWidth >= 700) {
-              return const Row(
+            // WEB
+            if (constraints.maxWidth >= 800) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: _OutstandingCard(
-                      title: 'Sales Outstanding',
+                    child: DashboardHoverPanel(
+                      accentColor: Color(0xFF3B82F6),
+                      child: SizedBox(
+                        height: 230,
+                        child: _OutstandingContent(
+                          title: 'Sales Outstanding',
+                          icon: Icons.trending_up,
+                          iconColor: Color(0xFF3B82F6),
+                        ),
+                      ),
                     ),
                   ),
-                  SizedBox(width: 20),
+
+                  SizedBox(width: 18),
+
                   Expanded(
-                    child: _OutstandingCard(
-                      title: 'Purchase Outstanding',
+                    child: DashboardHoverPanel(
+                      accentColor: Color(0xFF8B5CF6),
+                      child: SizedBox(
+                        height: 230,
+                        child: _OutstandingContent(
+                          title: 'Purchase Outstanding',
+                          icon: Icons.shopping_cart_outlined,
+                          iconColor: Color(0xFF8B5CF6),
+                        ),
+                      ),
                     ),
                   ),
                 ],
               );
             }
 
-            return const Column(
+            // MOBILE / TABLET
+            return Column(
               children: [
-                _OutstandingCard(
-                  title: 'Sales Outstanding',
+                DashboardHoverPanel(
+                  accentColor: Color(0xFF3B82F6),
+                  child: SizedBox(
+                    height: 220,
+                    child: _OutstandingContent(
+                      title: 'Sales Outstanding',
+                      icon: Icons.trending_up,
+                      iconColor: Color(0xFF3B82F6),
+                    ),
+                  ),
                 ),
-                SizedBox(height: 18),
-                _OutstandingCard(
-                  title: 'Purchase Outstanding',
+
+                SizedBox(height: 16),
+
+                DashboardHoverPanel(
+                  accentColor: Color(0xFF8B5CF6),
+                  child: SizedBox(
+                    height: 220,
+                    child: _OutstandingContent(
+                      title: 'Purchase Outstanding',
+                      icon: Icons.shopping_cart_outlined,
+                      iconColor: Color(0xFF8B5CF6),
+                    ),
+                  ),
                 ),
               ],
             );
@@ -106,46 +200,87 @@ class SalesPurchaseSection extends StatelessWidget {
   }
 }
 
-class _OutstandingCard extends StatelessWidget {
-  final String title;
+// ============================================================================
+// OUTSTANDING PANEL CONTENT
+// ============================================================================
 
-  const _OutstandingCard({
+class _OutstandingContent extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color iconColor;
+
+  const _OutstandingContent({
     required this.title,
+    required this.icon,
+    required this.iconColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 280,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: const Color(0xFFE0E0E0),
+    return Column(
+      children: [
+        // TITLE
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: 20,
+              ),
+            ),
+
+            const SizedBox(width: 10),
+
+            Text(
+              title,
+              style: const TextStyle(
+                color: Color(0xFF444444),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.only(top: 34),
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: Text(
-            title,
-            style: const TextStyle(
-              color: Color(0xFF666666),
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
+
+        const SizedBox(height: 28),
+
+        // EMPTY / SUMMARY AREA
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '₹0.00',
+                  style: TextStyle(
+                    color: iconColor,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'Total Outstanding',
+                  style: TextStyle(
+                    color: Color(0xFF777777),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
