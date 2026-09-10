@@ -1,315 +1,363 @@
 import 'package:flutter/material.dart';
 
-// Organization -> full-screen Organization / All Settings hub
-import '../../organization/organization_page.dart';
-
 class DashboardNavBar extends StatelessWidget {
-  final String selectedMenu;
-  final ValueChanged<String> onMenuSelected;
+  final bool isCollapsed;
+  final ValueChanged<String> onPageSelected;
 
   const DashboardNavBar({
     super.key,
-    required this.selectedMenu,
-    required this.onMenuSelected,
+    required this.isCollapsed,
+    required this.onPageSelected,
   });
+
+  static const double expandedWidth = 270;
+  static const double collapsedWidth = 80;
+
+  void _selectPage(String page) {
+    onPageSelected(page);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 270,
-      height: double.infinity,
-      color: Colors.black,
-      child: ListView(
-        padding: EdgeInsets.zero,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      width: isCollapsed ? collapsedWidth : expandedWidth,
+      color: const Color(0xFF0D1B2A),
+      child: Column(
         children: [
-          // ======================================================
-          // HEADER
-          // ======================================================
+          _buildOrganizationHeader(),
 
-          InkWell(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const OrganizationPage(),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                _mainMenuItem(
+                  icon: Icons.dashboard_outlined,
+                  title: 'Dashboard',
+                  onTap: () => _selectPage('dashboard'),
                 ),
-              );
-            },
-            child: Container(
-              height: 160,
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFF0D2B4E),
-                    Color(0xFF123A5C),
+
+                _buildExpansionMenu(
+                  icon: Icons.inventory_2_outlined,
+                  title: 'Items',
+                  children: [
+                    _subMenuItem(
+                      'Items',
+                      () => _selectPage('items'),
+                    ),
+                    _subMenuItem(
+                      'Parts',
+                      () => _selectPage('parts'),
+                    ),
                   ],
                 ),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.business,
-                    color: Colors.white,
-                    size: 40,
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Organization',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+
+                _buildExpansionMenu(
+                  icon: Icons.warehouse_outlined,
+                  title: 'Inventory',
+                  children: [
+                    _subMenuItem(
+                      'Current Stock',
+                      () => _selectPage('current-stock'),
                     ),
-                  ),
-                ],
-              ),
+                    _subMenuItem(
+                      'Inventory Adjustments',
+                      () => _selectPage('inventory-adjustments'),
+                    ),
+                    _subMenuItem(
+                      'Returnable Assets',
+                      () => _selectPage('returnable-assets'),
+                    ),
+                  ],
+                ),
+
+                _buildExpansionMenu(
+                  icon: Icons.trending_up,
+                  title: 'Sales',
+                  children: [
+                    _subMenuItem(
+                      'Customers',
+                      () => _selectPage('customers'),
+                    ),
+                    _subMenuItem(
+                      'Estimates',
+                      () => _selectPage('estimates'),
+                    ),
+                    _subMenuItem(
+                      'Sales Order',
+                      () => _selectPage('sales-order'),
+                    ),
+                    _subMenuItem(
+                      'Invoices',
+                      () => _selectPage('invoices'),
+                    ),
+                    _subMenuItem(
+                      'Delivery Challans',
+                      () => _selectPage('delivery-challans'),
+                    ),
+                    _subMenuItem(
+                      'Payment Received',
+                      () => _selectPage('payment-received'),
+                    ),
+                    _subMenuItem(
+                      'Credit Notes',
+                      () => _selectPage('credit-notes'),
+                    ),
+                  ],
+                ),
+
+                _buildExpansionMenu(
+                  icon: Icons.shopping_cart_outlined,
+                  title: 'Purchase',
+                  children: [
+                    _subMenuItem(
+                      'Vendors',
+                      () => _selectPage('vendors'),
+                    ),
+                    _subMenuItem(
+                      'Purchase Orders',
+                      () => _selectPage('purchase-orders'),
+                    ),
+                    _subMenuItem(
+                      'Bills',
+                      () => _selectPage('bills'),
+                    ),
+                    _subMenuItem(
+                      'Payment Made',
+                      () => _selectPage('payment-made'),
+                    ),
+                    _subMenuItem(
+                      'Vendor Credit Notes',
+                      () => _selectPage('vendor-credit-notes'),
+                    ),
+                  ],
+                ),
+
+                _buildExpansionMenu(
+                  icon: Icons.account_balance_outlined,
+                  title: 'Accounts',
+                  children: [
+                    _subMenuItem(
+                      'Expenses',
+                      () => _selectPage('expenses'),
+                    ),
+                    _subMenuItem(
+                      'Reimbursements',
+                      () => _selectPage('reimbursements'),
+                    ),
+                    _subMenuItem(
+                      'Travel Allowance',
+                      () => _selectPage('travel-allowance'),
+                    ),
+                    _subMenuItem(
+                      'Other Claims',
+                      () => _selectPage('other-claims'),
+                    ),
+                    _subMenuItem(
+                      'Investments',
+                      () => _selectPage('investments'),
+                    ),
+                    _subMenuItem(
+                      'Loans',
+                      () => _selectPage('loans'),
+                    ),
+                  ],
+                ),
+
+                const Divider(
+                  color: Color(0xFF334155),
+                  height: 24,
+                ),
+
+                _mainMenuItem(
+                  icon: Icons.description_outlined,
+                  title: 'Reports',
+                  onTap: () => _selectPage('reports'),
+                ),
+
+                _mainMenuItem(
+                  icon: Icons.hub_outlined,
+                  title: 'Fluxa Hub',
+                  onTap: () => _selectPage('fluxa-hub'),
+                ),
+
+                _mainMenuItem(
+                  icon: Icons.settings_outlined,
+                  title: 'Settings',
+                  onTap: () => _selectPage('settings'),
+                ),
+
+                _mainMenuItem(
+                  icon: Icons.account_circle_outlined,
+                  title: 'My Account',
+                  onTap: () => _selectPage('my-account'),
+                ),
+
+                const SizedBox(height: 20),
+              ],
             ),
-          ),
-
-          // ======================================================
-          // DASHBOARD
-          // ======================================================
-
-          _mainMenuItem(
-            icon: Icons.dashboard,
-            title: 'Dashboard',
-          ),
-
-          // ======================================================
-          // ITEMS
-          // ======================================================
-
-          ExpansionTile(
-            leading: const Icon(
-              Icons.inventory_2,
-              color: Colors.white,
-            ),
-            title: const Text(
-              'Items',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
-            iconColor: Colors.white,
-            collapsedIconColor: Colors.white,
-            children: [
-              _subMenuItem('Items'),
-              _subMenuItem('Parts'),
-            ],
-          ),
-
-          // ======================================================
-          // INVENTORY
-          // ======================================================
-
-          ExpansionTile(
-            leading: const Icon(
-              Icons.warehouse,
-              color: Colors.white,
-            ),
-            title: const Text(
-              'Inventory',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
-            iconColor: Colors.white,
-            collapsedIconColor: Colors.white,
-            children: [
-              _subMenuItem('Current Stock'),
-              _subMenuItem('Inventory Adjustments'),
-              _subMenuItem('Returnable Assets'),
-            ],
-          ),
-
-          // ======================================================
-          // SALES
-          // ======================================================
-
-          ExpansionTile(
-            leading: const Icon(
-              Icons.trending_up,
-              color: Colors.white,
-            ),
-            title: const Text(
-              'Sales',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
-            iconColor: Colors.white,
-            collapsedIconColor: Colors.white,
-            children: [
-              _subMenuItem('Customers'),
-              _subMenuItem('Estimates'),
-              _subMenuItem('Sales Order'),
-              _subMenuItem('Invoices'),
-              _subMenuItem('Delivery Challans'),
-              _subMenuItem('Payment Received'),
-              _subMenuItem('Credit Notes'),
-            ],
-          ),
-
-          // ======================================================
-          // PURCHASE
-          // ======================================================
-
-          ExpansionTile(
-            leading: const Icon(
-              Icons.shopping_cart,
-              color: Colors.white,
-            ),
-            title: const Text(
-              'Purchase',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
-            iconColor: Colors.white,
-            collapsedIconColor: Colors.white,
-            children: [
-              _subMenuItem('Vendors'),
-              _subMenuItem('Purchase Orders'),
-              _subMenuItem('Bills'),
-              _subMenuItem('Payment Made'),
-              _subMenuItem('Vendor Credit Notes'),
-            ],
-          ),
-
-          // ======================================================
-          // ACCOUNTS
-          // ======================================================
-
-          ExpansionTile(
-            leading: const Icon(
-              Icons.account_balance,
-              color: Colors.white,
-            ),
-            title: const Text(
-              'Accountant',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
-            iconColor: Colors.white,
-            collapsedIconColor: Colors.white,
-            children: [
-              _subMenuItem('Expense'),
-              _subMenuItem('Reimbursements'),
-              _subMenuItem('Travel Allowance'),
-              _subMenuItem('Other Claims'),
-              _subMenuItem('Investments'),
-              _subMenuItem('Loans'),
-            ],
-          ),
-
-          const Divider(
-            color: Colors.grey,
-            height: 1,
-          ),
-
-          // ======================================================
-          // OTHER MENU
-          // ======================================================
-
-          _mainMenuItem(
-            icon: Icons.description,
-            title: 'Reports',
-          ),
-
-          _mainMenuItem(
-            icon: Icons.hub,
-            title: 'Fluxa Hub',
-          ),
-
-          _mainMenuItem(
-            icon: Icons.settings,
-            title: 'Settings',
-          ),
-
-          _mainMenuItem(
-            icon: Icons.account_circle,
-            title: 'My Account',
           ),
         ],
       ),
     );
   }
 
-  // ============================================================
-  // MAIN MENU ITEM
-  // ============================================================
+  Widget _buildOrganizationHeader() {
+    return Container(
+      height: 100,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: const BoxDecoration(
+        color: Color(0xFF123A5C),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.business,
+            color: Colors.white,
+            size: 30,
+          ),
+
+          if (!isCollapsed) ...[
+            const SizedBox(width: 12),
+
+            const Expanded(
+              child: Text(
+                'Organization',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
   Widget _mainMenuItem({
     required IconData icon,
     required String title,
+    required VoidCallback onTap,
   }) {
-    final bool isSelected = selectedMenu == title;
+    return InkWell(
+      onTap: onTap,
+      hoverColor: Colors.white10,
+      child: SizedBox(
+        height: 52,
+        child: Row(
+          children: [
+            SizedBox(
+              width: collapsedWidth,
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
 
-    return ListTile(
-      selected: isSelected,
-      selectedTileColor: Colors.white12,
-
-      leading: Icon(
-        icon,
-        color: Colors.white,
-      ),
-
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 15,
+            if (!isCollapsed)
+              Expanded(
+                child: Text(
+                  title,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
-
-      onTap: () {
-        onMenuSelected(title);
-      },
     );
   }
 
-  // ============================================================
-  // SUB MENU ITEM
-  // ============================================================
+  Widget _buildExpansionMenu({
+    required IconData icon,
+    required String title,
+    required List<Widget> children,
+  }) {
+    if (isCollapsed) {
+      return InkWell(
+        onTap: () {},
+        child: SizedBox(
+          height: 52,
+          child: Center(
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 22,
+            ),
+          ),
+        ),
+      );
+    }
 
-  Widget _subMenuItem(String title) {
-    final bool isSelected = selectedMenu == title;
-
-    return ListTile(
-      contentPadding: const EdgeInsets.only(
-        left: 72,
+    return Theme(
+      data: ThemeData(
+        dividerColor: Colors.transparent,
+        splashColor: Colors.white10,
+        highlightColor: Colors.white10,
       ),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(
+          horizontal: 0,
+        ),
+        childrenPadding: EdgeInsets.zero,
+        leading: SizedBox(
+          width: 80,
+          child: Center(
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 22,
+            ),
+          ),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        iconColor: Colors.white,
+        collapsedIconColor: Colors.white,
+        children: children,
+      ),
+    );
+  }
 
-      selected: isSelected,
-      selectedTileColor: Colors.white12,
-
-      leading: const Text(
-        '•',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 18,
+  Widget _subMenuItem(
+    String title,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      hoverColor: Colors.white10,
+      child: Container(
+        height: 42,
+        padding: const EdgeInsets.only(
+          left: 92,
+          right: 16,
+        ),
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Color(0xFFD1D5DB),
+            fontSize: 13,
+          ),
         ),
       ),
-
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-        ),
-      ),
-
-      onTap: () {
-        // IMPORTANT:
-        // We do NOT Navigator.push().
-        // We only change the content on the right.
-        onMenuSelected(title);
-      },
     );
   }
 }

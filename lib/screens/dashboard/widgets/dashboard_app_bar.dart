@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 
 class DashboardAppBar extends StatelessWidget
     implements PreferredSizeWidget {
-  const DashboardAppBar({super.key});
+  final VoidCallback onMenuPressed;
+
+  const DashboardAppBar({
+    super.key,
+    required this.onMenuPressed,
+  });
 
   @override
   Size get preferredSize => const Size.fromHeight(64);
@@ -12,9 +17,24 @@ class DashboardAppBar extends StatelessWidget
     return AppBar(
       backgroundColor: Colors.blue,
       elevation: 1,
-      titleSpacing: 16,
+      titleSpacing: 12,
 
+      // =============================================================
+      // THREE LINE / MENU BUTTON
+      // =============================================================
+      leading: IconButton(
+        tooltip: 'Menu',
+        onPressed: onMenuPressed,
+        icon: const Icon(
+          Icons.menu,
+          color: Colors.white,
+          size: 26,
+        ),
+      ),
+
+      // =============================================================
       // LOGO
+      // =============================================================
       title: const Text(
         'logo',
         overflow: TextOverflow.ellipsis,
@@ -24,86 +44,51 @@ class DashboardAppBar extends StatelessWidget
           fontWeight: FontWeight.w500,
         ),
       ),
+      
+      
 
-      actions: [
-        // SUPER ADMIN
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Row(
-            children: [
-              // Building + User icon circle
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 1.5,
-                  ),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    const Icon(
-                      Icons.apartment_rounded,
-                      color: Colors.blue,
-                      size: 22,
-                    ),
+    actions: [
+  const Text(
+    'Welcome',
+    style: TextStyle(
+      color: Colors.white,
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+    ),
+  ),
 
-                    Positioned(
-                      right: 3,
-                      bottom: 4,
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.person,
-                          color: Colors.blue,
-                          size: 10,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+  const SizedBox(width: 14),
 
-              const SizedBox(width: 8),
+  // PROFILE / SUPER ADMIN ICON
+  Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 8),
+    child: Container(
+      width: 36,
+      height: 36,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+      ),
+      child: const Icon(
+        Icons.admin_panel_settings_outlined,
+        color: Colors.blue,
+        size: 20,
+      ),
+    ),
+  ),
 
-              
-            ],
-          ),
-        ),
+  // POWER ICON
+  IconButton(
+    tooltip: 'Shutdown',
+    onPressed: () {},
+    icon: const Icon(
+      Icons.power_settings_new_rounded,
+      color: Colors.white,
+    ),
+  ),
 
-        // LOGOUT
-        IconButton(
-          tooltip: 'Logout',
-          onPressed: () {},
-          icon: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white,
-                width: 1.5,
-              ),
-            ),
-            child: const Icon(
-              Icons.person_rounded,
-              color: Colors.white,
-              size: 19,
-            ),
-          ),
-        ),
-
-        const SizedBox(width: 8),
-      ],
-    );
+  const SizedBox(width: 8),
+],
+  );
   }
 }

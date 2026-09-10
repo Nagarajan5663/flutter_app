@@ -13,23 +13,17 @@ class RecentActivitySection extends StatelessWidget {
           title: 'Recent Activity',
           icon: Icons.history,
         ),
-
         const SizedBox(height: 20),
-
         const _EmptyActivityCard(
           title: 'Recent Revenue',
           message: 'No recent revenue found.',
         ),
-
         const SizedBox(height: 16),
-
         const _EmptyActivityCard(
           title: 'Recent Expenses',
           message: 'No recent expenses found.',
         ),
-
         const SizedBox(height: 16),
-
         const _RecentInventoryCard(),
       ],
     );
@@ -76,14 +70,11 @@ class _EmptyActivityCard extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-
           const SizedBox(height: 12),
-
           const Divider(
             height: 1,
             color: Color(0xFFE6E6E6),
           ),
-
           Expanded(
             child: Center(
               child: Text(
@@ -102,12 +93,26 @@ class _EmptyActivityCard extends StatelessWidget {
   }
 }
 
-class _RecentInventoryCard extends StatelessWidget {
+class _RecentInventoryCard extends StatefulWidget {
   const _RecentInventoryCard();
 
   @override
+  State<_RecentInventoryCard> createState() =>
+      _RecentInventoryCardState();
+}
+
+class _RecentInventoryCardState extends State<_RecentInventoryCard> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final items = [
+    final List<Widget> items = [
       const _InventoryActivity(
         itemId: '#162',
         time: '20 Aug 2026, 08:38 AM',
@@ -159,37 +164,40 @@ class _RecentInventoryCard extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-
           const SizedBox(height: 12),
-
           const Divider(
             height: 1,
             color: Color(0xFFE6E6E6),
           ),
-
           const SizedBox(height: 8),
-
           SizedBox(
             height: 255,
-            child: ListView.separated(
-              padding: EdgeInsets.zero,
-              itemCount: items.length,
-              separatorBuilder: (context, index) {
-                return const Divider(
-                  height: 1,
-                  color: Color(0xFFEEEEEE),
-                );
-              },
-              itemBuilder: (context, index) {
-                return items[index];
-              },
+            child: Scrollbar(
+              controller: _scrollController,
+              thumbVisibility: true,
+              trackVisibility: false,
+              thickness: 6,
+              radius: const Radius.circular(10),
+              child: ListView.separated(
+                controller: _scrollController,
+                padding: EdgeInsets.zero,
+                itemCount: items.length,
+                separatorBuilder: (context, index) {
+                  return const Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: Color(0xFFEEEEEE),
+                  );
+                },
+                itemBuilder: (context, index) {
+                  return items[index];
+                },
+              ),
             ),
           ),
-
           const Divider(
             color: Color(0xFFE6E6E6),
           ),
-
           const Center(
             child: Text(
               'Note: Inventory data is system-wide '
@@ -219,9 +227,7 @@ class _InventoryActivity extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: 10,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
           Container(
@@ -237,9 +243,7 @@ class _InventoryActivity extends StatelessWidget {
               color: Color(0xFF8B5AD9),
             ),
           ),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,9 +256,7 @@ class _InventoryActivity extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-
                 const SizedBox(height: 3),
-
                 Text(
                   time,
                   style: const TextStyle(
@@ -265,7 +267,6 @@ class _InventoryActivity extends StatelessWidget {
               ],
             ),
           ),
-
           const Text(
             '+1 Units',
             style: TextStyle(
