@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+// Organization -> full-screen Organization / All Settings hub
+import '../../organization/organization_page.dart';
+
 class DashboardNavBar extends StatelessWidget {
   final String selectedMenu;
   final ValueChanged<String> onMenuSelected;
@@ -23,38 +26,47 @@ class DashboardNavBar extends StatelessWidget {
           // HEADER
           // ======================================================
 
-          Container(
-            height: 160,
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF0D2B4E),
-                  Color(0xFF123A5C),
+          InkWell(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const OrganizationPage(),
+                ),
+              );
+            },
+            child: Container(
+              height: 160,
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF0D2B4E),
+                    Color(0xFF123A5C),
+                  ],
+                ),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.business,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Organization',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
-            ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.business,
-                  color: Colors.white,
-                  size: 40,
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'Organization',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
             ),
           ),
 
