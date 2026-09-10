@@ -1,27 +1,34 @@
 name: flutter_app
-
-description: A new Flutter project.
-
-publish_to: 'none'
+description: A Flutter business management application.
+publish_to: "none"
 
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.9.0
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
+  intl: ^0.19.0
+  file_picker: ^8.1.7
+
+  # Searchable dropdown for Time Zone and other dropdown fields
+  dropdown_search: ^6.0.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true
 
-  uses-material-design: true
+  # Uncomment this section only if you have assets
+  #
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/

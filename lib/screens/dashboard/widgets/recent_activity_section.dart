@@ -59,7 +59,7 @@ class _EmptyActivityCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -142,7 +142,7 @@ class _RecentInventoryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -171,21 +171,18 @@ class _RecentInventoryCard extends StatelessWidget {
 
           SizedBox(
             height: 255,
-            child: Scrollbar(
-              thumbVisibility: true,
-              child: ListView.separated(
-                padding: EdgeInsets.zero,
-                itemCount: items.length,
-                separatorBuilder: (context, index) {
-                  return const Divider(
-                    height: 1,
-                    color: Color(0xFFEEEEEE),
-                  );
-                },
-                itemBuilder: (context, index) {
-                  return items[index];
-                },
-              ),
+            child: ListView.separated(
+              padding: EdgeInsets.zero,
+              itemCount: items.length,
+              separatorBuilder: (context, index) {
+                return const Divider(
+                  height: 1,
+                  color: Color(0xFFEEEEEE),
+                );
+              },
+              itemBuilder: (context, index) {
+                return items[index];
+              },
             ),
           ),
 
