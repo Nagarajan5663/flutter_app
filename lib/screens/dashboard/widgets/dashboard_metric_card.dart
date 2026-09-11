@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+// ============================================================================
+// DASHBOARD METRIC CARD
+// ============================================================================
+
 class DashboardMetricCard extends StatefulWidget {
   final String title;
   final String value;
   final IconData icon;
-
   final Color iconColor;
   final Color iconBackground;
   final Color valueColor;
@@ -20,8 +23,7 @@ class DashboardMetricCard extends StatefulWidget {
   });
 
   @override
-  State<DashboardMetricCard> createState() =>
-      _DashboardMetricCardState();
+  State<DashboardMetricCard> createState() => _DashboardMetricCardState();
 }
 
 class _DashboardMetricCardState extends State<DashboardMetricCard> {
@@ -44,47 +46,42 @@ class _DashboardMetricCardState extends State<DashboardMetricCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
-
-        // Hover lift
         transform: Matrix4.translationValues(
           0,
           _isHovered ? -5 : 0,
           0,
         ),
-
         padding: const EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: 16,
+          vertical: 14,
         ),
-
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-
           border: Border.all(
             color: _isHovered
                 ? widget.iconColor.withValues(alpha: 0.45)
-                : const Color(0xFFE5E7EB),
-            width: 1,
+                : const Color(0xFFE0E0E0),
           ),
-
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(
-                alpha: _isHovered ? 0.15 : 0.05,
+                alpha: _isHovered ? 0.12 : 0.05,
               ),
-              blurRadius: _isHovered ? 18 : 8,
+              blurRadius: _isHovered ? 16 : 8,
               offset: Offset(
                 0,
-                _isHovered ? 8 : 3,
+                _isHovered ? 7 : 3,
               ),
             ),
           ],
         ),
-
         child: Row(
           children: [
-            // Icon
+            // ==============================================================
+            // ICON
+            // ==============================================================
+
             Container(
               width: 48,
               height: 48,
@@ -95,23 +92,25 @@ class _DashboardMetricCardState extends State<DashboardMetricCard> {
               child: Icon(
                 widget.icon,
                 color: widget.iconColor,
-                size: 24,
+                size: 25,
               ),
             ),
 
             const SizedBox(width: 14),
 
-            // Title and value
+            // ==============================================================
+            // TITLE + VALUE
+            // ==============================================================
+
             Expanded(
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     widget.title,
                     maxLines: 2,
-                    softWrap: true,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Color(0xFF555555),
                       fontSize: 13,
@@ -120,14 +119,13 @@ class _DashboardMetricCardState extends State<DashboardMetricCard> {
                     ),
                   ),
 
-                  const SizedBox(height: 7),
+                  const SizedBox(height: 5),
 
                   Text(
                     widget.value,
-                    maxLines: 1,
                     style: TextStyle(
                       color: widget.valueColor,
-                      fontSize: 19,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -141,9 +139,9 @@ class _DashboardMetricCardState extends State<DashboardMetricCard> {
   }
 }
 
-// ==================================================================
-// RESPONSIVE WEB GRID
-// ==================================================================
+// ============================================================================
+// RESPONSIVE DASHBOARD METRIC GRID
+// ============================================================================
 
 class DashboardMetricGrid extends StatelessWidget {
   final List<Widget> children;
@@ -157,7 +155,10 @@ class DashboardMetricGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Desktop / Web
+        // ====================================================================
+        // DESKTOP
+        // ====================================================================
+
         if (constraints.maxWidth >= 1000) {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,7 +181,10 @@ class DashboardMetricGrid extends StatelessWidget {
           );
         }
 
-        // Tablet
+        // ====================================================================
+        // TABLET
+        // ====================================================================
+
         if (constraints.maxWidth >= 550) {
           const double gap = 14;
 
@@ -200,14 +204,18 @@ class DashboardMetricGrid extends StatelessWidget {
           );
         }
 
-        // Mobile
+        // ====================================================================
+        // MOBILE
+        // ====================================================================
+
         return Column(
           children: List.generate(
             children.length,
             (index) {
               return Padding(
                 padding: EdgeInsets.only(
-                  bottom: index == children.length - 1 ? 0 : 12,
+                  bottom:
+                      index == children.length - 1 ? 0 : 12,
                 ),
                 child: SizedBox(
                   width: double.infinity,
@@ -224,7 +232,7 @@ class DashboardMetricGrid extends StatelessWidget {
 }
 
 // ============================================================================
-// REUSABLE HOVER PANEL
+// REUSABLE DASHBOARD HOVER PANEL
 // ============================================================================
 
 class DashboardHoverPanel extends StatefulWidget {
@@ -244,7 +252,8 @@ class DashboardHoverPanel extends StatefulWidget {
       _DashboardHoverPanelState();
 }
 
-class _DashboardHoverPanelState extends State<DashboardHoverPanel> {
+class _DashboardHoverPanelState
+    extends State<DashboardHoverPanel> {
   bool _isHovered = false;
 
   @override
@@ -264,25 +273,20 @@ class _DashboardHoverPanelState extends State<DashboardHoverPanel> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
-
         transform: Matrix4.translationValues(
           0,
           _isHovered ? -5 : 0,
           0,
         ),
-
         padding: widget.padding,
-
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-
           border: Border.all(
             color: _isHovered
                 ? widget.accentColor.withValues(alpha: 0.45)
                 : const Color(0xFFE5E7EB),
           ),
-
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(
@@ -296,7 +300,6 @@ class _DashboardHoverPanelState extends State<DashboardHoverPanel> {
             ),
           ],
         ),
-
         child: widget.child,
       ),
     );

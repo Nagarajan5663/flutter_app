@@ -1,527 +1,997 @@
 import 'package:flutter/material.dart';
 
-// =====================================================================
-// ORGANIZATION PAGE (All Settings hub)
-//
-// Full-screen settings hub, opened by tapping the "Organization" header
-// block at the top of the sidebar (see DashboardNavBar). This page
-// intentionally covers the whole screen (no sidebar/topbar) to match
-// the recorded behaviour, and is closed via the "Close Settings" button
-// which pops back to the dashboard.
-// =====================================================================
-
-class OrganizationPage extends StatelessWidget {
-  /// Shown under the "All Settings" title. Wire this up to the real
-  /// signed-in organization name once that data is available; 'test'
-  /// matches the placeholder organization used in the recording.
-  final String organizationName;
+class OrganizationPage extends StatefulWidget {
+  final VoidCallback onBack;
 
   const OrganizationPage({
     super.key,
-    this.organizationName = 'test',
+    required this.onBack,
   });
 
-  void _openItem(BuildContext context, String label) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$label settings - coming soon'),
-      ),
-    );
+  @override
+  State<OrganizationPage> createState() =>
+      _OrganizationPageState();
+}
+
+class _OrganizationPageState extends State<OrganizationPage> {
+  bool gstApplicable = true;
+
+  String baseCurrency = 'INR - Indian Rupee';
+  String fiscalYear = 'April - March';
+  String organizationLanguage = 'English';
+
+  String timeZone =
+      '(GMT 5:30) India Standard Time (Asia/Kolkata)';
+
+  String dateFormat = 'dd/MM/yyyy';
+
+  final TextEditingController organizationNameController =
+      TextEditingController(
+    text: 'test',
+  );
+
+  final TextEditingController primaryEmailController =
+      TextEditingController(
+    text: 'sureshkaniyappan27@gmail.com',
+  );
+
+  final TextEditingController contactPersonController =
+      TextEditingController(
+    text: 'Suresh K',
+  );
+
+  final TextEditingController phoneController =
+      TextEditingController(
+    text: '08098482620',
+  );
+
+  final TextEditingController addressController =
+      TextEditingController(
+    text: '2/78, main street, putur -626111',
+  );
+
+  final TextEditingController cityController =
+      TextEditingController();
+
+  final TextEditingController countryController =
+      TextEditingController();
+
+  final TextEditingController websiteController =
+      TextEditingController();
+
+  final TextEditingController gstController =
+      TextEditingController();
+
+  final TextEditingController cinController =
+      TextEditingController();
+
+  @override
+  void dispose() {
+    organizationNameController.dispose();
+    primaryEmailController.dispose();
+    contactPersonController.dispose();
+    phoneController.dispose();
+    addressController.dispose();
+    cityController.dispose();
+    countryController.dispose();
+    websiteController.dispose();
+    gstController.dispose();
+    cinController.dispose();
+
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
-      body: Column(
-        children: [
-          _buildTopBar(context),
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: const Color(0xFFF5F7FA),
 
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSection(
-                    context: context,
-                    title: 'Organization Settings',
-                    columns: _organizationSettingsColumns,
-                  ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          28,
+          25,
+          28,
+          35,
+        ),
 
-                  const SizedBox(height: 24),
+        child: Container(
+          width: double.infinity,
 
-                  _buildSection(
-                    context: context,
-                    title: 'Module Settings',
-                    columns: _moduleSettingsColumns,
-                  ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(
+              color: const Color(0xFFE2E6E9),
+            ),
+            borderRadius: BorderRadius.circular(5),
+          ),
 
-                  const SizedBox(height: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // =====================================================
+              // MAIN CONTENT
+              // =====================================================
 
-                  _buildSection(
-                    context: context,
-                    title: 'Extension and Developer Data',
-                    columns: _extensionSettingsColumns,
-                  ),
+              Padding(
+                padding: const EdgeInsets.all(28),
 
-                  const SizedBox(height: 30),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // =================================================
+                    // TITLE + ID
+                    // =================================================
 
-                  Center(
-                    child: Text(
-                      '© ${DateTime.now().year} $organizationName. All Rights Reserved.',
-                      style: const TextStyle(
-                        color: Color(0xFF9AA3AD),
-                        fontSize: 13,
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Organization Profile',
+                            style: TextStyle(
+                              color: Color(0xFF23292D),
+                              fontSize: 23,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 11,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0F2F3),
+                            borderRadius:
+                                BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'ID: 0aec398a',
+                            style: TextStyle(
+                              color: Color(0xFF59666D),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // =================================================
+                    // ORGANIZATION LOGO
+                    // =================================================
+
+                    const Text(
+                      'Organization Logo',
+                      style: _labelStyle,
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Row(
+                      children: [
+                        Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(
+                              color:
+                                  const Color(0xFFE0E4E6),
+                            ),
+                            borderRadius:
+                                BorderRadius.circular(4),
+                          ),
+                          child: const Column(
+                            mainAxisAlignment:
+                                MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.image_outlined,
+                                size: 20,
+                                color: Color(0xFF69835F),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Logo\nPreview',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color:
+                                      Color(0xFF666666),
+                                  fontSize: 8,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(width: 15),
+
+                        Expanded(
+                          child: Container(
+                            height: 42,
+                            padding:
+                                const EdgeInsets.symmetric(
+                              horizontal: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color:
+                                    const Color(0xFFDDE1E3),
+                              ),
+                              borderRadius:
+                                  BorderRadius.circular(3),
+                            ),
+                            child: Row(
+                              children: [
+                                OutlinedButton(
+                                  onPressed: () {
+                                    // File picker functionality
+                                    // can be connected later.
+                                  },
+                                  style:
+                                      OutlinedButton.styleFrom(
+                                    foregroundColor:
+                                        const Color(
+                                      0xFF333333,
+                                    ),
+                                    padding:
+                                        const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 7,
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Choose File',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(width: 8),
+
+                                const Text(
+                                  'No file chosen',
+                                  style: TextStyle(
+                                    color:
+                                        Color(0xFF666666),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 35),
+
+                    // =================================================
+                    // ORGANIZATION DETAILS
+                    // =================================================
+
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth >= 800) {
+                          return Row(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: _buildField(
+                                  label:
+                                      'Organization Name',
+                                  controller:
+                                      organizationNameController,
+                                ),
+                              ),
+
+                              const SizedBox(width: 25),
+
+                              Expanded(
+                                child: _buildField(
+                                  label:
+                                      'Primary Contact Email',
+                                  controller:
+                                      primaryEmailController,
+                                ),
+                              ),
+
+                              const SizedBox(width: 25),
+
+                              Expanded(
+                                child: _buildField(
+                                  label: 'Contact Person',
+                                  controller:
+                                      contactPersonController,
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+
+                        return Column(
+                          children: [
+                            _buildField(
+                              label: 'Organization Name',
+                              controller:
+                                  organizationNameController,
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            _buildField(
+                              label:
+                                  'Primary Contact Email',
+                              controller:
+                                  primaryEmailController,
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            _buildField(
+                              label: 'Contact Person',
+                              controller:
+                                  contactPersonController,
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 22),
+
+                    SizedBox(
+                      width: 340,
+                      child: _buildField(
+                        label: 'Phone Number',
+                        controller: phoneController,
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 10),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+                    const SizedBox(height: 32),
 
-  // ==================================================================
-  // TOP BAR
-  // ==================================================================
+                    const Divider(
+                      color: Color(0xFFE5E8EA),
+                    ),
 
-  Widget _buildTopBar(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF4F6FA),
-        border: Border(
-          bottom: BorderSide(color: Color(0xFFE3E6EC)),
+                    const SizedBox(height: 27),
+
+                    // =================================================
+                    // ADDRESS
+                    // =================================================
+
+                    _buildField(
+                      label: 'Organization Address',
+                      controller: addressController,
+                      maxLines: 4,
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth >= 700) {
+                          return Row(
+                            children: [
+                              Expanded(
+                                child: _buildField(
+                                  label: 'City',
+                                  controller:
+                                      cityController,
+                                ),
+                              ),
+
+                              const SizedBox(width: 25),
+
+                              Expanded(
+                                child: _buildField(
+                                  label: 'Country',
+                                  controller:
+                                      countryController,
+                                ),
+                              ),
+
+                              const Spacer(flex: 2),
+                            ],
+                          );
+                        }
+
+                        return Column(
+                          children: [
+                            _buildField(
+                              label: 'City',
+                              controller: cityController,
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            _buildField(
+                              label: 'Country',
+                              controller:
+                                  countryController,
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    _buildField(
+                      label: 'Website URL',
+                      controller: websiteController,
+                      hintText:
+                          'e.g., https://www.example.com',
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    const Divider(
+                      color: Color(0xFFE5E8EA),
+                    ),
+
+                    const SizedBox(height: 27),
+
+                    // =================================================
+                    // GST
+                    // =================================================
+
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth >= 700) {
+                          return Row(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Expanded(
+      child: _buildGstApplicable(),
+    ),
+
+    if (gstApplicable) ...[
+      const SizedBox(width: 25),
+
+      Expanded(
+        child: _buildField(
+          label: 'GST Number',
+          controller: gstController,
         ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'All Settings',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1B1F27),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  organizationName,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF6B7280),
-                  ),
-                ),
-              ],
-            ),
-          ),
+    ],
 
-          SizedBox(
-            width: 260,
-            height: 42,
-            child: TextField(
-              style: const TextStyle(fontSize: 14, color: Colors.black),
-              decoration: InputDecoration(
-                hintText: 'Search settings (/)',
-                hintStyle: const TextStyle(
-                  color: Color(0xFF9AA3AD),
-                  fontSize: 14,
-                ),
-                prefixIcon: const Icon(
-                  Icons.search,
-                  size: 20,
-                  color: Color(0xFF9AA3AD),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFFD7DCE2)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFFD7DCE2)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF1E78B7)),
-                ),
-              ),
-            ),
-          ),
+    const Spacer(),
+  ]
+                          );
+    
 
-          const SizedBox(width: 14),
+                        }
 
-          ElevatedButton.icon(
-            onPressed: () {
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
-              }
-            },
-            icon: const Icon(Icons.close, size: 18),
-            label: const Text('Close Settings'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE8EAFB),
-              foregroundColor: const Color(0xFF3F4CCB),
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(7),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+                        return Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            _buildGstApplicable(),
 
-  // ==================================================================
-  // SECTION CARD (white card with a title + a wrap of columns)
-  // ==================================================================
+                            const SizedBox(height: 20),
 
-  Widget _buildSection({
-    required BuildContext context,
-    required String title,
-    required List<List<_SettingsGroup>> columns,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE1E5EA)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF1B1F27),
-            ),
-          ),
+                            _buildField(
+                              label: 'GST Number',
+                              controller: gstController,
+                            ),
+                          ],
+                        );
+                      },
+                    ),
 
-          const SizedBox(height: 12),
+                    const SizedBox(height: 25),
 
-          const Divider(color: Color(0xFFE5E7EB)),
+                    _buildField(
+                      label: 'CIN Number',
+                      controller: cinController,
+                    ),
 
-          const SizedBox(height: 16),
+                    const SizedBox(height: 32),
 
-          Wrap(
-            spacing: 36,
-            runSpacing: 24,
-            children: columns.map(
-              (column) {
-                return SizedBox(
-                  width: 210,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (int i = 0; i < column.length; i++) ...[
-                        if (i > 0) const SizedBox(height: 22),
-                        _buildGroup(context, column[i]),
+                    const Divider(
+                      color: Color(0xFFE5E8EA),
+                    ),
+
+                    const SizedBox(height: 27),
+
+                    // =================================================
+                    // CURRENCY / YEAR / LANGUAGE
+                    // =================================================
+
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth >= 800) {
+                          return Row(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: _buildDropdown(
+                                  label: 'Base Currency',
+                                  value: baseCurrency,
+                                  items: const [
+                                    'INR - Indian Rupee',
+                                    'USD - US Dollar',
+                                    'EUR - Euro',
+                                  ],
+                                  onChanged: (value) {
+                                    if (value == null) {
+                                      return;
+                                    }
+
+                                    setState(() {
+                                      baseCurrency = value;
+                                    });
+                                  },
+                                ),
+                              ),
+
+                              const SizedBox(width: 25),
+
+                              Expanded(
+                                child: _buildDropdown(
+                                  label: 'Fiscal Year',
+                                  value: fiscalYear,
+                                  items: const [
+                                    'April - March',
+                                    'January - December',
+                                  ],
+                                  onChanged: (value) {
+                                    if (value == null) {
+                                      return;
+                                    }
+
+                                    setState(() {
+                                      fiscalYear = value;
+                                    });
+                                  },
+                                ),
+                              ),
+
+                              const SizedBox(width: 25),
+
+                              Expanded(
+                                child: _buildDropdown(
+                                  label:
+                                      'Organization Language',
+                                  value:
+                                      organizationLanguage,
+                                  items: const [
+                                    'English',
+                                  ],
+                                  onChanged: (value) {
+                                    if (value == null) {
+                                      return;
+                                    }
+
+                                    setState(() {
+                                      organizationLanguage =
+                                          value;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+
+                        return Column(
+                          children: [
+                            _buildDropdown(
+                              label: 'Base Currency',
+                              value: baseCurrency,
+                              items: const [
+                                'INR - Indian Rupee',
+                                'USD - US Dollar',
+                                'EUR - Euro',
+                              ],
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() {
+                                    baseCurrency = value;
+                                  });
+                                }
+                              },
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            _buildDropdown(
+                              label: 'Fiscal Year',
+                              value: fiscalYear,
+                              items: const [
+                                'April - March',
+                                'January - December',
+                              ],
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() {
+                                    fiscalYear = value;
+                                  });
+                                }
+                              },
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            _buildDropdown(
+                              label:
+                                  'Organization Language',
+                              value:
+                                  organizationLanguage,
+                              items: const [
+                                'English',
+                              ],
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() {
+                                    organizationLanguage =
+                                        value;
+                                  });
+                                }
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    SizedBox(
+                      width: 390,
+                      child: _buildDropdown(
+                        label: 'Time Zone',
+                        value: timeZone,
+                        items: const [
+                          '(GMT 5:30) India Standard Time (Asia/Kolkata)',
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              timeZone = value;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    _buildDropdown(
+                      label: 'Date Format',
+                      value: dateFormat,
+                      items: const [
+                        'dd/MM/yyyy',
+                        'MM/dd/yyyy',
+                        'yyyy-MM-dd',
                       ],
-                    ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            dateFormat = value;
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              // =====================================================
+              // BOTTOM BUTTON BAR
+              // =====================================================
+
+              Container(
+                width: double.infinity,
+
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 28,
+                  vertical: 18,
+                ),
+
+                decoration: const BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: Color(0xFFE4E8EA),
+                    ),
                   ),
-                );
-              },
-            ).toList(),
+                ),
+
+                child: Row(
+                  children: [
+                    // BACK
+                    ElevatedButton(
+                      onPressed: widget.onBack,
+
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color(0xFF6F7D83),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+
+                        padding:
+                            const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
+
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(4),
+                        ),
+                      ),
+
+                      child: const Text(
+                        'Back to All Settings',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+
+                    const Spacer(),
+
+                    // SAVE
+                    ElevatedButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Organization profile saved',
+                            ),
+                          ),
+                        );
+                      },
+
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color(0xFF168FE5),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+
+                        padding:
+                            const EdgeInsets.symmetric(
+                          horizontal: 25,
+                          vertical: 14,
+                        ),
+
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(4),
+                        ),
+                      ),
+
+                      child: const Text(
+                        'Save Changes',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  // ==================================================================
-  // ONE ICON + TITLE + LINK LIST GROUP
-  // ==================================================================
+  // ================================================================
+  // GST YES / NO
+  // ================================================================
 
-  Widget _buildGroup(BuildContext context, _SettingsGroup group) {
+  Widget _buildGstApplicable() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const Text(
+          'Is GST Applicable?',
+          style: _labelStyle,
+        ),
+
+        const SizedBox(height: 4),
+
         Row(
           children: [
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: group.color,
-                borderRadius: BorderRadius.circular(7),
-              ),
-              child: Icon(
-                group.icon,
-                color: Colors.white,
-                size: 16,
-              ),
+            Radio<bool>(
+              value: true,
+              groupValue: gstApplicable,
+              activeColor: const Color(0xFF2196E4),
+              onChanged: (value) {
+                if (value == null) return;
+
+                setState(() {
+                  gstApplicable = value;
+                });
+              },
             ),
 
-            const SizedBox(width: 10),
-
-            Expanded(
-              child: Text(
-                group.title,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1B1F27),
-                ),
-                overflow: TextOverflow.ellipsis,
+            const Text(
+              'Yes',
+              style: TextStyle(
+                fontSize: 12,
               ),
             ),
           ],
         ),
 
-        const SizedBox(height: 12),
+        Row(
+          children: [
+            Radio<bool>(
+              value: false,
+              groupValue: gstApplicable,
+              activeColor: const Color(0xFF2196E4),
+              onChanged: (value) {
+                if (value == null) return;
 
-        for (final item in group.items)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: InkWell(
-              onTap: () => _openItem(context, item),
-              child: Text(
-                item,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF2F6FE4),
-                ),
+                setState(() {
+                  gstApplicable = value;
+                });
+              },
+            ),
+
+            const Text(
+              'No',
+              style: TextStyle(
+                fontSize: 12,
               ),
             ),
-          ),
+          ],
+        ),
       ],
     );
   }
 
-  // ==================================================================
-  // DATA - ORGANIZATION SETTINGS
-  // ==================================================================
+  // ================================================================
+  // TEXT FIELD
+  // ================================================================
 
-  static final List<List<_SettingsGroup>> _organizationSettingsColumns = [
-    [
-      _SettingsGroup(
-        icon: Icons.apartment,
-        color: const Color(0xFF2FA84F),
-        title: 'Organization',
-        items: const [
-          'Profile',
-          'General',
-          'Branding',
-          'Custom Domain',
-          'Locations',
-          'Manage Subscription',
-        ],
-      ),
-    ],
-    [
-      _SettingsGroup(
-        icon: Icons.groups,
-        color: const Color(0xFFE0397B),
-        title: 'Users & Roles',
-        items: const [
-          'Users',
-          'Roles',
-          'User Preferences',
-        ],
-      ),
-      _SettingsGroup(
-        icon: Icons.shield_outlined,
-        color: const Color(0xFFE0397B),
-        title: 'Taxes & Compliance',
-        items: const [
-          'Taxes',
-          'Direct Taxes',
-          'e-Way Bills',
-          'e-Invoicing',
-        ],
-      ),
-    ],
-    [
-      _SettingsGroup(
-        icon: Icons.tune,
-        color: const Color(0xFFF39C12),
-        title: 'Setup & Configurations',
-        items: const [
-          'Currencies',
-          'Opening Balances',
-          'Reminders',
-          'Customer Portal',
-          'Vendor Portal',
-        ],
-      ),
-    ],
-    [
-      _SettingsGroup(
-        icon: Icons.palette_outlined,
-        color: const Color(0xFF2D7FF9),
-        title: 'Customization',
-        items: const [
-          'Transaction Number Series',
-          'PDF Templates',
-          'Email Notifications',
-          'SMS Notifications',
-          'Reporting Tags',
-          'Web Tabs',
-          'Digital Signature',
-        ],
-      ),
-    ],
-    [
-      _SettingsGroup(
-        icon: Icons.smart_toy_outlined,
-        color: const Color(0xFFE0522D),
-        title: 'Automation',
-        items: const [
-          'Workflow Rules',
-          'Workflow Actions',
-          'Workflow Logs',
-        ],
-      ),
-    ],
-  ];
+  Widget _buildField({
+    required String label,
+    required TextEditingController controller,
+    String? hintText,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: _labelStyle,
+        ),
 
-  // ==================================================================
-  // DATA - MODULE SETTINGS
-  // ==================================================================
+        const SizedBox(height: 8),
 
-  static final List<List<_SettingsGroup>> _moduleSettingsColumns = [
-    [
-      _SettingsGroup(
-        icon: Icons.grid_view,
-        color: const Color(0xFF2FA84F),
-        title: 'General',
-        items: const [
-          'Customers and Vendors',
-          'Items',
-          'Accountant',
-          'Projects',
-          'Timesheet',
-        ],
-      ),
-    ],
-    [
-      _SettingsGroup(
-        icon: Icons.inventory_2_outlined,
-        color: const Color(0xFFE0397B),
-        title: 'Inventory',
-        items: const [
-          'Inventory Adjustments',
-        ],
-      ),
-      _SettingsGroup(
-        icon: Icons.credit_card,
-        color: const Color(0xFF2D7FF9),
-        title: 'Online Payments',
-        items: const [
-          'Customer Payments',
-          'Vendor Payments',
-        ],
-      ),
-    ],
-    [
-      _SettingsGroup(
-        icon: Icons.show_chart,
-        color: const Color(0xFF1F9254),
-        title: 'Sales',
-        items: const [
-          'Estimates',
-          'Sales Orders',
-          'Delivery Challans',
-          'Invoices',
-          'Recurring Invoices',
-          'Payments Received',
-          'Credit Notes',
-          'Delivery Notes',
-          'Packing Slips',
-        ],
-      ),
-    ],
-    [
-      _SettingsGroup(
-        icon: Icons.shopping_cart_outlined,
-        color: const Color(0xFF7B4FE0),
-        title: 'Purchases',
-        items: const [
-          'Expenses',
-          'Purchase Orders',
-          'Bills',
-          'Payments Made',
-          'Vendor Credits',
-        ],
-      ),
-    ],
-  ];
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
 
-  // ==================================================================
-  // DATA - EXTENSION AND DEVELOPER DATA
-  // ==================================================================
+          style: const TextStyle(
+            color: Color(0xFF333333),
+            fontSize: 12,
+          ),
 
-  static final List<List<_SettingsGroup>> _extensionSettingsColumns = [
-    [
-      _SettingsGroup(
-        icon: Icons.extension_outlined,
-        color: const Color(0xFF2D7FF9),
-        title: 'Integrations & Market...',
-        items: const [
-          'Zoho Apps',
-          'WhatsApp',
-          'SMS Integrations',
-          'Uber for Business',
-          'Other Apps',
-          'Marketplace',
-        ],
-      ),
-    ],
-    [
-      _SettingsGroup(
-        icon: Icons.code,
-        color: const Color(0xFF7B4FE0),
-        title: 'Developer Data',
-        items: const [
-          'Incoming Webhooks',
-          'Connections',
-          'API Usage',
-          'Data Management',
-          'Deluge Components Usage',
-          'Web Forms',
-        ],
-      ),
-    ],
-  ];
+          decoration: InputDecoration(
+            hintText: hintText,
+
+            hintStyle: const TextStyle(
+              color: Color(0xFF9E9E9E),
+              fontSize: 11,
+            ),
+
+            isDense: true,
+            filled: true,
+            fillColor: Colors.white,
+
+            contentPadding:
+                const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
+
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(3),
+              borderSide: const BorderSide(
+                color: Color(0xFFDDE2E5),
+              ),
+            ),
+
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(3),
+              borderSide: const BorderSide(
+                color: Color(0xFF2196E4),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ================================================================
+  // DROPDOWN
+  // ================================================================
+
+  Widget _buildDropdown({
+    required String label,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: _labelStyle,
+        ),
+
+        const SizedBox(height: 8),
+
+        DropdownButtonFormField<String>(
+          initialValue: value,
+          isExpanded: true,
+
+          style: const TextStyle(
+            color: Color(0xFF333333),
+            fontSize: 12,
+          ),
+
+          decoration: InputDecoration(
+            isDense: true,
+
+            contentPadding:
+                const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 11,
+            ),
+
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(3),
+              borderSide: const BorderSide(
+                color: Color(0xFFDDE2E5),
+              ),
+            ),
+
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(3),
+              borderSide: const BorderSide(
+                color: Color(0xFF2196E4),
+              ),
+            ),
+          ),
+
+          items: items.map((item) {
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(item),
+            );
+          }).toList(),
+
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
 }
 
-// ===================================================================
-// SETTINGS GROUP (icon + title + list of link labels)
-// ===================================================================
-
-class _SettingsGroup {
-  final IconData icon;
-  final Color color;
-  final String title;
-  final List<String> items;
-
-  const _SettingsGroup({
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.items,
-  });
-}
+const TextStyle _labelStyle = TextStyle(
+  color: Color(0xFF4D555A),
+  fontSize: 11,
+  fontWeight: FontWeight.w500,
+);

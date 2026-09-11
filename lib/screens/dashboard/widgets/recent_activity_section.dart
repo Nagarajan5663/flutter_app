@@ -13,22 +13,32 @@ class RecentActivitySection extends StatelessWidget {
           title: 'Recent Activity',
           icon: Icons.history,
         ),
+
         const SizedBox(height: 20),
+
         const _EmptyActivityCard(
           title: 'Recent Revenue',
           message: 'No recent revenue found.',
         ),
+
         const SizedBox(height: 16),
+
         const _EmptyActivityCard(
           title: 'Recent Expenses',
           message: 'No recent expenses found.',
         ),
+
         const SizedBox(height: 16),
+
         const _RecentInventoryCard(),
       ],
     );
   }
 }
+
+// ============================================================================
+// EMPTY ACTIVITY CARD
+// ============================================================================
 
 class _EmptyActivityCard extends StatelessWidget {
   final String title;
@@ -70,11 +80,14 @@ class _EmptyActivityCard extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+
           const SizedBox(height: 12),
+
           const Divider(
             height: 1,
             color: Color(0xFFE6E6E6),
           ),
+
           Expanded(
             child: Center(
               child: Text(
@@ -92,6 +105,10 @@ class _EmptyActivityCard extends StatelessWidget {
     );
   }
 }
+
+// ============================================================================
+// RECENT INVENTORY CARD
+// ============================================================================
 
 class _RecentInventoryCard extends StatefulWidget {
   const _RecentInventoryCard();
@@ -112,7 +129,7 @@ class _RecentInventoryCardState extends State<_RecentInventoryCard> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> items = [
+    final items = [
       const _InventoryActivity(
         itemId: '#162',
         time: '20 Aug 2026, 08:38 AM',
@@ -164,18 +181,21 @@ class _RecentInventoryCardState extends State<_RecentInventoryCard> {
               fontWeight: FontWeight.w700,
             ),
           ),
+
           const SizedBox(height: 12),
+
           const Divider(
             height: 1,
             color: Color(0xFFE6E6E6),
           ),
+
           const SizedBox(height: 8),
+
           SizedBox(
             height: 255,
             child: Scrollbar(
               controller: _scrollController,
               thumbVisibility: true,
-              trackVisibility: false,
               thickness: 6,
               radius: const Radius.circular(10),
               child: ListView.separated(
@@ -195,9 +215,11 @@ class _RecentInventoryCardState extends State<_RecentInventoryCard> {
               ),
             ),
           ),
+
           const Divider(
             color: Color(0xFFE6E6E6),
           ),
+
           const Center(
             child: Text(
               'Note: Inventory data is system-wide '
@@ -214,6 +236,10 @@ class _RecentInventoryCardState extends State<_RecentInventoryCard> {
     );
   }
 }
+
+// ============================================================================
+// INVENTORY ACTIVITY ROW
+// ============================================================================
 
 class _InventoryActivity extends StatelessWidget {
   final String itemId;
@@ -243,7 +269,9 @@ class _InventoryActivity extends StatelessWidget {
               color: Color(0xFF8B5AD9),
             ),
           ),
+
           const SizedBox(width: 12),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,7 +284,9 @@ class _InventoryActivity extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
+
                 const SizedBox(height: 3),
+
                 Text(
                   time,
                   style: const TextStyle(
@@ -267,6 +297,7 @@ class _InventoryActivity extends StatelessWidget {
               ],
             ),
           ),
+
           const Text(
             '+1 Units',
             style: TextStyle(

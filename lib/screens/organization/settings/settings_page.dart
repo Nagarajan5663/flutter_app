@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../organization/organization_page.dart';
+import '../organization/general_settings_page.dart';
+import '../organization/manage_subscription_page.dart';
+
 class SettingsPage extends StatefulWidget {
+  final VoidCallback? onClose;
+
   const SettingsPage({
     super.key,
+    this.onClose,
   });
 
   @override
@@ -10,27 +17,70 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  bool _showOrganizationProfile = false;
+  bool _showGeneralSettings = false;
+  bool _showManageSubscription = false;
+
+  final TextEditingController _searchController =
+      TextEditingController();
+
+  String _searchText = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   // ================================================================
-  // SETTINGS VALUES
+  // OPEN ORGANIZATION PROFILE
   // ================================================================
 
-  String selectedTheme = 'Light Mode';
-  String selectedLanguage = 'English';
-
-  bool emailNotifications = true;
+  void _openOrganizationProfile() {
+    setState(() {
+      _showOrganizationProfile = true;
+    });
+  }
 
   // ================================================================
-  // SAVE SETTINGS
+  // BACK TO ALL SETTINGS
   // ================================================================
 
-  void _savePreferences() {
+  void _backToAllSettings() {
+    setState(() {
+      _showOrganizationProfile = false;
+    });
+  }
+
+  // ================================================================
+  // COMING SOON
+  // ================================================================
+
+  void _showComingSoon(String title) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text(
-          'Preferences saved successfully.',
+          '$title - Coming Soon',
         ),
+        duration: const Duration(seconds: 1),
       ),
     );
+  }
+
+  // ================================================================
+  // SEARCH
+  // ================================================================
+
+  bool _matches(String text) {
+    if (_searchText.trim().isEmpty) {
+      return true;
+    }
+
+    return text.toLowerCase().contains(
+          _searchText.toLowerCase().trim(),
+        );
   }
 
   // ================================================================
@@ -39,386 +89,770 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    // ==============================================================
+    // ORGANIZATION PROFILE PAGE
+    // ==============================================================
+
+    if (_showOrganizationProfile) {
+      return OrganizationPage(
+        onBack: _backToAllSettings,
+      );
+    }
+
+
+    if (_showGeneralSettings) {
+  return GeneralSettingsPage(
+    onBack: () {
+      setState(() {
+        _showGeneralSettings = false;
+      });
+    },
+  );
+}
+
+    if (_showManageSubscription) {
+  return ManageSubscriptionPage(
+    onBack: () {
+      setState(() {
+        _showManageSubscription = false;
+      });
+    },
+  );
+}
+
+    // ==============================================================
+    // ALL SETTINGS PAGE
+    // ==============================================================
+
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: const Color(0xFFF4F6F9),
-      child: Stack(
-        children: [
-          // ==========================================================
-          // BACKGROUND DECORATION
-          // ==========================================================
+      color: const Color(0xFFF5F7FA),
 
-          Positioned(
-            left: -180,
-            top: 30,
-            child: Container(
-              width: 650,
-              height: 800,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.55),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ========================================================
+            // TOP HEADER
+            // ========================================================
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(
+                24,
+                22,
+                24,
+                20,
               ),
-            ),
-          ),
-
-          Positioned(
-            right: -120,
-            top: -80,
-            child: Container(
-              width: 600,
-              height: 600,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.55),
-              ),
-            ),
-          ),
-
-          // ==========================================================
-          // MAIN CONTENT
-          // ==========================================================
-
-          SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              30,
-              35,
-              30,
-              30,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ====================================================
-                // PAGE TITLE
-                // ====================================================
-
-                const Text(
-                  'Preferences',
-                  style: TextStyle(
-                    color: Color(0xFF12395D),
-                    fontSize: 34,
-                    fontWeight: FontWeight.w800,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF5F7FA),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Color(0xFFE1E5E8),
                   ),
                 ),
+              ),
 
-                const SizedBox(height: 30),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ==================================================
+                  // TITLE
+                  // ==================================================
 
-                // ====================================================
-                // SETTINGS CARD
-                // ====================================================
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'All Settings',
+                          style: TextStyle(
+                            color: Color(0xFF252A2E),
+                            fontSize: 29,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
 
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: 820,
+                        SizedBox(height: 5),
+
+                        Text(
+                          'test',
+                          style: TextStyle(
+                            color: Color(0xFF747E85),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
-                    child: Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(
-                              alpha: 0.08,
-                            ),
-                            blurRadius: 25,
-                            offset: const Offset(0, 8),
+                  ),
+
+                  // ==================================================
+                  // SEARCH SETTINGS
+                  // ==================================================
+
+                  SizedBox(
+                    width: 260,
+                    height: 42,
+                    child: TextField(
+                      controller: _searchController,
+
+                      onChanged: (value) {
+                        setState(() {
+                          _searchText = value;
+                        });
+                      },
+
+                      decoration: InputDecoration(
+                        hintText: 'Search settings (/)',
+
+                        hintStyle: const TextStyle(
+                          color: Color(0xFF9AA5AD),
+                          fontSize: 14,
+                        ),
+
+                        prefixIcon: const Icon(
+                          Icons.search_rounded,
+                          size: 20,
+                          color: Color(0xFF8C9AA4),
+                        ),
+
+                        filled: true,
+                        fillColor: Colors.white,
+
+                        contentPadding:
+                            const EdgeInsets.symmetric(
+                          vertical: 10,
+                        ),
+
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius.circular(7),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFD4DBE0),
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          // ==========================================
-                          // FORM CONTENT
-                          // ==========================================
+                        ),
 
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              32,
-                              30,
-                              32,
-                              28,
-                            ),
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                // ====================================
-                                // THEME + LANGUAGE
-                                // ====================================
-
-                                Row(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: _buildDropdownField(
-                                        label: 'Application Theme',
-                                        value: selectedTheme,
-                                        items: const [
-                                          'Light Mode',
-                                          'Dark Mode',
-                                          'System Default',
-                                        ],
-                                        onChanged: (value) {
-                                          if (value == null) return;
-
-                                          setState(() {
-                                            selectedTheme = value;
-                                          });
-                                        },
-                                      ),
-                                    ),
-
-                                    const SizedBox(width: 30),
-
-                                    Expanded(
-                                      child: _buildDropdownField(
-                                        label: 'Language',
-                                        value: selectedLanguage,
-                                        items: const [
-                                          'English',
-                                          'Tamil',
-                                          'Hindi',
-                                        ],
-                                        onChanged: (value) {
-                                          if (value == null) return;
-
-                                          setState(() {
-                                            selectedLanguage = value;
-                                          });
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 55),
-
-                                // ====================================
-                                // DIVIDER
-                                // ====================================
-
-                                const Divider(
-                                  height: 1,
-                                  color: Color(0xFFE0E0E0),
-                                ),
-
-                                const SizedBox(height: 40),
-
-                                // ====================================
-                                // EMAIL NOTIFICATIONS
-                                // ====================================
-
-                                const Text(
-                                  'Email Notifications',
-                                  style: TextStyle(
-                                    color: Color(0xFF666666),
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-
-                                const SizedBox(height: 10),
-
-                                Row(
-                                  children: [
-                                    SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: Checkbox(
-                                        value:
-                                            emailNotifications,
-                                        activeColor:
-                                            const Color(
-                                              0xFF1683F8,
-                                            ),
-                                        onChanged: (value) {
-                                          setState(() {
-                                            emailNotifications =
-                                                value ?? false;
-                                          });
-                                        },
-                                      ),
-                                    ),
-
-                                    const SizedBox(width: 10),
-
-                                    const Text(
-                                      'Receive email updates and alerts',
-                                      style: TextStyle(
-                                        color: Color(0xFF444444),
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius.circular(7),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF3978FF),
                           ),
-
-                          // ==========================================
-                          // BOTTOM BUTTON AREA
-                          // ==========================================
-
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.fromLTRB(
-                              32,
-                              20,
-                              32,
-                              20,
-                            ),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFFAFAFA),
-                              borderRadius: BorderRadius.only(
-                                bottomLeft: Radius.circular(14),
-                                bottomRight: Radius.circular(14),
-                              ),
-                              border: Border(
-                                top: BorderSide(
-                                  color: Color(0xFFE5E5E5),
-                                ),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.end,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: _savePreferences,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                        const Color(0xFF1683F8),
-                                    foregroundColor: Colors.white,
-                                    elevation: 0,
-                                    padding:
-                                        const EdgeInsets.symmetric(
-                                      horizontal: 26,
-                                      vertical: 14,
-                                    ),
-                                    shape:
-                                        RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Save Preferences',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+
+                  const SizedBox(width: 14),
+
+                  // ==================================================
+                  // CLOSE SETTINGS
+                  // ==================================================
+
+                  TextButton.icon(
+                    onPressed: widget.onClose ??
+                        () {
+                          Navigator.maybePop(context);
+                        },
+
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      size: 18,
+                      color: Color(0xFF4C4FEA),
+                    ),
+
+                    label: const Text(
+                      'Close Settings',
+                    ),
+
+                    style: TextButton.styleFrom(
+                      foregroundColor:
+                          const Color(0xFF4C4FEA),
+
+                      backgroundColor:
+                          const Color(0xFFECEBFF),
+
+                      padding:
+                          const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 12,
+                      ),
+
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(6),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+
+            // ========================================================
+            // SETTINGS CONTENT
+            // ========================================================
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                24,
+                24,
+                24,
+                35,
+              ),
+
+              child: Container(
+                width: double.infinity,
+
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  24,
+                  24,
+                  35,
+                ),
+
+                decoration: BoxDecoration(
+                  color: Colors.white,
+
+                  borderRadius:
+                      BorderRadius.circular(11),
+
+                  border: Border.all(
+                    color: const Color(0xFFDDE3E7),
+                  ),
+                ),
+
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    // =================================================
+                    // ORGANIZATION SETTINGS TITLE
+                    // =================================================
+
+                    const Text(
+                      'Organization Settings',
+                      style: TextStyle(
+                        color: Color(0xFF262B2F),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    const Divider(
+                      height: 1,
+                      color: Color(0xFFE4E8EA),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // =================================================
+                    // SETTINGS COLUMNS
+                    // =================================================
+
+                    LayoutBuilder(
+                      builder: (
+                        context,
+                        constraints,
+                      ) {
+                        if (constraints.maxWidth >=
+                            900) {
+                          return Row(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child:
+                                    _organizationColumn(),
+                              ),
+
+                              const SizedBox(width: 35),
+
+                              Expanded(
+                                child:
+                                    _usersAndTaxColumn(),
+                              ),
+
+                              const SizedBox(width: 35),
+
+                              Expanded(
+                                child:
+                                    _setupColumn(),
+                              ),
+
+                              const SizedBox(width: 35),
+
+                              Expanded(
+                                child:
+                                    _customizationColumn(),
+                              ),
+                            ],
+                          );
+                        }
+
+                        if (constraints.maxWidth >=
+                            600) {
+                          return Wrap(
+                            spacing: 30,
+                            runSpacing: 35,
+                            children: [
+                              SizedBox(
+                                width:
+                                    (constraints.maxWidth -
+                                            30) /
+                                        2,
+                                child:
+                                    _organizationColumn(),
+                              ),
+
+                              SizedBox(
+                                width:
+                                    (constraints.maxWidth -
+                                            30) /
+                                        2,
+                                child:
+                                    _usersAndTaxColumn(),
+                              ),
+
+                              SizedBox(
+                                width:
+                                    (constraints.maxWidth -
+                                            30) /
+                                        2,
+                                child:
+                                    _setupColumn(),
+                              ),
+
+                              SizedBox(
+                                width:
+                                    (constraints.maxWidth -
+                                            30) /
+                                        2,
+                                child:
+                                    _customizationColumn(),
+                              ),
+                            ],
+                          );
+                        }
+
+                        return Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            _organizationColumn(),
+
+                            const SizedBox(height: 35),
+
+                            _usersAndTaxColumn(),
+
+                            const SizedBox(height: 35),
+
+                            _setupColumn(),
+
+                            const SizedBox(height: 35),
+
+                            _customizationColumn(),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // ================================================================
-  // DROPDOWN FIELD
-  // ================================================================
+  // ==================================================================
+  // ORGANIZATION
+  // ==================================================================
 
-  Widget _buildDropdownField({
-    required String label,
-    required String value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-  }) {
+  Widget _organizationColumn() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFF666666),
-            fontSize: 17,
-            fontWeight: FontWeight.w500,
-          ),
+        _sectionTitle(
+          icon: Icons.business_rounded,
+          iconColor: const Color(0xFF34A853),
+          title: 'Organization',
         ),
 
         const SizedBox(height: 10),
 
-        DropdownButtonFormField<String>(
-          initialValue: value,
-          isExpanded: true,
-
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 16,
+        // PROFILE
+        // THIS OPENS YOUR COMPLETE ORGANIZATION PROFILE PAGE
+        if (_matches('Profile'))
+          _settingLink(
+            title: 'Profile',
+            onTap: _openOrganizationProfile,
           ),
 
-          icon: const Icon(
-            Icons.keyboard_arrow_down,
-            color: Colors.black,
+        if (_matches('General'))
+  _settingLink(
+    title: 'General',
+    onTap: () {
+      setState(() {
+        _showGeneralSettings = true;
+      });
+    },
+  ),
+
+        if (_matches('Branding'))
+          _settingLink(
+            title: 'Branding',
+            onTap: () {
+              _showComingSoon('Branding');
+            },
           ),
 
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 15,
-              vertical: 14,
-            ),
-
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: Color(0xFFDADADA),
-              ),
-            ),
-
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: Color(0xFFDADADA),
-              ),
-            ),
-
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: Color(0xFF1683F8),
-                width: 1.5,
-              ),
-            ),
+        if (_matches('Custom Domain'))
+          _settingLink(
+            title: 'Custom Domain',
+            onTap: () {
+              _showComingSoon('Custom Domain');
+            },
           ),
 
-          dropdownColor: Colors.white,
+        if (_matches('Locations'))
+          _settingLink(
+            title: 'Locations',
+            onTap: () {
+              _showComingSoon('Locations');
+            },
+          ),
 
-          items: items.map(
-            (item) {
-              return DropdownMenuItem<String>(
-                value: item,
-                child: Text(
-                  item,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 16,
-                  ),
-                ),
+        if (_matches('Manage Subscription'))
+  _settingLink(
+    title: 'Manage Subscription',
+    onTap: () {
+      setState(() {
+        _showManageSubscription = true;
+      });
+    },
+  ),
+      ],
+    );
+  }
+
+  // ==================================================================
+  // USERS & ROLES + TAXES
+  // ==================================================================
+
+  Widget _usersAndTaxColumn() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(
+          icon: Icons.groups_rounded,
+          iconColor: const Color(0xFFE83E7E),
+          title: 'Users & Roles',
+        ),
+
+        const SizedBox(height: 10),
+
+        if (_matches('Users'))
+          _settingLink(
+            title: 'Users',
+            onTap: () {
+              _showComingSoon('Users');
+            },
+          ),
+
+        if (_matches('Roles'))
+          _settingLink(
+            title: 'Roles',
+            onTap: () {
+              _showComingSoon('Roles');
+            },
+          ),
+
+        if (_matches('User Preferences'))
+          _settingLink(
+            title: 'User Preferences',
+            onTap: () {
+              _showComingSoon(
+                'User Preferences',
               );
             },
-          ).toList(),
+          ),
 
-          onChanged: onChanged,
+        const SizedBox(height: 25),
+
+        _sectionTitle(
+          icon: Icons.shield_outlined,
+          iconColor: const Color(0xFFE83E7E),
+          title: 'Taxes & Compliance',
+        ),
+
+        const SizedBox(height: 10),
+
+        if (_matches('Taxes'))
+          _settingLink(
+            title: 'Taxes',
+            onTap: () {
+              _showComingSoon('Taxes');
+            },
+          ),
+
+        if (_matches('Direct Taxes'))
+          _settingLink(
+            title: 'Direct Taxes',
+            onTap: () {
+              _showComingSoon('Direct Taxes');
+            },
+          ),
+
+        if (_matches('e-Way Bills'))
+          _settingLink(
+            title: 'e-Way Bills',
+            onTap: () {
+              _showComingSoon('e-Way Bills');
+            },
+          ),
+
+        if (_matches('e-Invoicing'))
+          _settingLink(
+            title: 'e-Invoicing',
+            onTap: () {
+              _showComingSoon('e-Invoicing');
+            },
+          ),
+      ],
+    );
+  }
+
+  // ==================================================================
+  // SETUP & CONFIGURATIONS
+  // ==================================================================
+
+  Widget _setupColumn() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(
+          icon: Icons.tune_rounded,
+          iconColor: const Color(0xFFF59A0A),
+          title: 'Setup & Configurations',
+        ),
+
+        const SizedBox(height: 10),
+
+        if (_matches('Currencies'))
+          _settingLink(
+            title: 'Currencies',
+            onTap: () {
+              _showComingSoon('Currencies');
+            },
+          ),
+
+        if (_matches('Opening Balances'))
+          _settingLink(
+            title: 'Opening Balances',
+            onTap: () {
+              _showComingSoon(
+                'Opening Balances',
+              );
+            },
+          ),
+
+        if (_matches('Reminders'))
+          _settingLink(
+            title: 'Reminders',
+            onTap: () {
+              _showComingSoon('Reminders');
+            },
+          ),
+
+        if (_matches('Customer Portal'))
+          _settingLink(
+            title: 'Customer Portal',
+            onTap: () {
+              _showComingSoon(
+                'Customer Portal',
+              );
+            },
+          ),
+
+        if (_matches('Vendor Portal'))
+          _settingLink(
+            title: 'Vendor Portal',
+            onTap: () {
+              _showComingSoon('Vendor Portal');
+            },
+          ),
+      ],
+    );
+  }
+
+  // ==================================================================
+  // CUSTOMIZATION
+  // ==================================================================
+
+  Widget _customizationColumn() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(
+          icon: Icons.palette_outlined,
+          iconColor: const Color(0xFF3478F6),
+          title: 'Customization',
+        ),
+
+        const SizedBox(height: 10),
+
+        if (_matches('Transaction Number Series'))
+          _settingLink(
+            title: 'Transaction Number Series',
+            onTap: () {
+              _showComingSoon(
+                'Transaction Number Series',
+              );
+            },
+          ),
+
+        if (_matches('PDF Templates'))
+          _settingLink(
+            title: 'PDF Templates',
+            onTap: () {
+              _showComingSoon('PDF Templates');
+            },
+          ),
+
+        if (_matches('Email Notifications'))
+          _settingLink(
+            title: 'Email Notifications',
+            onTap: () {
+              _showComingSoon(
+                'Email Notifications',
+              );
+            },
+          ),
+
+        if (_matches('SMS Notifications'))
+          _settingLink(
+            title: 'SMS Notifications',
+            onTap: () {
+              _showComingSoon(
+                'SMS Notifications',
+              );
+            },
+          ),
+
+        if (_matches('Reporting Tags'))
+          _settingLink(
+            title: 'Reporting Tags',
+            onTap: () {
+              _showComingSoon('Reporting Tags');
+            },
+          ),
+
+        if (_matches('Web Tabs'))
+          _settingLink(
+            title: 'Web Tabs',
+            onTap: () {
+              _showComingSoon('Web Tabs');
+            },
+          ),
+
+        if (_matches('Digital Signature'))
+          _settingLink(
+            title: 'Digital Signature',
+            onTap: () {
+              _showComingSoon(
+                'Digital Signature',
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  // ==================================================================
+  // SECTION TITLE
+  // ==================================================================
+
+  Widget _sectionTitle({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+
+          alignment: Alignment.center,
+
+          decoration: BoxDecoration(
+            color: iconColor,
+            borderRadius: BorderRadius.circular(6),
+          ),
+
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: 17,
+          ),
+        ),
+
+        const SizedBox(width: 10),
+
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Color(0xFF292E32),
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ],
+    );
+  }
+
+  // ==================================================================
+  // SETTING LINK
+  // ==================================================================
+
+  Widget _settingLink({
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+
+      child: InkWell(
+        onTap: onTap,
+
+        borderRadius: BorderRadius.circular(4),
+
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: 6,
+          ),
+
+          child: Align(
+            alignment: Alignment.centerLeft,
+
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: Color(0xFF2767F4),
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
