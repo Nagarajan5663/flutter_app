@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'business_overview_page.dart';
-
+import 'report_category_detail_page.dart';
 import 'widgets/report_category_sidebar.dart';
 import 'widgets/reports_section.dart';
 
@@ -9,22 +8,19 @@ class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
 
   @override
-  State<ReportsPage> createState() =>
-      _ReportsPageState();
+  State<ReportsPage> createState() => _ReportsPageState();
 }
 
 class _ReportsPageState extends State<ReportsPage> {
   // ================================================================
-  // SELECTED CATEGORY
+  // CURRENT CATEGORY
   // ================================================================
 
   String _selectedCategory = 'All Reports';
 
-  // ================================================================
-  // BUSINESS OVERVIEW DETAIL PAGE
-  // ================================================================
-
-  bool _showBusinessOverview = false;
+  // null = main Reports Center
+  // otherwise = selected category detail page
+  String? _activeCategory;
 
   // ================================================================
   // REPORT DATA
@@ -42,25 +38,20 @@ class _ReportsPageState extends State<ReportsPage> {
           name: 'Profit and Loss',
           lastVisited: '04/05/2025 07:49 PM',
         ),
-
         ReportItem(
           name: 'Profit and Loss (Schedule III)',
         ),
-
         ReportItem(
           name: 'Horizontal Profit and Loss',
         ),
-
         ReportItem(
           name: 'Cash Flow Statement',
           lastVisited: '24/03/2023 11:37 PM',
         ),
-
         ReportItem(
           name: 'Balance Sheet',
           lastVisited: '14/07/2025 02:31 PM',
         ),
-
         ReportItem(
           name: 'Horizontal Balance Sheet',
         ),
@@ -77,15 +68,12 @@ class _ReportsPageState extends State<ReportsPage> {
         ReportItem(
           name: 'Sales by Customer',
         ),
-
         ReportItem(
           name: 'Sales by Item',
         ),
-
         ReportItem(
           name: 'Sales by Sales Person',
         ),
-
         ReportItem(
           name: 'Sales Summary',
         ),
@@ -102,11 +90,9 @@ class _ReportsPageState extends State<ReportsPage> {
         ReportItem(
           name: 'Inventory Summary',
         ),
-
         ReportItem(
           name: 'Inventory Valuation Summary',
         ),
-
         ReportItem(
           name: 'Inventory Aging Summary',
         ),
@@ -123,15 +109,12 @@ class _ReportsPageState extends State<ReportsPage> {
         ReportItem(
           name: 'AR Aging Summary',
         ),
-
         ReportItem(
           name: 'AR Aging Details',
         ),
-
         ReportItem(
           name: 'Invoice Details',
         ),
-
         ReportItem(
           name: 'Customer Balance Summary',
         ),
@@ -148,15 +131,12 @@ class _ReportsPageState extends State<ReportsPage> {
         ReportItem(
           name: 'AP Aging Summary',
         ),
-
         ReportItem(
           name: 'Vendor Balance Summary',
         ),
-
         ReportItem(
           name: 'Bill Details',
         ),
-
         ReportItem(
           name: 'Payments Made',
         ),
@@ -173,15 +153,12 @@ class _ReportsPageState extends State<ReportsPage> {
         ReportItem(
           name: 'Purchases by Vendor',
         ),
-
         ReportItem(
           name: 'Purchases by Item',
         ),
-
         ReportItem(
           name: 'Expense Details',
         ),
-
         ReportItem(
           name: 'Expenses by Category',
         ),
@@ -199,15 +176,12 @@ class _ReportsPageState extends State<ReportsPage> {
           name: 'Account Transactions',
           lastVisited: '07/09/2026 07:10',
         ),
-
         ReportItem(
           name: 'General Ledger',
         ),
-
         ReportItem(
           name: 'Journal Report',
         ),
-
         ReportItem(
           name: 'Trial Balance',
         ),
@@ -216,20 +190,21 @@ class _ReportsPageState extends State<ReportsPage> {
   ];
 
   // ================================================================
-  // FILTER REPORT SECTIONS
+  // POINT 5 - FIND SELECTED CATEGORY DATA
   // ================================================================
 
-  List<ReportSectionData> get _visibleSections {
-    if (_selectedCategory == 'All Reports') {
-      return _sections;
+  ReportSectionData? get _activeSection {
+    if (_activeCategory == null) {
+      return null;
     }
 
-    return _sections
-        .where(
-          (section) =>
-              section.title == _selectedCategory,
-        )
-        .toList();
+    for (final section in _sections) {
+      if (section.title == _activeCategory) {
+        return section;
+      }
+    }
+
+    return null;
   }
 
   // ================================================================
@@ -237,23 +212,25 @@ class _ReportsPageState extends State<ReportsPage> {
   // ================================================================
 
   void _handleCategorySelected(String category) {
-    // Business Overview opens a NEW DETAIL VIEW
-    if (category == 'Business Overview') {
+    // All Reports returns to main Reports Center
+    if (category == 'All Reports') {
       setState(() {
-        _showBusinessOverview = true;
+        _selectedCategory = 'All Reports';
+        _activeCategory = null;
       });
 
       return;
     }
 
-    // Other categories filter the reports center
+    // Every other category opens full body
     setState(() {
       _selectedCategory = category;
+      _activeCategory = category;
     });
   }
 
   // ================================================================
-  // CUSTOM REPORT BUTTON
+  // CREATE CUSTOM REPORT
   // ================================================================
 
   void _createCustomReport() {
@@ -262,39 +239,77 @@ class _ReportsPageState extends State<ReportsPage> {
         content: Text(
           'Create Custom Report selected',
         ),
+        duration: Duration(seconds: 1),
       ),
     );
   }
 
   // ================================================================
-  // BUILD
+  // REPORT CLICK
+  // ================================================================
+
+  void _handleReportSelected(
+    BuildContext context,
+    ReportItem report,
+  ) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${report.name} selected',
+        ),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  // ================================================================
+  // POINT 6 - BUILD
   // ================================================================
 
   @override
   Widget build(BuildContext context) {
+    final ReportSectionData? activeSection =
+        _activeSection;
+
     // ==============================================================
-    // BUSINESS OVERVIEW DETAIL PAGE
+    // CATEGORY DETAIL PAGE
     // ==============================================================
 
-    if (_showBusinessOverview) {
-      return BusinessOverviewPage(
+    if (activeSection != null) {
+      return ReportCategoryDetailPage(
+        section: activeSection,
+
+        // ============================================================
+        // BACK TO ALL REPORTS
+        // ============================================================
+
         onBack: () {
           setState(() {
-            _showBusinessOverview = false;
+            _activeCategory = null;
             _selectedCategory = 'All Reports';
           });
+        },
+
+        // ============================================================
+        // REPORT ROW CLICK
+        // ============================================================
+
+        onReportSelected: (report) {
+          _handleReportSelected(
+            context,
+            report,
+          );
         },
       );
     }
 
     // ==============================================================
-    // REPORTS CENTER
+    // MAIN REPORTS CENTER
     // ==============================================================
 
     return Container(
       width: double.infinity,
       height: double.infinity,
-
       color: const Color(0xFFF3F7FA),
 
       child: SingleChildScrollView(
@@ -308,12 +323,19 @@ class _ReportsPageState extends State<ReportsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // =======================================================
-            // REPORTS CENTER HEADER
-            // =======================================================
+            // ========================================================
+            // HEADER
+            // ========================================================
 
             LayoutBuilder(
-              builder: (context, constraints) {
+              builder: (
+                context,
+                constraints,
+              ) {
+                // ====================================================
+                // DESKTOP
+                // ====================================================
+
                 if (constraints.maxWidth >= 600) {
                   return Row(
                     children: [
@@ -327,6 +349,12 @@ class _ReportsPageState extends State<ReportsPage> {
                           ),
                         ),
                       ),
+
+                      // =================================================
+                      // CREATE CUSTOM REPORT
+                      //
+                      // ONLY SHOWS ON ALL REPORTS PAGE
+                      // =================================================
 
                       ElevatedButton.icon(
                         onPressed: _createCustomReport,
@@ -344,7 +372,8 @@ class _ReportsPageState extends State<ReportsPage> {
                           backgroundColor:
                               const Color(0xFF5DAEDD),
 
-                          foregroundColor: Colors.white,
+                          foregroundColor:
+                              Colors.white,
 
                           elevation: 0,
 
@@ -354,7 +383,8 @@ class _ReportsPageState extends State<ReportsPage> {
                             vertical: 16,
                           ),
 
-                          shape: RoundedRectangleBorder(
+                          shape:
+                              RoundedRectangleBorder(
                             borderRadius:
                                 BorderRadius.circular(8),
                           ),
@@ -368,6 +398,10 @@ class _ReportsPageState extends State<ReportsPage> {
                     ],
                   );
                 }
+
+                // ====================================================
+                // MOBILE
+                // ====================================================
 
                 return Column(
                   crossAxisAlignment:
@@ -386,11 +420,17 @@ class _ReportsPageState extends State<ReportsPage> {
 
                     ElevatedButton.icon(
                       onPressed: _createCustomReport,
-
-                      icon: const Icon(Icons.add),
-
+                      icon: const Icon(
+                        Icons.add,
+                      ),
                       label: const Text(
                         'Create Custom Report',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color(0xFF5DAEDD),
+                        foregroundColor:
+                            Colors.white,
                       ),
                     ),
                   ],
@@ -400,29 +440,33 @@ class _ReportsPageState extends State<ReportsPage> {
 
             const SizedBox(height: 28),
 
-            // =======================================================
-            // REPORT BODY
-            // =======================================================
+            // ========================================================
+            // MAIN REPORT CONTENT
+            // ========================================================
 
             LayoutBuilder(
-              builder: (context, constraints) {
-                // ===================================================
+              builder: (
+                context,
+                constraints,
+              ) {
+                // ====================================================
                 // WEB / DESKTOP
-                // ===================================================
+                // ====================================================
 
                 if (constraints.maxWidth >= 850) {
                   return Row(
                     crossAxisAlignment:
                         CrossAxisAlignment.start,
                     children: [
-                      // =============================================
-                      // CATEGORY SIDEBAR
-                      // =============================================
+                      // ===============================================
+                      // LEFT REPORT CATEGORY
+                      // ===============================================
 
                       SizedBox(
                         width: 250,
 
-                        child: ReportCategorySidebar(
+                        child:
+                            ReportCategorySidebar(
                           selectedCategory:
                               _selectedCategory,
 
@@ -433,43 +477,34 @@ class _ReportsPageState extends State<ReportsPage> {
 
                       const SizedBox(width: 25),
 
-                      // =============================================
-                      // REPORT SECTIONS
-                      // =============================================
+                      // ===============================================
+                      // ALL REPORT SECTIONS
+                      // ===============================================
 
                       Expanded(
                         child: Column(
                           children: [
-                            for (int i = 0;
-                                i <
-                                    _visibleSections
-                                        .length;
-                                i++) ...[
+                            for (
+                              int index = 0;
+                              index <
+                                  _sections.length;
+                              index++
+                            ) ...[
                               ReportsSection(
                                 section:
-                                    _visibleSections[i],
+                                    _sections[index],
 
                                 onReportSelected:
                                     (report) {
-                                  ScaffoldMessenger.of(
-                                          context)
-                                      .showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        '${report.name} selected',
-                                      ),
-                                      duration:
-                                          const Duration(
-                                        seconds: 1,
-                                      ),
-                                    ),
+                                  _handleReportSelected(
+                                    context,
+                                    report,
                                   );
                                 },
                               ),
 
-                              if (i !=
-                                  _visibleSections
-                                          .length -
+                              if (index !=
+                                  _sections.length -
                                       1)
                                 const SizedBox(
                                   height: 22,
@@ -482,14 +517,18 @@ class _ReportsPageState extends State<ReportsPage> {
                   );
                 }
 
-                // ===================================================
+                // ====================================================
                 // TABLET / MOBILE
-                // ===================================================
+                // ====================================================
 
                 return Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
+                    // =================================================
+                    // CATEGORY
+                    // =================================================
+
                     ReportCategorySidebar(
                       selectedCategory:
                           _selectedCategory,
@@ -500,31 +539,33 @@ class _ReportsPageState extends State<ReportsPage> {
 
                     const SizedBox(height: 22),
 
-                    for (int i = 0;
-                        i < _visibleSections.length;
-                        i++) ...[
+                    // =================================================
+                    // REPORT SECTIONS
+                    // =================================================
+
+                    for (
+                      int index = 0;
+                      index < _sections.length;
+                      index++
+                    ) ...[
                       ReportsSection(
                         section:
-                            _visibleSections[i],
+                            _sections[index],
 
                         onReportSelected:
                             (report) {
-                          ScaffoldMessenger.of(
-                                  context)
-                              .showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${report.name} selected',
-                              ),
-                            ),
+                          _handleReportSelected(
+                            context,
+                            report,
                           );
                         },
                       ),
 
-                      if (i !=
-                          _visibleSections.length -
-                              1)
-                        const SizedBox(height: 20),
+                      if (index !=
+                          _sections.length - 1)
+                        const SizedBox(
+                          height: 20,
+                        ),
                     ],
                   ],
                 );
@@ -533,9 +574,9 @@ class _ReportsPageState extends State<ReportsPage> {
 
             const SizedBox(height: 40),
 
-            // =======================================================
+            // ========================================================
             // FOOTER
-            // =======================================================
+            // ========================================================
 
             const Center(
               child: Text(

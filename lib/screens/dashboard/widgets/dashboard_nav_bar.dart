@@ -2,46 +2,34 @@ import 'package:flutter/material.dart';
 
 class DashboardNavBar extends StatefulWidget {
   final bool isCollapsed;
-  final ValueChanged<String> onPageSelected;
+  final String selectedMenu;
+  final ValueChanged<String> onMenuSelected;
 
   const DashboardNavBar({
     super.key,
     required this.isCollapsed,
-    required this.onPageSelected,
+    required this.selectedMenu,
+    required this.onMenuSelected,
   });
 
   @override
-  State<DashboardNavBar> createState() =>
-      _DashboardNavBarState();
+  State<DashboardNavBar> createState() => _DashboardNavBarState();
 }
 
 class _DashboardNavBarState extends State<DashboardNavBar> {
-  // Only ONE dropdown can be open at a time.
   String? _openSection;
 
-  void _toggleSection(String section) {
-    setState(() {
-      if (_openSection == section) {
-        // Clicking the same dropdown closes it.
-        _openSection = null;
-      } else {
-        // Open selected dropdown.
-        // Previous dropdown automatically closes.
-        _openSection = section;
-      }
-    });
-  }
+  bool get isCollapsed => widget.isCollapsed;
 
-  bool _isOpen(String section) {
-    return _openSection == section;
-  }
+  String get selectedMenu => widget.selectedMenu;
+
+  ValueChanged<String> get onMenuSelected => widget.onMenuSelected;
 
   @override
   void didUpdateWidget(covariant DashboardNavBar oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // When sidebar is collapsed, close any open dropdown.
-    if (widget.isCollapsed && !oldWidget.isCollapsed) {
+    if (!oldWidget.isCollapsed && widget.isCollapsed) {
       _openSection = null;
     }
   }
@@ -49,388 +37,201 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-
-      // FULL SIDEBAR / ICON ONLY SIDEBAR
-      width: widget.isCollapsed ? 72 : 245,
-
-      decoration: const BoxDecoration(
-        color: Color(0xFF0D2B4E),
-      ),
-
+      duration: const Duration(milliseconds: 200),
+      width: isCollapsed ? 72 : 250,
+      height: double.infinity,
+      color: const Color(0xFF123653),
       child: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: 16,
-            horizontal: 8,
+          padding: EdgeInsets.symmetric(
+            horizontal: isCollapsed ? 8 : 14,
+            vertical: 18,
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // =====================================================
               // DASHBOARD
               // =====================================================
-
-              _simpleMenuItem(
+              _menuItem(
                 icon: Icons.dashboard_outlined,
                 title: 'Dashboard',
+                selected: _isSelected('dashboard'),
                 onTap: () {
-                  // Dashboard navigation here
+                  onMenuSelected('dashboard');
                 },
               ),
 
-              _menuSpace(),
+              const SizedBox(height: 7),
 
               // =====================================================
               // ITEMS
               // =====================================================
-
-              _dropdownMenu(
-                section: 'items',
+              _sectionMenu(
                 icon: Icons.inventory_2_outlined,
                 title: 'Items',
-                children: [
-                  _subMenuItem(
-                    icon: Icons.list_alt_outlined,
-                    title: 'Items',
-                    onTap: () {
-                      // Items page
-                    },
-                  ),
-
-                  _subMenuItem(
-                    icon: Icons.category_outlined,
-                    title: 'part',
-                    onTap: () {},
-                  ),
+                selected: _isSelected('items'),
+                children: const [
+                  'Items',
+                  'Parts',
                 ],
               ),
 
-              _menuSpace(),
+              const SizedBox(height: 7),
 
               // =====================================================
               // INVENTORY
               // =====================================================
-
-              _dropdownMenu(
-                section: 'inventory',
+              _sectionMenu(
                 icon: Icons.warehouse_outlined,
                 title: 'Inventory',
-                children: [
-                  _subMenuItem(
-                    icon: Icons.inventory_outlined,
-                    title: 'Current Stock',
-                    onTap: () {},
-                  ),
-
-                  _subMenuItem(
-                    icon: Icons.tune_outlined,
-                    title: 'Inventory Adjustments',
-                    onTap: () {},
-                  ),
-
-                  _subMenuItem(
-                    icon: Icons.assignment_return_outlined,
-                    title: 'Returnable Assets',
-                    onTap: () {},
-                  ),
+                selected: _isSelected('inventory'),
+                children: const [
+                  'Current Stock',
+                  'Inventory Adjustments',
+                  'Returnable Assets',
                 ],
               ),
 
-              _menuSpace(),
+              const SizedBox(height: 7),
 
               // =====================================================
               // SALES
               // =====================================================
-
-              _dropdownMenu(
-                section: 'sales',
-                icon: Icons.point_of_sale_outlined,
+              _sectionMenu(
+                icon: Icons.show_chart_rounded,
                 title: 'Sales',
-                children: [
-                  _subMenuItem(
-                    icon: Icons.people_outline,
-                    title: 'Customers',
-                    onTap: () {},
-                  ),
-
-                  _subMenuItem(
-                    icon: Icons.description_outlined,
-                    title: 'Estimates',
-                    onTap: () {},
-                  ),
-
-                  _subMenuItem(
-                    icon: Icons.shopping_bag_outlined,
-                    title: 'Sales Orders',
-                    onTap: () {},
-                  ),
-
-                  
-                  _subMenuItem(
-                    icon: Icons.receipt_long_outlined,
-                    title: 'Invoices',
-                    onTap: () {},
-                  ),
-                  _subMenuItem(
-                    icon: Icons.local_shipping_outlined ,
-                    title: 'Delivery Challans',
-                    onTap: () {},
-                  ),
-
-                  _subMenuItem(
-                    icon: Icons.payments_outlined,
-                    title: 'Payments received ',
-                    onTap: () {},
-                  ),
-                   _subMenuItem(
-                    icon: Icons.credit_card_outlined,
-                    title: 'Credit Notes ',
-                    onTap: () {},
-                  ),
+                selected: _isSelected('sales'),
+                children: const [
+                  'Customers',
+                  'Estimates',
+                  'Sales Order',
+                  'Invoices',
+                  'Delivery Challans',
+                  'Payment Received',
+                  'Credit Notes',
                 ],
               ),
 
-              _menuSpace(),
+              const SizedBox(height: 7),
 
               // =====================================================
               // PURCHASE
               // =====================================================
-
-              _dropdownMenu(
-                section: 'purchase',
+              _sectionMenu(
                 icon: Icons.shopping_cart_outlined,
                 title: 'Purchase',
-                children: [
-                  _subMenuItem(
-                    icon: Icons.store_outlined,
-                    title: 'Vendors',
-                    onTap: () {},
-                  ),
-
-                  _subMenuItem(
-                    icon: Icons.shopping_cart_checkout_outlined,
-                    title: 'Purchase Orders',
-                    onTap: () {},
-                  ),
-
-                  _subMenuItem(
-                    icon: Icons.description_outlined,
-                    title: 'Bills',
-                    onTap: () {},
-                  ),
-
-                  _subMenuItem(
-                    icon: Icons.payment_outlined,
-                    title: 'Payments Made',
-                    onTap: () {},
-                  ),
-                  _subMenuItem(
-                    icon: Icons.credit_card_outlined,
-                    title: 'vendor Credit Notes',
-                    onTap: () {},
-                  ),
+                selected: _isSelected('purchase'),
+                children: const [
+                  'Vendors',
+                  'Purchase Orders',
+                  'Bills',
+                  'Payment Made',
+                  'Vendor Credit Notes',
                 ],
               ),
 
-              _menuSpace(),
+              const SizedBox(height: 7),
 
               // =====================================================
               // ACCOUNTANT
               // =====================================================
-
-              _dropdownMenu(
-                section: 'accountant',
-                icon: Icons.account_balance_outlined,
+              _sectionMenu(
+                icon: Icons.calculate_outlined,
                 title: 'Accountant',
-                children: [
-                  _subMenuItem(
-                    icon: Icons.account_balance_wallet_outlined,
-                    title: 'Expenses',
-                    onTap: () {},
-                  ),
-
-                  _subMenuItem(
-                    icon: Icons.payments_outlined,
-                    title: 'Reimbursements',
-                    onTap: () {},
-                  ),
-                  _subMenuItem(
-                    icon: Icons.flight_takeoff_outlined,
-                    title: 'Travel Allowance',
-                    onTap: () {},
-                  ),
-                  _subMenuItem(
-                    icon: Icons.request_quote_outlined,
-                    title: 'Other Claims',
-                    onTap: () {},
-                  ),
-                  _subMenuItem(
-                    icon: Icons.savings_outlined,
-                    title: 'Investments',
-                    onTap: () {},
-                  ),
-                  _subMenuItem(
-                    icon: Icons.account_balance_outlined,
-                    title: 'Loans',
-                    onTap: () {},
-                  ),
+                selected: _isSelected('accountant'),
+                children: const [
+                  'Expense',
+                  'Reimbursements',
+                  'Travel Allowance',
+                  'Other Claims',
+                  'Investments',
+                  'Loans',
                 ],
               ),
 
-              _menuSpace(),
+              const SizedBox(height: 7),
 
               // =====================================================
-              // _menuSpace(),
-              _simpleMenuItem(
-                icon: Icons.bar_chart_outlined,
+              // REPORTS
+              // =====================================================
+              _menuItem(
+                icon: Icons.description_outlined,
                 title: 'Reports',
-                onTap: () => widget.onPageSelected('reports'),
+                selected: _isSelected('reports'),
+                onTap: () {
+                  onMenuSelected('reports');
+                },
               ),
-              // =====================================================
 
-              
-
-    
-
-              
-
-              // =====================================================
-              // SETTINGS
-              // =====================================================
-
-              
-
-              
-
-              _menuSpace(),
-
-              // =====================================================
-              // MY ACCOUNT
-              // =====================================================
-
-              
-
-              _menuSpace(),
+              const SizedBox(height: 20),
 
               // =====================================================
               // DIVIDER
               // =====================================================
-
-              if (!widget.isCollapsed) ...[
-                const SizedBox(height: 6),
-
-                const Divider(
-                  color: Colors.white24,
-                  thickness: 1,
-                ),
-
-                const SizedBox(height: 6),
-              ],
-              _simpleMenuItem(
-                icon: Icons.account_circle_outlined,
-                title:'FluxaHub',
-                onTap:(){},
+              const Divider(
+                color: Color(0xFF31516F),
+                thickness: 1,
+                height: 1,
               ),
-              _menuSpace(),
-              
-              _simpleMenuItem(
-                icon:Icons.settings_outlined,
-                title:'Settings',
-                onTap:(){},
-              ),
-
-
-              _simpleMenuItem(
-                icon: Icons.help_outline_rounded,
-                title: 'Help',
-                onTap: () {},
-              ),
-
-              _menuSpace(),
-
-              // =====================================================
-              //
-              // =====================================================
-
-              _simpleMenuItem(
-                icon: Icons.quiz_outlined,
-                title: "FAQ's",
-                onTap: () {},
-              ),
-              _menuSpace(),
-              
 
               const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
-  // =========================================================================
-  // SPACE BETWEEN MAIN MENU OPTIONS
-  // =========================================================================
-
-  Widget _menuSpace() {
-    return const SizedBox(height: 7);
-  }
-
-  // =========================================================================
-  // SIMPLE MENU ITEM
-  // Dashboard / My Account / Help / FAQ
-  // =========================================================================
-
-  Widget _simpleMenuItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        hoverColor: Colors.white.withValues(alpha: 0.08),
-
-        child: Container(
-          height: 50,
-
-          padding: EdgeInsets.symmetric(
-            horizontal: widget.isCollapsed ? 0 : 14,
-          ),
-
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-          ),
-
-          child: Row(
-            mainAxisAlignment: widget.isCollapsed
-                ? MainAxisAlignment.center
-                : MainAxisAlignment.start,
-            children: [
-              Icon(
-                icon,
-                color: Colors.white,
-                size: 22,
+              // =====================================================
+              // FLUXA HUB
+              // =====================================================
+              _menuItem(
+                icon: Icons.hub_outlined,
+                title: 'Fluxa Hub',
+                selected: _isSelected('fluxa hub'),
+                onTap: () {
+                  onMenuSelected('fluxa hub');
+                },
               ),
 
-              if (!widget.isCollapsed) ...[
-                const SizedBox(width: 14),
+              const SizedBox(height: 7),
 
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
+              // =====================================================
+              // SETTINGS
+              // NO DROPDOWN
+              // NO NAVIGATION
+              // =====================================================
+              _menuItem(
+                icon: Icons.settings_outlined,
+                title: 'Settings',
+                onTap: () {
+                  // No functionality
+                },
+              ),
+
+              const SizedBox(height: 7),
+
+              // =====================================================
+              // MY ACCOUNT
+              // =====================================================
+              _menuItem(
+                icon: Icons.account_circle_outlined,
+                title: 'My Account',
+                selected: _isSelected('my account'),
+                onTap: () {
+                  onMenuSelected('my account');
+                },
+              ),
+
+              const SizedBox(height: 7),
+
+              // =====================================================
+              // HELP
+              // =====================================================
+              _menuItem(
+                icon: Icons.help_outline_rounded,
+                title: 'Help',
+                selected: _isSelected('help'),
+                onTap: () {
+                  onMenuSelected('help');
+                },
+              ),
+
+              const SizedBox(height: 25),
             ],
           ),
         ),
@@ -438,200 +239,196 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
     );
   }
 
-  // =========================================================================
-  // DROPDOWN MAIN MENU
-  // =========================================================================
+  // ===============================================================
+  // CHECK SELECTED MENU
+  // ===============================================================
+  bool _isSelected(String menu) {
+    return selectedMenu.toLowerCase().trim() ==
+        menu.toLowerCase().trim();
+  }
 
-  Widget _dropdownMenu({
-    required String section,
+  // ===============================================================
+  // EXPANDABLE MENU SECTION
+  // ===============================================================
+  Widget _sectionMenu({
     required IconData icon,
     required String title,
-    required List<Widget> children,
+    required List<String> children,
+    bool selected = false,
   }) {
-    final bool opened = _isOpen(section);
-
-    // When collapsed, show icon only.
-    if (widget.isCollapsed) {
-      return Material(
-        color: Colors.transparent,
-
-        child: InkWell(
-          onTap: () {},
-          borderRadius: BorderRadius.circular(10),
-          hoverColor: Colors.white.withValues(alpha: 0.08),
-
-          child: Container(
-            width: double.infinity,
-            height: 50,
-
-            alignment: Alignment.center,
-
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 22,
-            ),
-          ),
+    if (isCollapsed) {
+      return _menuItem(
+        icon: icon,
+        title: title,
+        selected: selected,
+        onTap: () => onMenuSelected(
+          title.toLowerCase(),
         ),
       );
     }
 
-    return Column(
+    return ExpansionTile(
+      key: ValueKey(
+        '$title-${_openSection == title}',
+      ),
+      initiallyExpanded: _openSection == title,
+
+      onExpansionChanged: (isExpanded) {
+        setState(() {
+          _openSection = isExpanded ? title : null;
+        });
+      },
+
+      tilePadding: const EdgeInsets.symmetric(
+        horizontal: 14,
+      ),
+
+      childrenPadding: const EdgeInsets.only(
+        bottom: 6,
+      ),
+
+      leading: Icon(
+        icon,
+        size: 21,
+        color: Colors.white,
+      ),
+
+      iconColor: Colors.white,
+      collapsedIconColor: Colors.white,
+
+      title: Text(
+        title,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+
+      backgroundColor: const Color(0xFF123653),
+      collapsedBackgroundColor:
+          const Color(0xFF123653),
+
       children: [
-        // ====================================================================
-        // MAIN DROPDOWN BUTTON
-        // ====================================================================
-
-        Material(
-          color: Colors.transparent,
-
-          child: InkWell(
-            onTap: () {
-              _toggleSection(section);
-            },
-
-            borderRadius: BorderRadius.circular(10),
-
-            hoverColor: Colors.white.withValues(alpha: 0.08),
-
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-
-              height: 50,
-
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-              ),
-
-              decoration: BoxDecoration(
-                color: opened
-                    ? Colors.white.withValues(alpha: 0.10)
-                    : Colors.transparent,
-
-                borderRadius: BorderRadius.circular(10),
-              ),
-
-              child: Row(
-                children: [
-                  Icon(
-                    icon,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-
-                  const SizedBox(width: 14),
-
-                  Expanded(
-                    child: Text(
-                      title,
-
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-
-                  AnimatedRotation(
-                    duration: const Duration(milliseconds: 180),
-
-                    turns: opened ? 0.5 : 0,
-
-                    child: const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: Colors.white70,
-                      size: 21,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-
-        // ====================================================================
-        // DROPDOWN OPTIONS
-        // ====================================================================
-
-        AnimatedSize(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeInOut,
-
-          child: opened
-              ? Padding(
-                  padding: const EdgeInsets.only(
-                    top: 5,
-                    bottom: 3,
-                  ),
-
-                  child: Column(
-                    children: children,
-                  ),
-                )
-              : const SizedBox.shrink(),
-        ),
+        for (final child in children)
+          _subMenuItem(child),
       ],
     );
   }
 
-  // =========================================================================
-  // DROPDOWN SUB MENU
-  // =========================================================================
+  // ===============================================================
+  // SUB MENU ITEM
+  // ===============================================================
+  Widget _subMenuItem(String title) {
+    return ListTile(
+      dense: true,
 
-  Widget _subMenuItem({
+      contentPadding: const EdgeInsets.only(
+        left: 62,
+        right: 12,
+      ),
+
+      selected: _isSelected(title),
+      selectedTileColor: Colors.transparent,
+
+      leading: const Icon(
+        Icons.chevron_right_rounded,
+        size: 18,
+        color: Colors.white70,
+      ),
+
+      title: Text(
+        title,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+        ),
+      ),
+
+      onTap: () {
+        onMenuSelected(title);
+      },
+    );
+  }
+
+  // ===============================================================
+  // NORMAL MENU ITEM
+  // ===============================================================
+  Widget _menuItem({
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    bool selected = false,
+    bool showArrow = false,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        left: 13,
-        right: 4,
-        bottom: 3,
-      ),
+    return Material(
+      color: Colors.transparent,
 
-      child: Material(
-        color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(9),
 
-        child: InkWell(
-          onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(
+            milliseconds: 150,
+          ),
 
-          borderRadius: BorderRadius.circular(8),
+          width: double.infinity,
+          height: 50,
 
-          hoverColor: Colors.white.withValues(alpha: 0.08),
+          padding: EdgeInsets.symmetric(
+            horizontal: isCollapsed ? 0 : 14,
+          ),
 
-          child: Container(
-            height: 42,
+          decoration: BoxDecoration(
+            color: selected
+                ? const Color(0xFF245AA6)
+                : Colors.transparent,
 
-            padding: const EdgeInsets.only(
-              left: 22,
-              right: 10,
-            ),
+            borderRadius: BorderRadius.circular(9),
+          ),
 
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  color: Colors.white70,
-                  size: 18,
-                ),
+          child: Row(
+            mainAxisAlignment: isCollapsed
+                ? MainAxisAlignment.center
+                : MainAxisAlignment.start,
 
-                const SizedBox(width: 12),
+            children: [
+              // ICON
+              Icon(
+                icon,
+                size: 21,
+                color: Colors.white,
+              ),
 
+              // Hide text when sidebar is collapsed
+              if (!isCollapsed) ...[
+                const SizedBox(width: 17),
+
+                // MENU NAME
                 Expanded(
                   child: Text(
                     title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
 
                     style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
+
+                // OPTIONAL ARROW
+                if (showArrow)
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    size: 26,
+                    color: Colors.white,
+                  ),
               ],
-            ),
+            ],
           ),
         ),
       ),

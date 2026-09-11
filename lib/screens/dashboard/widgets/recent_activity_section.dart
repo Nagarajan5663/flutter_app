@@ -36,10 +36,6 @@ class RecentActivitySection extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// EMPTY ACTIVITY CARD
-// ============================================================================
-
 class _EmptyActivityCard extends StatelessWidget {
   final String title;
   final String message;
@@ -55,34 +51,23 @@ class _EmptyActivityCard extends StatelessWidget {
       width: double.infinity,
       height: 145,
       padding: const EdgeInsets.all(18),
-
       decoration: BoxDecoration(
         color: Colors.white,
-
         borderRadius: BorderRadius.circular(10),
-
         border: Border.all(
           color: const Color(0xFFE1E1E1),
         ),
-
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              alpha: 0.04,
-            ),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ================================================================
-          // TITLE
-          // ================================================================
-
           Text(
             title,
             style: const TextStyle(
@@ -98,10 +83,6 @@ class _EmptyActivityCard extends StatelessWidget {
             height: 1,
             color: Color(0xFFE6E6E6),
           ),
-
-          // ================================================================
-          // EMPTY MESSAGE
-          // ================================================================
 
           Expanded(
             child: Center(
@@ -121,70 +102,24 @@ class _EmptyActivityCard extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// RECENT INVENTORY CARD
-//
-// CHANGED TO STATEFULWIDGET BECAUSE WE NEED A SCROLLCONTROLLER
-// ============================================================================
-
-class _RecentInventoryCard extends StatefulWidget {
+class _RecentInventoryCard extends StatelessWidget {
   const _RecentInventoryCard();
 
   @override
-  State<_RecentInventoryCard> createState() =>
-      _RecentInventoryCardState();
-}
-
-class _RecentInventoryCardState
-    extends State<_RecentInventoryCard> {
-  // =========================================================================
-  // SCROLL CONTROLLER
-  //
-  // IMPORTANT:
-  // The SAME controller is used by:
-  //
-  // 1. Scrollbar
-  // 2. ListView
-  //
-  // This fixes:
-  // "The Scrollbar's ScrollController has no ScrollPosition attached."
-  // =========================================================================
-
-  final ScrollController _scrollController =
-      ScrollController();
-
-  // =========================================================================
-  // DISPOSE CONTROLLER
-  // =========================================================================
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  // =========================================================================
-  // BUILD
-  // =========================================================================
-
-  @override
   Widget build(BuildContext context) {
-    final List<Widget> items = [
+    final items = [
       const _InventoryActivity(
         itemId: '#162',
         time: '20 Aug 2026, 08:38 AM',
       ),
-
       const _InventoryActivity(
         itemId: '#162',
         time: '20 Aug 2026, 08:38 AM',
       ),
-
       const _InventoryActivity(
         itemId: '#161',
         time: '20 Aug 2026, 08:37 AM',
       ),
-
       const _InventoryActivity(
         itemId: '#159',
         time: '20 Aug 2026, 08:37 AM',
@@ -193,41 +128,29 @@ class _RecentInventoryCardState
 
     return Container(
       width: double.infinity,
-
       padding: const EdgeInsets.fromLTRB(
         18,
         18,
         18,
         12,
       ),
-
       decoration: BoxDecoration(
         color: Colors.white,
-
         borderRadius: BorderRadius.circular(10),
-
         border: Border.all(
           color: const Color(0xFFE1E1E1),
         ),
-
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              alpha: 0.04,
-            ),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // =================================================================
-          // TITLE
-          // =================================================================
-
           const Text(
             'Recent Inventory Adjustments',
             style: TextStyle(
@@ -246,75 +169,26 @@ class _RecentInventoryCardState
 
           const SizedBox(height: 8),
 
-          // =================================================================
-          // SCROLLABLE INVENTORY LIST
-          // =================================================================
-
           SizedBox(
             height: 255,
-
-            child: Scrollbar(
-              // --------------------------------------------------------------
-              // SAME CONTROLLER
-              // --------------------------------------------------------------
-
-              controller: _scrollController,
-
-              thumbVisibility: true,
-
-              trackVisibility: false,
-
-              thickness: 6,
-
-              radius: const Radius.circular(10),
-
-              child: ListView.separated(
-                // ------------------------------------------------------------
-                // SAME CONTROLLER
-                // ------------------------------------------------------------
-
-                controller: _scrollController,
-
-                padding: EdgeInsets.zero,
-
-                itemCount: items.length,
-
-                // ------------------------------------------------------------
-                // DIVIDER BETWEEN ITEMS
-                // ------------------------------------------------------------
-
-                separatorBuilder: (
-                  context,
-                  index,
-                ) {
-                  return const Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: Color(0xFFEEEEEE),
-                  );
-                },
-
-                // ------------------------------------------------------------
-                // LIST ITEM
-                // ------------------------------------------------------------
-
-                itemBuilder: (
-                  context,
-                  index,
-                ) {
-                  return items[index];
-                },
-              ),
+            child: ListView.separated(
+              padding: EdgeInsets.zero,
+              itemCount: items.length,
+              separatorBuilder: (context, index) {
+                return const Divider(
+                  height: 1,
+                  color: Color(0xFFEEEEEE),
+                );
+              },
+              itemBuilder: (context, index) {
+                return items[index];
+              },
             ),
           ),
 
           const Divider(
             color: Color(0xFFE6E6E6),
           ),
-
-          // =================================================================
-          // NOTE
-          // =================================================================
 
           const Center(
             child: Text(
@@ -333,10 +207,6 @@ class _RecentInventoryCardState
   }
 }
 
-// ============================================================================
-// INVENTORY ACTIVITY ITEM
-// ============================================================================
-
 class _InventoryActivity extends StatelessWidget {
   final String itemId;
   final String time;
@@ -352,22 +222,15 @@ class _InventoryActivity extends StatelessWidget {
       padding: const EdgeInsets.symmetric(
         vertical: 10,
       ),
-
       child: Row(
         children: [
-          // =================================================================
-          // ICON
-          // =================================================================
-
           Container(
             width: 30,
             height: 30,
-
             decoration: const BoxDecoration(
               color: Color(0xFFF1E9FC),
               shape: BoxShape.circle,
             ),
-
             child: const Icon(
               Icons.add,
               size: 16,
@@ -376,10 +239,6 @@ class _InventoryActivity extends StatelessWidget {
           ),
 
           const SizedBox(width: 12),
-
-          // =================================================================
-          // ITEM DETAILS
-          // =================================================================
 
           Expanded(
             child: Column(
@@ -406,10 +265,6 @@ class _InventoryActivity extends StatelessWidget {
               ],
             ),
           ),
-
-          // =================================================================
-          // QUANTITY
-          // =================================================================
 
           const Text(
             '+1 Units',

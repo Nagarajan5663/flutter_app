@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'glass_container.dart';
 
 class SummaryCard extends StatefulWidget {
   final String title;
@@ -22,19 +23,19 @@ class _SummaryCardState extends State<SummaryCard> {
   Color get _mainColor {
     switch (widget.title) {
       case 'Total Revenue':
-        return const Color(0xFF22C55E);
+        return const Color(0xFF38D66B);
 
       case 'Total Expenses':
-        return const Color(0xFFEF4444);
+        return const Color(0xFFFF5C70);
 
       case 'Cost of Goods':
-        return const Color(0xFFF59E0B);
+        return const Color(0xFFFFA23A);
 
       case 'Net Cash Flow':
-        return const Color(0xFF3B82F6);
+        return const Color(0xFF42D5E8);
 
       default:
-        return const Color(0xFF64748B);
+        return Colors.white;
     }
   }
 
@@ -56,101 +57,81 @@ class _SummaryCardState extends State<SummaryCard> {
       },
 
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+        duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
 
         transform: Matrix4.translationValues(
           0,
-          _isHovered ? -5 : 0,
+          _isHovered ? -6 : 0,
           0,
         ),
 
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-
-        decoration: BoxDecoration(
-          color: Colors.white,
-
-          borderRadius: BorderRadius.circular(12),
-
-          border: Border.all(
-            color: _isHovered
-                ? _mainColor.withValues(alpha: 0.45)
-                : const Color(0xFFE5E7EB),
-            width: 1,
+        child: GlassContainer(
+          opacity: _isHovered ? 0.24 : 0.16,
+          blur: 18,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
           ),
 
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(
-                alpha: _isHovered ? 0.15 : 0.06,
-              ),
-              blurRadius: _isHovered ? 18 : 8,
-              offset: Offset(
-                0,
-                _isHovered ? 8 : 3,
-              ),
-            ),
-          ],
-        ),
+          child: Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
 
-        child: Row(
-          children: [
-            // ICON
-            Container(
-              width: 48,
-              height: 48,
+                decoration: BoxDecoration(
+                  color: _mainColor.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
 
-              decoration: BoxDecoration(
-                color: _mainColor.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-
-              child: Icon(
-                widget.icon,
-                color: _mainColor,
-                size: 24,
-              ),
-            ),
-
-            const SizedBox(width: 14),
-
-            // TEXT
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-
-                children: [
-                  Text(
-                    widget.title,
-                    maxLines: 2,
-                    softWrap: true,
-
-                    style: const TextStyle(
-                      color: Color(0xFF555555),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  border: Border.all(
+                    color: _mainColor.withValues(alpha: 0.35),
                   ),
+                ),
 
-                  const SizedBox(height: 7),
-
-                  Text(
-                    widget.amount,
-
-                    style: const TextStyle(
-                      color: Color(0xFF333333),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
+                child: Icon(
+                  widget.icon,
+                  color: _mainColor,
+                  size: 26,
+                ),
               ),
-            ),
-          ],
+
+              const SizedBox(width: 14),
+
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+
+                  children: [
+                    Text(
+                      widget.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.80),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+
+                    const SizedBox(height: 5),
+
+                    Text(
+                      widget.amount,
+
+                      style: TextStyle(
+                        color: _mainColor,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
