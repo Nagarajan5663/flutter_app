@@ -5,6 +5,8 @@ import '../../theme/app_colors.dart';
 import '../../widgets/animated_auth_background.dart';
 import '../../widgets/auth_text_field.dart';
 import '../../widgets/codexia_logo.dart';
+import '../../widgets/cursor_spotlight.dart';
+import '../../widgets/tilt_card.dart';
 import 'signup_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -95,145 +97,154 @@ class _LoginPageState extends State<LoginPage> {
                     constraints: const BoxConstraints(
                       maxWidth: 440,
                     ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 40,
-                      ),
-                      decoration: BoxDecoration(
-                        color: CodexiaColors.card.withValues(
-                          alpha: 0.55,
-                        ),
+                    // TiltCard gives the card a subtle cursor-driven 3D
+                    // tilt. CursorSpotlight (inside it) paints a soft
+                    // glow/flash that follows the pointer as it moves
+                    // across the glass card.
+                    child: TiltCard(
+                      child: CursorSpotlight(
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: CodexiaColors.cardBorder.withValues(
-                            alpha: 0.6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 40,
                           ),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(
-                              alpha: 0.35,
+                          decoration: BoxDecoration(
+                            color: CodexiaColors.card.withValues(
+                              alpha: 0.55,
                             ),
-                            blurRadius: 40,
-                            offset: const Offset(0, 20),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const CodexiaLogo(),
-                          const SizedBox(height: 14),
-                          const Text(
-                            'Your Digital Librarian',
-                            style: TextStyle(
-                              color: CodexiaColors.muted,
-                              fontSize: 15,
-                            ),
-                          ),
-                          const SizedBox(height: 34),
-                          AuthTextField(
-                            controller: _emailController,
-                            hintText: 'Email Address',
-                            icon: Icons.mail_outline,
-                            keyboardType: TextInputType.emailAddress,
-                          ),
-                          const SizedBox(height: 16),
-                          AuthTextField(
-                            controller: _passwordController,
-                            hintText: 'Password',
-                            icon: Icons.lock_outline,
-                            obscureText: _obscurePassword,
-                            onToggleObscure: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {},
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: const Size(0, 0),
-                                tapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: const Text(
-                                'Forgot Password?',
-                                style: TextStyle(
-                                  color: CodexiaColors.gold,
-                                  fontSize: 13.5,
-                                ),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: CodexiaColors.cardBorder.withValues(
+                                alpha: 0.6,
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 22),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed:
-                                  _isSubmitting ? null : _handleSignIn,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: CodexiaColors.gold,
-                                foregroundColor: CodexiaColors.navyDark,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 17,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(
+                                  alpha: 0.35,
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: _isSubmitting
-                                  ? const SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.4,
-                                        color: CodexiaColors.navyDark,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Sign In',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                          const SizedBox(height: 28),
-                          const Divider(
-                            color: CodexiaColors.cardBorder,
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                "Don't have an account? ",
-                                style: TextStyle(
-                                  color: CodexiaColors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: _goToSignUp,
-                                child: const Text(
-                                  'Create one',
-                                  style: TextStyle(
-                                    color: CodexiaColors.gold,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
+                                blurRadius: 40,
+                                offset: const Offset(0, 20),
                               ),
                             ],
                           ),
-                        ],
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CodexiaLogo(),
+                              const SizedBox(height: 14),
+                              const Text(
+                                'Your Digital Librarian',
+                                style: TextStyle(
+                                  color: CodexiaColors.muted,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              const SizedBox(height: 34),
+                              AuthTextField(
+                                controller: _emailController,
+                                hintText: 'Email Address',
+                                icon: Icons.mail_outline,
+                                keyboardType: TextInputType.emailAddress,
+                              ),
+                              const SizedBox(height: 16),
+                              AuthTextField(
+                                controller: _passwordController,
+                                hintText: 'Password',
+                                icon: Icons.lock_outline,
+                                obscureText: _obscurePassword,
+                                onToggleObscure: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                              const SizedBox(height: 12),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: () {},
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(0, 0),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: const Text(
+                                    'Forgot Password?',
+                                    style: TextStyle(
+                                      color: CodexiaColors.gold,
+                                      fontSize: 13.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 22),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed:
+                                      _isSubmitting ? null : _handleSignIn,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: CodexiaColors.gold,
+                                    foregroundColor: CodexiaColors.navyDark,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 17,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: _isSubmitting
+                                      ? const SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.4,
+                                            color: CodexiaColors.navyDark,
+                                          ),
+                                        )
+                                      : const Text(
+                                          'Sign In',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(height: 28),
+                              const Divider(
+                                color: CodexiaColors.cardBorder,
+                              ),
+                              const SizedBox(height: 20),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    "Don't have an account? ",
+                                    style: TextStyle(
+                                      color: CodexiaColors.white,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: _goToSignUp,
+                                    child: const Text(
+                                      'Create one',
+                                      style: TextStyle(
+                                        color: CodexiaColors.gold,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),

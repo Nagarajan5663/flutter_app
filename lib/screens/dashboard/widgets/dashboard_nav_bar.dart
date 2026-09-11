@@ -26,17 +26,29 @@ class DashboardNavBar extends StatelessWidget {
       color: const Color(0xFF0D1B2A),
       child: Column(
         children: [
+          // ============================================================
+          // ORGANIZATION HEADER
+          // ============================================================
+
           _buildOrganizationHeader(),
 
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
+                // ======================================================
+                // DASHBOARD
+                // ======================================================
+
                 _mainMenuItem(
                   icon: Icons.dashboard_outlined,
                   title: 'Dashboard',
                   onTap: () => _selectPage('dashboard'),
                 ),
+
+                // ======================================================
+                // ITEMS
+                // ======================================================
 
                 _buildExpansionMenu(
                   icon: Icons.inventory_2_outlined,
@@ -52,6 +64,10 @@ class DashboardNavBar extends StatelessWidget {
                     ),
                   ],
                 ),
+
+                // ======================================================
+                // INVENTORY
+                // ======================================================
 
                 _buildExpansionMenu(
                   icon: Icons.warehouse_outlined,
@@ -71,6 +87,10 @@ class DashboardNavBar extends StatelessWidget {
                     ),
                   ],
                 ),
+
+                // ======================================================
+                // SALES
+                // ======================================================
 
                 _buildExpansionMenu(
                   icon: Icons.trending_up,
@@ -107,6 +127,10 @@ class DashboardNavBar extends StatelessWidget {
                   ],
                 ),
 
+                // ======================================================
+                // PURCHASE
+                // ======================================================
+
                 _buildExpansionMenu(
                   icon: Icons.shopping_cart_outlined,
                   title: 'Purchase',
@@ -133,6 +157,10 @@ class DashboardNavBar extends StatelessWidget {
                     ),
                   ],
                 ),
+
+                // ======================================================
+                // ACCOUNTS
+                // ======================================================
 
                 _buildExpansionMenu(
                   icon: Icons.account_balance_outlined,
@@ -170,11 +198,19 @@ class DashboardNavBar extends StatelessWidget {
                   height: 24,
                 ),
 
+                // ======================================================
+                // REPORTS
+                // ======================================================
+
                 _mainMenuItem(
                   icon: Icons.description_outlined,
                   title: 'Reports',
                   onTap: () => _selectPage('reports'),
                 ),
+
+                // ======================================================
+                // FLUXA HUB
+                // ======================================================
 
                 _mainMenuItem(
                   icon: Icons.hub_outlined,
@@ -182,11 +218,19 @@ class DashboardNavBar extends StatelessWidget {
                   onTap: () => _selectPage('fluxa-hub'),
                 ),
 
+                // ======================================================
+                // SETTINGS
+                // ======================================================
+
                 _mainMenuItem(
                   icon: Icons.settings_outlined,
                   title: 'Settings',
                   onTap: () => _selectPage('settings'),
                 ),
+
+                // ======================================================
+                // MY ACCOUNT
+                // ======================================================
 
                 _mainMenuItem(
                   icon: Icons.account_circle_outlined,
@@ -203,41 +247,54 @@ class DashboardNavBar extends StatelessWidget {
     );
   }
 
+  // ============================================================
+  // ORGANIZATION HEADER
+  // ============================================================
+
   Widget _buildOrganizationHeader() {
-    return Container(
-      height: 100,
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: const BoxDecoration(
-        color: Color(0xFF123A5C),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.business,
-            color: Colors.white,
-            size: 30,
-          ),
+    return InkWell(
+      onTap: () => _selectPage('organization'),
+      hoverColor: Colors.white10,
+      mouseCursor: SystemMouseCursors.click,
+      child: Container(
+        height: 100,
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: const BoxDecoration(
+          color: Color(0xFF123A5C),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.business,
+              color: Colors.white,
+              size: 30,
+            ),
 
-          if (!isCollapsed) ...[
-            const SizedBox(width: 12),
+            if (!isCollapsed) ...[
+              const SizedBox(width: 12),
 
-            const Expanded(
-              child: Text(
-                'Organization',
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
+              const Expanded(
+                child: Text(
+                  'Organization',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
+
+  // ============================================================
+  // MAIN MENU ITEM
+  // ============================================================
 
   Widget _mainMenuItem({
     required IconData icon,
@@ -247,6 +304,7 @@ class DashboardNavBar extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       hoverColor: Colors.white10,
+      mouseCursor: SystemMouseCursors.click,
       child: SizedBox(
         height: 52,
         child: Row(
@@ -278,6 +336,10 @@ class DashboardNavBar extends StatelessWidget {
     );
   }
 
+  // ============================================================
+  // EXPANSION MENU
+  // ============================================================
+
   Widget _buildExpansionMenu({
     required IconData icon,
     required String title,
@@ -286,6 +348,8 @@ class DashboardNavBar extends StatelessWidget {
     if (isCollapsed) {
       return InkWell(
         onTap: () {},
+        hoverColor: Colors.white10,
+        mouseCursor: SystemMouseCursors.click,
         child: SizedBox(
           height: 52,
           child: Center(
@@ -306,9 +370,7 @@ class DashboardNavBar extends StatelessWidget {
         highlightColor: Colors.white10,
       ),
       child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(
-          horizontal: 0,
-        ),
+        tilePadding: EdgeInsets.zero,
         childrenPadding: EdgeInsets.zero,
         leading: SizedBox(
           width: 80,
@@ -335,6 +397,10 @@ class DashboardNavBar extends StatelessWidget {
     );
   }
 
+  // ============================================================
+  // SUB MENU ITEM
+  // ============================================================
+
   Widget _subMenuItem(
     String title,
     VoidCallback onTap,
@@ -342,6 +408,7 @@ class DashboardNavBar extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       hoverColor: Colors.white10,
+      mouseCursor: SystemMouseCursors.click,
       child: Container(
         height: 42,
         padding: const EdgeInsets.only(
