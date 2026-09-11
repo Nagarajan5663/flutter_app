@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../organization/organization_page.dart';
-import '../organization/general_settings_page.dart';
-import '../organization/manage_subscription_page.dart';
+import '../organization_page.dart';
+import '../general_settings_page.dart';
+import '../manage_subscription_page.dart';
 
 class SettingsPage extends StatefulWidget {
   final VoidCallback? onClose;
@@ -39,6 +39,32 @@ class _SettingsPageState extends State<SettingsPage> {
   void _openOrganizationProfile() {
     setState(() {
       _showOrganizationProfile = true;
+      _showGeneralSettings = false;
+      _showManageSubscription = false;
+    });
+  }
+
+  // ================================================================
+  // OPEN GENERAL SETTINGS
+  // ================================================================
+
+  void _openGeneralSettings() {
+    setState(() {
+      _showOrganizationProfile = false;
+      _showGeneralSettings = true;
+      _showManageSubscription = false;
+    });
+  }
+
+  // ================================================================
+  // OPEN MANAGE SUBSCRIPTION
+  // ================================================================
+
+  void _openManageSubscription() {
+    setState(() {
+      _showOrganizationProfile = false;
+      _showGeneralSettings = false;
+      _showManageSubscription = true;
     });
   }
 
@@ -49,11 +75,13 @@ class _SettingsPageState extends State<SettingsPage> {
   void _backToAllSettings() {
     setState(() {
       _showOrganizationProfile = false;
+      _showGeneralSettings = false;
+      _showManageSubscription = false;
     });
   }
 
   // ================================================================
-  // COMING SOON
+  // COMING SOON MESSAGE
   // ================================================================
 
   void _showComingSoon(String title) {
@@ -61,16 +89,14 @@ class _SettingsPageState extends State<SettingsPage> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          '$title - Coming Soon',
-        ),
+        content: Text('$title - Coming Soon'),
         duration: const Duration(seconds: 1),
       ),
     );
   }
 
   // ================================================================
-  // SEARCH
+  // SEARCH MATCH
   // ================================================================
 
   bool _matches(String text) {
@@ -99,26 +125,25 @@ class _SettingsPageState extends State<SettingsPage> {
       );
     }
 
+    // ==============================================================
+    // GENERAL SETTINGS PAGE
+    // ==============================================================
 
     if (_showGeneralSettings) {
-  return GeneralSettingsPage(
-    onBack: () {
-      setState(() {
-        _showGeneralSettings = false;
-      });
-    },
-  );
-}
+      return GeneralSettingsPage(
+        onBack: _backToAllSettings,
+      );
+    }
+
+    // ==============================================================
+    // MANAGE SUBSCRIPTION PAGE
+    // ==============================================================
 
     if (_showManageSubscription) {
-  return ManageSubscriptionPage(
-    onBack: () {
-      setState(() {
-        _showManageSubscription = false;
-      });
-    },
-  );
-}
+      return ManageSubscriptionPage(
+        onBack: _backToAllSettings,
+      );
+    }
 
     // ==============================================================
     // ALL SETTINGS PAGE
@@ -128,14 +153,13 @@ class _SettingsPageState extends State<SettingsPage> {
       width: double.infinity,
       height: double.infinity,
       color: const Color(0xFFF5F7FA),
-
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ========================================================
+            // ======================================================
             // TOP HEADER
-            // ========================================================
+            // ======================================================
 
             Container(
               width: double.infinity,
@@ -153,146 +177,60 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
               ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isSmall = constraints.maxWidth < 750;
 
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ==================================================
-                  // TITLE
-                  // ==================================================
-
-                  const Expanded(
-                    child: Column(
+                  if (isSmall) {
+                    return Column(
                       crossAxisAlignment:
                           CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'All Settings',
-                          style: TextStyle(
-                            color: Color(0xFF252A2E),
-                            fontSize: 29,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        _buildTitle(),
+
+                        const SizedBox(height: 18),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 42,
+                          child: _buildSearchField(),
                         ),
 
-                        SizedBox(height: 5),
+                        const SizedBox(height: 12),
 
-                        Text(
-                          'test',
-                          style: TextStyle(
-                            color: Color(0xFF747E85),
-                            fontSize: 14,
-                          ),
-                        ),
+                        _buildCloseButton(),
                       ],
-                    ),
-                  ),
+                    );
+                  }
 
-                  // ==================================================
-                  // SEARCH SETTINGS
-                  // ==================================================
-
-                  SizedBox(
-                    width: 260,
-                    height: 42,
-                    child: TextField(
-                      controller: _searchController,
-
-                      onChanged: (value) {
-                        setState(() {
-                          _searchText = value;
-                        });
-                      },
-
-                      decoration: InputDecoration(
-                        hintText: 'Search settings (/)',
-
-                        hintStyle: const TextStyle(
-                          color: Color(0xFF9AA5AD),
-                          fontSize: 14,
-                        ),
-
-                        prefixIcon: const Icon(
-                          Icons.search_rounded,
-                          size: 20,
-                          color: Color(0xFF8C9AA4),
-                        ),
-
-                        filled: true,
-                        fillColor: Colors.white,
-
-                        contentPadding:
-                            const EdgeInsets.symmetric(
-                          vertical: 10,
-                        ),
-
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius.circular(7),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFD4DBE0),
-                          ),
-                        ),
-
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius.circular(7),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF3978FF),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 14),
-
-                  // ==================================================
-                  // CLOSE SETTINGS
-                  // ==================================================
-
-                  TextButton.icon(
-                    onPressed: widget.onClose ??
-                        () {
-                          Navigator.maybePop(context);
-                        },
-
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      size: 18,
-                      color: Color(0xFF4C4FEA),
-                    ),
-
-                    label: const Text(
-                      'Close Settings',
-                    ),
-
-                    style: TextButton.styleFrom(
-                      foregroundColor:
-                          const Color(0xFF4C4FEA),
-
-                      backgroundColor:
-                          const Color(0xFFECEBFF),
-
-                      padding:
-                          const EdgeInsets.symmetric(
-                        horizontal: 15,
-                        vertical: 12,
+                  return Row(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _buildTitle(),
                       ),
 
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(6),
+                      const SizedBox(width: 20),
+
+                      SizedBox(
+                        width: 260,
+                        height: 42,
+                        child: _buildSearchField(),
                       ),
-                    ),
-                  ),
-                ],
+
+                      const SizedBox(width: 14),
+
+                      _buildCloseButton(),
+                    ],
+                  );
+                },
               ),
             ),
 
-            // ========================================================
+            // ======================================================
             // SETTINGS CONTENT
-            // ========================================================
+            // ======================================================
 
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -301,36 +239,26 @@ class _SettingsPageState extends State<SettingsPage> {
                 24,
                 35,
               ),
-
               child: Container(
                 width: double.infinity,
-
                 padding: const EdgeInsets.fromLTRB(
                   24,
                   24,
                   24,
                   35,
                 ),
-
                 decoration: BoxDecoration(
                   color: Colors.white,
-
                   borderRadius:
                       BorderRadius.circular(11),
-
                   border: Border.all(
                     color: const Color(0xFFDDE3E7),
                   ),
                 ),
-
                 child: Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    // =================================================
-                    // ORGANIZATION SETTINGS TITLE
-                    // =================================================
-
                     const Text(
                       'Organization Settings',
                       style: TextStyle(
@@ -349,17 +277,15 @@ class _SettingsPageState extends State<SettingsPage> {
 
                     const SizedBox(height: 24),
 
-                    // =================================================
-                    // SETTINGS COLUMNS
-                    // =================================================
-
                     LayoutBuilder(
-                      builder: (
-                        context,
-                        constraints,
-                      ) {
+                      builder:
+                          (context, constraints) {
+                        // ==========================================
+                        // DESKTOP - 4 COLUMNS
+                        // ==========================================
+
                         if (constraints.maxWidth >=
-                            900) {
+                            1100) {
                           return Row(
                             crossAxisAlignment:
                                 CrossAxisAlignment.start,
@@ -393,50 +319,51 @@ class _SettingsPageState extends State<SettingsPage> {
                           );
                         }
 
+                        // ==========================================
+                        // TABLET - 2 COLUMNS
+                        // ==========================================
+
                         if (constraints.maxWidth >=
                             600) {
+                          final columnWidth =
+                              (constraints.maxWidth -
+                                      30) /
+                                  2;
+
                           return Wrap(
                             spacing: 30,
                             runSpacing: 35,
                             children: [
                               SizedBox(
-                                width:
-                                    (constraints.maxWidth -
-                                            30) /
-                                        2,
+                                width: columnWidth,
                                 child:
                                     _organizationColumn(),
                               ),
 
                               SizedBox(
-                                width:
-                                    (constraints.maxWidth -
-                                            30) /
-                                        2,
+                                width: columnWidth,
                                 child:
                                     _usersAndTaxColumn(),
                               ),
 
                               SizedBox(
-                                width:
-                                    (constraints.maxWidth -
-                                            30) /
-                                        2,
+                                width: columnWidth,
                                 child:
                                     _setupColumn(),
                               ),
 
                               SizedBox(
-                                width:
-                                    (constraints.maxWidth -
-                                            30) /
-                                        2,
+                                width: columnWidth,
                                 child:
                                     _customizationColumn(),
                               ),
                             ],
                           );
                         }
+
+                        // ==========================================
+                        // MOBILE - SINGLE COLUMN
+                        // ==========================================
 
                         return Column(
                           crossAxisAlignment:
@@ -469,45 +396,175 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // ==================================================================
-  // ORGANIZATION
-  // ==================================================================
+  // ================================================================
+  // TITLE
+  // ================================================================
+
+  Widget _buildTitle() {
+    return const Column(
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
+      children: [
+        Text(
+          'All Settings',
+          style: TextStyle(
+            color: Color(0xFF252A2E),
+            fontSize: 29,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+
+        SizedBox(height: 5),
+
+        Text(
+          'Manage your organization settings and preferences',
+          style: TextStyle(
+            color: Color(0xFF747E85),
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ================================================================
+  // SEARCH FIELD
+  // ================================================================
+
+  Widget _buildSearchField() {
+    return TextField(
+      controller: _searchController,
+      onChanged: (value) {
+        setState(() {
+          _searchText = value;
+        });
+      },
+      decoration: InputDecoration(
+        hintText: 'Search settings (/)',
+        hintStyle: const TextStyle(
+          color: Color(0xFF9AA5AD),
+          fontSize: 14,
+        ),
+        prefixIcon: const Icon(
+          Icons.search_rounded,
+          size: 20,
+          color: Color(0xFF8C9AA4),
+        ),
+        suffixIcon: _searchText.isNotEmpty
+            ? IconButton(
+                icon: const Icon(
+                  Icons.close_rounded,
+                  size: 18,
+                  color: Color(0xFF8C9AA4),
+                ),
+                onPressed: () {
+                  _searchController.clear();
+
+                  setState(() {
+                    _searchText = '';
+                  });
+                },
+              )
+            : null,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(
+          vertical: 10,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(7),
+          borderSide: const BorderSide(
+            color: Color(0xFFD4DBE0),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(7),
+          borderSide: const BorderSide(
+            color: Color(0xFF3978FF),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ================================================================
+  // CLOSE BUTTON
+  // ================================================================
+
+  Widget _buildCloseButton() {
+    return TextButton.icon(
+      onPressed: widget.onClose ??
+          () {
+            Navigator.maybePop(context);
+          },
+      icon: const Icon(
+        Icons.close_rounded,
+        size: 18,
+        color: Color(0xFF4C4FEA),
+      ),
+      label: const Text(
+        'Close Settings',
+      ),
+      style: TextButton.styleFrom(
+        foregroundColor:
+            const Color(0xFF4C4FEA),
+        backgroundColor:
+            const Color(0xFFECEBFF),
+        padding:
+            const EdgeInsets.symmetric(
+          horizontal: 15,
+          vertical: 12,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.circular(6),
+        ),
+      ),
+    );
+  }
+
+  // ================================================================
+  // ORGANIZATION COLUMN
+  // ================================================================
 
   Widget _organizationColumn() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         _sectionTitle(
           icon: Icons.business_rounded,
-          iconColor: const Color(0xFF34A853),
+          iconColor:
+              const Color(0xFF34A853),
           title: 'Organization',
         ),
 
         const SizedBox(height: 10),
 
-        // PROFILE
-        // THIS OPENS YOUR COMPLETE ORGANIZATION PROFILE PAGE
         if (_matches('Profile'))
           _settingLink(
             title: 'Profile',
-            onTap: _openOrganizationProfile,
+            onTap:
+                _openOrganizationProfile,
           ),
 
         if (_matches('General'))
-  _settingLink(
-    title: 'General',
-    onTap: () {
-      setState(() {
-        _showGeneralSettings = true;
-      });
-    },
-  ),
+          _settingLink(
+            title: 'General',
+            onTap:
+                _openGeneralSettings,
+          ),
 
         if (_matches('Branding'))
           _settingLink(
             title: 'Branding',
             onTap: () {
-              _showComingSoon('Branding');
+              _showComingSoon(
+                'Branding',
+              );
             },
           ),
 
@@ -515,7 +572,9 @@ class _SettingsPageState extends State<SettingsPage> {
           _settingLink(
             title: 'Custom Domain',
             onTap: () {
-              _showComingSoon('Custom Domain');
+              _showComingSoon(
+                'Custom Domain',
+              );
             },
           ),
 
@@ -523,34 +582,36 @@ class _SettingsPageState extends State<SettingsPage> {
           _settingLink(
             title: 'Locations',
             onTap: () {
-              _showComingSoon('Locations');
+              _showComingSoon(
+                'Locations',
+              );
             },
           ),
 
-        if (_matches('Manage Subscription'))
-  _settingLink(
-    title: 'Manage Subscription',
-    onTap: () {
-      setState(() {
-        _showManageSubscription = true;
-      });
-    },
-  ),
+        if (_matches(
+            'Manage Subscription'))
+          _settingLink(
+            title: 'Manage Subscription',
+            onTap:
+                _openManageSubscription,
+          ),
       ],
     );
   }
 
-  // ==================================================================
-  // USERS & ROLES + TAXES
-  // ==================================================================
+  // ================================================================
+  // USERS AND TAX COLUMN
+  // ================================================================
 
   Widget _usersAndTaxColumn() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         _sectionTitle(
           icon: Icons.groups_rounded,
-          iconColor: const Color(0xFFE83E7E),
+          iconColor:
+              const Color(0xFFE83E7E),
           title: 'Users & Roles',
         ),
 
@@ -572,7 +633,8 @@ class _SettingsPageState extends State<SettingsPage> {
             },
           ),
 
-        if (_matches('User Preferences'))
+        if (_matches(
+            'User Preferences'))
           _settingLink(
             title: 'User Preferences',
             onTap: () {
@@ -586,7 +648,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
         _sectionTitle(
           icon: Icons.shield_outlined,
-          iconColor: const Color(0xFFE83E7E),
+          iconColor:
+              const Color(0xFFE83E7E),
           title: 'Taxes & Compliance',
         ),
 
@@ -604,7 +667,9 @@ class _SettingsPageState extends State<SettingsPage> {
           _settingLink(
             title: 'Direct Taxes',
             onTap: () {
-              _showComingSoon('Direct Taxes');
+              _showComingSoon(
+                'Direct Taxes',
+              );
             },
           ),
 
@@ -612,7 +677,9 @@ class _SettingsPageState extends State<SettingsPage> {
           _settingLink(
             title: 'e-Way Bills',
             onTap: () {
-              _showComingSoon('e-Way Bills');
+              _showComingSoon(
+                'e-Way Bills',
+              );
             },
           ),
 
@@ -620,25 +687,30 @@ class _SettingsPageState extends State<SettingsPage> {
           _settingLink(
             title: 'e-Invoicing',
             onTap: () {
-              _showComingSoon('e-Invoicing');
+              _showComingSoon(
+                'e-Invoicing',
+              );
             },
           ),
       ],
     );
   }
 
-  // ==================================================================
-  // SETUP & CONFIGURATIONS
-  // ==================================================================
+  // ================================================================
+  // SETUP COLUMN
+  // ================================================================
 
   Widget _setupColumn() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         _sectionTitle(
           icon: Icons.tune_rounded,
-          iconColor: const Color(0xFFF59A0A),
-          title: 'Setup & Configurations',
+          iconColor:
+              const Color(0xFFF59A0A),
+          title:
+              'Setup & Configurations',
         ),
 
         const SizedBox(height: 10),
@@ -647,11 +719,14 @@ class _SettingsPageState extends State<SettingsPage> {
           _settingLink(
             title: 'Currencies',
             onTap: () {
-              _showComingSoon('Currencies');
+              _showComingSoon(
+                'Currencies',
+              );
             },
           ),
 
-        if (_matches('Opening Balances'))
+        if (_matches(
+            'Opening Balances'))
           _settingLink(
             title: 'Opening Balances',
             onTap: () {
@@ -665,11 +740,14 @@ class _SettingsPageState extends State<SettingsPage> {
           _settingLink(
             title: 'Reminders',
             onTap: () {
-              _showComingSoon('Reminders');
+              _showComingSoon(
+                'Reminders',
+              );
             },
           ),
 
-        if (_matches('Customer Portal'))
+        if (_matches(
+            'Customer Portal'))
           _settingLink(
             title: 'Customer Portal',
             onTap: () {
@@ -679,36 +757,43 @@ class _SettingsPageState extends State<SettingsPage> {
             },
           ),
 
-        if (_matches('Vendor Portal'))
+        if (_matches(
+            'Vendor Portal'))
           _settingLink(
             title: 'Vendor Portal',
             onTap: () {
-              _showComingSoon('Vendor Portal');
+              _showComingSoon(
+                'Vendor Portal',
+              );
             },
           ),
       ],
     );
   }
 
-  // ==================================================================
-  // CUSTOMIZATION
-  // ==================================================================
+  // ================================================================
+  // CUSTOMIZATION COLUMN
+  // ================================================================
 
   Widget _customizationColumn() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         _sectionTitle(
           icon: Icons.palette_outlined,
-          iconColor: const Color(0xFF3478F6),
+          iconColor:
+              const Color(0xFF3478F6),
           title: 'Customization',
         ),
 
         const SizedBox(height: 10),
 
-        if (_matches('Transaction Number Series'))
+        if (_matches(
+            'Transaction Number Series'))
           _settingLink(
-            title: 'Transaction Number Series',
+            title:
+                'Transaction Number Series',
             onTap: () {
               _showComingSoon(
                 'Transaction Number Series',
@@ -720,13 +805,17 @@ class _SettingsPageState extends State<SettingsPage> {
           _settingLink(
             title: 'PDF Templates',
             onTap: () {
-              _showComingSoon('PDF Templates');
+              _showComingSoon(
+                'PDF Templates',
+              );
             },
           ),
 
-        if (_matches('Email Notifications'))
+        if (_matches(
+            'Email Notifications'))
           _settingLink(
-            title: 'Email Notifications',
+            title:
+                'Email Notifications',
             onTap: () {
               _showComingSoon(
                 'Email Notifications',
@@ -734,9 +823,11 @@ class _SettingsPageState extends State<SettingsPage> {
             },
           ),
 
-        if (_matches('SMS Notifications'))
+        if (_matches(
+            'SMS Notifications'))
           _settingLink(
-            title: 'SMS Notifications',
+            title:
+                'SMS Notifications',
             onTap: () {
               _showComingSoon(
                 'SMS Notifications',
@@ -744,11 +835,14 @@ class _SettingsPageState extends State<SettingsPage> {
             },
           ),
 
-        if (_matches('Reporting Tags'))
+        if (_matches(
+            'Reporting Tags'))
           _settingLink(
             title: 'Reporting Tags',
             onTap: () {
-              _showComingSoon('Reporting Tags');
+              _showComingSoon(
+                'Reporting Tags',
+              );
             },
           ),
 
@@ -756,13 +850,17 @@ class _SettingsPageState extends State<SettingsPage> {
           _settingLink(
             title: 'Web Tabs',
             onTap: () {
-              _showComingSoon('Web Tabs');
+              _showComingSoon(
+                'Web Tabs',
+              );
             },
           ),
 
-        if (_matches('Digital Signature'))
+        if (_matches(
+            'Digital Signature'))
           _settingLink(
-            title: 'Digital Signature',
+            title:
+                'Digital Signature',
             onTap: () {
               _showComingSoon(
                 'Digital Signature',
@@ -773,9 +871,9 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // ==================================================================
+  // ================================================================
   // SECTION TITLE
-  // ==================================================================
+  // ================================================================
 
   Widget _sectionTitle({
     required IconData icon,
@@ -787,14 +885,12 @@ class _SettingsPageState extends State<SettingsPage> {
         Container(
           width: 30,
           height: 30,
-
           alignment: Alignment.center,
-
           decoration: BoxDecoration(
             color: iconColor,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius:
+                BorderRadius.circular(6),
           ),
-
           child: Icon(
             icon,
             color: Colors.white,
@@ -810,7 +906,8 @@ class _SettingsPageState extends State<SettingsPage> {
             style: const TextStyle(
               color: Color(0xFF292E32),
               fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontWeight:
+                  FontWeight.w600,
             ),
           ),
         ),
@@ -818,9 +915,9 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // ==================================================================
+  // ================================================================
   // SETTING LINK
-  // ==================================================================
+  // ================================================================
 
   Widget _settingLink({
     required String title,
@@ -828,26 +925,28 @@ class _SettingsPageState extends State<SettingsPage> {
   }) {
     return Material(
       color: Colors.transparent,
-
       child: InkWell(
         onTap: onTap,
-
-        borderRadius: BorderRadius.circular(4),
-
+        borderRadius:
+            BorderRadius.circular(4),
+        hoverColor:
+            const Color(0xFFF0F5FF),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: 6,
+          padding:
+              const EdgeInsets.symmetric(
+            vertical: 7,
+            horizontal: 4,
           ),
-
           child: Align(
-            alignment: Alignment.centerLeft,
-
+            alignment:
+                Alignment.centerLeft,
             child: Text(
               title,
               style: const TextStyle(
                 color: Color(0xFF2767F4),
                 fontSize: 14,
-                fontWeight: FontWeight.w400,
+                fontWeight:
+                    FontWeight.w400,
               ),
             ),
           ),
