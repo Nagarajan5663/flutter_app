@@ -1,23 +1,41 @@
 import 'package:flutter/material.dart';
 
+import 'glass_widgets.dart';
+
 class AddItemDialog extends StatefulWidget {
-  const AddItemDialog({super.key});
+  const AddItemDialog({
+    super.key,
+  });
 
   @override
-  State<AddItemDialog> createState() => _AddItemDialogState();
+  State<AddItemDialog> createState() =>
+      _AddItemDialogState();
 }
 
-class _AddItemDialogState extends State<AddItemDialog> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final GlobalKey _taxBoxKey = GlobalKey();
+class _AddItemDialogState
+    extends State<AddItemDialog> {
+  final GlobalKey<FormState> _formKey =
+      GlobalKey<FormState>();
 
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController skuController = TextEditingController();
-  final TextEditingController purchasePriceController =
+  final GlobalKey _taxBoxKey =
+      GlobalKey();
+
+  final TextEditingController nameController =
       TextEditingController();
-  final TextEditingController salesPriceController =
+
+  final TextEditingController skuController =
       TextEditingController();
-  final TextEditingController descriptionController =
+
+  final TextEditingController
+      purchasePriceController =
+      TextEditingController();
+
+  final TextEditingController
+      salesPriceController =
+      TextEditingController();
+
+  final TextEditingController
+      descriptionController =
       TextEditingController();
 
   // ============================================================
@@ -44,58 +62,86 @@ class _AddItemDialogState extends State<AddItemDialog> {
     purchasePriceController.dispose();
     salesPriceController.dispose();
     descriptionController.dispose();
+
     super.dispose();
   }
 
   // ============================================================
-  // OPEN TAX LIST
+  // OPEN TAX DROPDOWN
   // ============================================================
 
   Future<void> _openTaxDropdown() async {
     final RenderBox? renderBox =
-        _taxBoxKey.currentContext?.findRenderObject() as RenderBox?;
+        _taxBoxKey.currentContext
+            ?.findRenderObject() as RenderBox?;
 
     if (renderBox == null) {
       return;
     }
 
-    final Offset position = renderBox.localToGlobal(Offset.zero);
+    final Offset position =
+        renderBox.localToGlobal(
+      Offset.zero,
+    );
+
     final Size size = renderBox.size;
 
-    final Size screenSize = MediaQuery.of(context).size;
+    final Size screenSize =
+        MediaQuery.of(context).size;
 
-    const double itemHeight = 48;
-    const double menuPadding = 8;
+    const double itemHeight = 46;
 
     final double menuHeight =
-        (taxOptions.length * itemHeight) + menuPadding;
+        ((taxOptions.length + 1) *
+                itemHeight) +
+            10;
 
-    // Open ABOVE the tax box.
-    double menuTop = position.dy - menuHeight - 4;
+    double menuTop =
+        position.dy + size.height + 6;
 
-    // Keep a small gap from the top of the screen.
-    if (menuTop < 8) {
-      menuTop = 8;
+    // If not enough space below,
+    // open menu above.
+    if (menuTop + menuHeight >
+        screenSize.height - 15) {
+      menuTop =
+          position.dy - menuHeight - 6;
     }
 
-    final double menuLeft = position.dx;
+    if (menuTop < 10) {
+      menuTop = 10;
+    }
+
+    final double menuLeft =
+        position.dx;
 
     final double menuRight =
-        screenSize.width - (position.dx + size.width);
+        screenSize.width -
+            (position.dx + size.width);
 
-    final String? result = await showMenu<String>(
+    final String? result =
+        await showMenu<String>(
       context: context,
 
-      color: Colors.white,
+      color: const Color(0xFF223A52)
+          .withValues(
+        alpha: 0.97,
+      ),
 
-      elevation: 8,
+      elevation: 20,
 
-      shadowColor: Colors.black26,
+      shadowColor: Colors.black
+          .withValues(
+        alpha: 0.35,
+      ),
 
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(4),
-        side: const BorderSide(
-          color: Color(0xFFBFC5CC),
+        borderRadius:
+            BorderRadius.circular(14),
+        side: BorderSide(
+          color: Colors.white
+              .withValues(
+            alpha: 0.25,
+          ),
         ),
       ),
 
@@ -103,29 +149,50 @@ class _AddItemDialogState extends State<AddItemDialog> {
         menuLeft,
         menuTop,
         menuRight,
-        screenSize.height - position.dy,
+        screenSize.height -
+            menuTop -
+            menuHeight,
       ),
 
       constraints: BoxConstraints(
         minWidth: size.width,
         maxWidth: size.width,
-        maxHeight: 320,
+        maxHeight: 350,
       ),
 
       items: [
         // ======================================================
-        // SELECT TAX
+        // NONE
         // ======================================================
 
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: '__none__',
-          height: 44,
-          child: Text(
-            'Select Tax',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 16,
-            ),
+          height: itemHeight,
+          child: Row(
+            children: [
+              Icon(
+                Icons
+                    .remove_circle_outline_rounded,
+                size: 18,
+                color: Colors.white
+                    .withValues(
+                  alpha: 0.60,
+                ),
+              ),
+
+              const SizedBox(width: 10),
+
+              Text(
+                'Select Tax',
+                style: TextStyle(
+                  color: Colors.white
+                      .withValues(
+                    alpha: 0.65,
+                  ),
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
         ),
 
@@ -135,15 +202,50 @@ class _AddItemDialogState extends State<AddItemDialog> {
 
         ...taxOptions.map(
           (String tax) {
+            final bool selected =
+                selectedTax == tax;
+
             return PopupMenuItem<String>(
               value: tax,
               height: itemHeight,
-              child: Text(
-                tax,
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 16,
-                ),
+              child: Row(
+                children: [
+                  Icon(
+                    selected
+                        ? Icons
+                            .check_circle_rounded
+                        : Icons
+                            .receipt_long_outlined,
+                    size: 18,
+                    color: selected
+                        ? const Color(
+                            0xFF75C7FF,
+                          )
+                        : Colors.white
+                            .withValues(
+                            alpha: 0.72,
+                          ),
+                  ),
+
+                  const SizedBox(width: 10),
+
+                  Expanded(
+                    child: Text(
+                      tax,
+                      style: TextStyle(
+                        color: selected
+                            ? const Color(
+                                0xFF9AD5FF,
+                              )
+                            : Colors.white,
+                        fontSize: 14,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             );
           },
@@ -151,7 +253,8 @@ class _AddItemDialogState extends State<AddItemDialog> {
       ],
     );
 
-    if (!mounted || result == null) {
+    if (!mounted ||
+        result == null) {
       return;
     }
 
@@ -169,15 +272,25 @@ class _AddItemDialogState extends State<AddItemDialog> {
   // ============================================================
 
   Future<void> _addNewTax() async {
-    final String? newTax = await showDialog<String>(
+    final String? newTax =
+        await showDialog<String>(
       context: context,
+
       barrierDismissible: false,
-      builder: (BuildContext context) {
+
+      barrierColor:
+          const Color(0xA30F1A24),
+
+      builder: (
+        BuildContext context,
+      ) {
         return const AddTaxRateDialog();
       },
     );
 
-    if (!mounted || newTax == null || newTax.trim().isEmpty) {
+    if (!mounted ||
+        newTax == null ||
+        newTax.trim().isEmpty) {
       return;
     }
 
@@ -199,11 +312,38 @@ class _AddItemDialogState extends State<AddItemDialog> {
       return;
     }
 
-    Navigator.pop(context);
+    final messenger =
+        ScaffoldMessenger.of(context);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Item added successfully'),
+    Navigator.of(context).pop();
+
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor:
+            const Color(0xFF163F5E),
+        shape: RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.circular(12),
+        ),
+        content: const Row(
+          children: [
+            Icon(
+              Icons
+                  .check_circle_outline_rounded,
+              color: Colors.white,
+            ),
+            SizedBox(width: 10),
+            Text(
+              'Item added successfully.',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight:
+                    FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -214,488 +354,296 @@ class _AddItemDialogState extends State<AddItemDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.white,
-
-      insetPadding: const EdgeInsets.symmetric(
-        horizontal: 24,
-        vertical: 24,
-      ),
-
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 650,
-          maxHeight: 820,
+    return GlassModalShell(
+      maxWidth: 720,
+      maxHeight: 860,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          30,
+          28,
+          30,
+          28,
         ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
+              // ==================================================
+              // HEADER
+              // ==================================================
 
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            34,
-            30,
-            34,
-            28,
-          ),
+              GlassDialogHeader(
+                title: 'Add New Item',
+                subtitle:
+                    'Create a new product for your inventory.',
+                icon:
+                    Icons.inventory_2_outlined,
+                onClose: () {
+                  Navigator.of(context).pop();
+                },
+              ),
 
-          child: Form(
-            key: _formKey,
+              const SizedBox(height: 28),
 
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              // ==================================================
+              // ITEM NAME
+              // ==================================================
 
-              children: [
-                // ==================================================
-                // HEADER
-                // ==================================================
+              const GlassLabel(
+                'Item Name',
+                required: true,
+              ),
 
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Add New Item',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF123456),
+              GlassTextField(
+                controller: nameController,
+                hintText: 'Enter item name',
+                prefixIcon:
+                    Icons.inventory_outlined,
+                validator: (value) {
+                  if (value == null ||
+                      value.trim().isEmpty) {
+                    return 'Please enter item name';
+                  }
+
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 19),
+
+              // ==================================================
+              // SKU
+              // ==================================================
+
+              const GlassLabel(
+                'SKU',
+                required: true,
+              ),
+
+              GlassTextField(
+                controller: skuController,
+                hintText: 'Enter SKU',
+                prefixIcon:
+                    Icons.qr_code_2_rounded,
+                validator: (value) {
+                  if (value == null ||
+                      value.trim().isEmpty) {
+                    return 'Please enter SKU';
+                  }
+
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 19),
+
+              // ==================================================
+              // PRICES
+              // ==================================================
+
+              LayoutBuilder(
+                builder: (
+                  context,
+                  constraints,
+                ) {
+                  final bool twoColumns =
+                      constraints.maxWidth >= 520;
+
+                  final purchasePrice =
+                      Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      const GlassLabel(
+                        'Purchase Price',
+                        required: true,
+                      ),
+
+                      GlassTextField(
+                        controller:
+                            purchasePriceController,
+                        hintText: '0.00',
+                        prefixIcon: Icons
+                            .currency_rupee_rounded,
+                        keyboardType:
+                            const TextInputType
+                                .numberWithOptions(
+                          decimal: true,
                         ),
+                        validator: (value) {
+                          if (value == null ||
+                              value
+                                  .trim()
+                                  .isEmpty) {
+                            return 'Please enter purchase price';
+                          }
+
+                          return null;
+                        },
                       ),
-                    ),
+                    ],
+                  );
 
-                    IconButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-
-                      icon: const Icon(
-                        Icons.close,
-                        color: Color(0xFFAAAAAA),
-                        size: 25,
+                  final salesPrice = Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      const GlassLabel(
+                        'Sales Price',
+                        required: true,
                       ),
-                    ),
-                  ],
-                ),
 
-                const SizedBox(height: 25),
-
-                // ==================================================
-                // ITEM NAME
-                // ==================================================
-
-                _buildLabel('Item Name'),
-
-                _buildTextField(
-                  controller: nameController,
-
-                  validator: (value) {
-                    if (value == null ||
-                        value.trim().isEmpty) {
-                      return 'Please enter item name';
-                    }
-
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 18),
-
-                // ==================================================
-                // SKU
-                // ==================================================
-
-                _buildLabel('SKU'),
-
-                _buildTextField(
-                  controller: skuController,
-
-                  validator: (value) {
-                    if (value == null ||
-                        value.trim().isEmpty) {
-                      return 'Please enter SKU';
-                    }
-
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 18),
-
-                // ==================================================
-                // PURCHASE PRICE
-                // ==================================================
-
-                _buildLabel('Purchase Price'),
-
-                _buildTextField(
-                  controller: purchasePriceController,
-
-                  keyboardType:
-                      const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-
-                  validator: (value) {
-                    if (value == null ||
-                        value.trim().isEmpty) {
-                      return 'Please enter purchase price';
-                    }
-
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 18),
-
-                // ==================================================
-                // SALES PRICE
-                // ==================================================
-
-                _buildLabel('Sales Price'),
-
-                _buildTextField(
-                  controller: salesPriceController,
-
-                  keyboardType:
-                      const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-
-                  validator: (value) {
-                    if (value == null ||
-                        value.trim().isEmpty) {
-                      return 'Please enter sales price';
-                    }
-
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 18),
-
-                // ==================================================
-                // TAX LABEL
-                // ==================================================
-
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Tax',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF3D4147),
+                      GlassTextField(
+                        controller:
+                            salesPriceController,
+                        hintText: '0.00',
+                        prefixIcon: Icons
+                            .sell_outlined,
+                        keyboardType:
+                            const TextInputType
+                                .numberWithOptions(
+                          decimal: true,
                         ),
+                        validator: (value) {
+                          if (value == null ||
+                              value
+                                  .trim()
+                                  .isEmpty) {
+                            return 'Please enter sales price';
+                          }
+
+                          return null;
+                        },
                       ),
-                    ),
+                    ],
+                  );
 
-                    TextButton(
-                      onPressed: _addNewTax,
-
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(0, 30),
-                        tapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap,
-                      ),
-
-                      child: const Text(
-                        '+ Add New',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 8),
-
-                // ==================================================
-                // CUSTOM TAX SELECT BOX
-                // ==================================================
-
-                GestureDetector(
-                  key: _taxBoxKey,
-
-                  onTap: _openTaxDropdown,
-
-                  child: Container(
-                    width: double.infinity,
-                    height: 50,
-
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                    ),
-
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8F9FA),
-
-                      borderRadius:
-                          BorderRadius.circular(7),
-
-                      border: Border.all(
-                        color: const Color(0xFFD9DEE5),
-                      ),
-                    ),
-
-                    child: Row(
+                  if (twoColumns) {
+                    return Row(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
                       children: [
-                        // ------------------------------------------
-                        // SELECTED TAX
-                        // ------------------------------------------
+                        Expanded(
+                          child:
+                              purchasePrice,
+                        ),
+
+                        const SizedBox(
+                          width: 16,
+                        ),
 
                         Expanded(
-                          child: Text(
-                            selectedTax ?? 'Select Tax',
-
-                            style: TextStyle(
-                              fontSize: 16,
-
-                              color: selectedTax == null
-                                  ? const Color(0xFF333333)
-                                  : Colors.black,
-                            ),
-
-                            overflow:
-                                TextOverflow.ellipsis,
-                          ),
-                        ),
-
-                        // ------------------------------------------
-                        // ARROW
-                        // ------------------------------------------
-
-                        const Icon(
-                          Icons.keyboard_arrow_down,
-                          color: Colors.black,
-                          size: 24,
+                          child: salesPrice,
                         ),
                       ],
+                    );
+                  }
+
+                  return Column(
+                    children: [
+                      purchasePrice,
+
+                      const SizedBox(
+                        height: 19,
+                      ),
+
+                      salesPrice,
+                    ],
+                  );
+                },
+              ),
+
+              const SizedBox(height: 19),
+
+              // ==================================================
+              // TAX LABEL
+              // ==================================================
+
+              Row(
+                children: [
+                  const Expanded(
+                    child: GlassLabel(
+                      'Tax',
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 18),
-
-                // ==================================================
-                // DESCRIPTION
-                // ==================================================
-
-                _buildLabel('Description'),
-
-                TextFormField(
-                  controller: descriptionController,
-
-                  maxLines: 4,
-
-                  decoration: InputDecoration(
-                    filled: true,
-
-                    fillColor:
-                        const Color(0xFFF8F9FA),
-
-                    contentPadding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 15,
-                    ),
-
-                    border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(7),
-                    ),
-
-                    enabledBorder:
-                        OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(7),
-
-                      borderSide:
-                          const BorderSide(
-                        color: Color(0xFFD9DEE5),
-                      ),
-                    ),
-
-                    focusedBorder:
-                        OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(7),
-
-                      borderSide:
-                          const BorderSide(
-                        color: Color(0xFF123456),
-                        width: 2,
-                      ),
-                    ),
+                  GlassAddNewLink(
+                    onTap: _addNewTax,
                   ),
-                ),
+                ],
+              ),
 
-                const SizedBox(height: 28),
+              // ==================================================
+              // TAX SELECT BOX
+              // ==================================================
 
-                // ==================================================
-                // BUTTONS
-                // ==================================================
+              GlassSelectBox(
+                boxKey: _taxBoxKey,
+                selectedLabel: selectedTax,
+                placeholder: 'Select Tax',
+                icon:
+                    Icons.receipt_long_outlined,
+                onTap: _openTaxDropdown,
+              ),
 
-                Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.end,
+              const SizedBox(height: 19),
 
+              // ==================================================
+              // DESCRIPTION
+              // ==================================================
+
+              const GlassLabel(
+                'Description',
+              ),
+
+              GlassTextField(
+                controller:
+                    descriptionController,
+                hintText:
+                    'Enter item description',
+                prefixIcon:
+                    Icons.notes_rounded,
+                maxLines: 4,
+              ),
+
+              const SizedBox(height: 30),
+
+              // ==================================================
+              // BUTTONS
+              // ==================================================
+
+              Align(
+                alignment:
+                    Alignment.centerRight,
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 10,
+                  alignment:
+                      WrapAlignment.end,
                   children: [
-                    // CLOSE
-                    ElevatedButton.icon(
+                    GlassButton(
+                      label: 'Close',
+                      icon:
+                          Icons.close_rounded,
+                      primary: false,
                       onPressed: () {
-                        Navigator.pop(context);
+                        Navigator.of(context)
+                            .pop();
                       },
-
-                      icon: const Icon(
-                        Icons.close,
-                        size: 18,
-                      ),
-
-                      label: const Text('Close'),
-
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color(0xFF6C757D),
-
-                        foregroundColor: Colors.white,
-
-                        padding:
-                            const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 14,
-                        ),
-
-                        shape:
-                            RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(7),
-                        ),
-                      ),
                     ),
 
-                    const SizedBox(width: 16),
-
-                    // SAVE ITEM
-                    ElevatedButton.icon(
+                    GlassButton(
+                      label: 'Save Item',
+                      icon:
+                          Icons.save_outlined,
                       onPressed: _saveItem,
-
-                      icon: const Icon(
-                        Icons.save,
-                        size: 18,
-                      ),
-
-                      label:
-                          const Text('Save Item'),
-
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color(0xFF123456),
-
-                        foregroundColor:
-                            Colors.white,
-
-                        padding:
-                            const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 14,
-                        ),
-
-                        shape:
-                            RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(7),
-                        ),
-                      ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // LABEL
-  // ============================================================
-
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        bottom: 8,
-      ),
-
-      child: Text(
-        text,
-
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF3D4147),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // TEXT FIELD
-  // ============================================================
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-
-      keyboardType: keyboardType,
-
-      validator: validator,
-
-      decoration: InputDecoration(
-        filled: true,
-
-        fillColor: const Color(0xFFF8F9FA),
-
-        contentPadding:
-            const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 15,
-        ),
-
-        border: OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(7),
-        ),
-
-        enabledBorder:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(7),
-
-          borderSide:
-              const BorderSide(
-            color: Color(0xFFD9DEE5),
-          ),
-        ),
-
-        focusedBorder:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(7),
-
-          borderSide:
-              const BorderSide(
-            color: Color(0xFF123456),
-            width: 2,
+              ),
+            ],
           ),
         ),
       ),
@@ -703,12 +651,15 @@ class _AddItemDialogState extends State<AddItemDialog> {
   }
 }
 
-// ==================================================================
+// ============================================================================
 // ADD NEW TAX RATE DIALOG
-// ==================================================================
+// ============================================================================
 
-class AddTaxRateDialog extends StatefulWidget {
-  const AddTaxRateDialog({super.key});
+class AddTaxRateDialog
+    extends StatefulWidget {
+  const AddTaxRateDialog({
+    super.key,
+  });
 
   @override
   State<AddTaxRateDialog> createState() =>
@@ -720,16 +671,20 @@ class _AddTaxRateDialogState
   final GlobalKey<FormState> _formKey =
       GlobalKey<FormState>();
 
-  final TextEditingController taxNameController =
+  final TextEditingController
+      taxNameController =
       TextEditingController();
 
-  final TextEditingController rateController =
+  final TextEditingController
+      rateController =
       TextEditingController();
 
-  final TextEditingController cgstController =
+  final TextEditingController
+      cgstController =
       TextEditingController();
 
-  final TextEditingController sgstController =
+  final TextEditingController
+      sgstController =
       TextEditingController();
 
   @override
@@ -754,350 +709,238 @@ class _AddTaxRateDialogState
     final String taxName =
         taxNameController.text.trim();
 
-    Navigator.pop(
-      context,
+    Navigator.of(context).pop(
       taxName,
     );
   }
 
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.white,
-
-      insetPadding:
-          const EdgeInsets.all(24),
-
-      shape:
-          RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(12),
-      ),
-
-      child: ConstrainedBox(
-        constraints:
-            const BoxConstraints(
-          maxWidth: 560,
-          maxHeight: 700,
+    return GlassModalShell(
+      maxWidth: 590,
+      maxHeight: 720,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          30,
+          28,
+          30,
+          28,
         ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
+              // ==================================================
+              // HEADER
+              // ==================================================
 
-        child: SingleChildScrollView(
-          padding:
-              const EdgeInsets.fromLTRB(
-            34,
-            30,
-            34,
-            28,
-          ),
+              GlassDialogHeader(
+                title: 'Add New Tax Rate',
+                subtitle:
+                    'Create a custom tax rate for this item.',
+                icon:
+                    Icons.percent_rounded,
+                onClose: () {
+                  Navigator.of(context).pop();
+                },
+              ),
 
-          child: Form(
-            key: _formKey,
+              const SizedBox(height: 27),
 
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              // ==================================================
+              // TAX NAME
+              // ==================================================
 
-              children: [
-                // ==================================================
-                // TITLE
-                // ==================================================
+              const GlassLabel(
+                'Tax Name',
+                required: true,
+              ),
 
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Add New Tax Rate',
+              GlassTextField(
+                controller:
+                    taxNameController,
+                hintText:
+                    'Enter tax name',
+                prefixIcon:
+                    Icons.label_outline_rounded,
+                validator: (value) {
+                  if (value == null ||
+                      value.trim().isEmpty) {
+                    return 'Please enter tax name';
+                  }
 
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight:
-                              FontWeight.bold,
-                          color:
-                              Color(0xFF123456),
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 19),
+
+              // ==================================================
+              // RATE
+              // ==================================================
+
+              const GlassLabel(
+                'Rate (%)',
+                required: true,
+              ),
+
+              GlassTextField(
+                controller:
+                    rateController,
+                hintText: '0.00',
+                prefixIcon:
+                    Icons.percent_rounded,
+                keyboardType:
+                    const TextInputType
+                        .numberWithOptions(
+                  decimal: true,
+                ),
+                validator: (value) {
+                  if (value == null ||
+                      value.trim().isEmpty) {
+                    return 'Please enter rate';
+                  }
+
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 19),
+
+              // ==================================================
+              // CGST + SGST
+              // ==================================================
+
+              LayoutBuilder(
+                builder: (
+                  context,
+                  constraints,
+                ) {
+                  final bool twoColumns =
+                      constraints.maxWidth >= 450;
+
+                  final cgst = Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      const GlassLabel(
+                        'CGST Rate (%)',
+                      ),
+
+                      GlassTextField(
+                        controller:
+                            cgstController,
+                        hintText: '0.00',
+                        prefixIcon:
+                            Icons.percent_rounded,
+                        keyboardType:
+                            const TextInputType
+                                .numberWithOptions(
+                          decimal: true,
                         ),
                       ),
-                    ),
+                    ],
+                  );
 
-                    IconButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
+                  final sgst = Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      const GlassLabel(
+                        'SGST Rate (%)',
+                      ),
 
+                      GlassTextField(
+                        controller:
+                            sgstController,
+                        hintText: '0.00',
+                        prefixIcon:
+                            Icons.percent_rounded,
+                        keyboardType:
+                            const TextInputType
+                                .numberWithOptions(
+                          decimal: true,
+                        ),
+                      ),
+                    ],
+                  );
+
+                  if (twoColumns) {
+                    return Row(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: cgst,
+                        ),
+
+                        const SizedBox(
+                          width: 16,
+                        ),
+
+                        Expanded(
+                          child: sgst,
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Column(
+                    children: [
+                      cgst,
+
+                      const SizedBox(
+                        height: 19,
+                      ),
+
+                      sgst,
+                    ],
+                  );
+                },
+              ),
+
+              const SizedBox(height: 30),
+
+              // ==================================================
+              // ACTIONS
+              // ==================================================
+
+              Align(
+                alignment:
+                    Alignment.centerRight,
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 10,
+                  alignment:
+                      WrapAlignment.end,
+                  children: [
+                    GlassButton(
+                      label: 'Close',
                       icon:
-                          const Icon(
-                        Icons.close,
-                        color:
-                            Color(0xFFAAAAAA),
-                        size: 25,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 25),
-
-                // ==================================================
-                // TAX NAME
-                // ==================================================
-
-                _buildLabel('Tax Name'),
-
-                _buildTextField(
-                  controller:
-                      taxNameController,
-
-                  validator: (value) {
-                    if (value == null ||
-                        value.trim().isEmpty) {
-                      return 'Please enter tax name';
-                    }
-
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 18),
-
-                // ==================================================
-                // RATE
-                // ==================================================
-
-                _buildLabel('Rate (%)'),
-
-                _buildTextField(
-                  controller:
-                      rateController,
-
-                  keyboardType:
-                      const TextInputType
-                          .numberWithOptions(
-                    decimal: true,
-                  ),
-
-                  validator: (value) {
-                    if (value == null ||
-                        value.trim().isEmpty) {
-                      return 'Please enter rate';
-                    }
-
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 18),
-
-                // ==================================================
-                // CGST
-                // ==================================================
-
-                _buildLabel(
-                    'CGST Rate (%)'),
-
-                _buildTextField(
-                  controller:
-                      cgstController,
-
-                  keyboardType:
-                      const TextInputType
-                          .numberWithOptions(
-                    decimal: true,
-                  ),
-                ),
-
-                const SizedBox(height: 18),
-
-                // ==================================================
-                // SGST
-                // ==================================================
-
-                _buildLabel(
-                    'SGST Rate (%)'),
-
-                _buildTextField(
-                  controller:
-                      sgstController,
-
-                  keyboardType:
-                      const TextInputType
-                          .numberWithOptions(
-                    decimal: true,
-                  ),
-                ),
-
-                const SizedBox(height: 28),
-
-                // ==================================================
-                // BUTTONS
-                // ==================================================
-
-                Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.end,
-
-                  children: [
-                    // CLOSE
-                    ElevatedButton.icon(
+                          Icons.close_rounded,
+                      primary: false,
                       onPressed: () {
-                        Navigator.pop(context);
+                        Navigator.of(context)
+                            .pop();
                       },
-
-                      icon: const Icon(
-                        Icons.close,
-                        size: 18,
-                      ),
-
-                      label:
-                          const Text('Close'),
-
-                      style:
-                          ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color(
-                                0xFF6C757D),
-
-                        foregroundColor:
-                            Colors.white,
-
-                        padding:
-                            const EdgeInsets
-                                .symmetric(
-                          horizontal: 18,
-                          vertical: 14,
-                        ),
-                      ),
                     ),
 
-                    const SizedBox(width: 16),
-
-                    // SAVE TAX
-                    ElevatedButton.icon(
+                    GlassButton(
+                      label: 'Save Tax',
+                      icon:
+                          Icons.save_outlined,
                       onPressed: _saveTax,
-
-                      icon: const Icon(
-                        Icons.save,
-                        size: 18,
-                      ),
-
-                      label:
-                          const Text('Save Tax'),
-
-                      style:
-                          ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color(
-                                0xFF123456),
-
-                        foregroundColor:
-                            Colors.white,
-
-                        padding:
-                            const EdgeInsets
-                                .symmetric(
-                          horizontal: 20,
-                          vertical: 14,
-                        ),
-                      ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // LABEL
-  // ============================================================
-
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding:
-          const EdgeInsets.only(
-        bottom: 8,
-      ),
-
-      child: Text(
-        text,
-
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight:
-              FontWeight.w500,
-          color:
-              Color(0xFF3D4147),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // TEXT FIELD
-  // ============================================================
-
-  Widget _buildTextField({
-    required TextEditingController
-        controller,
-    TextInputType? keyboardType,
-    String? Function(String?)?
-        validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-
-      keyboardType:
-          keyboardType,
-
-      validator:
-          validator,
-
-      decoration:
-          InputDecoration(
-        filled: true,
-
-        fillColor:
-            const Color(0xFFF8F9FA),
-
-        contentPadding:
-            const EdgeInsets
-                .symmetric(
-          horizontal: 16,
-          vertical: 15,
-        ),
-
-        border:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(
-                  7),
-        ),
-
-        enabledBorder:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(
-                  7),
-
-          borderSide:
-              const BorderSide(
-            color:
-                Color(0xFFD9DEE5),
-          ),
-        ),
-
-        focusedBorder:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(
-                  7),
-
-          borderSide:
-              const BorderSide(
-            color:
-                Color(0xFF123456),
-            width: 2,
+              ),
+            ],
           ),
         ),
       ),

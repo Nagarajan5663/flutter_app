@@ -19,6 +19,10 @@ class DashboardNavBar extends StatefulWidget {
 class _DashboardNavBarState extends State<DashboardNavBar> {
   String? _openSection;
 
+  // Motion tuning — shared by every sliding/fading label in this file.
+  static const Duration _motionDuration = Duration(milliseconds: 260);
+  static const Curve _motionCurve = Curves.easeInOutCubic;
+
   bool get isCollapsed => widget.isCollapsed;
 
   String get selectedMenu => widget.selectedMenu;
@@ -43,8 +47,8 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
+      duration: const Duration(milliseconds: 300),
+      curve: _motionCurve,
       width: isCollapsed ? 80 : 270,
       height: double.infinity,
       color: const Color(0xFF123653),
@@ -302,21 +306,35 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                 size: 28,
               ),
 
-              if (!isCollapsed) ...[
-                const SizedBox(width: 12),
+              const SizedBox(width: 12),
 
-                const Expanded(
-                  child: Text(
-                    'Organization',
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
+              // Slides + fades the org name in/out instead of an
+              // instant if(!isCollapsed) show/hide.
+              Expanded(
+                child: ClipRect(
+                  child: AnimatedSlide(
+                    duration: _motionDuration,
+                    curve: _motionCurve,
+                    offset: isCollapsed
+                        ? const Offset(-0.3, 0)
+                        : Offset.zero,
+                    child: AnimatedOpacity(
+                      duration: _motionDuration,
+                      curve: _motionCurve,
+                      opacity: isCollapsed ? 0 : 1,
+                      child: const Text(
+                        'Organization',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ],
+              ),
             ],
           ),
         ),
@@ -511,7 +529,9 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
         },
         hoverColor: Colors.white10,
         mouseCursor: SystemMouseCursors.click,
-        child: Container(
+        child: AnimatedContainer(
+          duration: _motionDuration,
+          curve: _motionCurve,
           width: double.infinity,
           constraints: const BoxConstraints(
             minHeight: 42,
@@ -524,17 +544,22 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
           ),
           decoration: BoxDecoration(
             color: selected
-                ? const Color(0xFF245AA6).withOpacity(0.55)
+                ? const Color(0xFF245AA6).withValues(alpha: 0.55)
                 : Colors.transparent,
           ),
           child: Row(
             children: [
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: selected
-                    ? Colors.white
-                    : Colors.white70,
+              AnimatedSlide(
+                duration: _motionDuration,
+                curve: _motionCurve,
+                offset: selected ? Offset.zero : const Offset(-0.15, 0),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: selected
+                      ? Colors.white
+                      : Colors.white70,
+                ),
               ),
 
               const SizedBox(width: 6),
@@ -576,7 +601,8 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
         mouseCursor: SystemMouseCursors.click,
         borderRadius: BorderRadius.circular(9),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: _motionDuration,
+          curve: _motionCurve,
           width: double.infinity,
           height: 50,
           padding: EdgeInsets.symmetric(
@@ -599,24 +625,40 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                 color: Colors.white,
               ),
 
-              if (!isCollapsed) ...[
-                const SizedBox(width: 17),
+              const SizedBox(width: 17),
 
-                Expanded(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: selected
-                          ? FontWeight.w700
-                          : FontWeight.w500,
+              // Label slides in from the left and fades in as the
+              // sidebar expands; slides out + fades when collapsing.
+              // ClipRect + zero-width collapse keeps it from taking
+              // space (and from overflowing) while collapsed.
+              Expanded(
+                child: ClipRect(
+                  child: AnimatedSlide(
+                    duration: _motionDuration,
+                    curve: _motionCurve,
+                    offset: isCollapsed
+                        ? const Offset(-0.4, 0)
+                        : Offset.zero,
+                    child: AnimatedOpacity(
+                      duration: _motionDuration,
+                      curve: _motionCurve,
+                      opacity: isCollapsed ? 0 : 1,
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: selected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ],
+              ),
             ],
           ),
         ),

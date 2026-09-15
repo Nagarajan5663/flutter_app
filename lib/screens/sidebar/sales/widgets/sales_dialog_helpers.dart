@@ -3,21 +3,21 @@ import 'package:flutter/material.dart';
 InputDecoration salesFieldDecoration({String? hint}) {
   return InputDecoration(
     hintText: hint,
-    hintStyle: const TextStyle(color: Colors.black),
+    hintStyle: const TextStyle(color: Color(0xFF8B9AA6)),
     filled: true,
-    fillColor: const Color(0xFFF8F9FA),
+    fillColor: const Color(0x6EFFFFFF),
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(7),
-      borderSide: const BorderSide(color: Color(0xFFD9DEE5)),
+      borderRadius: BorderRadius.circular(13),
+      borderSide: const BorderSide(color: Color(0xD9FFFFFF)),
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(7),
-      borderSide: const BorderSide(color: Color(0xFFD9DEE5)),
+      borderRadius: BorderRadius.circular(13),
+      borderSide: const BorderSide(color: Color(0xD9FFFFFF)),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(7),
-      borderSide: const BorderSide(color: Color(0xFF2E7DD1)),
+      borderRadius: BorderRadius.circular(13),
+      borderSide: const BorderSide(color: Color(0xFF5597C4), width: 1.4),
     ),
   );
 }
@@ -48,7 +48,7 @@ TextField salesTextField({
 }) {
   return TextField(
     controller: controller,
-    style: const TextStyle(color: Colors.black),
+    style: const TextStyle(color: Color(0xFF243B4C), fontWeight: FontWeight.w500),
     keyboardType: keyboardType,
     maxLines: maxLines,
     decoration: salesFieldDecoration(hint: hint),
@@ -61,7 +61,7 @@ TextField salesFilterTextField(
 ) {
   return TextField(
     controller: controller,
-    style: const TextStyle(color: Colors.black),
+    style: const TextStyle(color: Color(0xFF243B4C), fontWeight: FontWeight.w500),
     decoration: salesFieldDecoration(hint: hint),
   );
 }
@@ -91,13 +91,13 @@ Widget salesDateField({
 
   return InkWell(
     onTap: onTap,
-    borderRadius: BorderRadius.circular(7),
+    borderRadius: BorderRadius.circular(13),
     child: InputDecorator(
       decoration: salesFieldDecoration(),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(text, style: const TextStyle(color: Colors.black)),
+          Text(text, style: const TextStyle(color: Color(0xFF243B4C), fontWeight: FontWeight.w500)),
           const Icon(Icons.calendar_today_outlined, size: 18, color: Color(0xFF6C757D)),
         ],
       ),

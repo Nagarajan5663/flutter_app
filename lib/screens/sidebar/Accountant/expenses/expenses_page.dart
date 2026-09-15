@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../widgets/accountant_glass_widgets.dart';
 class ExpensesPage extends StatefulWidget {
   const ExpensesPage({
     super.key,
@@ -17,6 +18,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
+      barrierColor: const Color(0x9A12202C),
       builder: (context) {
         return NewOperationExpenseDialog(
           onSave: (expense) {
@@ -31,10 +33,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color(0xFFF4F6F9),
+    return AccountantGlassBackground(
       child: Stack(
         children: [
           // =========================================================
@@ -49,7 +48,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
               height: 700,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: Colors.white.withValues(alpha: 0.06),
               ),
             ),
           ),
@@ -62,7 +61,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
               height: 700,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: Colors.white.withValues(alpha: 0.06),
               ),
             ),
           ),
@@ -128,7 +127,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                 // TABLE CARD
                 // ===================================================
 
-                Container(
+                AccountantGlassHoverCard(
                   width: double.infinity,
                   constraints: const BoxConstraints(
                     minHeight: 350,
@@ -631,7 +630,7 @@ class _NewOperationExpenseDialogState
           maxWidth: 720,
           maxHeight: 570,
         ),
-        child: Container(
+        child: AccountantGlassDialogCard(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius:
@@ -1474,7 +1473,7 @@ class _NewOperationExpenseDialogState
       ),
 
       filled: true,
-      fillColor: Colors.white,
+      fillColor: Colors.white.withValues(alpha: 0.45),
 
       border: OutlineInputBorder(
         borderRadius:

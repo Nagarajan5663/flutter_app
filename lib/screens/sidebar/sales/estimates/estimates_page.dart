@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../widgets/sales_glass_widgets.dart';
 import 'package:intl/intl.dart';
 
 // =====================================================================
@@ -88,6 +90,7 @@ class _EstimatesPageState extends State<EstimatesPage> {
   void _openNewEstimateForm() {
     showDialog(
       context: context,
+      barrierColor: const Color(0x9A12202C),
       barrierDismissible: false,
       builder: (context) {
         return NewEstimateDialog(
@@ -122,10 +125,7 @@ class _EstimatesPageState extends State<EstimatesPage> {
   Widget build(BuildContext context) {
     final estimates = _filteredEstimates;
 
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color(0xFFF4F6F9),
+    return SalesGlassPageFrame(
       child: Stack(
         children: [
           // =========================================================
@@ -140,7 +140,7 @@ class _EstimatesPageState extends State<EstimatesPage> {
               height: 700,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: Colors.white.withValues(alpha: 0.31),
               ),
             ),
           ),
@@ -153,7 +153,7 @@ class _EstimatesPageState extends State<EstimatesPage> {
               height: 700,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: Colors.white.withValues(alpha: 0.31),
               ),
             ),
           ),
@@ -218,10 +218,10 @@ class _EstimatesPageState extends State<EstimatesPage> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
+                    color: const Color(0x4FFFFFFF),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: const Color(0xFFE1E5EA),
+                      color: const Color(0xD0FFFFFF),
                     ),
                   ),
                   child: Wrap(
@@ -281,7 +281,7 @@ class _EstimatesPageState extends State<EstimatesPage> {
                                 vertical: 14,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(7),
+                                borderRadius: BorderRadius.circular(11),
                               ),
                             ),
                             child: const Text('Filter'),
@@ -301,7 +301,7 @@ class _EstimatesPageState extends State<EstimatesPage> {
                                 vertical: 14,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(7),
+                                borderRadius: BorderRadius.circular(11),
                               ),
                             ),
                             child: const Text('Clear'),
@@ -324,10 +324,10 @@ class _EstimatesPageState extends State<EstimatesPage> {
                     minHeight: 350,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
+                    color: const Color(0x4FFFFFFF),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: const Color(0xFFE1E5EA),
+                      color: const Color(0xD0FFFFFF),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -337,7 +337,7 @@ class _EstimatesPageState extends State<EstimatesPage> {
                     ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(16),
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: ConstrainedBox(
@@ -536,7 +536,7 @@ class _EstimatesPageState extends State<EstimatesPage> {
         vertical: 13,
       ),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: const Color(0x7AFFFFFF),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(6),
         borderSide: const BorderSide(
@@ -1153,7 +1153,7 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return SalesGlassDialog(
       insetPadding: const EdgeInsets.all(12),
       backgroundColor: Colors.transparent,
       child: ConstrainedBox(
@@ -1163,8 +1163,8 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
+            color: const Color(0x4FFFFFFF),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
             children: [
@@ -1286,7 +1286,7 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                         Container(
                           decoration: BoxDecoration(
                             border: Border.all(
-                              color: const Color(0xFFE1E5EA),
+                              color: const Color(0xD0FFFFFF),
                             ),
                             borderRadius: BorderRadius.circular(6),
                           ),
@@ -1594,7 +1594,7 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                           vertical: 11,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(7),
+                          borderRadius: BorderRadius.circular(11),
                         ),
                       ),
                       child: const Text(
@@ -1619,7 +1619,7 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                           vertical: 11,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(7),
+                          borderRadius: BorderRadius.circular(11),
                         ),
                       ),
                       child: const Text(
@@ -1858,28 +1858,28 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
         vertical: 15,
       ),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: const Color(0x7AFFFFFF),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(11),
         borderSide: const BorderSide(
           color: Color(0xFFD7DCE2),
         ),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(11),
         borderSide: const BorderSide(
           color: Color(0xFFD7DCE2),
         ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(11),
         borderSide: const BorderSide(
           color: Color(0xFF1E78B7),
           width: 1.5,
         ),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(11),
         borderSide: const BorderSide(
           color: Colors.redAccent,
         ),
@@ -1896,7 +1896,7 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
         vertical: 12,
       ),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: const Color(0x7AFFFFFF),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(6),
         borderSide: const BorderSide(

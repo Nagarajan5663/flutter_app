@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../shared/glass_modal_shell.dart';
 import 'bill_filter.dart';
 import 'bill_model.dart';
 import 'bill_repository.dart';
@@ -143,10 +144,7 @@ class _BillsPageState extends State<BillsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color(0xFFF4F6F9),
+    return GlassPageBackground(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -164,30 +162,18 @@ class _BillsPageState extends State<BillsPage> {
                     ),
                   ),
                 ),
-                ElevatedButton.icon(
+                GlassButton(
                   onPressed: _openAddBill,
-                  icon: const Icon(Icons.add, size: 20),
-                  label: const Text('New Bill'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF123456),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                  ),
+                  icon: Icons.add,
+                  label: 'New Bill',
                 ),
               ],
             ),
             const SizedBox(height: 20),
 
             // FILTER CARD
-            Container(
-              width: double.infinity,
+            GlassPanel(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFD9DEE5)),
-              ),
               child: Wrap(
                 spacing: 16,
                 runSpacing: 16,
@@ -206,7 +192,6 @@ class _BillsPageState extends State<BillsPage> {
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: statusFilter,
-                          style: const TextStyle(color: Colors.black),
                           isExpanded: true,
                           items: statusOptions
                               .map((s) => DropdownMenuItem(value: s, child: Text(s)))
@@ -238,25 +223,16 @@ class _BillsPageState extends State<BillsPage> {
                       child: _filterDateField(dateTo, (d) => setState(() => dateTo = d)),
                     ),
                   ),
-                  ElevatedButton(
+                  GlassButton(
                     onPressed: _loadBills,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2E7DD1),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                    ),
-                    child: const Text('Filter'),
+                    icon: Icons.filter_alt_outlined,
+                    label: 'Filter',
                   ),
-                  ElevatedButton(
+                  GlassButton(
                     onPressed: _clearFilters,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE2E5E9),
-                      foregroundColor: const Color(0xFF3D4147),
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                    ),
-                    child: const Text('Clear'),
+                    icon: Icons.refresh,
+                    label: 'Clear',
+                    primary: false,
                   ),
                 ],
               ),
@@ -264,13 +240,7 @@ class _BillsPageState extends State<BillsPage> {
             const SizedBox(height: 20),
 
             // TABLE CARD
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFD9DEE5)),
-              ),
+            GlassPanel(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SizedBox(
@@ -281,9 +251,9 @@ class _BillsPageState extends State<BillsPage> {
                       Container(
                         width: 1080,
                         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFF7F8FA),
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.35),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
                         ),
                         child: const Row(
                           children: [
@@ -398,10 +368,8 @@ class _BillsPageState extends State<BillsPage> {
   Widget _filterTextField(TextEditingController controller, String hint) {
     return TextField(
       controller: controller,
-      style: const TextStyle(color: Colors.black),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.black),
         filled: true,
         fillColor: const Color(0xFFF8F9FA),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -436,7 +404,7 @@ class _BillsPageState extends State<BillsPage> {
                 value == null
                     ? 'dd-mm-yyyy'
                     : '${value.day.toString().padLeft(2, '0')}-${value.month.toString().padLeft(2, '0')}-${value.year}',
-                style: const TextStyle(color: Colors.black, fontSize: 14),
+                style: TextStyle(color: value == null ? Colors.grey : Colors.black, fontSize: 14),
               ),
             ),
             const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF888888)),

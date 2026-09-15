@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/accountant_glass_widgets.dart';
 class TravelAllowancePage extends StatefulWidget {
   const TravelAllowancePage({super.key});
 
@@ -14,6 +15,7 @@ class _TravelAllowancePageState extends State<TravelAllowancePage> {
     showDialog(
       context: context,
       barrierDismissible: false,
+      barrierColor: const Color(0x9A12202C),
       builder: (_) {
         return _TravelAllowanceDialog(
           onSave: (allowance) {
@@ -28,8 +30,7 @@ class _TravelAllowancePageState extends State<TravelAllowancePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFF5F6F8),
+    return AccountantGlassBackground(
       child: Column(
         children: [
           // =========================================================
@@ -82,7 +83,7 @@ class _TravelAllowancePageState extends State<TravelAllowancePage> {
               padding: const EdgeInsets.symmetric(
                 horizontal: 28,
               ),
-              child: Container(
+              child: AccountantGlassHoverCard(
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -436,11 +437,11 @@ class _TravelAllowanceDialogState
   Widget build(BuildContext context) {
     return Dialog(
       insetPadding: const EdgeInsets.all(10),
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(4),
       ),
-      child: SizedBox(
+      child: AccountantGlassDialogCard(
         width: 800,
         height: MediaQuery.of(context).size.height * 0.70,
         child: Column(

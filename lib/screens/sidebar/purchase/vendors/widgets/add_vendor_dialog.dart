@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../shared/glass_modal_shell.dart';
 import '../vendor_model.dart';
 
 class AddVendorDialog extends StatefulWidget {
@@ -108,39 +109,22 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 700, maxHeight: 780),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(34, 30, 34, 28),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Add New Vendor',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF123456),
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close,
-                          color: Color(0xFFAAAAAA), size: 25),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 25),
+    return GlassModalShell(
+      maxWidth: 700,
+      maxHeight: 780,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(34, 30, 34, 28),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GlassDialogHeader(
+                title: 'Add New Vendor',
+                icon: Icons.storefront_outlined,
+                onClose: () => Navigator.pop(context),
+              ),
+              const SizedBox(height: 25),
 
                 // Vendor Type + Company Name
                 _twoColumnRow(
@@ -357,36 +341,24 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
                 ),
                 const SizedBox(height: 28),
 
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, size: 18),
-                      label: const Text('Cancel'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6C757D),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    ElevatedButton.icon(
-                      onPressed: _isSaving ? null : _saveVendor,
-                      icon: const Icon(Icons.save, size: 18),
-                      label: const Text('Save Vendor'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF123456),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  GlassButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icons.close,
+                    label: 'Cancel',
+                    primary: false,
+                  ),
+                  const SizedBox(width: 16),
+                  GlassButton(
+                    onPressed: _isSaving ? null : _saveVendor,
+                    icon: Icons.save,
+                    label: 'Save Vendor',
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -436,23 +408,21 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
   }) {
     return TextFormField(
       controller: controller,
-      style: const TextStyle(color: Colors.black),
       keyboardType: keyboardType,
       validator: validator,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.black),
         filled: true,
-        fillColor: const Color(0xFFF8F9FA),
+        fillColor: GlassSurface.fill(),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(7)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(7),
-          borderSide: const BorderSide(color: Color(0xFFD9DEE5)),
+          borderSide: BorderSide(color: GlassSurface.border()),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(7),
-          borderSide: const BorderSide(color: Color(0xFF123456), width: 2),
+          borderSide: BorderSide(color: GlassSurface.border(focused: true), width: 2),
         ),
       ),
     );
@@ -466,14 +436,13 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
+        color: GlassSurface.fill(),
         borderRadius: BorderRadius.circular(7),
-        border: Border.all(color: const Color(0xFFD9DEE5)),
+        border: Border.all(color: GlassSurface.border()),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          style: const TextStyle(color: Colors.black),
           isExpanded: true,
           items: items
               .map((item) => DropdownMenuItem(value: item, child: Text(item)))

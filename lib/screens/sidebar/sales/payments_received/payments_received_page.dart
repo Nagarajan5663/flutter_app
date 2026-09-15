@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/sales_glass_widgets.dart';
+
 import '../widgets/sales_dialog_helpers.dart';
 import 'payment_received_filter.dart';
 import 'payment_received_model.dart';
@@ -57,6 +59,7 @@ class _PaymentsReceivedPageState extends State<PaymentsReceivedPage> {
   Future<void> _openAddPayment() async {
     final payment = await showDialog<PaymentReceivedModel>(
       context: context,
+      barrierColor: const Color(0x9A12202C),
       barrierDismissible: false,
       builder: (_) => const AddPaymentReceivedDialog(),
     );
@@ -83,10 +86,7 @@ class _PaymentsReceivedPageState extends State<PaymentsReceivedPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color(0xFFF4F6F9),
+    return SalesGlassPageFrame(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -117,9 +117,9 @@ class _PaymentsReceivedPageState extends State<PaymentsReceivedPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFD9DEE5)),
+                color: const Color(0x4FFFFFFF),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xC7FFFFFF)),
               ),
               child: Wrap(
                 spacing: 16,
@@ -204,9 +204,9 @@ class _PaymentsReceivedPageState extends State<PaymentsReceivedPage> {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFD9DEE5)),
+                color: const Color(0x4FFFFFFF),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xC7FFFFFF)),
               ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,

@@ -1,45 +1,52 @@
 import 'package:flutter/material.dart';
 
-class AddReturnableAssetDialog extends StatefulWidget {
+import 'glass_widgets.dart';
+
+class AddReturnableAssetDialog
+    extends StatefulWidget {
   const AddReturnableAssetDialog({
     super.key,
   });
 
   @override
-  State<AddReturnableAssetDialog> createState() =>
-      _AddReturnableAssetDialogState();
+  State<AddReturnableAssetDialog>
+      createState() =>
+          _AddReturnableAssetDialogState();
 }
 
 class _AddReturnableAssetDialogState
-    extends State<AddReturnableAssetDialog> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+    extends State<
+        AddReturnableAssetDialog> {
+  final GlobalKey<FormState> _formKey =
+      GlobalKey<FormState>();
 
-  // ================================================================
+  // ============================================================
   // CONTROLLERS
-  // ================================================================
+  // ============================================================
 
-  final TextEditingController assetTagController =
+  final TextEditingController
+      assetTagController =
       TextEditingController();
 
-  final TextEditingController serialNumberController =
+  final TextEditingController
+      serialNumberController =
       TextEditingController();
 
-  final TextEditingController initialLocationController =
+  final TextEditingController
+      initialLocationController =
       TextEditingController();
 
-  // ================================================================
-  // DROPDOWN
-  // ================================================================
+  // ============================================================
+  // PRODUCT ITEM
+  // ============================================================
 
   String? selectedProductItem;
 
-  final List<String> productItemOptions = [
+  // EXACT EXISTING OPTION
+  final List<String>
+      productItemOptions = [
     'Select a Product Item',
   ];
-
-  // ================================================================
-  // DISPOSE
-  // ================================================================
 
   @override
   void dispose() {
@@ -50,346 +57,259 @@ class _AddReturnableAssetDialogState
     super.dispose();
   }
 
-  // ================================================================
+  // ============================================================
+  // SAVE
+  // ============================================================
+
+  void _saveAsset() {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final messenger =
+        ScaffoldMessenger.of(context);
+
+    Navigator.of(context).pop();
+
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor:
+            const Color(0xFF163F5E),
+        shape: RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.circular(12),
+        ),
+        content: const Row(
+          children: [
+            Icon(
+              Icons
+                  .check_circle_outline_rounded,
+              color: Colors.white,
+            ),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Returnable asset saved successfully.',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight:
+                      FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
   // BUILD
-  // ================================================================
+  // ============================================================
 
   @override
   Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.of(context).size;
-
-    final bool isMobile = screenSize.width < 600;
-
-    return Dialog(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      insetPadding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 10 : 35,
-        vertical: 20,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 562,
-          maxHeight: screenSize.height - 40,
+    return InventoryGlassModalShell(
+      maxWidth: 700,
+      maxHeight: 790,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          30,
+          28,
+          30,
+          28,
         ),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              isMobile ? 22 : 34,
-              isMobile ? 28 : 34,
-              isMobile ? 22 : 34,
-              isMobile ? 24 : 34,
-            ),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ==================================================
-                  // TITLE + CLOSE ICON
-                  // ==================================================
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
+              // ==================================================
+              // HEADER
+              // ==================================================
 
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Add Returnable Asset',
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF17395C),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 12),
-
-                      InkWell(
-                        onTap: () {
-                          Navigator.of(context).pop();
-                        },
-                        borderRadius: BorderRadius.circular(20),
-                        child: const Padding(
-                          padding: EdgeInsets.all(2),
-                          child: Icon(
-                            Icons.close,
-                            size: 24,
-                            color: Color(0xFFAAAAAA),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // ==================================================
-                  // 1. ITEM (TYPE OF ASSET)
-                  // ==================================================
-
-                  _buildLabel(
-                    'Item (Type of Asset)',
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  _buildProductItemDropdown(),
-
-                  const SizedBox(height: 20),
-
-                  // ==================================================
-                  // 2. ASSET TAG (UNIQUE ID)
-                  // ==================================================
-
-                  _buildLabel(
-                    'Asset Tag (Unique ID)',
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  TextFormField(
-                    controller: assetTagController,
-                    decoration: _inputDecoration(
-                      hintText: '',
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // ==================================================
-                  // 3. SERIAL NUMBER
-                  // ==================================================
-
-                  _buildLabel(
-                    'Serial Number (Optional)',
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  TextFormField(
-                    controller: serialNumberController,
-                    decoration: _inputDecoration(
-                      hintText: '',
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // ==================================================
-                  // 4. INITIAL LOCATION
-                  // ==================================================
-
-                  _buildLabel(
-                    'Initial Location',
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  TextFormField(
-                    controller: initialLocationController,
-                    decoration: _inputDecoration(
-                      hintText: '',
-                    ),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // ==================================================
-                  // BUTTONS
-                  // ==================================================
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      // ------------------------------------------------
-                      // CLOSE BUTTON
-                      // ------------------------------------------------
-
-                      SizedBox(
-                        height: 46,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          icon: const Icon(
-                            Icons.close,
-                            size: 17,
-                          ),
-                          label: const Text(
-                            'Close',
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF707981),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            textStyle: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 16),
-
-                      // ------------------------------------------------
-                      // SAVE ASSET BUTTON
-                      // ------------------------------------------------
-
-                      SizedBox(
-                        height: 46,
-                        child: ElevatedButton.icon(
-                          onPressed: _saveAsset,
-                          icon: const Icon(
-                            Icons.save,
-                            size: 17,
-                          ),
-                          label: const Text(
-                            'Save Asset',
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF12385F),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            textStyle: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              InventoryDialogHeader(
+                title:
+                    'Add Returnable Asset',
+                subtitle:
+                    'Register a reusable asset and track its availability.',
+                icon: Icons
+                    .assignment_return_outlined,
+                onClose: () {
+                  Navigator.of(context).pop();
+                },
               ),
-            ),
+
+              const SizedBox(height: 28),
+
+              // ==================================================
+              // ITEM
+              // ==================================================
+
+              const InventoryGlassLabel(
+                'Item (Type of Asset)',
+              ),
+
+              InventoryGlassDropdown(
+                value:
+                    selectedProductItem,
+                options:
+                    productItemOptions,
+                hintText:
+                    'Select a Product Item',
+                prefixIcon:
+                    Icons.inventory_outlined,
+                onChanged: (value) {
+                  setState(() {
+                    selectedProductItem =
+                        value;
+                  });
+                },
+              ),
+
+              const SizedBox(height: 19),
+
+              // ==================================================
+              // TAG + SERIAL
+              // ==================================================
+
+              LayoutBuilder(
+                builder: (
+                  context,
+                  constraints,
+                ) {
+                  final bool twoColumns =
+                      constraints.maxWidth >=
+                          520;
+
+                  final Widget tagField =
+                      Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      const InventoryGlassLabel(
+                        'Asset Tag (Unique ID)',
+                      ),
+
+                      InventoryGlassTextField(
+                        controller:
+                            assetTagController,
+                        hintText:
+                            'Enter asset tag',
+                        prefixIcon:
+                            Icons.qr_code_rounded,
+                      ),
+                    ],
+                  );
+
+                  final Widget serialField =
+                      Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      const InventoryGlassLabel(
+                        'Serial Number (Optional)',
+                      ),
+
+                      InventoryGlassTextField(
+                        controller:
+                            serialNumberController,
+                        hintText:
+                            'Enter serial number',
+                        prefixIcon:
+                            Icons.tag_rounded,
+                      ),
+                    ],
+                  );
+
+                  if (twoColumns) {
+                    return Row(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: tagField,
+                        ),
+                        const SizedBox(
+                          width: 16,
+                        ),
+                        Expanded(
+                          child: serialField,
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Column(
+                    children: [
+                      tagField,
+                      const SizedBox(
+                        height: 19,
+                      ),
+                      serialField,
+                    ],
+                  );
+                },
+              ),
+
+              const SizedBox(height: 19),
+
+              // ==================================================
+              // LOCATION
+              // ==================================================
+
+              const InventoryGlassLabel(
+                'Initial Location',
+              ),
+
+              InventoryGlassTextField(
+                controller:
+                    initialLocationController,
+                hintText:
+                    'Enter initial location',
+                prefixIcon:
+                    Icons.location_on_outlined,
+              ),
+
+              const SizedBox(height: 30),
+
+              // ==================================================
+              // BUTTONS
+              // ==================================================
+
+              Align(
+                alignment:
+                    Alignment.centerRight,
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 10,
+                  alignment:
+                      WrapAlignment.end,
+                  children: [
+                    InventoryGlassButton(
+                      label: 'Close',
+                      icon:
+                          Icons.close_rounded,
+                      primary: false,
+                      onPressed: () {
+                        Navigator.of(context)
+                            .pop();
+                      },
+                    ),
+
+                    InventoryGlassButton(
+                      label: 'Save Asset',
+                      icon:
+                          Icons.save_outlined,
+                      onPressed: _saveAsset,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ),
-      ),
-    );
-  }
-
-  // ================================================================
-  // PRODUCT ITEM DROPDOWN
-  // ================================================================
-
-  Widget _buildProductItemDropdown() {
-    return DropdownButtonFormField<String>(
-      initialValue: selectedProductItem,
-      isExpanded: true,
-      dropdownColor: Colors.white,
-      icon: const Icon(
-        Icons.keyboard_arrow_down,
-        color: Colors.black,
-      ),
-      decoration: _inputDecoration(
-        hintText: 'Select a Product Item',
-      ),
-      items: productItemOptions.map(
-        (String item) {
-          return DropdownMenuItem<String>(
-            value: item,
-            child: Text(
-              item,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Color(0xFF222222),
-              ),
-            ),
-          );
-        },
-      ).toList(),
-      onChanged: (String? value) {
-        setState(() {
-          selectedProductItem = value;
-        });
-      },
-    );
-  }
-
-  // ================================================================
-  // LABEL
-  // ================================================================
-
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: Color(0xFF3D4147),
-      ),
-    );
-  }
-
-  // ================================================================
-  // INPUT DECORATION
-  // ================================================================
-
-  InputDecoration _inputDecoration({
-    required String hintText,
-  }) {
-    return InputDecoration(
-      hintText: hintText,
-      hintStyle: const TextStyle(
-        fontSize: 16,
-        color: Color(0xFF222222),
-      ),
-      filled: true,
-      fillColor: const Color(0xFFF8F9FA),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 14,
-      ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6),
-        borderSide: const BorderSide(
-          color: Color(0xFFD8DEE5),
-        ),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6),
-        borderSide: const BorderSide(
-          color: Color(0xFFD8DEE5),
-        ),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6),
-        borderSide: const BorderSide(
-          color: Color(0xFF17395C),
-          width: 1.3,
-        ),
-      ),
-    );
-  }
-
-  // ================================================================
-  // SAVE ASSET
-  // ================================================================
-
-  void _saveAsset() {
-    Navigator.of(context).pop();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Returnable asset saved successfully.',
         ),
       ),
     );

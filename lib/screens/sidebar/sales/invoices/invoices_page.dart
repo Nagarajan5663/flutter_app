@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/sales_glass_widgets.dart';
+
 import '../widgets/sales_dialog_helpers.dart';
 import 'invoice_filter.dart';
 import 'invoice_model.dart';
@@ -58,6 +60,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
   Future<void> _openAddInvoice() async {
     final invoice = await showDialog<InvoiceModel>(
       context: context,
+      barrierColor: const Color(0x9A12202C),
       barrierDismissible: false,
       builder: (_) => const AddInvoiceDialog(),
     );
@@ -106,10 +109,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color(0xFFF4F6F9),
+    return SalesGlassPageFrame(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -140,9 +140,9 @@ class _InvoicesPageState extends State<InvoicesPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFD9DEE5)),
+                color: const Color(0x4FFFFFFF),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xC7FFFFFF)),
               ),
               child: Wrap(
                 spacing: 16,
@@ -159,9 +159,9 @@ class _InvoicesPageState extends State<InvoicesPage> {
                         width: 150,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8F9FA),
-                          borderRadius: BorderRadius.circular(7),
-                          border: Border.all(color: const Color(0xFFD9DEE5)),
+                          color: const Color(0x6EFFFFFF),
+                          borderRadius: BorderRadius.circular(11),
+                          border: Border.all(color: const Color(0xC7FFFFFF)),
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
@@ -246,9 +246,9 @@ class _InvoicesPageState extends State<InvoicesPage> {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFD9DEE5)),
+                color: const Color(0x4FFFFFFF),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xC7FFFFFF)),
               ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,

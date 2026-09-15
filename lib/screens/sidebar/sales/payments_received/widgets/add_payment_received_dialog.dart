@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../widgets/sales_glass_widgets.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 
 import '../../customer/customer_model.dart';
@@ -111,7 +113,7 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return SalesGlassDialog(
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -246,9 +248,9 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF8F9FA),
-                                borderRadius: BorderRadius.circular(7),
-                                border: Border.all(color: const Color(0xFFD9DEE5)),
+                                color: const Color(0x6EFFFFFF),
+                                borderRadius: BorderRadius.circular(11),
+                                border: Border.all(color: const Color(0xC7FFFFFF)),
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<String>(

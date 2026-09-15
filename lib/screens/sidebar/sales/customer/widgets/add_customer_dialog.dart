@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../widgets/sales_glass_widgets.dart';
+
 import '../customer_model.dart';
 
 class AddCustomerDialog extends StatefulWidget {
@@ -108,7 +110,7 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return SalesGlassDialog(
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -443,15 +445,15 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.black),
         filled: true,
-        fillColor: const Color(0xFFF8F9FA),
+        fillColor: const Color(0x6EFFFFFF),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(7)),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(7),
+          borderRadius: BorderRadius.circular(11),
           borderSide: const BorderSide(color: Color(0xFFD9DEE5)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(7),
+          borderRadius: BorderRadius.circular(11),
           borderSide: const BorderSide(color: Color(0xFF123456), width: 2),
         ),
       ),
@@ -466,9 +468,9 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(7),
-        border: Border.all(color: const Color(0xFFD9DEE5)),
+        color: const Color(0x6EFFFFFF),
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(color: const Color(0xC7FFFFFF)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../shared/glass_modal_shell.dart';
 import 'vendor_filter.dart';
 import 'vendor_model.dart';
 import 'vendor_repository.dart';
@@ -93,10 +94,7 @@ class _VendorsPageState extends State<VendorsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color(0xFFF4F6F9),
+    return GlassPageBackground(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -114,29 +112,17 @@ class _VendorsPageState extends State<VendorsPage> {
                     ),
                   ),
                 ),
-                ElevatedButton.icon(
+                GlassButton(
                   onPressed: _openAddVendor,
-                  icon: const Icon(Icons.add, size: 20),
-                  label: const Text('New Vendor'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF123456),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                  ),
+                  icon: Icons.add,
+                  label: 'New Vendor',
                 ),
               ],
             ),
             const SizedBox(height: 20),
 
-            Container(
-              width: double.infinity,
+            GlassPanel(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFD9DEE5)),
-              ),
               child: Wrap(
                 spacing: 16,
                 runSpacing: 16,
@@ -155,7 +141,6 @@ class _VendorsPageState extends State<VendorsPage> {
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: statusFilter,
-                          style: const TextStyle(color: Colors.black),
                           isExpanded: true,
                           items: const [
                             DropdownMenuItem(value: 'All', child: Text('All')),
@@ -182,38 +167,23 @@ class _VendorsPageState extends State<VendorsPage> {
                     label: 'Country',
                     child: SizedBox(width: 160, child: _filterTextField(countryController)),
                   ),
-                  ElevatedButton(
+                  GlassButton(
                     onPressed: _loadVendors,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2E7DD1),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                    ),
-                    child: const Text('Filter'),
+                    icon: Icons.filter_alt_outlined,
+                    label: 'Filter',
                   ),
-                  ElevatedButton(
+                  GlassButton(
                     onPressed: _clearFilters,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE2E5E9),
-                      foregroundColor: const Color(0xFF3D4147),
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                    ),
-                    child: const Text('Clear'),
+                    icon: Icons.refresh,
+                    label: 'Clear',
+                    primary: false,
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
 
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFD9DEE5)),
-              ),
+            GlassPanel(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SizedBox(
@@ -224,9 +194,9 @@ class _VendorsPageState extends State<VendorsPage> {
                       Container(
                         width: 950,
                         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFF7F8FA),
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.35),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
                         ),
                         child: const Row(
                           children: [
@@ -340,7 +310,6 @@ class _VendorsPageState extends State<VendorsPage> {
   Widget _filterTextField(TextEditingController controller) {
     return TextField(
       controller: controller,
-      style: const TextStyle(color: Colors.black),
       decoration: InputDecoration(
         filled: true,
         fillColor: const Color(0xFFF8F9FA),

@@ -33,6 +33,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  assets:
+    - lib/widgets/Codexia_OG1.8.png
+
   # Uncomment this section only if you have assets
   #
   # assets:

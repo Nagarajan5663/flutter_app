@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/sales_glass_widgets.dart';
+
 import 'customer_filter.dart';
 import 'customer_model.dart';
 import 'customer_repository.dart';
@@ -62,6 +64,7 @@ class _CustomersPageState extends State<CustomersPage> {
   Future<void> _openAddCustomer() async {
     final CustomerModel? customer = await showDialog<CustomerModel>(
       context: context,
+      barrierColor: const Color(0x9A12202C),
       barrierDismissible: false,
       builder: (_) => const AddCustomerDialog(),
     );
@@ -93,10 +96,7 @@ class _CustomersPageState extends State<CustomersPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color(0xFFF4F6F9),
+    return SalesGlassPageFrame(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -133,9 +133,9 @@ class _CustomersPageState extends State<CustomersPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFD9DEE5)),
+                color: const Color(0x4FFFFFFF),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xC7FFFFFF)),
               ),
               child: Wrap(
                 spacing: 16,
@@ -148,9 +148,9 @@ class _CustomersPageState extends State<CustomersPage> {
                       width: 160,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FA),
-                        borderRadius: BorderRadius.circular(7),
-                        border: Border.all(color: const Color(0xFFD9DEE5)),
+                        color: const Color(0x6EFFFFFF),
+                        borderRadius: BorderRadius.circular(11),
+                        border: Border.all(color: const Color(0xC7FFFFFF)),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
@@ -210,9 +210,9 @@ class _CustomersPageState extends State<CustomersPage> {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFD9DEE5)),
+                color: const Color(0x4FFFFFFF),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xC7FFFFFF)),
               ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -344,15 +344,15 @@ class _CustomersPageState extends State<CustomersPage> {
       decoration: InputDecoration(
         hintStyle: const TextStyle(color: Colors.black),
         filled: true,
-        fillColor: const Color(0xFFF8F9FA),
+        fillColor: const Color(0x6EFFFFFF),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(7)),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(7),
+          borderRadius: BorderRadius.circular(11),
           borderSide: const BorderSide(color: Color(0xFFD9DEE5)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(7),
+          borderRadius: BorderRadius.circular(11),
           borderSide: const BorderSide(color: Color(0xFF123456), width: 2),
         ),
       ),

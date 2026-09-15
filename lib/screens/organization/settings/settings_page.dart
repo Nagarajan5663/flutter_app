@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../organization_page.dart';
-import '../general_settings_page.dart';
-import '../manage_subscription_page.dart';
+import 'shared/glass_widgets.dart';
+import '../../organization/organization_page.dart';
+import '../../organization/general_settings_page.dart';
+import '../../organization/manage_subscription_page.dart';
 
 class SettingsPage extends StatefulWidget {
   final VoidCallback? onClose;
@@ -149,10 +150,7 @@ class _SettingsPageState extends State<SettingsPage> {
     // ALL SETTINGS PAGE
     // ==============================================================
 
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color(0xFFF5F7FA),
+    return GlassPageBackground(
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,16 +162,15 @@ class _SettingsPageState extends State<SettingsPage> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(
-                24,
-                22,
-                24,
                 20,
+                18,
+                20,
+                16,
               ),
               decoration: const BoxDecoration(
-                color: Color(0xFFF5F7FA),
                 border: Border(
                   bottom: BorderSide(
-                    color: Color(0xFFE1E5E8),
+                    color: Colors.white24,
                   ),
                 ),
               ),
@@ -188,17 +185,13 @@ class _SettingsPageState extends State<SettingsPage> {
                       children: [
                         _buildTitle(),
 
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 14),
 
                         SizedBox(
                           width: double.infinity,
-                          height: 42,
+                          height: 38,
                           child: _buildSearchField(),
                         ),
-
-                        const SizedBox(height: 12),
-
-                        _buildCloseButton(),
                       ],
                     );
                   }
@@ -211,17 +204,13 @@ class _SettingsPageState extends State<SettingsPage> {
                         child: _buildTitle(),
                       ),
 
-                      const SizedBox(width: 20),
+                      const SizedBox(width: 16),
 
                       SizedBox(
-                        width: 260,
-                        height: 42,
+                        width: 220,
+                        height: 38,
                         child: _buildSearchField(),
                       ),
-
-                      const SizedBox(width: 14),
-
-                      _buildCloseButton(),
                     ],
                   );
                 },
@@ -234,48 +223,40 @@ class _SettingsPageState extends State<SettingsPage> {
 
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                24,
-                24,
-                24,
-                35,
+                20,
+                18,
+                20,
+                26,
               ),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(
-                  24,
-                  24,
-                  24,
-                  35,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius:
-                      BorderRadius.circular(11),
-                  border: Border.all(
-                    color: const Color(0xFFDDE3E7),
+              child: GlassPanel(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    18,
+                    18,
+                    18,
+                    24,
                   ),
-                ),
-                child: Column(
+                  child: Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'Organization Settings',
                       style: TextStyle(
-                        color: Color(0xFF262B2F),
-                        fontSize: 22,
+                        color: Colors.white,
+                        fontSize: 19,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
 
-                    const Divider(
+                    Divider(
                       height: 1,
-                      color: Color(0xFFE4E8EA),
+                      color: Colors.white.withValues(alpha: 0.16),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 18),
 
                     LayoutBuilder(
                       builder:
@@ -295,21 +276,21 @@ class _SettingsPageState extends State<SettingsPage> {
                                     _organizationColumn(),
                               ),
 
-                              const SizedBox(width: 35),
+                              const SizedBox(width: 26),
 
                               Expanded(
                                 child:
                                     _usersAndTaxColumn(),
                               ),
 
-                              const SizedBox(width: 35),
+                              const SizedBox(width: 26),
 
                               Expanded(
                                 child:
                                     _setupColumn(),
                               ),
 
-                              const SizedBox(width: 35),
+                              const SizedBox(width: 26),
 
                               Expanded(
                                 child:
@@ -327,12 +308,12 @@ class _SettingsPageState extends State<SettingsPage> {
                             600) {
                           final columnWidth =
                               (constraints.maxWidth -
-                                      30) /
+                                      22) /
                                   2;
 
                           return Wrap(
-                            spacing: 30,
-                            runSpacing: 35,
+                            spacing: 22,
+                            runSpacing: 26,
                             children: [
                               SizedBox(
                                 width: columnWidth,
@@ -371,15 +352,15 @@ class _SettingsPageState extends State<SettingsPage> {
                           children: [
                             _organizationColumn(),
 
-                            const SizedBox(height: 35),
+                            const SizedBox(height: 26),
 
                             _usersAndTaxColumn(),
 
-                            const SizedBox(height: 35),
+                            const SizedBox(height: 26),
 
                             _setupColumn(),
 
-                            const SizedBox(height: 35),
+                            const SizedBox(height: 26),
 
                             _customizationColumn(),
                           ],
@@ -387,6 +368,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       },
                     ),
                   ],
+                ),
                 ),
               ),
             ),
@@ -408,19 +390,19 @@ class _SettingsPageState extends State<SettingsPage> {
         Text(
           'All Settings',
           style: TextStyle(
-            color: Color(0xFF252A2E),
-            fontSize: 29,
+            color: Colors.white,
+            fontSize: 24,
             fontWeight: FontWeight.w700,
           ),
         ),
 
-        SizedBox(height: 5),
+        SizedBox(height: 4),
 
         Text(
           'Manage your organization settings and preferences',
           style: TextStyle(
-            color: Color(0xFF747E85),
-            fontSize: 14,
+            color: Color(0xFFAAB4C4),
+            fontSize: 13,
           ),
         ),
       ],
@@ -434,6 +416,10 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildSearchField() {
     return TextField(
       controller: _searchController,
+      style: const TextStyle(
+        color: GlassSurface.inputText,
+        fontSize: 13.5,
+      ),
       onChanged: (value) {
         setState(() {
           _searchText = value;
@@ -441,21 +427,21 @@ class _SettingsPageState extends State<SettingsPage> {
       },
       decoration: InputDecoration(
         hintText: 'Search settings (/)',
-        hintStyle: const TextStyle(
-          color: Color(0xFF9AA5AD),
-          fontSize: 14,
+        hintStyle: TextStyle(
+          color: GlassSurface.hintText,
+          fontSize: 13.5,
         ),
-        prefixIcon: const Icon(
+        prefixIcon: Icon(
           Icons.search_rounded,
-          size: 20,
-          color: Color(0xFF8C9AA4),
+          size: 18,
+          color: GlassSurface.hintText,
         ),
         suffixIcon: _searchText.isNotEmpty
             ? IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.close_rounded,
-                  size: 18,
-                  color: Color(0xFF8C9AA4),
+                  size: 16,
+                  color: GlassSurface.hintText,
                 ),
                 onPressed: () {
                   _searchController.clear();
@@ -467,60 +453,24 @@ class _SettingsPageState extends State<SettingsPage> {
               )
             : null,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: GlassSurface.fill(),
         contentPadding:
             const EdgeInsets.symmetric(
-          vertical: 10,
+          vertical: 8,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius:
               BorderRadius.circular(7),
-          borderSide: const BorderSide(
-            color: Color(0xFFD4DBE0),
+          borderSide: BorderSide(
+            color: GlassSurface.border(),
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius:
               BorderRadius.circular(7),
-          borderSide: const BorderSide(
-            color: Color(0xFF3978FF),
+          borderSide: BorderSide(
+            color: GlassSurface.border(focused: true),
           ),
-        ),
-      ),
-    );
-  }
-
-  // ================================================================
-  // CLOSE BUTTON
-  // ================================================================
-
-  Widget _buildCloseButton() {
-    return TextButton.icon(
-      onPressed: widget.onClose ??
-          () {
-            Navigator.maybePop(context);
-          },
-      icon: const Icon(
-        Icons.close_rounded,
-        size: 18,
-        color: Color(0xFF4C4FEA),
-      ),
-      label: const Text(
-        'Close Settings',
-      ),
-      style: TextButton.styleFrom(
-        foregroundColor:
-            const Color(0xFF4C4FEA),
-        backgroundColor:
-            const Color(0xFFECEBFF),
-        padding:
-            const EdgeInsets.symmetric(
-          horizontal: 15,
-          vertical: 12,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.circular(6),
         ),
       ),
     );
@@ -542,7 +492,7 @@ class _SettingsPageState extends State<SettingsPage> {
           title: 'Organization',
         ),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
 
         if (_matches('Profile'))
           _settingLink(
@@ -615,7 +565,7 @@ class _SettingsPageState extends State<SettingsPage> {
           title: 'Users & Roles',
         ),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
 
         if (_matches('Users'))
           _settingLink(
@@ -644,7 +594,7 @@ class _SettingsPageState extends State<SettingsPage> {
             },
           ),
 
-        const SizedBox(height: 25),
+        const SizedBox(height: 18),
 
         _sectionTitle(
           icon: Icons.shield_outlined,
@@ -653,7 +603,7 @@ class _SettingsPageState extends State<SettingsPage> {
           title: 'Taxes & Compliance',
         ),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
 
         if (_matches('Taxes'))
           _settingLink(
@@ -713,7 +663,7 @@ class _SettingsPageState extends State<SettingsPage> {
               'Setup & Configurations',
         ),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
 
         if (_matches('Currencies'))
           _settingLink(
@@ -787,7 +737,7 @@ class _SettingsPageState extends State<SettingsPage> {
           title: 'Customization',
         ),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
 
         if (_matches(
             'Transaction Number Series'))
@@ -883,8 +833,8 @@ class _SettingsPageState extends State<SettingsPage> {
     return Row(
       children: [
         Container(
-          width: 30,
-          height: 30,
+          width: 26,
+          height: 26,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: iconColor,
@@ -894,18 +844,18 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Icon(
             icon,
             color: Colors.white,
-            size: 17,
+            size: 15,
           ),
         ),
 
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
 
         Expanded(
           child: Text(
             title,
             style: const TextStyle(
-              color: Color(0xFF292E32),
-              fontSize: 16,
+              color: Colors.white,
+              fontSize: 14.5,
               fontWeight:
                   FontWeight.w600,
             ),
@@ -923,35 +873,9 @@ class _SettingsPageState extends State<SettingsPage> {
     required String title,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius:
-            BorderRadius.circular(4),
-        hoverColor:
-            const Color(0xFFF0F5FF),
-        child: Padding(
-          padding:
-              const EdgeInsets.symmetric(
-            vertical: 7,
-            horizontal: 4,
-          ),
-          child: Align(
-            alignment:
-                Alignment.centerLeft,
-            child: Text(
-              title,
-              style: const TextStyle(
-                color: Color(0xFF2767F4),
-                fontSize: 14,
-                fontWeight:
-                    FontWeight.w400,
-              ),
-            ),
-          ),
-        ),
-      ),
+    return GlassLinkTile(
+      title: title,
+      onTap: onTap,
     );
   }
 }

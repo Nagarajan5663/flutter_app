@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart';
 
 import '../auth/login_page.dart';
 import '../auth/signup_page.dart';
+import '../../widgets/codexia_logo.dart';
 
 /// ============================================================
 /// CODEXIA — dark navy / gold "executive glass" home page.
@@ -321,31 +322,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildWordmark() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: secondaryContainer.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Icon(Icons.terminal, color: secondary, size: 24),
-        ),
-        const SizedBox(width: 10),
-        Text(
-          'CODEXIA',
-          style: TextStyle(
-            color: secondary,
-            fontSize: 17,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 2.5,
-            shadows: [Shadow(color: secondary.withValues(alpha: 0.3), blurRadius: 12)],
-          ),
-        ),
-      ],
-    );
+    return const CodexiaLogo(iconSize: 31);
   }
 
   // ============================================================
@@ -2272,7 +2249,7 @@ class _TiltCardState extends State<_TiltCard> {
   double _rotateY = 0;
   bool _hovered = false;
 
-  void _onHover(PointerHoverEvent event) {
+  void _onHover(PointerEvent event) {
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return;
     final local = box.globalToLocal(event.position);

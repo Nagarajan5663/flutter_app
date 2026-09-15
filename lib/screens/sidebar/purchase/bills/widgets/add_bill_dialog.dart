@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:file_picker/file_picker.dart';
 
+import '../../shared/glass_modal_shell.dart';
 import '../../purchase_orders/purchase_order_item_model.dart';
 import '../../vendors/vendor_model.dart';
 import '../../vendors/vendor_repository.dart';
@@ -170,41 +171,25 @@ class _AddBillDialogState extends State<AddBillDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 900, maxHeight: 820),
-        child: _isLoading
-            ? const Padding(
-                padding: EdgeInsets.all(60),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            : SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(34, 30, 34, 28),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'New Bill',
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF123456),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close, color: Color(0xFFAAAAAA), size: 25),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
+    return GlassModalShell(
+      maxWidth: 900,
+      maxHeight: 820,
+      child: _isLoading
+          ? const Padding(
+              padding: EdgeInsets.all(60),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(34, 30, 34, 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GlassDialogHeader(
+                    title: 'New Bill',
+                    icon: Icons.receipt_long_outlined,
+                    onClose: () => Navigator.pop(context),
+                  ),
+                  const SizedBox(height: 20),
 
                     if (_errorText != null) ...[
                       Container(
@@ -384,13 +369,10 @@ class _AddBillDialogState extends State<AddBillDialog> {
                                 alignment: Alignment.centerLeft,
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF0F2F4),
+                                  color: GlassSurface.fill(emphasized: true),
                                   borderRadius: BorderRadius.circular(7),
                                 ),
-                                child: Text(
-                                  row.amount.toStringAsFixed(2),
-                                  style: const TextStyle(color: Colors.black),
-                                ),
+                                child: Text(row.amount.toStringAsFixed(2)),
                               ),
                             ),
                             SizedBox(
@@ -425,10 +407,7 @@ class _AddBillDialogState extends State<AddBillDialog> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text('Sub Total', style: TextStyle(color: Color(0xFF5B5B5B))),
-                                Text(
-                                  'INR ${_subTotal.toStringAsFixed(2)}',
-                                  style: const TextStyle(color: Colors.black),
-                                ),
+                                Text('INR ${_subTotal.toStringAsFixed(2)}'),
                               ],
                             ),
                             const SizedBox(height: 10),
@@ -444,18 +423,17 @@ class _AddBillDialogState extends State<AddBillDialog> {
                                     textAlign: TextAlign.right,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     onChanged: (_) => setState(() {}),
-                                    style: const TextStyle(color: Colors.black),
                                     decoration: InputDecoration(
                                       prefixText: 'INR ',
                                       isDense: true,
                                       contentPadding:
                                           const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                                       filled: true,
-                                      fillColor: const Color(0xFFF8F9FA),
+                                      fillColor: GlassSurface.fill(),
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(7)),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(7),
-                                        borderSide: const BorderSide(color: Color(0xFFD9DEE5)),
+                                        borderSide: BorderSide(color: GlassSurface.border()),
                                       ),
                                     ),
                                   ),
@@ -470,11 +448,7 @@ class _AddBillDialogState extends State<AddBillDialog> {
                                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                 Text(
                                   'INR ${_total.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                 ),
                               ],
                             ),
@@ -484,38 +458,26 @@ class _AddBillDialogState extends State<AddBillDialog> {
                     ),
                     const SizedBox(height: 24),
 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close, size: 18),
-                          label: const Text('Cancel'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6C757D),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        ElevatedButton.icon(
-                          onPressed: _isSaving ? null : _saveBill,
-                          icon: const Icon(Icons.save, size: 18),
-                          label: const Text('Save Bill'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF123456),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      GlassButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icons.close,
+                        label: 'Cancel',
+                        primary: false,
+                      ),
+                      const SizedBox(width: 16),
+                      GlassButton(
+                        onPressed: _isSaving ? null : _saveBill,
+                        icon: Icons.save,
+                        label: 'Save Bill',
+                      ),
+                    ],
+                  ),
+                ],
               ),
-      ),
+            ),
     );
   }
 
@@ -533,18 +495,17 @@ class _AddBillDialogState extends State<AddBillDialog> {
   InputDecoration _fieldDecoration({String? hint}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Colors.black),
       filled: true,
-      fillColor: const Color(0xFFF8F9FA),
+      fillColor: GlassSurface.fill(),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(7)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
-        borderSide: const BorderSide(color: Color(0xFFD9DEE5)),
+        borderSide: BorderSide(color: GlassSurface.border()),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
-        borderSide: const BorderSide(color: Color(0xFF123456), width: 2),
+        borderSide: BorderSide(color: GlassSurface.border(focused: true), width: 2),
       ),
     );
   }
@@ -559,7 +520,6 @@ class _AddBillDialogState extends State<AddBillDialog> {
   }) {
     return TextField(
       controller: controller,
-      style: const TextStyle(color: Colors.black),
       keyboardType: keyboardType,
       maxLines: maxLines,
       enabled: enabled,
@@ -575,9 +535,9 @@ class _AddBillDialogState extends State<AddBillDialog> {
         height: 50,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F9FA),
+          color: GlassSurface.fill(),
           borderRadius: BorderRadius.circular(7),
-          border: Border.all(color: const Color(0xFFD9DEE5)),
+          border: Border.all(color: GlassSurface.border()),
         ),
         child: Row(
           children: [
@@ -586,7 +546,7 @@ class _AddBillDialogState extends State<AddBillDialog> {
                 value == null
                     ? 'dd-mm-yyyy'
                     : '${value.day.toString().padLeft(2, '0')}-${value.month.toString().padLeft(2, '0')}-${value.year}',
-                style: const TextStyle(color: Colors.black),
+                style: TextStyle(color: value == null ? Colors.grey : Colors.black),
               ),
             ),
             const Icon(Icons.calendar_today_outlined, size: 18, color: Color(0xFF888888)),

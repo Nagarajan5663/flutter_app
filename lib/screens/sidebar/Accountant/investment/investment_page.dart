@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../widgets/accountant_glass_widgets.dart';
 // =====================================================================
 // INVESTMENTS PAGE
 // =====================================================================
@@ -23,6 +24,7 @@ class _InvestmentPageState extends State<InvestmentPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
+      barrierColor: const Color(0x9A12202C),
       builder: (context) {
         return NewInvestmentDialog(
           nextNumber: 'INV-$_investmentCounter',
@@ -54,10 +56,7 @@ class _InvestmentPageState extends State<InvestmentPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color(0xFFF4F6F9),
+    return AccountantGlassBackground(
       child: Stack(
         children: [
           // =========================================================
@@ -72,7 +71,7 @@ class _InvestmentPageState extends State<InvestmentPage> {
               height: 700,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: Colors.white.withValues(alpha: 0.06),
               ),
             ),
           ),
@@ -85,7 +84,7 @@ class _InvestmentPageState extends State<InvestmentPage> {
               height: 700,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: Colors.white.withValues(alpha: 0.06),
               ),
             ),
           ),
@@ -146,7 +145,7 @@ class _InvestmentPageState extends State<InvestmentPage> {
                 // TABLE CARD
                 // ===================================================
 
-                Container(
+                AccountantGlassHoverCard(
                   width: double.infinity,
                   constraints: const BoxConstraints(
                     minHeight: 350,
@@ -822,7 +821,7 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
           maxWidth: 720,
           maxHeight: 600,
         ),
-        child: Container(
+        child: AccountantGlassDialogCard(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
@@ -1545,7 +1544,7 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
       ),
 
       filled: true,
-      fillColor: Colors.white,
+      fillColor: Colors.white.withValues(alpha: 0.45),
 
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 
+import '../../shared/glass_modal_shell.dart';
 import '../../vendors/vendor_model.dart';
 import '../../vendors/vendor_repository.dart';
 import '../vendor_credit_repository.dart';
@@ -99,41 +100,25 @@ class _AddVendorCreditDialogState extends State<AddVendorCreditDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 640, maxHeight: 620),
-        child: _isLoading
-            ? const Padding(
-                padding: EdgeInsets.all(60),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            : SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(34, 30, 34, 28),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'New Vendor Credit Note',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF123456),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close, color: Color(0xFFAAAAAA), size: 25),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
+    return GlassModalShell(
+      maxWidth: 640,
+      maxHeight: 620,
+      child: _isLoading
+          ? const Padding(
+              padding: EdgeInsets.all(60),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(34, 30, 34, 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GlassDialogHeader(
+                    title: 'New Vendor Credit Note',
+                    icon: Icons.request_quote_outlined,
+                    onClose: () => Navigator.pop(context),
+                  ),
+                  const SizedBox(height: 20),
 
                     if (_errorText != null) ...[
                       Container(
@@ -209,36 +194,26 @@ class _AddVendorCreditDialogState extends State<AddVendorCreditDialog> {
                     ),
                     const SizedBox(height: 24),
 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6C757D),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                          ),
-                          child: const Text('Cancel'),
-                        ),
-                        const SizedBox(width: 16),
-                        ElevatedButton(
-                          onPressed: _isSaving ? null : _save,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2E7DD1),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                          ),
-                          child: const Text('Save'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      GlassButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icons.close,
+                        label: 'Cancel',
+                        primary: false,
+                      ),
+                      const SizedBox(width: 16),
+                      GlassButton(
+                        onPressed: _isSaving ? null : _save,
+                        icon: Icons.save,
+                        label: 'Save',
+                      ),
+                    ],
+                  ),
+                ],
               ),
-      ),
+            ),
     );
   }
 
@@ -256,18 +231,17 @@ class _AddVendorCreditDialogState extends State<AddVendorCreditDialog> {
   InputDecoration _fieldDecoration({String? hint}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Colors.black),
       filled: true,
-      fillColor: const Color(0xFFF8F9FA),
+      fillColor: GlassSurface.fill(),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(7)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
-        borderSide: const BorderSide(color: Color(0xFFD9DEE5)),
+        borderSide: BorderSide(color: GlassSurface.border()),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
-        borderSide: const BorderSide(color: Color(0xFF123456), width: 2),
+        borderSide: BorderSide(color: GlassSurface.border(focused: true), width: 2),
       ),
     );
   }
@@ -281,7 +255,6 @@ class _AddVendorCreditDialogState extends State<AddVendorCreditDialog> {
   }) {
     return TextField(
       controller: controller,
-      style: const TextStyle(color: Colors.black),
       keyboardType: keyboardType,
       maxLines: maxLines,
       enabled: enabled,
@@ -296,9 +269,9 @@ class _AddVendorCreditDialogState extends State<AddVendorCreditDialog> {
         height: 50,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F9FA),
+          color: GlassSurface.fill(),
           borderRadius: BorderRadius.circular(7),
-          border: Border.all(color: const Color(0xFFD9DEE5)),
+          border: Border.all(color: GlassSurface.border()),
         ),
         child: Row(
           children: [
@@ -307,7 +280,7 @@ class _AddVendorCreditDialogState extends State<AddVendorCreditDialog> {
                 value == null
                     ? 'dd-mm-yyyy'
                     : '${value.day.toString().padLeft(2, '0')}-${value.month.toString().padLeft(2, '0')}-${value.year}',
-                style: const TextStyle(color: Colors.black),
+                style: TextStyle(color: value == null ? Colors.grey : Colors.black),
               ),
             ),
             const Icon(Icons.calendar_today_outlined, size: 18, color: Color(0xFF888888)),

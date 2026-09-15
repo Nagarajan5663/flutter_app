@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/sales_glass_widgets.dart';
+
 import '../widgets/sales_dialog_helpers.dart';
 import 'delivery_challan_filter.dart';
 import 'delivery_challan_model.dart';
@@ -54,6 +56,7 @@ class _DeliveryChallansPageState extends State<DeliveryChallansPage> {
   Future<void> _openAddChallan() async {
     final challan = await showDialog<DeliveryChallanModel>(
       context: context,
+      barrierColor: const Color(0x9A12202C),
       barrierDismissible: false,
       builder: (_) => const AddDeliveryChallanDialog(),
     );
@@ -79,10 +82,7 @@ class _DeliveryChallansPageState extends State<DeliveryChallansPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color(0xFFF4F6F9),
+    return SalesGlassPageFrame(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -113,9 +113,9 @@ class _DeliveryChallansPageState extends State<DeliveryChallansPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFD9DEE5)),
+                color: const Color(0x4FFFFFFF),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xC7FFFFFF)),
               ),
               child: Wrap(
                 spacing: 16,
@@ -191,9 +191,9 @@ class _DeliveryChallansPageState extends State<DeliveryChallansPage> {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFD9DEE5)),
+                color: const Color(0x4FFFFFFF),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xC7FFFFFF)),
               ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,

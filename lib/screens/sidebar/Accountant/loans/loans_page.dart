@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../widgets/accountant_glass_widgets.dart';
 class LoansPage extends StatefulWidget {
   const LoansPage({
     super.key,
@@ -18,6 +19,7 @@ class _LoansPageState extends State<LoansPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
+      barrierColor: const Color(0x9A12202C),
       builder: (context) {
         return _NewLoanDialog(
           onSave: (loan) {
@@ -32,8 +34,7 @@ class _LoansPageState extends State<LoansPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFF5F6F8),
+    return AccountantGlassBackground(
       child: Column(
         children: [
           // ==========================================================
@@ -86,7 +87,7 @@ class _LoansPageState extends State<LoansPage> {
           // ==========================================================
 
           Expanded(
-            child: Container(
+            child: AccountantGlassHoverCard(
               margin: const EdgeInsets.fromLTRB(28, 0, 28, 28),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -517,7 +518,7 @@ class _NewLoanDialogState extends State<_NewLoanDialog> {
       insetPadding: const EdgeInsets.all(20),
       child: SizedBox(
         width: dialogWidth,
-        child: Container(
+        child: AccountantGlassDialogCard(
           constraints: const BoxConstraints(
             maxHeight: 780,
           ),
@@ -878,7 +879,7 @@ class _NewLoanDialogState extends State<_NewLoanDialog> {
               filled: readOnly,
               fillColor: readOnly
                   ? const Color(0xFFF3F3F3)
-                  : Colors.white,
+                  : Colors.white.withValues(alpha: 0.45),
 
               contentPadding:
                   const EdgeInsets.symmetric(

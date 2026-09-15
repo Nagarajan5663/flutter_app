@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'shared/glass_widgets.dart';
+
 class MyAccountPage extends StatefulWidget {
   const MyAccountPage({
     super.key,
@@ -411,153 +413,109 @@ class _MyAccountPageState extends State<MyAccountPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFF4F5FA),
-      child: Stack(
-        children: [
-          // ==========================================================
-          // DECORATIVE BACKGROUND CIRCLES
-          // ==========================================================
-
-          Positioned(
-            top: -180,
-            right: -100,
-            child: _backgroundCircle(
-              420,
+    return GlassPageBackground(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          28,
+          30,
+          28,
+          40,
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 1035,
             ),
-          ),
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                // =================================================
+                // PAGE TITLE
+                // =================================================
 
-          Positioned(
-            bottom: -220,
-            left: -150,
-            child: _backgroundCircle(
-              430,
-            ),
-          ),
-
-          // ==========================================================
-          // CONTENT
-          // ==========================================================
-
-          SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              28,
-              30,
-              28,
-              40,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: 1035,
+                const Text(
+                  'My Account',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    // =================================================
-                    // PAGE TITLE
-                    // =================================================
 
-                    const Text(
-                      'My Account',
-                      style: TextStyle(
-                        color: Color(0xFF15385C),
-                        fontSize: 32,
-                        fontWeight: FontWeight.w800,
-                      ),
+                const SizedBox(height: 24),
+
+                // =================================================
+                // TRIAL MESSAGE
+                // =================================================
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 15,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD8F3F7),
+                    borderRadius:
+                        BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'Your free trial will end on December 2, 2026. (88 days remaining)',
+                    style: TextStyle(
+                      color: Color(0xFF27636B),
+                      fontSize: 15,
                     ),
-
-                    const SizedBox(height: 24),
-
-                    // =================================================
-                    // TRIAL MESSAGE
-                    // =================================================
-
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 15,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD8F3F7),
-                        borderRadius:
-                            BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'Your free trial will end on December 2, 2026. (88 days remaining)',
-                        style: TextStyle(
-                          color: Color(0xFF27636B),
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    // =================================================
-                    // PROFILE INFORMATION
-                    // =================================================
-
-                    _sectionTitle(
-                      'Profile Information',
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    _buildProfileCard(),
-
-                    const SizedBox(height: 30),
-
-                    // =================================================
-                    // CHANGE PASSWORD
-                    // =================================================
-
-                    _sectionTitle(
-                      'Change Password',
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    _buildPasswordCard(),
-
-                    const SizedBox(height: 25),
-
-                    // =================================================
-                    // FOOTER
-                    // =================================================
-
-                    const Center(
-                      child: Text(
-                        '© 2026 test. All Rights Reserved.',
-                        style: TextStyle(
-                          color: Color(0xFF777777),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+
+                const SizedBox(height: 25),
+
+                // =================================================
+                // PROFILE INFORMATION
+                // =================================================
+
+                _sectionTitle(
+                  'Profile Information',
+                ),
+
+                const SizedBox(height: 14),
+
+                _buildProfileCard(),
+
+                const SizedBox(height: 30),
+
+                // =================================================
+                // CHANGE PASSWORD
+                // =================================================
+
+                _sectionTitle(
+                  'Change Password',
+                ),
+
+                const SizedBox(height: 14),
+
+                _buildPasswordCard(),
+
+                const SizedBox(height: 25),
+
+                // =================================================
+                // FOOTER
+                // =================================================
+
+                const Center(
+                  child: Text(
+                    '© 2026 test. All Rights Reserved.',
+                    style: TextStyle(
+                      color: Color(0xFFAAB4C4),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  // ================================================================
-  // BACKGROUND CIRCLE
-  // ================================================================
-
-  Widget _backgroundCircle(double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: Color(0xFFE9EAF0),
+        ),
       ),
     );
   }
@@ -573,7 +531,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
         Text(
           title,
           style: const TextStyle(
-            color: Color(0xFF15385C),
+            color: Colors.white,
             fontSize: 24,
             fontWeight: FontWeight.w800,
           ),
@@ -582,7 +540,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
         Container(
           height: 1,
           width: double.infinity,
-          color: const Color(0xFFD5D7DC),
+          color: Colors.white.withValues(alpha: 0.18),
         ),
       ],
     );
@@ -593,19 +551,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
   // ================================================================
 
   Widget _buildProfileCard() {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 15,
-            offset: Offset(0, 5),
-          ),
-        ],
-      ),
+    return GlassPanel(
       child: Column(
         children: [
           Padding(
@@ -707,7 +653,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
 
                 Container(
                   height: 1,
-                  color: const Color(0xFFE1E1E1),
+                  color: Colors.white.withValues(alpha: 0.14),
                 ),
 
                 const SizedBox(height: 28),
@@ -722,7 +668,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
                   child: const Text(
                     'Mobile Number(s)',
                     style: TextStyle(
-                      color: Color(0xFF666666),
+                      color: GlassSurface.labelText,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -809,42 +755,10 @@ class _MyAccountPageState extends State<MyAccountPage> {
                 Align(
                   alignment:
                       Alignment.centerLeft,
-                  child: ElevatedButton(
-                    onPressed:
-                        _addMobileNumber,
-                    style:
-                        ElevatedButton.styleFrom(
-                      backgroundColor:
-                          const Color(
-                        0xFFF0F0F0,
-                      ),
-                      foregroundColor:
-                          const Color(
-                        0xFF333333,
-                      ),
-                      elevation: 0,
-                      padding:
-                          const EdgeInsets
-                              .symmetric(
-                        horizontal: 20,
-                        vertical: 13,
-                      ),
-                      shape:
-                          RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(
-                          6,
-                        ),
-                      ),
-                    ),
-                    child: const Text(
-                      '+ Add Number',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight:
-                            FontWeight.w500,
-                      ),
-                    ),
+                  child: GlassButton(
+                    onPressed: _addMobileNumber,
+                    primary: false,
+                    label: '+ Add Number',
                   ),
                 ),
               ],
@@ -855,53 +769,21 @@ class _MyAccountPageState extends State<MyAccountPage> {
           // SAVE BUTTON FOOTER
           // ========================================================
 
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(
-              28,
-              18,
-              28,
-              18,
-            ),
-            decoration: const BoxDecoration(
-              color: Color(0xFFFCFCFC),
-              border: Border(
-                top: BorderSide(
-                  color: Color(0xFFE1E1E1),
-                ),
+          GlassFooterBar(
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                28,
+                18,
+                28,
+                18,
               ),
-            ),
-            child: Align(
-              alignment:
-                  Alignment.centerRight,
-              child: ElevatedButton(
-                onPressed: _saveChanges,
-                style:
-                    ElevatedButton.styleFrom(
-                  backgroundColor:
-                      const Color(0xFF1687E8),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding:
-                      const EdgeInsets.symmetric(
-                    horizontal: 25,
-                    vertical: 13,
-                  ),
-                  shape:
-                      RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(
-                      6,
-                    ),
-                  ),
-                ),
-                child: const Text(
-                  'Save Changes',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight:
-                        FontWeight.w600,
-                  ),
+              child: Align(
+                alignment:
+                    Alignment.centerRight,
+                child: GlassButton(
+                  onPressed: _saveChanges,
+                  label: 'Save Changes',
                 ),
               ),
             ),
@@ -916,19 +798,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
   // ================================================================
 
   Widget _buildPasswordCard() {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 15,
-            offset: Offset(0, 5),
-          ),
-        ],
-      ),
+    return GlassPanel(
       child: Column(
         children: [
           Padding(
@@ -969,7 +839,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
 
                 Container(
                   height: 1,
-                  color: const Color(0xFFE1E1E1),
+                  color: Colors.white.withValues(alpha: 0.14),
                 ),
 
                 const SizedBox(height: 30),
@@ -1031,53 +901,21 @@ class _MyAccountPageState extends State<MyAccountPage> {
           // UPDATE PASSWORD FOOTER
           // ========================================================
 
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(
-              28,
-              18,
-              28,
-              18,
-            ),
-            decoration: const BoxDecoration(
-              color: Color(0xFFFCFCFC),
-              border: Border(
-                top: BorderSide(
-                  color: Color(0xFFE1E1E1),
-                ),
+          GlassFooterBar(
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                28,
+                18,
+                28,
+                18,
               ),
-            ),
-            child: Align(
-              alignment:
-                  Alignment.centerRight,
-              child: ElevatedButton(
-                onPressed: _updatePassword,
-                style:
-                    ElevatedButton.styleFrom(
-                  backgroundColor:
-                      const Color(0xFF1687E8),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding:
-                      const EdgeInsets.symmetric(
-                    horizontal: 25,
-                    vertical: 13,
-                  ),
-                  shape:
-                      RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(
-                      6,
-                    ),
-                  ),
-                ),
-                child: const Text(
-                  'Update Password',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight:
-                        FontWeight.w600,
-                  ),
+              child: Align(
+                alignment:
+                    Alignment.centerRight,
+                child: GlassButton(
+                  onPressed: _updatePassword,
+                  label: 'Update Password',
                 ),
               ),
             ),
@@ -1102,7 +940,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
         Text(
           label,
           style: const TextStyle(
-            color: Color(0xFF666666),
+            color: GlassSurface.labelText,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -1114,7 +952,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
             controller: controller,
             style: const TextStyle(
               fontSize: 15,
-              color: Color(0xFF444444),
+              color: GlassSurface.inputText,
             ),
             decoration: _inputDecoration(),
           ),
@@ -1138,7 +976,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
             TextInputType.phone,
         style: const TextStyle(
           fontSize: 15,
-          color: Color(0xFF444444),
+          color: GlassSurface.inputText,
         ),
         decoration: _inputDecoration(
           hintText: 'Enter mobile number',
@@ -1162,7 +1000,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
         Text(
           label,
           style: const TextStyle(
-            color: Color(0xFF666666),
+            color: GlassSurface.labelText,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -1195,7 +1033,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
         Text(
           label,
           style: const TextStyle(
-            color: Color(0xFF666666),
+            color: GlassSurface.labelText,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -1209,8 +1047,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
                 TextEditingController(text: value),
             decoration: InputDecoration(
               filled: true,
-              fillColor:
-                  const Color(0xFFF1F1F6),
+              fillColor: GlassSurface.fill(),
               contentPadding:
                   const EdgeInsets.symmetric(
                 horizontal: 13,
@@ -1220,8 +1057,8 @@ class _MyAccountPageState extends State<MyAccountPage> {
                 borderRadius:
                     BorderRadius.circular(7),
                 borderSide:
-                    const BorderSide(
-                  color: Color(0xFFDCDDE2),
+                    BorderSide(
+                  color: GlassSurface.border(),
                 ),
               ),
               disabledBorder:
@@ -1229,13 +1066,13 @@ class _MyAccountPageState extends State<MyAccountPage> {
                 borderRadius:
                     BorderRadius.circular(7),
                 borderSide:
-                    const BorderSide(
-                  color: Color(0xFFDCDDE2),
+                    BorderSide(
+                  color: GlassSurface.border(),
                 ),
               ),
             ),
             style: const TextStyle(
-              color: Color(0xFF888888),
+              color: Color(0xFF9FADBF),
               fontSize: 15,
             ),
           ),
@@ -1256,7 +1093,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
         const Text(
           'Gender',
           style: TextStyle(
-            color: Color(0xFF666666),
+            color: GlassSurface.labelText,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -1272,10 +1109,24 @@ class _MyAccountPageState extends State<MyAccountPage> {
               color: Colors.black,
               fontSize: 15,
             ),
+            selectedItemBuilder: (context) => genderOptions
+                .map(
+                  (gender) => Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      gender,
+                      style: const TextStyle(
+                        color: GlassSurface.inputText,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
             hint: const Text(
               '-- Select --',
               style: TextStyle(
-                color: Color(0xFF555555),
+                color: GlassSurface.hintText,
                 fontSize: 15,
               ),
             ),
@@ -1295,9 +1146,10 @@ class _MyAccountPageState extends State<MyAccountPage> {
             },
             decoration:
                 _inputDecoration(),
-            icon: const Icon(
+            icon: Icon(
               Icons.keyboard_arrow_down,
               size: 20,
+              color: GlassSurface.hintText,
             ),
             ),
           ),
@@ -1318,7 +1170,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
         const Text(
           'Time Zone',
           style: TextStyle(
-            color: Color(0xFF666666),
+            color: GlassSurface.labelText,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -1334,10 +1186,25 @@ class _MyAccountPageState extends State<MyAccountPage> {
               color: Colors.black,
               fontSize: 15,
             ),
+            selectedItemBuilder: (context) => timeZones
+                .map(
+                  (timeZone) => Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      timeZone,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: GlassSurface.inputText,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
             hint: const Text(
               'Search and select a time zone',
               style: TextStyle(
-                color: Color(0xFF999999),
+                color: GlassSurface.hintText,
                 fontSize: 15,
               ),
             ),
@@ -1360,9 +1227,10 @@ class _MyAccountPageState extends State<MyAccountPage> {
             },
             decoration: _inputDecoration(),
             menuMaxHeight: 320,
-            icon: const Icon(
+            icon: Icon(
               Icons.keyboard_arrow_down,
               size: 20,
+              color: GlassSurface.hintText,
             ),
             ),
           ),
@@ -1394,8 +1262,8 @@ class _MyAccountPageState extends State<MyAccountPage> {
   }) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: const TextStyle(
-        color: Color(0xFF999999),
+      hintStyle: TextStyle(
+        color: GlassSurface.hintText,
         fontSize: 15,
       ),
       contentPadding:
@@ -1404,28 +1272,28 @@ class _MyAccountPageState extends State<MyAccountPage> {
         vertical: 12,
       ),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: GlassSurface.fill(),
       border: OutlineInputBorder(
         borderRadius:
             BorderRadius.circular(7),
-        borderSide: const BorderSide(
-          color: Color(0xFFDCDDE2),
+        borderSide: BorderSide(
+          color: GlassSurface.border(),
         ),
       ),
       enabledBorder:
           OutlineInputBorder(
         borderRadius:
             BorderRadius.circular(7),
-        borderSide: const BorderSide(
-          color: Color(0xFFDCDDE2),
+        borderSide: BorderSide(
+          color: GlassSurface.border(),
         ),
       ),
       focusedBorder:
           OutlineInputBorder(
         borderRadius:
             BorderRadius.circular(7),
-        borderSide: const BorderSide(
-          color: Color(0xFF1687E8),
+        borderSide: BorderSide(
+          color: GlassSurface.border(focused: true),
           width: 1.2,
         ),
       ),

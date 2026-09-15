@@ -1,49 +1,115 @@
 import 'package:flutter/material.dart';
 
-import '../organization/organization_page.dart';
-import '../organization/settings/settings_page.dart';
-
-import '../sidebar/inventory/inventory_page.dart';
-import '../sidebar/items_parts/items_parts_page.dart';
-import '../sidebar/reports/reports_page.dart';
+// ================================================================
+// DASHBOARD WIDGETS
+// ================================================================
 
 import 'widgets/dashboard_app_bar.dart';
-import 'widgets/dashboard_body.dart';
 import 'widgets/dashboard_nav_bar.dart';
+import 'widgets/dashboard_body.dart';
+
+// ================================================================
+// SALES
+// ================================================================
+
+import '../sidebar/sales/customer/customers_page.dart';
+import '../sidebar/sales/estimates/estimates_page.dart';
+import '../sidebar/sales/sales_orders/sales_orders_page.dart';
+import '../sidebar/sales/invoices/invoices_page.dart';
+import '../sidebar/sales/delivery_challans/delivery_challans_page.dart';
+import '../sidebar/sales/payments_received/payments_received_page.dart';
+import '../sidebar/sales/credit_notes/credit_notes_page.dart';
+
+// ================================================================
+// ORGANIZATION SETTINGS
+// ================================================================
+
+import '../organization/organization_page.dart';
+import '../sidebar/settings/preferences_page.dart';
+
+// ================================================================
+// REPORTS
+// ================================================================
+
+import '../sidebar/reports/reports_page.dart';
+
+// ================================================================
+// ITEMS & PARTS
+// ================================================================
+
+import '../sidebar/items_parts/items_parts_page.dart';
+
+// ================================================================
+// INVENTORY
+// ================================================================
+
+import '../sidebar/inventory/inventory_page.dart';
+
+// ================================================================
+// PURCHASE
+// ================================================================
+
+import '../sidebar/purchase/vendors/vendors_page.dart';
+import '../sidebar/purchase/purchase_orders/purchase_orders_page.dart';
+import '../sidebar/purchase/bills/bills_page.dart';
+import '../sidebar/purchase/payments_made/payments_made_page.dart';
+import '../sidebar/purchase/vendor_credit_notes/vendor_credit_notes_page.dart';
+
+// ================================================================
+// ACCOUNTANT
+// ================================================================
+
+import '../sidebar/accountant/expenses/expenses_page.dart';
+import '../sidebar/accountant/reimbursements/reimbursements_page.dart';
+import '../sidebar/accountant/travel_allowance/travel_allowance_page.dart';
+import '../sidebar/accountant/other_claims/other_claims_page.dart';
+import '../sidebar/accountant/loans/loans_page.dart';
+import '../sidebar/my_account/my_account_page.dart';
+
+// ================================================================
+// INVESTMENT
+// ================================================================
+
+import '../sidebar/accountant/investment/investment_page.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  const DashboardPage({
+    super.key,
+  });
 
   @override
-  State<DashboardPage> createState() => _DashboardPageState();
+  State<DashboardPage> createState() =>
+      _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
-  // ============================================================
+class _DashboardPageState
+    extends State<DashboardPage> {
+  // ================================================================
   // SIDEBAR STATE
-  // ============================================================
+  // ================================================================
 
   bool _isSidebarCollapsed = false;
 
-  // ============================================================
+  // ================================================================
   // CURRENT SELECTED MENU
-  // ============================================================
+  // ================================================================
 
   String selectedMenu = 'dashboard';
 
-  // ============================================================
+  // ================================================================
   // TOGGLE SIDEBAR
-  // ============================================================
+  // ================================================================
 
   void _toggleSidebar() {
     setState(() {
-      _isSidebarCollapsed = !_isSidebarCollapsed;
+      _isSidebarCollapsed =
+          !_isSidebarCollapsed;
     });
   }
 
-  // ============================================================
-  // SELECT MENU
-  // ============================================================
+  // ================================================================
+  // SELECT SIDEBAR MENU
+  // ================================================================
 
   void _selectMenu(String menu) {
     setState(() {
@@ -51,303 +117,219 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
-  // ============================================================
-  // PROFILE CLICK
-  // ============================================================
+  // ================================================================
+  // OPEN ORGANIZATION SETTINGS
+  // ================================================================
 
-  void _openSuperAdminSettings() {
+  void _openOrganizationSettings() {
     setState(() {
-      selectedMenu = 'all_settings';
+      selectedMenu = 'organization';
     });
   }
 
-  // ============================================================
-  // BACK TO DASHBOARD
-  // ============================================================
-
-  void _goToDashboard() {
-    setState(() {
-      selectedMenu = 'dashboard';
-    });
-  }
-
-  // ============================================================
+  // ================================================================
   // BUILD SELECTED PAGE
-  // ============================================================
+  // ================================================================
 
   Widget _buildSelectedPage() {
-    final menu = selectedMenu.toLowerCase().trim();
-
-    switch (menu) {
-      // ========================================================
+    switch (
+      selectedMenu
+          .toLowerCase()
+          .trim()
+    ) {
+      // ============================================================
       // DASHBOARD
-      // ========================================================
+      // ============================================================
 
       case 'dashboard':
         return const DashboardBody();
 
-      // ========================================================
-      // ORGANIZATION
-      // ========================================================
+      // ============================================================
+      // ALL SETTINGS
+      // ============================================================
+
+      case 'all_settings':
+      case 'settings':
+        return PreferencesPage(
+          onBack: () {
+            setState(() {
+              selectedMenu = 'dashboard';
+            });
+          },
+        );
 
       case 'organization':
         return OrganizationPage(
-          onBack: _goToDashboard,
+          onBack: () {
+            setState(() {
+              selectedMenu = 'dashboard';
+            });
+          },
         );
 
-      // ========================================================
-      // ITEMS
-      // ========================================================
-
-      case 'items':
-        return ItemsPartsPage(
-          key: const ValueKey('items-page'),
-          initialTab: 0,
-          onSectionChanged: _selectMenu,
-        );
-
-      // ========================================================
-      // PARTS
-      // ========================================================
-
-      case 'parts':
-        return ItemsPartsPage(
-          key: const ValueKey('parts-page'),
-          initialTab: 1,
-          onSectionChanged: _selectMenu,
-        );
-
-      // ========================================================
-      // INVENTORY - CURRENT STOCK
-      // ========================================================
-
-      case 'inventory':
-      case 'current stock':
-      case 'current-stock':
-        return InventoryPage(
-          key: const ValueKey('current-stock-page'),
-          initialTab: 0,
-          onSectionChanged: _selectMenu,
-        );
-
-      // ========================================================
-      // INVENTORY ADJUSTMENTS
-      // ========================================================
-
-      case 'inventory adjustments':
-      case 'inventory-adjustments':
-        return InventoryPage(
-          key: const ValueKey('inventory-adjustments-page'),
-          initialTab: 1,
-          onSectionChanged: _selectMenu,
-        );
-
-      // ========================================================
-      // RETURNABLE ASSETS
-      // ========================================================
-
-      case 'returnable assets':
-      case 'returnable-assets':
-        return InventoryPage(
-          key: const ValueKey('returnable-assets-page'),
-          initialTab: 2,
-          onSectionChanged: _selectMenu,
-        );
-
-      // ========================================================
+      // ============================================================
       // REPORTS
-      // ========================================================
+      // ============================================================
 
       case 'reports':
         return const ReportsPage();
 
-      // ========================================================
-      // SETTINGS
-      // ========================================================
+      // ============================================================
+      // ITEMS & PARTS
+      // ============================================================
 
-      case 'settings':
-      case 'all_settings':
-        return SettingsPage(
-          onClose: _goToDashboard,
+      case 'items':
+        return const ItemsPartsPage(
+          initialTab: 0,
         );
 
-      // ========================================================
+      case 'parts':
+        return const ItemsPartsPage(
+          initialTab: 1,
+        );
+
+      // ============================================================
+      // INVENTORY
+      // ============================================================
+
+      case 'inventory':
+        return const InventoryPage(
+          initialTab: 0,
+        );
+
+      case 'current stock':
+        return const InventoryPage(
+          initialTab: 0,
+        );
+
+      case 'inventory adjustments':
+        return const InventoryPage(
+          initialTab: 1,
+        );
+
+      case 'returnable assets':
+        return const InventoryPage(
+          initialTab: 2,
+        );
+
+      // ============================================================
       // SALES
-      // ========================================================
+      // ============================================================
 
       case 'sales':
       case 'customers':
-        return _comingSoonPage(
-          icon: Icons.people_outline,
-          title: 'Customers',
-        );
+        return const CustomersPage();
 
       case 'estimates':
-        return _comingSoonPage(
-          icon: Icons.description_outlined,
-          title: 'Estimates',
-        );
+        return const EstimatesPage();
 
       case 'sales order':
-      case 'sales-order':
-        return _comingSoonPage(
-          icon: Icons.shopping_cart_outlined,
-          title: 'Sales Order',
-        );
+      case 'sales orders':
+        return const SalesOrderPage();
 
       case 'invoices':
-        return _comingSoonPage(
-          icon: Icons.receipt_long_outlined,
-          title: 'Invoices',
-        );
+        return const InvoicesPage();
 
       case 'delivery challans':
-      case 'delivery-challans':
-        return _comingSoonPage(
-          icon: Icons.local_shipping_outlined,
-          title: 'Delivery Challans',
-        );
+        return const DeliveryChallansPage();
 
       case 'payment received':
-      case 'payment-received':
-        return _comingSoonPage(
-          icon: Icons.payments_outlined,
-          title: 'Payment Received',
-        );
+      case 'payments received':
+        return const PaymentsReceivedPage();
 
       case 'credit notes':
-      case 'credit-notes':
-        return _comingSoonPage(
-          icon: Icons.note_alt_outlined,
-          title: 'Credit Notes',
-        );
+        return const CreditNotesPage();
 
-      // ========================================================
+      // ============================================================
       // PURCHASE
-      // ========================================================
+      // ============================================================
 
       case 'purchase':
+        return const VendorsPage();
+
       case 'vendors':
-        return _comingSoonPage(
-          icon: Icons.storefront_outlined,
-          title: 'Vendors',
-        );
+        return const VendorsPage();
 
       case 'purchase orders':
-      case 'purchase-orders':
-        return _comingSoonPage(
-          icon: Icons.shopping_bag_outlined,
-          title: 'Purchase Orders',
-        );
+        return const PurchaseOrdersPage();
 
       case 'bills':
-        return _comingSoonPage(
-          icon: Icons.receipt_outlined,
-          title: 'Bills',
-        );
+        return const BillsPage();
 
       case 'payment made':
-      case 'payment-made':
-        return _comingSoonPage(
-          icon: Icons.account_balance_wallet_outlined,
-          title: 'Payment Made',
-        );
+      case 'payments made':
+        return const PaymentsMadePage();
 
       case 'vendor credit notes':
-      case 'vendor-credit-notes':
-        return _comingSoonPage(
-          icon: Icons.note_outlined,
-          title: 'Vendor Credit Notes',
-        );
+        return const VendorCreditNotesPage();
 
-      // ========================================================
+      // ============================================================
       // ACCOUNTANT
-      // ========================================================
+      // ============================================================
 
       case 'accountant':
-      case 'expenses':
+        return const ExpensesPage();
+
       case 'expense':
-        return _comingSoonPage(
-          icon: Icons.account_balance_outlined,
-          title: 'Expenses',
-        );
+      case 'expenses':
+        return const ExpensesPage();
 
       case 'reimbursements':
-        return _comingSoonPage(
-          icon: Icons.currency_exchange_outlined,
-          title: 'Reimbursements',
-        );
+        return const ReimbursementsPage();
 
       case 'travel allowance':
-      case 'travel-allowance':
-        return _comingSoonPage(
-          icon: Icons.flight_takeoff_outlined,
-          title: 'Travel Allowance',
-        );
+        return const TravelAllowancePage();
 
       case 'other claims':
-      case 'other-claims':
-        return _comingSoonPage(
-          icon: Icons.request_page_outlined,
-          title: 'Other Claims',
-        );
+        return const OtherClaimsPage();
 
       case 'investments':
-        return _comingSoonPage(
-          icon: Icons.trending_up_outlined,
-          title: 'Investments',
-        );
+      case 'investment':
+        return const InvestmentPage();
 
       case 'loans':
-        return _comingSoonPage(
-          icon: Icons.account_balance_wallet_outlined,
-          title: 'Loans',
-        );
+        return const LoansPage();
 
-      // ========================================================
+      // ============================================================
       // FLUXA HUB
-      // ========================================================
+      // ============================================================
 
       case 'fluxa hub':
-      case 'fluxa-hub':
         return _comingSoonPage(
           icon: Icons.hub_outlined,
           title: 'Fluxa Hub',
         );
 
-      // ========================================================
+      // ============================================================
       // MY ACCOUNT
-      // ========================================================
+      // ============================================================
 
       case 'my account':
-      case 'my-account':
-        return _comingSoonPage(
-          icon: Icons.person_outline,
-          title: 'My Account',
-        );
+        return const MyAccountPage();
 
-      // ========================================================
+      // ============================================================
       // HELP
-      // ========================================================
+      // ============================================================
 
       case 'help':
         return _comingSoonPage(
-          icon: Icons.help_outline_rounded,
+          icon:
+              Icons.help_outline_rounded,
           title: 'Help',
         );
 
-      // ========================================================
+      // ============================================================
       // DEFAULT
-      // ========================================================
+      // ============================================================
 
       default:
         return const DashboardBody();
     }
   }
 
-  // ============================================================
+  // ================================================================
   // COMING SOON PAGE
-  // ============================================================
+  // ================================================================
 
   Widget _comingSoonPage({
     required IconData icon,
@@ -356,120 +338,105 @@ class _DashboardPageState extends State<DashboardPage> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: const Color(0xFFF4F7FA),
+      color: const Color(
+        0xFFF4F7FA,
+      ),
+
       child: Center(
-        child: Container(
-          width: 380,
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: const Color(0xFFE3E8ED),
+        child: Column(
+          mainAxisSize:
+              MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 52,
+              color: const Color(
+                0xFF245AA6,
+              ),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+
+            const SizedBox(
+              height: 15,
+            ),
+
+            Text(
+              title,
+              style: const TextStyle(
+                color:
+                    Color(0xFF123653),
+                fontSize: 26,
+                fontWeight:
+                    FontWeight.w700,
               ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 82,
-                height: 82,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF2FF),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  size: 40,
-                  color: const Color(0xFF245AA6),
-                ),
+            ),
+
+            const SizedBox(
+              height: 8,
+            ),
+
+            const Text(
+              'Coming Soon',
+              style: TextStyle(
+                color:
+                    Color(0xFF7A8791),
+                fontSize: 14,
               ),
-
-              const SizedBox(height: 22),
-
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFF123653),
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              const Text(
-                'This module is currently under development.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFF7A8791),
-                  fontSize: 14,
-                  height: 1.5,
-                ),
-              ),
-
-              const SizedBox(height: 6),
-
-              const Text(
-                'Coming Soon',
-                style: TextStyle(
-                  color: Color(0xFF245AA6),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ============================================================
+  // ================================================================
   // MAIN BUILD
-  // ============================================================
+  // ================================================================
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Scaffold(
+      // ============================================================
+      // TOP APP BAR
+      // ============================================================
+
       appBar: DashboardAppBar(
-        onMenuPressed: _toggleSidebar,
-        onProfilePressed: _openSuperAdminSettings,
+        onMenuPressed:
+            _toggleSidebar,
+
+        onProfilePressed:
+          _openOrganizationSettings,
       ),
+
+      // ============================================================
+      // SIDEBAR + PAGE CONTENT
+      // ============================================================
+
       body: Row(
         children: [
-          // ======================================================
-          // PERMANENT SIDEBAR
-          // ======================================================
+          // ========================================================
+          // LEFT SIDEBAR
+          // ========================================================
 
           DashboardNavBar(
-            isCollapsed: _isSidebarCollapsed,
-            selectedMenu: selectedMenu,
-            onMenuSelected: _selectMenu,
+            isCollapsed:
+                _isSidebarCollapsed,
+
+            selectedMenu:
+                selectedMenu,
+
+            onMenuSelected:
+                _selectMenu,
           ),
 
-          // ======================================================
-          // PAGE CONTENT
-          // ======================================================
+          // ========================================================
+          // RIGHT PAGE CONTENT
+          // ========================================================
 
           Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              child: KeyedSubtree(
-                key: ValueKey(selectedMenu),
-                child: _buildSelectedPage(),
-              ),
-            ),
+            child:
+                _buildSelectedPage(),
           ),
         ],
       ),

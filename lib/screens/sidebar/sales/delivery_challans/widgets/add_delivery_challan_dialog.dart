@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../widgets/sales_glass_widgets.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 
 import '../../customer/customer_model.dart';
@@ -126,7 +128,7 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return SalesGlassDialog(
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
