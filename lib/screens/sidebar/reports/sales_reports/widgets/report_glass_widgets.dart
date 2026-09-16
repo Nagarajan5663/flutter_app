@@ -520,7 +520,7 @@ class ReportDateFilterCard extends StatelessWidget {
             child: SizedBox(
               width: 145,
               child: DropdownButtonFormField<String>(
-                value: dateRange,
+                initialValue: dateRange,
                 items: const [
                   DropdownMenuItem(
                     value: 'Custom',

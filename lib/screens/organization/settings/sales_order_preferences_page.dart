@@ -653,12 +653,11 @@ class _PreferenceRadioState
           ),
           child: Row(
             children: [
-              Radio<String>(
-                value: widget.value,
-                groupValue:
-                    widget.groupValue,
-                onChanged:
-                    widget.onChanged,
+                RadioGroup<String>(
+                groupValue: widget.groupValue,
+                onChanged: widget.onChanged,
+                child: Radio<String>(
+                  value: widget.value,
                 activeColor:
                     const Color(0xFF3478F6),
                 fillColor:
@@ -677,6 +676,7 @@ class _PreferenceRadioState
                       alpha: 0.60,
                     );
                   },
+                ),
                 ),
               ),
 

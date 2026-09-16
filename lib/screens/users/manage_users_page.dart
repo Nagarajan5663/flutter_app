@@ -1123,7 +1123,7 @@ Widget _roleDropdown({
   ];
 
   return DropdownButtonFormField<String>(
-    value: value,
+    initialValue: value,
 
     hint: hint == null
         ? null

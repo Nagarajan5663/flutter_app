@@ -4,9 +4,6 @@ import 'trial_balance_page.dart';
 import 'widgets/report_glass_widgets.dart';
 
 enum _AccountantReport {
-  accountTransactions,
-  generalLedger,
-  journalReport,
   trialBalance,
 }
 
