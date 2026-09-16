@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'shared/glass_widgets.dart';
-import '../../organization/organization_page.dart';
-import '../../organization/general_settings_page.dart';
-import '../../organization/manage_subscription_page.dart';
+
+import 'item_preferences_page.dart';
+import 'sales_order_preferences_page.dart';
+import 'expense_settings_page.dart';
+
+import '../organization_page.dart';
+import '../general_settings_page.dart';
+import '../manage_subscription_page.dart';
 
 class SettingsPage extends StatefulWidget {
   final VoidCallback? onClose;
@@ -14,15 +19,18 @@ class SettingsPage extends StatefulWidget {
   });
 
   @override
-  State<SettingsPage> createState() => _SettingsPageState();
+  State<SettingsPage> createState() =>
+      _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage> {
+class _SettingsPageState
+    extends State<SettingsPage> {
   bool _showOrganizationProfile = false;
   bool _showGeneralSettings = false;
   bool _showManageSubscription = false;
 
-  final TextEditingController _searchController =
+  final TextEditingController
+      _searchController =
       TextEditingController();
 
   String _searchText = '';
@@ -34,7 +42,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // ================================================================
-  // OPEN ORGANIZATION PROFILE
+  // ORGANIZATION PROFILE
   // ================================================================
 
   void _openOrganizationProfile() {
@@ -46,7 +54,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // ================================================================
-  // OPEN GENERAL SETTINGS
+  // GENERAL SETTINGS
   // ================================================================
 
   void _openGeneralSettings() {
@@ -58,7 +66,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // ================================================================
-  // OPEN MANAGE SUBSCRIPTION
+  // MANAGE SUBSCRIPTION
   // ================================================================
 
   void _openManageSubscription() {
@@ -70,7 +78,46 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // ================================================================
-  // BACK TO ALL SETTINGS
+  // ITEMS
+  // ================================================================
+
+  void _openItemPreferences() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            const ItemPreferencesPage(),
+      ),
+    );
+  }
+
+  // ================================================================
+  // SALES ORDERS
+  // ================================================================
+
+  void _openSalesOrderPreferences() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            const SalesOrderPreferencesPage(),
+      ),
+    );
+  }
+
+  // ================================================================
+  // EXPENSE SETTINGS
+  // ================================================================
+
+  void _openExpenseSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            const ExpenseSettingsPage(),
+      ),
+    );
+  }
+
+  // ================================================================
+  // BACK
   // ================================================================
 
   void _backToAllSettings() {
@@ -82,31 +129,48 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // ================================================================
-  // COMING SOON MESSAGE
+  // COMING SOON
   // ================================================================
 
-  void _showComingSoon(String title) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  void _showComingSoon(
+    String title,
+  ) {
+    ScaffoldMessenger.of(context)
+        .hideCurrentSnackBar();
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
       SnackBar(
-        content: Text('$title - Coming Soon'),
-        duration: const Duration(seconds: 1),
+        content: Text(
+          '$title - Coming Soon',
+        ),
+        duration:
+            const Duration(
+          seconds: 1,
+        ),
       ),
     );
   }
 
   // ================================================================
-  // SEARCH MATCH
+  // SEARCH
   // ================================================================
 
-  bool _matches(String text) {
-    if (_searchText.trim().isEmpty) {
+  bool _matches(
+    String text,
+  ) {
+    if (_searchText
+        .trim()
+        .isEmpty) {
       return true;
     }
 
-    return text.toLowerCase().contains(
-          _searchText.toLowerCase().trim(),
+    return text
+        .toLowerCase()
+        .contains(
+          _searchText
+              .toLowerCase()
+              .trim(),
         );
   }
 
@@ -115,114 +179,283 @@ class _SettingsPageState extends State<SettingsPage> {
   // ================================================================
 
   @override
-  Widget build(BuildContext context) {
-    // ==============================================================
-    // ORGANIZATION PROFILE PAGE
-    // ==============================================================
-
+  Widget build(
+    BuildContext context,
+  ) {
     if (_showOrganizationProfile) {
       return OrganizationPage(
-        onBack: _backToAllSettings,
+        onBack:
+            _backToAllSettings,
       );
     }
-
-    // ==============================================================
-    // GENERAL SETTINGS PAGE
-    // ==============================================================
 
     if (_showGeneralSettings) {
       return GeneralSettingsPage(
-        onBack: _backToAllSettings,
+        onBack:
+            _backToAllSettings,
       );
     }
-
-    // ==============================================================
-    // MANAGE SUBSCRIPTION PAGE
-    // ==============================================================
 
     if (_showManageSubscription) {
       return ManageSubscriptionPage(
-        onBack: _backToAllSettings,
+        onBack:
+            _backToAllSettings,
       );
     }
 
-    // ==============================================================
-    // ALL SETTINGS PAGE
-    // ==============================================================
-
     return GlassPageBackground(
-      child: SingleChildScrollView(
+      child:
+          SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
-            // ======================================================
-            // TOP HEADER
-            // ======================================================
+            // =======================================================
+            // HEADER
+            // =======================================================
 
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(
-                20,
-                18,
-                20,
-                16,
-              ),
-              decoration: const BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.white24,
-                  ),
+            GlassPanel(
+              borderRadius:
+                  BorderRadius.zero,
+              child: Padding(
+                padding:
+                    const EdgeInsets
+                        .fromLTRB(
+                  20,
+                  18,
+                  20,
+                  16,
                 ),
-              ),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final isSmall = constraints.maxWidth < 750;
+                child:
+                    LayoutBuilder(
+                  builder: (
+                    context,
+                    constraints,
+                  ) {
+                    final isSmall =
+                        constraints
+                                .maxWidth <
+                            750;
 
-                  if (isSmall) {
-                    return Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                    if (isSmall) {
+                      return Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment
+                                .start,
+                        children: [
+                          _buildTitle(),
+                          const SizedBox(
+                            height: 14,
+                          ),
+                          SizedBox(
+                            width:
+                                double.infinity,
+                            height: 38,
+                            child:
+                                _buildSearchField(),
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Row(
                       children: [
-                        _buildTitle(),
-
-                        const SizedBox(height: 14),
-
+                        Expanded(
+                          child:
+                              _buildTitle(),
+                        ),
+                        const SizedBox(
+                          width: 16,
+                        ),
                         SizedBox(
-                          width: double.infinity,
+                          width: 220,
                           height: 38,
-                          child: _buildSearchField(),
+                          child:
+                              _buildSearchField(),
                         ),
                       ],
                     );
-                  }
-
-                  return Row(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: _buildTitle(),
-                      ),
-
-                      const SizedBox(width: 16),
-
-                      SizedBox(
-                        width: 220,
-                        height: 38,
-                        child: _buildSearchField(),
-                      ),
-                    ],
-                  );
-                },
+                  },
+                ),
               ),
             ),
 
-            // ======================================================
-            // SETTINGS CONTENT
-            // ======================================================
+            // =======================================================
+            // ORGANIZATION SETTINGS
+            // =======================================================
 
             Padding(
-              padding: const EdgeInsets.fromLTRB(
+              padding:
+                  const EdgeInsets
+                      .fromLTRB(
+                20,
+                18,
+                20,
+                0,
+              ),
+              child: GlassPanel(
+                child: Padding(
+                  padding:
+                      const EdgeInsets
+                          .fromLTRB(
+                    18,
+                    18,
+                    18,
+                    24,
+                  ),
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment
+                            .start,
+                    children: [
+                      const Text(
+                        'Organization Settings',
+                        style:
+                            TextStyle(
+                          color:
+                              Colors.white,
+                          fontSize: 19,
+                          fontWeight:
+                              FontWeight
+                                  .w600,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 14,
+                      ),
+
+                      Divider(
+                        height: 1,
+                        color: Colors
+                            .white
+                            .withValues(
+                          alpha: 0.16,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 18,
+                      ),
+
+                      LayoutBuilder(
+                        builder: (
+                          context,
+                          constraints,
+                        ) {
+                          if (constraints
+                                  .maxWidth >=
+                              1100) {
+                            return Row(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment
+                                      .start,
+                              children: [
+                                Expanded(
+                                  child:
+                                      _organizationColumn(),
+                                ),
+                                const SizedBox(
+                                  width: 26,
+                                ),
+                                Expanded(
+                                  child:
+                                      _usersAndTaxColumn(),
+                                ),
+                                const SizedBox(
+                                  width: 26,
+                                ),
+                                Expanded(
+                                  child:
+                                      _setupColumn(),
+                                ),
+                                const SizedBox(
+                                  width: 26,
+                                ),
+                                Expanded(
+                                  child:
+                                      _customizationColumn(),
+                                ),
+                              ],
+                            );
+                          }
+
+                          if (constraints
+                                  .maxWidth >=
+                              600) {
+                            final width =
+                                (constraints.maxWidth -
+                                        22) /
+                                    2;
+
+                            return Wrap(
+                              spacing: 22,
+                              runSpacing: 26,
+                              children: [
+                                SizedBox(
+                                  width:
+                                      width,
+                                  child:
+                                      _organizationColumn(),
+                                ),
+                                SizedBox(
+                                  width:
+                                      width,
+                                  child:
+                                      _usersAndTaxColumn(),
+                                ),
+                                SizedBox(
+                                  width:
+                                      width,
+                                  child:
+                                      _setupColumn(),
+                                ),
+                                SizedBox(
+                                  width:
+                                      width,
+                                  child:
+                                      _customizationColumn(),
+                                ),
+                              ],
+                            );
+                          }
+
+                          return Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment
+                                    .start,
+                            children: [
+                              _organizationColumn(),
+                              const SizedBox(
+                                height: 26,
+                              ),
+                              _usersAndTaxColumn(),
+                              const SizedBox(
+                                height: 26,
+                              ),
+                              _setupColumn(),
+                              const SizedBox(
+                                height: 26,
+                              ),
+                              _customizationColumn(),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // =======================================================
+            // MODULE SETTINGS
+            // =======================================================
+
+            Padding(
+              padding:
+                  const EdgeInsets
+                      .fromLTRB(
                 20,
                 18,
                 20,
@@ -230,145 +463,152 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               child: GlassPanel(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
+                  padding:
+                      const EdgeInsets
+                          .fromLTRB(
                     18,
                     18,
                     18,
                     24,
                   ),
                   child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Organization Settings',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 19,
-                        fontWeight: FontWeight.w600,
+                    crossAxisAlignment:
+                        CrossAxisAlignment
+                            .start,
+                    children: [
+                      const Text(
+                        'Module Settings',
+                        style:
+                            TextStyle(
+                          color:
+                              Colors.white,
+                          fontSize: 19,
+                          fontWeight:
+                              FontWeight
+                                  .w600,
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 14),
+                      const SizedBox(
+                        height: 14,
+                      ),
 
-                    Divider(
-                      height: 1,
-                      color: Colors.white.withValues(alpha: 0.16),
-                    ),
+                      Divider(
+                        height: 1,
+                        color: Colors
+                            .white
+                            .withValues(
+                          alpha: 0.16,
+                        ),
+                      ),
 
-                    const SizedBox(height: 18),
+                      const SizedBox(
+                        height: 18,
+                      ),
 
-                    LayoutBuilder(
-                      builder:
-                          (context, constraints) {
-                        // ==========================================
-                        // DESKTOP - 4 COLUMNS
-                        // ==========================================
+                      LayoutBuilder(
+                        builder: (
+                          context,
+                          constraints,
+                        ) {
+                          if (constraints
+                                  .maxWidth >=
+                              1050) {
+                            return Row(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment
+                                      .start,
+                              children: [
+                                Expanded(
+                                  child:
+                                      _generalModuleColumn(),
+                                ),
+                                const SizedBox(
+                                  width: 26,
+                                ),
+                                Expanded(
+                                  child:
+                                      _inventoryModuleColumn(),
+                                ),
+                                const SizedBox(
+                                  width: 26,
+                                ),
+                                Expanded(
+                                  child:
+                                      _salesModuleColumn(),
+                                ),
+                                const SizedBox(
+                                  width: 26,
+                                ),
+                                Expanded(
+                                  child:
+                                      _purchasesModuleColumn(),
+                                ),
+                              ],
+                            );
+                          }
 
-                        if (constraints.maxWidth >=
-                            1100) {
-                          return Row(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                          if (constraints
+                                  .maxWidth >=
+                              600) {
+                            final width =
+                                (constraints.maxWidth -
+                                        22) /
+                                    2;
+
+                            return Wrap(
+                              spacing: 22,
+                              runSpacing: 28,
+                              children: [
+                                SizedBox(
+                                  width:
+                                      width,
+                                  child:
+                                      _generalModuleColumn(),
+                                ),
+                                SizedBox(
+                                  width:
+                                      width,
+                                  child:
+                                      _inventoryModuleColumn(),
+                                ),
+                                SizedBox(
+                                  width:
+                                      width,
+                                  child:
+                                      _salesModuleColumn(),
+                                ),
+                                SizedBox(
+                                  width:
+                                      width,
+                                  child:
+                                      _purchasesModuleColumn(),
+                                ),
+                              ],
+                            );
+                          }
+
+                          return Column(
                             children: [
-                              Expanded(
-                                child:
-                                    _organizationColumn(),
+                              _generalModuleColumn(),
+                              const SizedBox(
+                                height: 26,
                               ),
-
-                              const SizedBox(width: 26),
-
-                              Expanded(
-                                child:
-                                    _usersAndTaxColumn(),
+                              _inventoryModuleColumn(),
+                              const SizedBox(
+                                height: 26,
                               ),
-
-                              const SizedBox(width: 26),
-
-                              Expanded(
-                                child:
-                                    _setupColumn(),
+                              _salesModuleColumn(),
+                              const SizedBox(
+                                height: 26,
                               ),
-
-                              const SizedBox(width: 26),
-
-                              Expanded(
-                                child:
-                                    _customizationColumn(),
-                              ),
+                              _purchasesModuleColumn(),
                             ],
                           );
-                        }
-
-                        // ==========================================
-                        // TABLET - 2 COLUMNS
-                        // ==========================================
-
-                        if (constraints.maxWidth >=
-                            600) {
-                          final columnWidth =
-                              (constraints.maxWidth -
-                                      22) /
-                                  2;
-
-                          return Wrap(
-                            spacing: 22,
-                            runSpacing: 26,
-                            children: [
-                              SizedBox(
-                                width: columnWidth,
-                                child:
-                                    _organizationColumn(),
-                              ),
-
-                              SizedBox(
-                                width: columnWidth,
-                                child:
-                                    _usersAndTaxColumn(),
-                              ),
-
-                              SizedBox(
-                                width: columnWidth,
-                                child:
-                                    _setupColumn(),
-                              ),
-
-                              SizedBox(
-                                width: columnWidth,
-                                child:
-                                    _customizationColumn(),
-                              ),
-                            ],
-                          );
-                        }
-
-                        // ==========================================
-                        // MOBILE - SINGLE COLUMN
-                        // ==========================================
-
-                        return Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
-                          children: [
-                            _organizationColumn(),
-
-                            const SizedBox(height: 26),
-
-                            _usersAndTaxColumn(),
-
-                            const SizedBox(height: 26),
-
-                            _setupColumn(),
-
-                            const SizedBox(height: 26),
-
-                            _customizationColumn(),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -392,7 +632,8 @@ class _SettingsPageState extends State<SettingsPage> {
           style: TextStyle(
             color: Colors.white,
             fontSize: 24,
-            fontWeight: FontWeight.w700,
+            fontWeight:
+                FontWeight.w700,
           ),
         ),
 
@@ -401,7 +642,8 @@ class _SettingsPageState extends State<SettingsPage> {
         Text(
           'Manage your organization settings and preferences',
           style: TextStyle(
-            color: Color(0xFFAAB4C4),
+            color:
+                Color(0xFFAAB4C4),
             fontSize: 13,
           ),
         ),
@@ -415,9 +657,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildSearchField() {
     return TextField(
-      controller: _searchController,
-      style: const TextStyle(
-        color: GlassSurface.inputText,
+      controller:
+          _searchController,
+      style:
+          const TextStyle(
+        color:
+            GlassSurface.inputText,
         fontSize: 13.5,
       ),
       onChanged: (value) {
@@ -425,51 +670,72 @@ class _SettingsPageState extends State<SettingsPage> {
           _searchText = value;
         });
       },
-      decoration: InputDecoration(
-        hintText: 'Search settings (/)',
-        hintStyle: TextStyle(
-          color: GlassSurface.hintText,
+      decoration:
+          InputDecoration(
+        hintText:
+            'Search settings (/)',
+        hintStyle:
+            TextStyle(
+          color:
+              GlassSurface.hintText,
           fontSize: 13.5,
         ),
-        prefixIcon: Icon(
+        prefixIcon:
+            Icon(
           Icons.search_rounded,
           size: 18,
-          color: GlassSurface.hintText,
+          color:
+              GlassSurface.hintText,
         ),
-        suffixIcon: _searchText.isNotEmpty
-            ? IconButton(
-                icon: Icon(
-                  Icons.close_rounded,
-                  size: 16,
-                  color: GlassSurface.hintText,
-                ),
-                onPressed: () {
-                  _searchController.clear();
+        suffixIcon:
+            _searchText.isNotEmpty
+                ? IconButton(
+                    icon: Icon(
+                      Icons
+                          .close_rounded,
+                      size: 16,
+                      color:
+                          GlassSurface
+                              .hintText,
+                    ),
+                    onPressed: () {
+                      _searchController
+                          .clear();
 
-                  setState(() {
-                    _searchText = '';
-                  });
-                },
-              )
-            : null,
+                      setState(() {
+                        _searchText =
+                            '';
+                      });
+                    },
+                  )
+                : null,
         filled: true,
-        fillColor: GlassSurface.fill(),
-        contentPadding:
-            const EdgeInsets.symmetric(
-          vertical: 8,
-        ),
-        enabledBorder: OutlineInputBorder(
+        fillColor:
+            GlassSurface.fill(),
+        enabledBorder:
+            OutlineInputBorder(
           borderRadius:
-              BorderRadius.circular(7),
-          borderSide: BorderSide(
-            color: GlassSurface.border(),
+              BorderRadius.circular(
+            7,
+          ),
+          borderSide:
+              BorderSide(
+            color:
+                GlassSurface.border(),
           ),
         ),
-        focusedBorder: OutlineInputBorder(
+        focusedBorder:
+            OutlineInputBorder(
           borderRadius:
-              BorderRadius.circular(7),
-          borderSide: BorderSide(
-            color: GlassSurface.border(focused: true),
+              BorderRadius.circular(
+            7,
+          ),
+          borderSide:
+              BorderSide(
+            color:
+                GlassSurface.border(
+              focused: true,
+            ),
           ),
         ),
       ),
@@ -486,9 +752,12 @@ class _SettingsPageState extends State<SettingsPage> {
           CrossAxisAlignment.start,
       children: [
         _sectionTitle(
-          icon: Icons.business_rounded,
+          icon:
+              Icons.business_rounded,
           iconColor:
-              const Color(0xFF34A853),
+              const Color(
+            0xFF34A853,
+          ),
           title: 'Organization',
         ),
 
@@ -509,39 +778,28 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
 
         if (_matches('Branding'))
-          _settingLink(
-            title: 'Branding',
-            onTap: () {
-              _showComingSoon(
-                'Branding',
-              );
-            },
-          ),
-
-        if (_matches('Custom Domain'))
-          _settingLink(
-            title: 'Custom Domain',
-            onTap: () {
-              _showComingSoon(
-                'Custom Domain',
-              );
-            },
-          ),
-
-        if (_matches('Locations'))
-          _settingLink(
-            title: 'Locations',
-            onTap: () {
-              _showComingSoon(
-                'Locations',
-              );
-            },
+          _comingSoonLink(
+            'Branding',
           ),
 
         if (_matches(
-            'Manage Subscription'))
+          'Custom Domain',
+        ))
+          _comingSoonLink(
+            'Custom Domain',
+          ),
+
+        if (_matches('Locations'))
+          _comingSoonLink(
+            'Locations',
+          ),
+
+        if (_matches(
+          'Manage Subscription',
+        ))
           _settingLink(
-            title: 'Manage Subscription',
+            title:
+                'Manage Subscription',
             onTap:
                 _openManageSubscription,
           ),
@@ -550,7 +808,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // ================================================================
-  // USERS AND TAX COLUMN
+  // USERS + TAX
   // ================================================================
 
   Widget _usersAndTaxColumn() {
@@ -559,95 +817,83 @@ class _SettingsPageState extends State<SettingsPage> {
           CrossAxisAlignment.start,
       children: [
         _sectionTitle(
-          icon: Icons.groups_rounded,
+          icon:
+              Icons.groups_rounded,
           iconColor:
-              const Color(0xFFE83E7E),
-          title: 'Users & Roles',
+              const Color(
+            0xFFE83E7E,
+          ),
+          title:
+              'Users & Roles',
         ),
 
         const SizedBox(height: 8),
 
         if (_matches('Users'))
-          _settingLink(
-            title: 'Users',
-            onTap: () {
-              _showComingSoon('Users');
-            },
+          _comingSoonLink(
+            'Users',
           ),
 
         if (_matches('Roles'))
-          _settingLink(
-            title: 'Roles',
-            onTap: () {
-              _showComingSoon('Roles');
-            },
+          _comingSoonLink(
+            'Roles',
           ),
 
         if (_matches(
-            'User Preferences'))
-          _settingLink(
-            title: 'User Preferences',
-            onTap: () {
-              _showComingSoon(
-                'User Preferences',
-              );
-            },
+          'User Preferences',
+        ))
+          _comingSoonLink(
+            'User Preferences',
           ),
 
-        const SizedBox(height: 18),
+        const SizedBox(
+          height: 18,
+        ),
 
         _sectionTitle(
-          icon: Icons.shield_outlined,
+          icon:
+              Icons.shield_outlined,
           iconColor:
-              const Color(0xFFE83E7E),
-          title: 'Taxes & Compliance',
+              const Color(
+            0xFFE83E7E,
+          ),
+          title:
+              'Taxes & Compliance',
         ),
 
         const SizedBox(height: 8),
 
         if (_matches('Taxes'))
-          _settingLink(
-            title: 'Taxes',
-            onTap: () {
-              _showComingSoon('Taxes');
-            },
+          _comingSoonLink(
+            'Taxes',
           ),
 
-        if (_matches('Direct Taxes'))
-          _settingLink(
-            title: 'Direct Taxes',
-            onTap: () {
-              _showComingSoon(
-                'Direct Taxes',
-              );
-            },
+        if (_matches(
+          'Direct Taxes',
+        ))
+          _comingSoonLink(
+            'Direct Taxes',
           ),
 
-        if (_matches('e-Way Bills'))
-          _settingLink(
-            title: 'e-Way Bills',
-            onTap: () {
-              _showComingSoon(
-                'e-Way Bills',
-              );
-            },
+        if (_matches(
+          'e-Way Bills',
+        ))
+          _comingSoonLink(
+            'e-Way Bills',
           ),
 
-        if (_matches('e-Invoicing'))
-          _settingLink(
-            title: 'e-Invoicing',
-            onTap: () {
-              _showComingSoon(
-                'e-Invoicing',
-              );
-            },
+        if (_matches(
+          'e-Invoicing',
+        ))
+          _comingSoonLink(
+            'e-Invoicing',
           ),
       ],
     );
   }
 
   // ================================================================
-  // SETUP COLUMN
+  // SETUP
   // ================================================================
 
   Widget _setupColumn() {
@@ -656,73 +902,58 @@ class _SettingsPageState extends State<SettingsPage> {
           CrossAxisAlignment.start,
       children: [
         _sectionTitle(
-          icon: Icons.tune_rounded,
+          icon:
+              Icons.tune_rounded,
           iconColor:
-              const Color(0xFFF59A0A),
+              const Color(
+            0xFFF59A0A,
+          ),
           title:
               'Setup & Configurations',
         ),
 
         const SizedBox(height: 8),
 
-        if (_matches('Currencies'))
-          _settingLink(
-            title: 'Currencies',
-            onTap: () {
-              _showComingSoon(
-                'Currencies',
-              );
-            },
+        if (_matches(
+          'Currencies',
+        ))
+          _comingSoonLink(
+            'Currencies',
           ),
 
         if (_matches(
-            'Opening Balances'))
-          _settingLink(
-            title: 'Opening Balances',
-            onTap: () {
-              _showComingSoon(
-                'Opening Balances',
-              );
-            },
-          ),
-
-        if (_matches('Reminders'))
-          _settingLink(
-            title: 'Reminders',
-            onTap: () {
-              _showComingSoon(
-                'Reminders',
-              );
-            },
+          'Opening Balances',
+        ))
+          _comingSoonLink(
+            'Opening Balances',
           ),
 
         if (_matches(
-            'Customer Portal'))
-          _settingLink(
-            title: 'Customer Portal',
-            onTap: () {
-              _showComingSoon(
-                'Customer Portal',
-              );
-            },
+          'Reminders',
+        ))
+          _comingSoonLink(
+            'Reminders',
           ),
 
         if (_matches(
-            'Vendor Portal'))
-          _settingLink(
-            title: 'Vendor Portal',
-            onTap: () {
-              _showComingSoon(
-                'Vendor Portal',
-              );
-            },
+          'Customer Portal',
+        ))
+          _comingSoonLink(
+            'Customer Portal',
+          ),
+
+        if (_matches(
+          'Vendor Portal',
+        ))
+          _comingSoonLink(
+            'Vendor Portal',
           ),
       ],
     );
   }
 
   // ================================================================
-  // CUSTOMIZATION COLUMN
+  // CUSTOMIZATION
   // ================================================================
 
   Widget _customizationColumn() {
@@ -731,91 +962,321 @@ class _SettingsPageState extends State<SettingsPage> {
           CrossAxisAlignment.start,
       children: [
         _sectionTitle(
-          icon: Icons.palette_outlined,
+          icon:
+              Icons.palette_outlined,
           iconColor:
-              const Color(0xFF3478F6),
-          title: 'Customization',
+              const Color(
+            0xFF3478F6,
+          ),
+          title:
+              'Customization',
         ),
 
         const SizedBox(height: 8),
 
         if (_matches(
-            'Transaction Number Series'))
-          _settingLink(
-            title:
-                'Transaction Number Series',
-            onTap: () {
-              _showComingSoon(
-                'Transaction Number Series',
-              );
-            },
-          ),
-
-        if (_matches('PDF Templates'))
-          _settingLink(
-            title: 'PDF Templates',
-            onTap: () {
-              _showComingSoon(
-                'PDF Templates',
-              );
-            },
+          'Transaction Number Series',
+        ))
+          _comingSoonLink(
+            'Transaction Number Series',
           ),
 
         if (_matches(
-            'Email Notifications'))
-          _settingLink(
-            title:
-                'Email Notifications',
-            onTap: () {
-              _showComingSoon(
-                'Email Notifications',
-              );
-            },
+          'PDF Templates',
+        ))
+          _comingSoonLink(
+            'PDF Templates',
           ),
 
         if (_matches(
-            'SMS Notifications'))
-          _settingLink(
-            title:
-                'SMS Notifications',
-            onTap: () {
-              _showComingSoon(
-                'SMS Notifications',
-              );
-            },
+          'Email Notifications',
+        ))
+          _comingSoonLink(
+            'Email Notifications',
           ),
 
         if (_matches(
-            'Reporting Tags'))
-          _settingLink(
-            title: 'Reporting Tags',
-            onTap: () {
-              _showComingSoon(
-                'Reporting Tags',
-              );
-            },
+          'SMS Notifications',
+        ))
+          _comingSoonLink(
+            'SMS Notifications',
+          ),
+
+        if (_matches(
+          'Reporting Tags',
+        ))
+          _comingSoonLink(
+            'Reporting Tags',
           ),
 
         if (_matches('Web Tabs'))
-          _settingLink(
-            title: 'Web Tabs',
-            onTap: () {
-              _showComingSoon(
-                'Web Tabs',
-              );
-            },
+          _comingSoonLink(
+            'Web Tabs',
           ),
 
         if (_matches(
-            'Digital Signature'))
+          'Digital Signature',
+        ))
+          _comingSoonLink(
+            'Digital Signature',
+          ),
+      ],
+    );
+  }
+
+  // ================================================================
+  // GENERAL MODULE
+  // ================================================================
+
+  Widget _generalModuleColumn() {
+    return Column(
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(
+          icon:
+              Icons.apps_rounded,
+          iconColor:
+              const Color(
+            0xFF34A853,
+          ),
+          title: 'General',
+        ),
+
+        const SizedBox(height: 8),
+
+        if (_matches(
+          'Customers and Vendors',
+        ))
+          _comingSoonLink(
+            'Customers and Vendors',
+          ),
+
+        if (_matches('Items'))
+          _settingLink(
+            title: 'Items',
+            onTap:
+                _openItemPreferences,
+          ),
+
+        if (_matches('Accountant'))
+          _comingSoonLink(
+            'Accountant',
+          ),
+
+        if (_matches('Projects'))
+          _comingSoonLink(
+            'Projects',
+          ),
+
+        if (_matches('Timesheet'))
+          _comingSoonLink(
+            'Timesheet',
+          ),
+      ],
+    );
+  }
+
+  // ================================================================
+  // INVENTORY + ONLINE PAYMENTS
+  // ================================================================
+
+  Widget _inventoryModuleColumn() {
+    return Column(
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(
+          icon:
+              Icons.inventory_2_rounded,
+          iconColor:
+              const Color(
+            0xFFE83E7E,
+          ),
+          title: 'Inventory',
+        ),
+
+        const SizedBox(height: 8),
+
+        if (_matches(
+          'Inventory Adjustments',
+        ))
+          _comingSoonLink(
+            'Inventory Adjustments',
+          ),
+
+        const SizedBox(
+          height: 18,
+        ),
+
+        _sectionTitle(
+          icon:
+              Icons.credit_card_rounded,
+          iconColor:
+              const Color(
+            0xFF3498DB,
+          ),
+          title:
+              'Online Payments',
+        ),
+
+        const SizedBox(height: 8),
+
+        if (_matches(
+          'Customer Payments',
+        ))
+          _comingSoonLink(
+            'Customer Payments',
+          ),
+
+        if (_matches(
+          'Vendor Payments',
+        ))
+          _comingSoonLink(
+            'Vendor Payments',
+          ),
+      ],
+    );
+  }
+
+  // ================================================================
+  // SALES MODULE
+  // ================================================================
+
+  Widget _salesModuleColumn() {
+    return Column(
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(
+          icon:
+              Icons.show_chart_rounded,
+          iconColor:
+              const Color(
+            0xFF009688,
+          ),
+          title: 'Sales',
+        ),
+
+        const SizedBox(height: 8),
+
+        if (_matches('Estimates'))
+          _comingSoonLink(
+            'Estimates',
+          ),
+
+        if (_matches(
+          'Sales Orders',
+        ))
           _settingLink(
             title:
-                'Digital Signature',
-            onTap: () {
-              _showComingSoon(
-                'Digital Signature',
-              );
-            },
+                'Sales Orders',
+            onTap:
+                _openSalesOrderPreferences,
+          ),
+
+        if (_matches(
+          'Delivery Challans',
+        ))
+          _comingSoonLink(
+            'Delivery Challans',
+          ),
+
+        if (_matches('Invoices'))
+          _comingSoonLink(
+            'Invoices',
+          ),
+
+        if (_matches(
+          'Recurring Invoices',
+        ))
+          _comingSoonLink(
+            'Recurring Invoices',
+          ),
+
+        if (_matches(
+          'Payments Received',
+        ))
+          _comingSoonLink(
+            'Payments Received',
+          ),
+
+        if (_matches(
+          'Credit Notes',
+        ))
+          _comingSoonLink(
+            'Credit Notes',
+          ),
+
+        if (_matches(
+          'Delivery Notes',
+        ))
+          _comingSoonLink(
+            'Delivery Notes',
+          ),
+
+        if (_matches(
+          'Packing Slips',
+        ))
+          _comingSoonLink(
+            'Packing Slips',
+          ),
+      ],
+    );
+  }
+
+  // ================================================================
+  // PURCHASES MODULE
+  // ================================================================
+
+  Widget _purchasesModuleColumn() {
+    return Column(
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(
+          icon:
+              Icons.shopping_cart_rounded,
+          iconColor:
+              const Color(
+            0xFF673AB7,
+          ),
+          title: 'Purchases',
+        ),
+
+        const SizedBox(height: 8),
+
+        if (_matches('Expenses'))
+          _settingLink(
+            title: 'Expenses',
+            onTap:
+                _openExpenseSettings,
+          ),
+
+        if (_matches(
+          'Purchase Orders',
+        ))
+          _comingSoonLink(
+            'Purchase Orders',
+          ),
+
+        if (_matches('Bills'))
+          _comingSoonLink(
+            'Bills',
+          ),
+
+        if (_matches(
+          'Payments Made',
+        ))
+          _comingSoonLink(
+            'Payments Made',
+          ),
+
+        if (_matches(
+          'Vendor Credits',
+        ))
+          _comingSoonLink(
+            'Vendor Credits',
           ),
       ],
     );
@@ -835,11 +1296,15 @@ class _SettingsPageState extends State<SettingsPage> {
         Container(
           width: 26,
           height: 26,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
+          alignment:
+              Alignment.center,
+          decoration:
+              BoxDecoration(
             color: iconColor,
             borderRadius:
-                BorderRadius.circular(6),
+                BorderRadius.circular(
+              6,
+            ),
           ),
           child: Icon(
             icon,
@@ -853,7 +1318,8 @@ class _SettingsPageState extends State<SettingsPage> {
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(
+            style:
+                const TextStyle(
               color: Colors.white,
               fontSize: 14.5,
               fontWeight:
@@ -866,7 +1332,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // ================================================================
-  // SETTING LINK
+  // LINK
   // ================================================================
 
   Widget _settingLink({
@@ -876,6 +1342,19 @@ class _SettingsPageState extends State<SettingsPage> {
     return GlassLinkTile(
       title: title,
       onTap: onTap,
+    );
+  }
+
+  Widget _comingSoonLink(
+    String title,
+  ) {
+    return GlassLinkTile(
+      title: title,
+      onTap: () {
+        _showComingSoon(
+          title,
+        );
+      },
     );
   }
 }

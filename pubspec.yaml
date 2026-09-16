@@ -35,9 +35,11 @@ flutter:
 
   assets:
     - lib/widgets/Codexia_OG1.8.png
+    - assets/images/codexia_hero.png
 
   # Uncomment this section only if you have assets
   #
   # assets:
   #   - assets/images/
   #   - assets/icons/
+  

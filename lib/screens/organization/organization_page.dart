@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'settings/shared/glass_widgets.dart';
+import 'settings/expense_settings_page.dart';
+import 'settings/item_preferences_page.dart';
+import 'settings/sales_order_preferences_page.dart';
+
 // =====================================================================
 // ORGANIZATION PAGE (All Settings hub)
 //
@@ -30,6 +35,38 @@ class OrganizationPage extends StatelessWidget {
   });
 
   void _openItem(BuildContext context, String label) {
+    final normalizedLabel = label.trim().toLowerCase();
+
+    if (normalizedLabel == 'items' ||
+        normalizedLabel == 'item preferences') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const ItemPreferencesPage(),
+        ),
+      );
+      return;
+    }
+
+    if (normalizedLabel == 'sales orders' ||
+        normalizedLabel == 'sales order preferences') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const SalesOrderPreferencesPage(),
+        ),
+      );
+      return;
+    }
+
+    if (normalizedLabel == 'expenses' ||
+        normalizedLabel == 'expense settings') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const ExpenseSettingsPage(),
+        ),
+      );
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('$label settings - coming soon'),
@@ -47,9 +84,10 @@ class OrganizationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
-      body: Column(
+    return GlassPageBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Column(
         children: [
           _buildTopBar(context),
 
@@ -100,6 +138,7 @@ class OrganizationPage extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -108,16 +147,11 @@ class OrganizationPage extends StatelessWidget {
   // ==================================================================
 
   Widget _buildTopBar(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF4F6FA),
-        border: Border(
-          bottom: BorderSide(color: Color(0xFFE3E6EC)),
-        ),
-      ),
-      child: Row(
+    return GlassPanel(
+      borderRadius: BorderRadius.zero,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+        child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
@@ -129,7 +163,7 @@ class OrganizationPage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF1B1F27),
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -137,7 +171,7 @@ class OrganizationPage extends StatelessWidget {
                   organizationName,
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF6B7280),
+                    color: Color(0xFFCBD5E1),
                   ),
                 ),
               ],
@@ -148,32 +182,32 @@ class OrganizationPage extends StatelessWidget {
             width: 260,
             height: 42,
             child: TextField(
-              style: const TextStyle(fontSize: 14, color: Colors.black),
+              style: const TextStyle(fontSize: 14, color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Search settings (/)',
                 hintStyle: const TextStyle(
-                  color: Color(0xFF9AA3AD),
+                  color: Color(0xFF9AA7B8),
                   fontSize: 14,
                 ),
                 prefixIcon: const Icon(
                   Icons.search,
                   size: 20,
-                  color: Color(0xFF9AA3AD),
+                  color: Color(0xFF9AA7B8),
                 ),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: GlassSurface.fill(),
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFFD7DCE2)),
+                  borderSide: BorderSide(color: GlassSurface.border()),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFFD7DCE2)),
+                  borderSide: BorderSide(color: GlassSurface.border()),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF1E78B7)),
+                  borderSide: BorderSide(color: GlassSurface.border(focused: true)),
                 ),
               ),
             ),
@@ -186,8 +220,8 @@ class OrganizationPage extends StatelessWidget {
             icon: const Icon(Icons.close, size: 18),
             label: const Text('Close Settings'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE8EAFB),
-              foregroundColor: const Color(0xFF3F4CCB),
+              backgroundColor: GlassSurface.fill(emphasized: true),
+              foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(
                 horizontal: 16,
@@ -199,6 +233,7 @@ class OrganizationPage extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -212,15 +247,11 @@ class OrganizationPage extends StatelessWidget {
     required String title,
     required List<List<_SettingsGroup>> columns,
   }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE1E5EA)),
-      ),
-      child: Column(
+    return GlassPanel(
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -228,13 +259,13 @@ class OrganizationPage extends StatelessWidget {
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF1B1F27),
+              color: Colors.white,
             ),
           ),
 
           const SizedBox(height: 12),
 
-          const Divider(color: Color(0xFFE5E7EB)),
+          Divider(color: Colors.white.withValues(alpha: 0.16)),
 
           const SizedBox(height: 16),
 
@@ -259,6 +290,7 @@ class OrganizationPage extends StatelessWidget {
             ).toList(),
           ),
         ],
+        ),
       ),
     );
   }
@@ -295,7 +327,7 @@ class OrganizationPage extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF1B1F27),
+                  color: Colors.white,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -314,12 +346,12 @@ class OrganizationPage extends StatelessWidget {
                 item,
                 style: const TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF2F6FE4),
+                  color: Color(0xFF9CC6FF),
                 ),
               ),
             ),
           ),
-      ],
+        ],
     );
   }
 
@@ -423,6 +455,7 @@ class OrganizationPage extends StatelessWidget {
         items: const [
           'Customers and Vendors',
           'Items',
+          'Item Preferences',
           'Accountant',
           'Projects',
           'Timesheet',

@@ -170,13 +170,13 @@ class _GlassLinkTileState extends State<GlassLinkTile> {
           padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 8),
           decoration: BoxDecoration(
             color: hovering
-                ? Colors.white.withValues(alpha: 0.10)
-                : Colors.transparent,
+                ? Colors.white.withValues(alpha: 0.16)
+                : Colors.white.withValues(alpha: 0.055),
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: hovering
-                  ? Colors.white.withValues(alpha: 0.20)
-                  : Colors.transparent,
+                  ? Colors.white.withValues(alpha: 0.30)
+                  : Colors.white.withValues(alpha: 0.10),
             ),
           ),
           child: Align(

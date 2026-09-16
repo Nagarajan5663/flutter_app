@@ -142,16 +142,18 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    // Smaller feature cards: keep the sticky stack compact instead of
-    // occupying almost the full viewport.
-    final cardHeight = math.max(280.0, math.min(330.0, screenHeight * 0.42));
-    const peekHeight = 48.0;
+    final cardHeight = math.max(620.0, screenHeight * 0.92);
+    const peekHeight = 78.0;
 
     return Scaffold(
       backgroundColor: background,
       body: Stack(
         children: [
-          const Positioned.fill(child: _AuroraBackground()),
+          const Positioned.fill(
+            child: ColoredBox(
+              color: background,
+            ),
+          ),
           SafeArea(
             child: Column(
               children: [
@@ -171,7 +173,7 @@ class _HomePageState extends State<HomePage> {
                         slivers: [
                           ..._buildFeatureStackCards(cardHeight, peekHeight),
                           SliverToBoxAdapter(
-                            child: SizedBox(height: cardHeight * 0.52),
+                            child: SizedBox(height: cardHeight * 0.92),
                           ),
                         ],
                       ),
@@ -262,7 +264,7 @@ class _HomePageState extends State<HomePage> {
         ),
         const SizedBox(width: 10),
         _GoldButton(label: 'Get Started', onPressed: _goToSignUp),
-        const SizedBox(width: 10),
+        const SizedBox(width: 14),
         Container(
           width: 32,
           height: 32,
@@ -322,7 +324,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildWordmark() {
-    return const CodexiaLogo(iconSize: 31);
+    return const CodexiaLogo(iconSize: 40, fontSize: 20);
   }
 
   // ============================================================
@@ -330,225 +332,9 @@ class _HomePageState extends State<HomePage> {
   // ============================================================
 
   Widget _buildHeroSection() {
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 640),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 56),
-      child: Center(
-        child: _FloatingHeroContent(
-          child: _buildHeroText(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeroText() {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 850),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
-            decoration: BoxDecoration(
-              color: surfaceContainerHigh.withValues(alpha: 0.72),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: secondary.withValues(alpha: 0.25)),
-              boxShadow: [BoxShadow(color: secondary.withValues(alpha: 0.08), blurRadius: 24, spreadRadius: 2)],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const _PulsingDot(color: secondary),
-                const SizedBox(width: 9),
-                Text('SMART BUSINESS MANAGEMENT', style: TextStyle(color: secondary, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 28),
-          const Text('Manage Your Business', textAlign: TextAlign.center, style: TextStyle(color: onSurface, fontSize: 56, fontWeight: FontWeight.w800, height: 1.05, letterSpacing: -1)),
-          const SizedBox(height: 4),
-          Text('Elegantly.', textAlign: TextAlign.center, style: TextStyle(color: secondary, fontSize: 56, fontWeight: FontWeight.w800, height: 1.05, letterSpacing: -1, shadows: [Shadow(color: secondary.withValues(alpha: 0.35), blurRadius: 28)])),
-          const SizedBox(height: 26),
-          ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 700),
-            child: Text('Codexia gives you a powerful and simple way to manage your sales, purchases, inventory and finances from one beautiful connected platform.', textAlign: TextAlign.center, style: TextStyle(color: onSurfaceVariant, fontSize: 17, height: 1.7)),
-          ),
-          const SizedBox(height: 34),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 14,
-            runSpacing: 14,
-            children: [
-              _GoldButton(label: 'Start Your Free Trial', onPressed: _goToSignUp, large: true, icon: Icons.arrow_forward),
-              _GhostButton(label: 'Explore Features', onPressed: () => _scrollTo(featuresKey), icon: Icons.explore),
-            ],
-          ),
-          const SizedBox(height: 34),
-          const Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 20,
-            runSpacing: 12,
-            children: [
-              _HeroStatusItem(icon: Icons.auto_awesome_rounded, label: 'Smart automation'),
-              _HeroStatusItem(icon: Icons.sync_rounded, label: 'Connected workflows'),
-              _HeroStatusItem(icon: Icons.insights_rounded, label: 'Real-time insights'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeroVisual() {
-    return _TiltCard(
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: surfaceContainer.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 50, offset: const Offset(0, 20))],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                _dot(error),
-                const SizedBox(width: 6),
-                _dot(secondary),
-                const SizedBox(width: 6),
-                _dot(tertiary),
-                const Spacer(),
-                const Text('CODEXIA CORE OS v4.8',
-                    style: TextStyle(color: onSurfaceVariant, fontSize: 9, letterSpacing: 1)),
-              ],
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(child: _glassMetric('MONTHLY REVENUE', '₹1,45,200', '+18.4% vs last cycle', Icons.trending_up, secondary)),
-                const SizedBox(width: 12),
-                Expanded(child: _glassMetric('ORDERS PROCESSED', '248 Units', '99.4% On-time delivery', Icons.shopping_bag, primary)),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: surfaceContainerLowest.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(14)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Text('Weekly Transaction Velocity',
-                          style: TextStyle(color: onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
-                      const Spacer(),
-                      Text('LIVE TELEMETRY',
-                          style: TextStyle(color: secondary, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1)),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 110,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        _weekBar('M', 0.45), _weekBar('T', 0.65), _weekBar('W', 0.55),
-                        _weekBar('T', 0.85), _weekBar('F', 0.70), _weekBar('S', 0.95, peak: true), _weekBar('S', 0.60),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _alertChip(error, 'Stock Warning', '3 Low Items', error)),
-                const SizedBox(width: 10),
-                Expanded(child: _alertChip(secondary, 'Invoicing', '12 Pending', secondary)),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _dot(Color color) => Container(width: 11, height: 11, decoration: BoxDecoration(color: color, shape: BoxShape.circle));
-
-  Widget _glassMetric(String label, String value, String delta, IconData icon, Color accent) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: surfaceContainerHigh.withValues(alpha: 0.9), borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(child: Text(label, style: const TextStyle(color: onSurfaceVariant, fontSize: 10, letterSpacing: 0.6))),
-              Icon(icon, color: accent, size: 18),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(value, style: const TextStyle(color: onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
-          Text(delta, style: TextStyle(color: accent, fontSize: 11, fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
-
-  Widget _weekBar(String label, double h, {bool peak = false}) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Expanded(
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: h),
-                  duration: const Duration(milliseconds: 1100),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, child) => FractionallySizedBox(
-                    heightFactor: value,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: peak ? secondary : secondaryContainer.withValues(alpha: 0.55),
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-                        boxShadow: peak ? [BoxShadow(color: secondary.withValues(alpha: 0.6), blurRadius: 10)] : null,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(label, style: const TextStyle(color: onSurfaceVariant, fontSize: 10)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _alertChip(Color dot, String label, String value, Color valueColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(color: surfaceContainerHigh.withValues(alpha: 0.9), borderRadius: BorderRadius.circular(8)),
-      child: Row(
-        children: [
-          Container(width: 7, height: 7, decoration: BoxDecoration(color: dot, shape: BoxShape.circle)),
-          const SizedBox(width: 6),
-          Expanded(child: Text(label, style: const TextStyle(color: onSurfaceVariant, fontSize: 11))),
-          Text(value, style: TextStyle(color: valueColor, fontSize: 11, fontWeight: FontWeight.bold)),
-        ],
-      ),
+    return _FloatingCodexiaHero(
+      onStartTrial: _goToSignUp,
+      onExploreFeatures: () => _scrollTo(featuresKey),
     );
   }
 
@@ -603,7 +389,7 @@ class _HomePageState extends State<HomePage> {
                   decoration: BoxDecoration(color: accent.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
                   child: Icon(icon, color: accent, size: 26),
                 ),
-                Text(tag, style: TextStyle(color: accent, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                Text(tag, style: TextStyle(color: accent, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
               ],
             ),
             const SizedBox(height: 16),
@@ -681,7 +467,7 @@ class _HomePageState extends State<HomePage> {
         key: i == 0 ? featuresKey : null,
         pinned: true,
         delegate: _StackCardDelegate(
-          maxHeight: cardHeight,
+          maxHeight: cardHeight * 0.78,
           minHeight: peekHeight,
           contentBuilder: (context, progress) =>
               _stackedFeatureCard(features[i], i + 1, features.length, progress),
@@ -695,15 +481,15 @@ class _HomePageState extends State<HomePage> {
   /// stack, so it must never depend on `progress`.
   Widget _stackHeader({required IconData icon, required Color accent, required String title, required String tag, required int index, required int total}) {
     return Container(
-      height: 58,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
+      height: 78,
+      padding: const EdgeInsets.symmetric(horizontal: 28),
       child: Row(
         children: [
           Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(color: accent.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: accent, size: 17),
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(color: accent.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(12)),
+            child: Icon(icon, color: accent, size: 21),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -715,7 +501,7 @@ class _HomePageState extends State<HomePage> {
                 Text(title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
+                    style: const TextStyle(color: onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
               ],
             ),
           ),
@@ -728,29 +514,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _stackCardShell({required Color accent, required Widget child}) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(26)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.075),
-                surfaceContainer.withValues(alpha: 0.56),
-                surfaceContainerLowest.withValues(alpha: 0.42),
-              ],
-            ),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.12),
-            ),
-          ),
-          child: child,
-        ),
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: surfaceContainer,
+        border: Border(top: BorderSide(color: accent.withValues(alpha: 0.25), width: 1)),
       ),
+      child: child,
     );
   }
 
@@ -775,18 +545,18 @@ class _HomePageState extends State<HomePage> {
             Expanded(
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 980),
+                  constraints: const BoxConstraints(maxWidth: 1100),
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                    padding: const EdgeInsets.fromLTRB(28, 0, 28, 32),
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        final stacked = constraints.maxWidth < 760;
+                        final stacked = constraints.maxWidth < 820;
 
                         final image = ClipRRect(
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(20),
                           child: _HoverImage(
                             imageUrl: f.imageUrl,
-                            height: stacked ? 100 : null,
+                            height: stacked ? 220 : null,
                           ),
                         );
 
@@ -798,23 +568,21 @@ class _HomePageState extends State<HomePage> {
                               f.title,
                               style: const TextStyle(
                                 color: onSurface,
-                                fontSize: 20,
+                                fontSize: 28,
                                 fontWeight: FontWeight.bold,
-                                height: 1.12,
+                                height: 1.15,
                               ),
                             ),
-                            const SizedBox(height: 5),
+                            const SizedBox(height: 14),
                             Text(
                               f.copy,
-                              maxLines: stacked ? 3 : 4,
-                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: onSurfaceVariant,
-                                fontSize: 11.5,
-                                height: 1.45,
+                                fontSize: 15,
+                                height: 1.65,
                               ),
                             ),
-                            const SizedBox(height: 7),
+                            const SizedBox(height: 22),
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -822,12 +590,16 @@ class _HomePageState extends State<HomePage> {
                                   'Inspect Workflow',
                                   style: TextStyle(
                                     color: f.accent,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                const SizedBox(width: 5),
-                                Icon(Icons.arrow_forward, color: f.accent, size: 13),
+                                const SizedBox(width: 6),
+                                Icon(
+                                  Icons.arrow_forward,
+                                  color: f.accent,
+                                  size: 16,
+                                ),
                               ],
                             ),
                           ],
@@ -838,8 +610,12 @@ class _HomePageState extends State<HomePage> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SizedBox(width: double.infinity, height: 100, child: image),
-                              const SizedBox(height: 7),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 220,
+                                child: image,
+                              ),
+                              const SizedBox(height: 22),
                               copy,
                             ],
                           );
@@ -850,10 +626,16 @@ class _HomePageState extends State<HomePage> {
                           children: [
                             Expanded(
                               flex: 5,
-                              child: SizedBox(height: 140, child: image),
+                              child: SizedBox(
+                                height: 320,
+                                child: image,
+                              ),
                             ),
-                            const SizedBox(width: 14),
-                            Expanded(flex: 6, child: copy),
+                            const SizedBox(width: 44),
+                            Expanded(
+                              flex: 6,
+                              child: copy,
+                            ),
                           ],
                         );
                       },
@@ -869,7 +651,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   double cardHeightForBody(BoxConstraints c) =>
-      math.min(310.0, c.maxHeight.isFinite ? c.maxHeight : 310.0);
+      math.min(380.0, c.maxHeight.isFinite ? c.maxHeight : 380.0);
 
   // ============================================================
   // NORMAL SECTIONS AFTER THE FEATURE STACK
@@ -1183,7 +965,7 @@ class _HomePageState extends State<HomePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Built For Better, Rapid Decisions',
-            style: TextStyle(color: onSurface, fontSize: 20, fontWeight: FontWeight.bold, height: 1.15)),
+            style: TextStyle(color: onSurface, fontSize: 24, fontWeight: FontWeight.bold, height: 1.15)),
         const SizedBox(height: 10),
         const Text(
           'Run your company on live figures rather than delayed spreadsheets. Codexia synthesizes operational noise into strategic signal.',
@@ -1351,7 +1133,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           const SizedBox(height: 12),
-          Text(desc, style: const TextStyle(color: onSurfaceVariant, fontSize: 11.5, height: 1.5)),
+          Text(desc, style: const TextStyle(color: onSurfaceVariant, fontSize: 12.5, height: 1.5)),
           const SizedBox(height: 14),
           for (final f in features)
             Padding(
@@ -1429,7 +1211,7 @@ class _HomePageState extends State<HomePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Engineered To Make Management Intuitive',
-            style: TextStyle(color: onSurface, fontSize: 20, fontWeight: FontWeight.bold, height: 1.15)),
+            style: TextStyle(color: onSurface, fontSize: 24, fontWeight: FontWeight.bold, height: 1.15)),
         const SizedBox(height: 10),
         const Text(
           'Codexia was founded with a singular conviction: operational friction is the silent killer of '
@@ -1521,7 +1303,7 @@ class _HomePageState extends State<HomePage> {
         const SizedBox(height: 14),
         const Text(
           'The smart business management platform engineered for executive clarity, automated operations, and complete procedural command.',
-          style: TextStyle(color: onSurfaceVariant, fontSize: 11.5, height: 1.6),
+          style: TextStyle(color: onSurfaceVariant, fontSize: 12.5, height: 1.6),
         ),
       ],
     );
@@ -1578,6 +1360,308 @@ class _HomePageState extends State<HomePage> {
 // Supporting data class
 // ============================================================
 
+
+// ============================================================
+// FLOATING CODEXIA HERO ARTWORK
+// Uses the exact supplied hero image as the visual itself.
+// The artwork floats, breathes and tilts gently with the mouse.
+// Invisible hit-zones preserve the two CTA actions printed
+// inside the artwork without changing the image visually.
+// ============================================================
+
+class _FloatingCodexiaHero extends StatefulWidget {
+  final VoidCallback onStartTrial;
+  final VoidCallback onExploreFeatures;
+
+  const _FloatingCodexiaHero({
+    required this.onStartTrial,
+    required this.onExploreFeatures,
+  });
+
+  @override
+  State<_FloatingCodexiaHero> createState() =>
+      _FloatingCodexiaHeroState();
+}
+
+class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  double _mouseX = 0;
+  double _mouseY = 0;
+
+  static const double _artAspectRatio = 1012 / 510;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 6),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleHover(PointerEvent event) {
+    final renderObject = context.findRenderObject();
+
+    if (renderObject is! RenderBox) {
+      return;
+    }
+
+    final size = renderObject.size;
+
+    if (size.width <= 0 || size.height <= 0) {
+      return;
+    }
+
+    final x = (event.localPosition.dx / size.width) - 0.5;
+    final y = (event.localPosition.dy / size.height) - 0.5;
+
+    setState(() {
+      _mouseX = x.clamp(-0.5, 0.5);
+      _mouseY = y.clamp(-0.5, 0.5);
+    });
+  }
+
+  void _resetHover() {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _mouseX = 0;
+      _mouseY = 0;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(
+        minHeight: 650,
+      ),
+      padding: const EdgeInsets.fromLTRB(
+        20,
+        30,
+        20,
+        46,
+      ),
+      color: const Color(0xFF00142A),
+      child: Center(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final bool desktop = constraints.maxWidth >= 850;
+
+            final double maxArtworkWidth = constraints.maxWidth >= 1400
+                ? 1120
+                : constraints.maxWidth >= 1000
+                    ? constraints.maxWidth * 0.90
+                    : constraints.maxWidth >= 650
+                        ? constraints.maxWidth * 0.94
+                        : constraints.maxWidth;
+
+            final double artworkWidth =
+                math.min(maxArtworkWidth, constraints.maxWidth);
+
+            final double artworkHeight =
+                artworkWidth / _artAspectRatio;
+
+            return MouseRegion(
+              cursor: SystemMouseCursors.basic,
+              onHover: desktop ? _handleHover : null,
+              onExit: (_) {
+                if (desktop) {
+                  _resetHover();
+                }
+              },
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  final phase =
+                      _controller.value * math.pi * 2;
+
+                  final floatY =
+                      math.sin(phase) * (desktop ? 12.0 : 7.0);
+
+                  final floatX =
+                      math.cos(phase * 0.72) * (desktop ? 3.5 : 1.5);
+
+                  final breathe =
+                      1 + (math.sin(phase) * 0.0065);
+
+                  final autoRotation =
+                      math.sin(phase * 0.55) * 0.0022;
+
+                  final pointerX =
+                      desktop ? _mouseX * 18 : 0.0;
+
+                  final pointerY =
+                      desktop ? _mouseY * 10 : 0.0;
+
+                  return Transform.translate(
+                    offset: Offset(
+                      floatX + pointerX,
+                      floatY + pointerY,
+                    ),
+                    child: Transform.scale(
+                      scale: breathe,
+                      alignment: Alignment.center,
+                      child: Transform(
+                        alignment: Alignment.center,
+                        transform: Matrix4.identity()
+                          ..setEntry(3, 2, 0.0012)
+                          ..rotateX(
+                            desktop
+                                ? -_mouseY * 0.025
+                                : 0,
+                          )
+                          ..rotateY(
+                            desktop
+                                ? _mouseX * 0.025
+                                : 0,
+                          )
+                          ..rotateZ(autoRotation),
+                        child: child,
+                      ),
+                    ),
+                  );
+                },
+                child: SizedBox(
+                  width: artworkWidth,
+                  height: artworkHeight,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Soft glow only. No border, crop or filter is applied,
+                      // so the hero image itself remains visually unchanged.
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF3AA8FF)
+                                    .withValues(alpha: 0.15),
+                                blurRadius: 52,
+                                spreadRadius: 2,
+                                offset: const Offset(0, 18),
+                              ),
+                              BoxShadow(
+                                color: Colors.black
+                                    .withValues(alpha: 0.38),
+                                blurRadius: 34,
+                                offset: const Offset(0, 22),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      Image.asset(
+                        'assets/images/codexia_hero.png',
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
+                      ),
+
+                      // Invisible click target over "Start Your Free Trial".
+                      Positioned(
+                        left: artworkWidth * 0.382,
+                        top: artworkHeight * 0.746,
+                        width: artworkWidth * 0.135,
+                        height: artworkHeight * 0.083,
+                        child: _InvisibleHeroAction(
+                          tooltip: 'Start Your Free Trial',
+                          onTap: widget.onStartTrial,
+                        ),
+                      ),
+
+                      // Invisible click target over "Explore Features".
+                      Positioned(
+                        left: artworkWidth * 0.523,
+                        top: artworkHeight * 0.746,
+                        width: artworkWidth * 0.135,
+                        height: artworkHeight * 0.083,
+                        child: _InvisibleHeroAction(
+                          tooltip: 'Explore Features',
+                          onTap: widget.onExploreFeatures,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _InvisibleHeroAction extends StatefulWidget {
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _InvisibleHeroAction({
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  State<_InvisibleHeroAction> createState() =>
+      _InvisibleHeroActionState();
+}
+
+class _InvisibleHeroActionState extends State<_InvisibleHeroAction> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: widget.tooltip,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) {
+          setState(() {
+            _hovering = true;
+          });
+        },
+        onExit: (_) {
+          setState(() {
+            _hovering = false;
+          });
+        },
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: _hovering
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFFFDBA5A)
+                            .withValues(alpha: 0.20),
+                        blurRadius: 18,
+                      ),
+                    ]
+                  : null,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _Feature {
   final String title;
   final String copy;
@@ -1622,8 +1706,8 @@ class _AnimatedFeatureBackgroundState extends State<_AnimatedFeatureBackground>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 3600 + widget.index * 450),
-    )..repeat();
+      duration: Duration(seconds: 8 + widget.index * 2),
+    )..repeat(reverse: true);
   }
 
   @override
@@ -1639,89 +1723,58 @@ class _AnimatedFeatureBackgroundState extends State<_AnimatedFeatureBackground>
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: AnimatedScale(
-        duration: const Duration(milliseconds: 240),
+        duration: const Duration(milliseconds: 260),
         curve: Curves.easeOutCubic,
-        scale: _hovered ? 1.008 : 1,
+        scale: _hovered ? 1.012 : 1,
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, _) {
             final t = _controller.value;
-            final flashX = -1.8 + (t * 3.6);
-
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                // Subtle animated ambient light behind the glass.
-                Positioned(
-                  left: -120 + math.sin(t * math.pi * 2) * 60,
-                  top: 10,
-                  child: IgnorePointer(
-                    child: Container(
-                      width: 240,
-                      height: 240,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: widget.accent.withValues(alpha: _hovered ? 0.24 : 0.10),
-                            blurRadius: _hovered ? 90 : 70,
-                            spreadRadius: 25,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+            return Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment(-1 + t * 0.8, -1),
+                  end: Alignment(1, 1 - t * 0.8),
+                  colors: [
+                    _HomePageState.surfaceContainerLowest,
+                    Color.lerp(_HomePageState.surfaceContainer, widget.accent, 0.10 + (_hovered ? 0.08 : 0.0))!,
+                    _HomePageState.surfaceContainer,
+                  ],
                 ),
-                Positioned.fill(child: widget.child),
-
-                // Glass flash: a thin diagonal highlight sweeps across only on hover.
-                if (_hovered)
-                  IgnorePointer(
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(26)),
-                      child: Align(
-                        alignment: Alignment(flashX, 0),
-                        child: Transform.rotate(
-                          angle: -0.22,
-                          child: Container(
-                            width: 110,
-                            height: 900,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.white.withValues(alpha: 0.24),
-                                  Colors.white.withValues(alpha: 0.06),
-                                  Colors.transparent,
-                                ],
-                              ),
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.accent.withValues(alpha: _hovered ? 0.28 : 0.10),
+                    blurRadius: _hovered ? 34 : 18,
+                    spreadRadius: _hovered ? 2 : 0,
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    left: -100 + t * 140,
+                    top: 40 + math.sin(t * math.pi) * 80,
+                    child: IgnorePointer(
+                      child: Container(
+                        width: 260,
+                        height: 260,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: widget.accent.withValues(alpha: _hovered ? 0.12 : 0.06),
+                          boxShadow: [
+                            BoxShadow(
+                              color: widget.accent.withValues(alpha: 0.16),
+                              blurRadius: 90,
+                              spreadRadius: 40,
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-
-                // Accent edge becomes brighter when the pointer is over the card.
-                IgnorePointer(
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: widget.accent.withValues(alpha: _hovered ? 0.62 : 0.20),
-                      ),
-                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(26)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: widget.accent.withValues(alpha: _hovered ? 0.22 : 0.05),
-                          blurRadius: _hovered ? 28 : 12,
-                          spreadRadius: _hovered ? 1 : 0,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+                  Positioned.fill(child: widget.child),
+                ],
+              ),
             );
           },
         ),
@@ -2249,7 +2302,7 @@ class _TiltCardState extends State<_TiltCard> {
   double _rotateY = 0;
   bool _hovered = false;
 
-  void _onHover(PointerEvent event) {
+  void _onHover(PointerHoverEvent event) {
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return;
     final local = box.globalToLocal(event.position);
