@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-
 import '../organization/organization_page.dart';
 import '../organization/general_settings_page.dart';
 import '../organization/manage_subscription_page.dart';
+import '../users/manage_users_page.dart';
+import '../users/manage_roles_page.dart';
+import '../taxes/manage_taxes_page.dart';
+import '../customization/transaction_number_series_page.dart';
 
 class SettingsPage extends StatefulWidget {
   final VoidCallback? onClose;
@@ -20,6 +23,10 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _showOrganizationProfile = false;
   bool _showGeneralSettings = false;
   bool _showManageSubscription = false;
+  bool _showManageUsers = false;
+  bool _showManageRoles = false;
+  bool _showManageTaxes = false;
+  bool _showTransactionNumberSeries = false;
 
   final TextEditingController _searchController =
       TextEditingController();
@@ -115,6 +122,46 @@ class _SettingsPageState extends State<SettingsPage> {
     onBack: () {
       setState(() {
         _showManageSubscription = false;
+      });
+    },
+  );
+}
+
+   if (_showManageUsers) {
+  return ManageUsersPage(
+    onBack: () {
+      setState(() {
+        _showManageUsers = false;
+      });
+    },
+  );
+}
+
+    if (_showManageRoles) {
+  return ManageRolesPage(
+    onBack: () {
+      setState(() {
+        _showManageRoles = false;
+      });
+    },
+  );
+}    
+
+    if (_showManageTaxes) {
+  return ManageTaxesPage(
+    onBack: () {
+      setState(() {
+        _showManageTaxes = false;
+      });
+    },
+  );
+}
+
+    if (_showTransactionNumberSeries) {
+  return TransactionNumberSeriesPage(
+    onBack: () {
+      setState(() {
+        _showTransactionNumberSeries = false;
       });
     },
   );
@@ -557,20 +604,24 @@ class _SettingsPageState extends State<SettingsPage> {
         const SizedBox(height: 10),
 
         if (_matches('Users'))
-          _settingLink(
-            title: 'Users',
-            onTap: () {
-              _showComingSoon('Users');
-            },
-          ),
+  _settingLink(
+    title: 'Users',
+    onTap: () {
+      setState(() {
+        _showManageUsers = true;
+      });
+    },
+  ),
 
-        if (_matches('Roles'))
-          _settingLink(
-            title: 'Roles',
-            onTap: () {
-              _showComingSoon('Roles');
-            },
-          ),
+      if (_matches('Roles'))
+  _settingLink(
+    title: 'Roles',
+    onTap: () {
+      setState(() {
+        _showManageRoles = true;
+      });
+    },
+  ),
 
         if (_matches('User Preferences'))
           _settingLink(
@@ -593,12 +644,14 @@ class _SettingsPageState extends State<SettingsPage> {
         const SizedBox(height: 10),
 
         if (_matches('Taxes'))
-          _settingLink(
-            title: 'Taxes',
-            onTap: () {
-              _showComingSoon('Taxes');
-            },
-          ),
+  _settingLink(
+    title: 'Taxes',
+    onTap: () {
+      setState(() {
+        _showManageTaxes = true;
+      });
+    },
+  ),
 
         if (_matches('Direct Taxes'))
           _settingLink(
@@ -707,14 +760,14 @@ class _SettingsPageState extends State<SettingsPage> {
         const SizedBox(height: 10),
 
         if (_matches('Transaction Number Series'))
-          _settingLink(
-            title: 'Transaction Number Series',
-            onTap: () {
-              _showComingSoon(
-                'Transaction Number Series',
-              );
-            },
-          ),
+  _settingLink(
+    title: 'Transaction Number Series',
+    onTap: () {
+      setState(() {
+        _showTransactionNumberSeries = true;
+      });
+    },
+  ),
 
         if (_matches('PDF Templates'))
           _settingLink(
