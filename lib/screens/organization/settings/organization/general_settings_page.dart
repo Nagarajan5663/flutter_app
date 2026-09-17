@@ -47,12 +47,10 @@ class _GeneralSettingsPageState
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color(0xFFF1F7F8),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF1F7F8),
 
-      child: SingleChildScrollView(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
           28,
           25,
@@ -194,9 +192,15 @@ class _GeneralSettingsPageState
 
                       const SizedBox(height: 15),
 
+                      // =============================================
                       // BANK NAME + ACCOUNT NUMBER
+                      // =============================================
+
                       LayoutBuilder(
-                        builder: (context, constraints) {
+                        builder: (
+                          context,
+                          constraints,
+                        ) {
                           if (constraints.maxWidth >=
                               650) {
                             return Row(
@@ -213,7 +217,9 @@ class _GeneralSettingsPageState
                                   ),
                                 ),
 
-                                const SizedBox(width: 22),
+                                const SizedBox(
+                                  width: 22,
+                                ),
 
                                 Expanded(
                                   child: _buildField(
@@ -239,10 +245,13 @@ class _GeneralSettingsPageState
                                     bankNameController,
                               ),
 
-                              const SizedBox(height: 18),
+                              const SizedBox(
+                                height: 18,
+                              ),
 
                               _buildField(
-                                label: 'Account Number',
+                                label:
+                                    'Account Number',
                                 hintText:
                                     'Your account number',
                                 controller:
@@ -255,9 +264,15 @@ class _GeneralSettingsPageState
 
                       const SizedBox(height: 22),
 
-                      // IFSC + BRANCH
+                      // =============================================
+                      // IFSC + BRANCH NAME
+                      // =============================================
+
                       LayoutBuilder(
-                        builder: (context, constraints) {
+                        builder: (
+                          context,
+                          constraints,
+                        ) {
                           if (constraints.maxWidth >=
                               650) {
                             return Row(
@@ -274,7 +289,9 @@ class _GeneralSettingsPageState
                                   ),
                                 ),
 
-                                const SizedBox(width: 22),
+                                const SizedBox(
+                                  width: 22,
+                                ),
 
                                 Expanded(
                                   child: _buildField(
@@ -299,7 +316,9 @@ class _GeneralSettingsPageState
                                     ifscController,
                               ),
 
-                              const SizedBox(height: 18),
+                              const SizedBox(
+                                height: 18,
+                              ),
 
                               _buildField(
                                 label: 'Branch Name',
@@ -338,7 +357,10 @@ class _GeneralSettingsPageState
                       const SizedBox(height: 15),
 
                       LayoutBuilder(
-                        builder: (context, constraints) {
+                        builder: (
+                          context,
+                          constraints,
+                        ) {
                           if (constraints.maxWidth >=
                               650) {
                             return Row(
@@ -355,7 +377,9 @@ class _GeneralSettingsPageState
                                   ),
                                 ),
 
-                                const SizedBox(width: 22),
+                                const SizedBox(
+                                  width: 22,
+                                ),
 
                                 Expanded(
                                   child: _buildField(
@@ -381,7 +405,9 @@ class _GeneralSettingsPageState
                                     upiController,
                               ),
 
-                              const SizedBox(height: 18),
+                              const SizedBox(
+                                height: 18,
+                              ),
 
                               _buildField(
                                 label:
@@ -410,12 +436,18 @@ class _GeneralSettingsPageState
                       // =============================================
 
                       Align(
-                        alignment: Alignment.centerRight,
+                        alignment:
+                            Alignment.centerRight,
 
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            ScaffoldMessenger.of(context)
-                                .showSnackBar(
+                            ScaffoldMessenger.of(
+                              context,
+                            ).hideCurrentSnackBar();
+
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(
                               const SnackBar(
                                 content: Text(
                                   'General settings saved',
@@ -433,9 +465,12 @@ class _GeneralSettingsPageState
                             'Save Changes',
                           ),
 
-                          style: ElevatedButton.styleFrom(
+                          style:
+                              ElevatedButton.styleFrom(
                             backgroundColor:
-                                const Color(0xFF27A844),
+                                const Color(
+                              0xFF27A844,
+                            ),
 
                             foregroundColor:
                                 Colors.white,
@@ -443,7 +478,8 @@ class _GeneralSettingsPageState
                             elevation: 0,
 
                             padding:
-                                const EdgeInsets.symmetric(
+                                const EdgeInsets
+                                    .symmetric(
                               horizontal: 18,
                               vertical: 13,
                             ),
@@ -456,7 +492,8 @@ class _GeneralSettingsPageState
                               ),
                             ),
 
-                            textStyle: const TextStyle(
+                            textStyle:
+                                const TextStyle(
                               fontSize: 12,
                               fontWeight:
                                   FontWeight.w600,
@@ -528,6 +565,7 @@ class _GeneralSettingsPageState
             enabledBorder: OutlineInputBorder(
               borderRadius:
                   BorderRadius.circular(4),
+
               borderSide: const BorderSide(
                 color: Color(0xFFDDE2E5),
               ),
@@ -536,6 +574,7 @@ class _GeneralSettingsPageState
             focusedBorder: OutlineInputBorder(
               borderRadius:
                   BorderRadius.circular(4),
+
               borderSide: const BorderSide(
                 color: Color(0xFF4C79E8),
               ),

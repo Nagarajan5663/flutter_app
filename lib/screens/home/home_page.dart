@@ -56,9 +56,6 @@ class _HomePageState extends State<HomePage> {
   static const Color onSecondary = Color(0xFF452B00);
 
   static const Color tertiary = Color(0xFF4EDEA3); // mint
-  static const Color onTertiary = Color(0xFF003824);
-
-  static const Color error = Color(0xFFFFB4AB);
 
   static const Color onSurface = Color(0xFFD2E4FF);
   static const Color onSurfaceVariant = Color(0xFFC3C6CF);
@@ -837,6 +834,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Retained for the alternate stacked landing-page composition.
+  // ignore: unused_element
   Widget _stackedShowcaseCard(int index, int total, double progress) {
     return _stackCardShell(
       accent: secondary,
@@ -1033,6 +1032,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Retained for the alternate stacked landing-page composition.
+  // ignore: unused_element
   Widget _stackedPricingCard(int index, int total, double progress) {
     return _stackCardShell(
       accent: secondary,
@@ -1176,6 +1177,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Retained for the alternate stacked landing-page composition.
+  // ignore: unused_element
   Widget _stackedAboutCard(int index, int total, double progress) {
     return _stackCardShell(
       accent: tertiary,
@@ -2139,7 +2142,7 @@ class _GoldButtonState extends State<_GoldButton> {
 }
 
 class _GhostButton extends StatefulWidget {
-  const _GhostButton({required this.label, required this.onPressed, this.icon});
+  const _GhostButton({required this.label, required this.onPressed}) : icon = null;
   final String label;
   final VoidCallback onPressed;
   final IconData? icon;
@@ -2357,7 +2360,7 @@ class _TiltCardState extends State<_TiltCard> {
           ..setEntry(3, 2, 0.0015)
           ..rotateX(_rotateX)
           ..rotateY(_rotateY)
-          ..translate(0.0, _hovered ? -4.0 : 0.0),
+          ..translateByDouble(0.0, _hovered ? -4.0 : 0.0, 0.0, 1.0),
         child: widget.child,
       ),
     );
@@ -2365,7 +2368,7 @@ class _TiltCardState extends State<_TiltCard> {
 }
 
 class _HoverScale extends StatefulWidget {
-  const _HoverScale({required this.child, this.scale = 1.05});
+  const _HoverScale({required this.child}) : scale = 1.05;
   final Widget child;
   final double scale;
 
@@ -2539,6 +2542,8 @@ class _FloatingHeroContentState extends State<_FloatingHeroContent>
   }
 }
 
+// Retained for the alternate hero composition.
+// ignore: unused_element
 class _HeroStatusItem extends StatelessWidget {
   final IconData icon;
   final String label;

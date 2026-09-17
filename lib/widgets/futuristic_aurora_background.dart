@@ -179,12 +179,12 @@ class _FuturisticAuroraBackgroundState
                     colors: [
                       Colors.transparent,
                       Colors.black
-                          .withOpacity(
-                            0.06,
+                          .withValues(
+                            alpha: 0.06,
                           ),
                       Colors.black
-                          .withOpacity(
-                            0.38,
+                          .withValues(
+                            alpha: 0.38,
                           ),
                     ],
                     stops: const [
@@ -225,11 +225,11 @@ class _GlowOrb extends StatelessWidget {
         shape: BoxShape.circle,
         gradient: RadialGradient(
           colors: [
-            color.withOpacity(
-              opacity,
+            color.withValues(
+              alpha: opacity,
             ),
-            color.withOpacity(
-              opacity * 0.35,
+            color.withValues(
+              alpha: opacity * 0.35,
             ),
             Colors.transparent,
           ],
@@ -303,14 +303,14 @@ class _AuroraPainter
       thickness: 125,
       colors: [
         Colors.transparent,
-        cyan.withOpacity(
-          0.22,
+        cyan.withValues(
+          alpha: 0.22,
         ),
-        blue.withOpacity(
-          0.28,
+        blue.withValues(
+          alpha: 0.28,
         ),
-        violet.withOpacity(
-          0.18,
+        violet.withValues(
+          alpha: 0.18,
         ),
         Colors.transparent,
       ],
@@ -331,14 +331,14 @@ class _AuroraPainter
       thickness: 160,
       colors: [
         Colors.transparent,
-        violet.withOpacity(
-          0.22,
+        violet.withValues(
+          alpha: 0.22,
         ),
-        purple.withOpacity(
-          0.20,
+        purple.withValues(
+          alpha: 0.20,
         ),
-        pink.withOpacity(
-          0.09,
+        pink.withValues(
+          alpha: 0.09,
         ),
         Colors.transparent,
       ],
@@ -359,14 +359,14 @@ class _AuroraPainter
       thickness: 120,
       colors: [
         Colors.transparent,
-        blue.withOpacity(
-          0.14,
+        blue.withValues(
+          alpha: 0.14,
         ),
-        violet.withOpacity(
-          0.15,
+        violet.withValues(
+          alpha: 0.15,
         ),
-        gold.withOpacity(
-          0.08,
+        gold.withValues(
+          alpha: 0.08,
         ),
         Colors.transparent,
       ],

@@ -73,9 +73,11 @@ class _PremiumGlassAuthCardState
                 2,
                 0.001,
               )
-              ..translate(
+              ..translateByDouble(
                 translateX,
                 translateY,
+                0.0,
+                1.0,
               )
               ..rotateX(
                 rotateX,
@@ -129,20 +131,20 @@ class _PremiumGlassAuthCardState
                         Alignment.bottomRight,
                     colors: [
                       Colors.white
-                          .withOpacity(
-                        hovering
+                          .withValues(
+                        alpha: hovering
                             ? 0.16
                             : 0.12,
                       ),
                       const Color(
                         0xFF111D34,
-                      ).withOpacity(
-                        0.65,
+                      ).withValues(
+                        alpha: 0.65,
                       ),
                       const Color(
                         0xFF080F20,
-                      ).withOpacity(
-                        0.63,
+                      ).withValues(
+                        alpha: 0.63,
                       ),
                     ],
                   ),
@@ -151,8 +153,8 @@ class _PremiumGlassAuthCardState
                     width: 1.1,
                     color:
                         Colors.white
-                            .withOpacity(
-                      hovering
+                            .withValues(
+                      alpha: hovering
                           ? 0.28
                           : 0.17,
                     ),
@@ -161,8 +163,8 @@ class _PremiumGlassAuthCardState
                     BoxShadow(
                       color:
                           Colors.black
-                              .withOpacity(
-                        0.36,
+                              .withValues(
+                        alpha: 0.36,
                       ),
                       blurRadius:
                           hovering
@@ -178,8 +180,8 @@ class _PremiumGlassAuthCardState
                       color:
                           const Color(
                             0xFF118EFF,
-                          ).withOpacity(
-                        hovering
+                          ).withValues(
+                        alpha: hovering
                             ? 0.14
                             : 0.07,
                       ),
@@ -195,8 +197,8 @@ class _PremiumGlassAuthCardState
                       color:
                           const Color(
                             0xFF785CFF,
-                          ).withOpacity(
-                        hovering
+                          ).withValues(
+                        alpha: hovering
                             ? 0.15
                             : 0.08,
                       ),
@@ -311,8 +313,8 @@ class _PremiumAuthFieldState
                       color:
                           const Color(
                             0xFF118EFF,
-                          ).withOpacity(
-                        0.17,
+                          ).withValues(
+                        alpha: 0.17,
                       ),
                       blurRadius:
                           22,
@@ -343,8 +345,8 @@ class _PremiumAuthFieldState
           filled: true,
           fillColor:
               Colors.black
-                  .withOpacity(
-            0.22,
+                  .withValues(
+            alpha: 0.22,
           ),
           hintText:
               widget.hintText,
@@ -352,8 +354,8 @@ class _PremiumAuthFieldState
               TextStyle(
             color:
                 Colors.white
-                    .withOpacity(
-              0.43,
+                    .withValues(
+              alpha: 0.43,
             ),
             fontSize: 14,
           ),
@@ -366,8 +368,8 @@ class _PremiumAuthFieldState
                         0xFF65C9FF,
                       )
                     : Colors.white
-                        .withOpacity(
-                          0.50,
+                        .withValues(
+                          alpha: 0.50,
                         ),
           ),
           suffixIcon:
@@ -386,8 +388,8 @@ class _PremiumAuthFieldState
                                 .visibility_outlined,
                         color:
                             Colors.white
-                                .withOpacity(
-                          0.50,
+                                .withValues(
+                          alpha: 0.50,
                         ),
                       ),
                     ),
@@ -407,8 +409,8 @@ class _PremiumAuthFieldState
                 BorderSide(
               color:
                   Colors.white
-                      .withOpacity(
-                0.11,
+                      .withValues(
+                alpha: 0.11,
               ),
             ),
           ),
@@ -530,8 +532,8 @@ class _GradientLoginButtonState
                 color:
                     const Color(
                       0xFF118EFF,
-                    ).withOpacity(
-                  hovering
+                    ).withValues(
+                  alpha: hovering
                       ? 0.36
                       : 0.20,
                 ),
@@ -667,8 +669,8 @@ class _SocialLoginButtonState
               ),
               color:
                   Colors.white
-                      .withOpacity(
-                hovering
+                      .withValues(
+                alpha: hovering
                     ? 0.13
                     : 0.07,
               ),
@@ -676,8 +678,8 @@ class _SocialLoginButtonState
                   Border.all(
                 color:
                     Colors.white
-                        .withOpacity(
-                  hovering
+                        .withValues(
+                  alpha: hovering
                       ? 0.23
                       : 0.12,
                 ),
@@ -689,8 +691,8 @@ class _SocialLoginButtonState
                             color:
                                 const Color(
                                   0xFF118EFF,
-                                ).withOpacity(
-                              0.15,
+                                ).withValues(
+                              alpha: 0.15,
                             ),
                             blurRadius:
                                 18,
