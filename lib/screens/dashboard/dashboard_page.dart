@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../home/home_page.dart';
+
 // ================================================================
 // DASHBOARD WIDGETS
 // ================================================================
@@ -107,23 +109,52 @@ class _DashboardPageState
     });
   }
 
+  void _logout() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => const HomePage(),
+      ),
+      (_) => false,
+    );
+  }
+
+  // ================================================================
+  // OPEN ORGANIZATION FULL SCREEN
+  // ================================================================
+
+  Future<void> _openOrganizationSettings() async {
+    await Navigator.of(
+      context,
+      rootNavigator: true,
+    ).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) {
+          return const OrganizationPage();
+        },
+      ),
+    );
+  }
+
   // ================================================================
   // SELECT SIDEBAR MENU
   // ================================================================
 
   void _selectMenu(String menu) {
+    final normalized =
+        menu.toLowerCase().trim();
+
+    // --------------------------------------------------------------
+    // ORGANIZATION MUST OPEN OUTSIDE DASHBOARD
+    // --------------------------------------------------------------
+
+    if (normalized == 'organization') {
+      _openOrganizationSettings();
+      return;
+    }
+
     setState(() {
       selectedMenu = menu;
-    });
-  }
-
-  // ================================================================
-  // OPEN ORGANIZATION SETTINGS
-  // ================================================================
-
-  void _openOrganizationSettings() {
-    setState(() {
-      selectedMenu = 'organization';
     });
   }
 
@@ -145,21 +176,12 @@ class _DashboardPageState
         return const DashboardBody();
 
       // ============================================================
-      // ALL SETTINGS
+      // SETTINGS
       // ============================================================
 
       case 'all_settings':
       case 'settings':
         return PreferencesPage(
-          onBack: () {
-            setState(() {
-              selectedMenu = 'dashboard';
-            });
-          },
-        );
-
-      case 'organization':
-        return OrganizationPage(
           onBack: () {
             setState(() {
               selectedMenu = 'dashboard';
@@ -245,8 +267,6 @@ class _DashboardPageState
       // ============================================================
 
       case 'purchase':
-        return const VendorsPage();
-
       case 'vendors':
         return const VendorsPage();
 
@@ -268,8 +288,6 @@ class _DashboardPageState
       // ============================================================
 
       case 'accountant':
-        return const ExpensesPage();
-
       case 'expense':
       case 'expenses':
         return const ExpensesPage();
@@ -313,8 +331,7 @@ class _DashboardPageState
 
       case 'help':
         return _comingSoonPage(
-          icon:
-              Icons.help_outline_rounded,
+          icon: Icons.help_outline_rounded,
           title: 'Help',
         );
 
@@ -341,7 +358,6 @@ class _DashboardPageState
       color: const Color(
         0xFFF4F7FA,
       ),
-
       child: Center(
         child: Column(
           mainAxisSize:
@@ -362,8 +378,9 @@ class _DashboardPageState
             Text(
               title,
               style: const TextStyle(
-                color:
-                    Color(0xFF123653),
+                color: Color(
+                  0xFF123653,
+                ),
                 fontSize: 26,
                 fontWeight:
                     FontWeight.w700,
@@ -377,8 +394,9 @@ class _DashboardPageState
             const Text(
               'Coming Soon',
               style: TextStyle(
-                color:
-                    Color(0xFF7A8791),
+                color: Color(
+                  0xFF7A8791,
+                ),
                 fontSize: 14,
               ),
             ),
@@ -398,19 +416,37 @@ class _DashboardPageState
   ) {
     return Scaffold(
       // ============================================================
-      // TOP APP BAR
+      // DASHBOARD APP BAR
+      // ============================================================
+      //
+      // This app bar exists ONLY inside DashboardPage.
+      // OrganizationPage is now pushed above this route, so this
+      // app bar will NOT appear on OrganizationPage.
       // ============================================================
 
       appBar: DashboardAppBar(
         onMenuPressed:
             _toggleSidebar,
 
+        // ----------------------------------------------------------
+        // SUPER ADMIN PROFILE
+        // ----------------------------------------------------------
+        //
+        // Clicking the profile now pushes OrganizationPage as
+        // a completely separate full-screen route.
+        // ----------------------------------------------------------
+
         onProfilePressed:
-          _openOrganizationSettings,
+            _openOrganizationSettings,
+        onPowerPressed: _logout,
       ),
 
       // ============================================================
-      // SIDEBAR + PAGE CONTENT
+      // DASHBOARD BODY
+      // ============================================================
+      //
+      // Sidebar is only part of DashboardPage.
+      // OrganizationPage is NOT rendered here anymore.
       // ============================================================
 
       body: Row(

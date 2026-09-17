@@ -142,8 +142,11 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final cardHeight = math.max(620.0, screenHeight * 0.92);
-    const peekHeight = 78.0;
+    final isMobile = MediaQuery.of(context).size.width < 820;
+    final cardHeight = isMobile
+      ? math.max(420.0, math.min(460.0, screenHeight * 0.58))
+      : math.max(360.0, math.min(390.0, screenHeight * 0.42));
+    const peekHeight = 62.0;
 
     return Scaffold(
       backgroundColor: background,
@@ -467,7 +470,7 @@ class _HomePageState extends State<HomePage> {
         key: i == 0 ? featuresKey : null,
         pinned: true,
         delegate: _StackCardDelegate(
-          maxHeight: cardHeight * 0.78,
+          maxHeight: cardHeight,
           minHeight: peekHeight,
           contentBuilder: (context, progress) =>
               _stackedFeatureCard(features[i], i + 1, features.length, progress),
@@ -481,15 +484,15 @@ class _HomePageState extends State<HomePage> {
   /// stack, so it must never depend on `progress`.
   Widget _stackHeader({required IconData icon, required Color accent, required String title, required String tag, required int index, required int total}) {
     return Container(
-      height: 78,
-      padding: const EdgeInsets.symmetric(horizontal: 28),
+      height: 62,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(color: accent.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, color: accent, size: 21),
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(color: accent.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(9)),
+            child: Icon(icon, color: accent, size: 16),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -514,13 +517,28 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _stackCardShell({required Color accent, required Widget child}) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: surfaceContainer,
-        border: Border(top: BorderSide(color: accent.withValues(alpha: 0.25), width: 1)),
+    final radius = BorderRadius.circular(24);
+    return ClipRRect(
+      borderRadius: radius,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: surfaceContainer.withValues(alpha: 0.48),
+            borderRadius: radius,
+            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+            boxShadow: [
+              BoxShadow(
+                color: accent.withValues(alpha: 0.12),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: child,
+        ),
       ),
-      child: child,
     );
   }
 
@@ -547,7 +565,7 @@ class _HomePageState extends State<HomePage> {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1100),
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(28, 0, 28, 32),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         final stacked = constraints.maxWidth < 820;
@@ -556,7 +574,7 @@ class _HomePageState extends State<HomePage> {
                           borderRadius: BorderRadius.circular(20),
                           child: _HoverImage(
                             imageUrl: f.imageUrl,
-                            height: stacked ? 220 : null,
+                            height: stacked ? 150 : null,
                           ),
                         );
 
@@ -568,21 +586,21 @@ class _HomePageState extends State<HomePage> {
                               f.title,
                               style: const TextStyle(
                                 color: onSurface,
-                                fontSize: 28,
+                                fontSize: 22,
                                 fontWeight: FontWeight.bold,
                                 height: 1.15,
                               ),
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 8),
                             Text(
                               f.copy,
                               style: const TextStyle(
                                 color: onSurfaceVariant,
-                                fontSize: 15,
-                                height: 1.65,
+                                fontSize: 13,
+                                height: 1.4,
                               ),
                             ),
-                            const SizedBox(height: 22),
+                            const SizedBox(height: 12),
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -612,10 +630,10 @@ class _HomePageState extends State<HomePage> {
                             children: [
                               SizedBox(
                                 width: double.infinity,
-                                height: 220,
+                                height: 150,
                                 child: image,
                               ),
-                              const SizedBox(height: 22),
+                              const SizedBox(height: 12),
                               copy,
                             ],
                           );
@@ -627,11 +645,11 @@ class _HomePageState extends State<HomePage> {
                             Expanded(
                               flex: 5,
                               child: SizedBox(
-                                height: 320,
+                                height: 210,
                                 child: image,
                               ),
                             ),
-                            const SizedBox(width: 44),
+                            const SizedBox(width: 20),
                             Expanded(
                               flex: 6,
                               child: copy,
@@ -1461,11 +1479,11 @@ class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
             final bool desktop = constraints.maxWidth >= 850;
 
             final double maxArtworkWidth = constraints.maxWidth >= 1400
-                ? 1120
+                ? 1180
                 : constraints.maxWidth >= 1000
-                    ? constraints.maxWidth * 0.90
+                    ? constraints.maxWidth * 0.97
                     : constraints.maxWidth >= 650
-                        ? constraints.maxWidth * 0.94
+                        ? constraints.maxWidth * 0.99
                         : constraints.maxWidth;
 
             final double artworkWidth =
@@ -1495,7 +1513,7 @@ class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
                       math.cos(phase * 0.72) * (desktop ? 3.5 : 1.5);
 
                   final breathe =
-                      1 + (math.sin(phase) * 0.0065);
+                      1.04 + (math.sin(phase) * 0.0065);
 
                   final autoRotation =
                       math.sin(phase * 0.55) * 0.0022;
@@ -1566,7 +1584,8 @@ class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
 
                       Image.asset(
                         'assets/images/codexia_hero.png',
-                        fit: BoxFit.contain,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
                         filterQuality: FilterQuality.high,
                       ),
 

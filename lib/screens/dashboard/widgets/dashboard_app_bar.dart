@@ -45,14 +45,12 @@ class DashboardAppBar extends StatelessWidget
 
           const SizedBox(width: 10),
 
-          // ORGANIZATION LOGO TEXT
-          const Text(
-            'Organization Logo',
-            style: TextStyle(
-              color: Color(0xFF123653),
-              fontSize: 17,
-              fontWeight: FontWeight.w400,
-            ),
+          // CODEXIA LOGO
+          Image.asset(
+            'lib/widgets/Codexia_OG1.8.png',
+            width: 132,
+            height: 42,
+            fit: BoxFit.contain,
           ),
 
           const SizedBox(width: 45),
