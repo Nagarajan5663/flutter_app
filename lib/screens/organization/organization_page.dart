@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 
 import 'settings/shared/glass_widgets.dart';
-import 'settings/expense_settings_page.dart';
-import 'settings/item_preferences_page.dart';
-import 'settings/sales_order_preferences_page.dart';
+import 'settings/purchases/expanse_settings_page.dart';
+import 'settings/general/item_preferences_page.dart';
+import 'settings/organization/general_settings_page.dart';
+import 'settings/organization/manage_subscription_page.dart';
+import 'settings/sales/sales_order_preferences_page.dart';
+import 'settings/organization/organization_profile_page.dart';
+import 'settings/users/manage_roles_page.dart';
+import 'settings/users/manage_users_page.dart';
+import 'settings/taxes/manage_taxes_page.dart';
+import 'settings/customization/transaction_number_series_page.dart';
 
 // =====================================================================
 // ORGANIZATION PAGE (All Settings hub)
@@ -46,6 +53,86 @@ class OrganizationPage extends StatelessWidget {
       );
       return;
     }
+
+    if (normalizedLabel == 'profile') {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => OrganizationProfilePage(
+        onBack: () =>
+            Navigator.of(context).pop(),
+      ),
+    ),
+  );
+  return;
+}
+
+    if (normalizedLabel == 'general') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => GeneralSettingsPage(
+            onBack: () => Navigator.of(context).pop(),
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (normalizedLabel == 'manage subscription') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ManageSubscriptionPage(
+            onBack: () => Navigator.of(context).pop(),
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (normalizedLabel == 'users') {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => ManageUsersPage(
+        onBack: () => Navigator.of(context).pop(),
+      ),
+    ),
+  );
+  return;
+}
+
+    if (normalizedLabel == 'roles') {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => ManageRolesPage(
+        onBack: () => Navigator.of(context).pop(),
+      ),
+    ),
+  );
+  return;
+}
+
+if (normalizedLabel == 'taxes') {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => ManageTaxesPage(
+        onBack: () => Navigator.of(context).pop(),
+      ),
+    ),
+  );
+  return;
+}
+
+if (normalizedLabel == 'transaction number series') {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) =>
+          TransactionNumberSeriesPage(
+        onBack: () =>
+            Navigator.of(context).pop(),
+      ),
+    ),
+  );
+  return;
+}
 
     if (normalizedLabel == 'sales orders' ||
         normalizedLabel == 'sales order preferences') {

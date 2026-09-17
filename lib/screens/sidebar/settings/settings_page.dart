@@ -3,8 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../organization/organization_page.dart';
-import '../../organization/general_settings_page.dart';
-import '../../organization/manage_subscription_page.dart';
+import '../../organization/settings/organization/general_settings_page.dart';
+import '../../organization/settings/organization/manage_subscription_page.dart';
 
 class SettingsPage extends StatefulWidget {
   final VoidCallback? onClose;
@@ -415,8 +415,10 @@ class _SettingsPageState extends State<SettingsPage> {
   // ================================================================
 
   Widget _buildSearchField() {
-    return TextField(
-      controller: _searchController,
+    return Material(
+      color: Colors.transparent,
+      child: TextField(
+        controller: _searchController,
       style: const TextStyle(
         color: GlassSurface.inputText,
         fontSize: 13.5,
@@ -473,6 +475,7 @@ class _SettingsPageState extends State<SettingsPage> {
             color: GlassSurface.border(focused: true),
           ),
         ),
+      ),
       ),
     );
   }

@@ -55,12 +55,6 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
       child: Column(
         children: [
           // =========================================================
-          // ORGANIZATION HEADER
-          // =========================================================
-
-          _buildOrganizationHeader(),
-
-          // =========================================================
           // MENU
           // =========================================================
 
@@ -269,75 +263,6 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // ===============================================================
-  // ORGANIZATION HEADER
-  // ===============================================================
-
-  Widget _buildOrganizationHeader() {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          onMenuSelected('organization');
-        },
-        hoverColor: Colors.white10,
-        mouseCursor: SystemMouseCursors.click,
-        child: Container(
-          height: 88,
-          width: double.infinity,
-          padding: EdgeInsets.symmetric(
-            horizontal: isCollapsed ? 0 : 16,
-          ),
-          decoration: const BoxDecoration(
-            color: Color(0xFF123A5C),
-          ),
-          child: Row(
-            mainAxisAlignment: isCollapsed
-                ? MainAxisAlignment.center
-                : MainAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.business_outlined,
-                color: Colors.white,
-                size: 28,
-              ),
-
-              const SizedBox(width: 12),
-
-              // Slides + fades the org name in/out instead of an
-              // instant if(!isCollapsed) show/hide.
-              Expanded(
-                child: ClipRect(
-                  child: AnimatedSlide(
-                    duration: _motionDuration,
-                    curve: _motionCurve,
-                    offset: isCollapsed
-                        ? const Offset(-0.3, 0)
-                        : Offset.zero,
-                    child: AnimatedOpacity(
-                      duration: _motionDuration,
-                      curve: _motionCurve,
-                      opacity: isCollapsed ? 0 : 1,
-                      child: const Text(
-                        'Organization',
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

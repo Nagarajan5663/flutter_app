@@ -21,11 +21,14 @@ import '../sidebar/sales/payments_received/payments_received_page.dart';
 import '../sidebar/sales/credit_notes/credit_notes_page.dart';
 
 // ================================================================
-// ORGANIZATION SETTINGS
+// SETTINGS
 // ================================================================
 
-import '../organization/organization_page.dart';
+// Sidebar Settings -> Preferences page
 import '../sidebar/settings/preferences_page.dart';
+
+// Super Admin -> All Settings
+import '../organization/organization_page.dart';
 
 // ================================================================
 // REPORTS
@@ -78,12 +81,10 @@ class DashboardPage extends StatefulWidget {
   });
 
   @override
-  State<DashboardPage> createState() =>
-      _DashboardPageState();
+  State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState
-    extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage> {
   // ================================================================
   // SIDEBAR STATE
   // ================================================================
@@ -102,8 +103,7 @@ class _DashboardPageState
 
   void _toggleSidebar() {
     setState(() {
-      _isSidebarCollapsed =
-          !_isSidebarCollapsed;
+      _isSidebarCollapsed = !_isSidebarCollapsed;
     });
   }
 
@@ -118,12 +118,12 @@ class _DashboardPageState
   }
 
   // ================================================================
-  // OPEN ORGANIZATION SETTINGS
+  // OPEN SUPER ADMIN -> ALL SETTINGS
   // ================================================================
 
-  void _openOrganizationSettings() {
+  void _openAllSettings() {
     setState(() {
-      selectedMenu = 'organization';
+      selectedMenu = 'all_settings';
     });
   }
 
@@ -132,11 +132,7 @@ class _DashboardPageState
   // ================================================================
 
   Widget _buildSelectedPage() {
-    switch (
-      selectedMenu
-          .toLowerCase()
-          .trim()
-    ) {
+    switch (selectedMenu.toLowerCase().trim()) {
       // ============================================================
       // DASHBOARD
       // ============================================================
@@ -145,10 +141,9 @@ class _DashboardPageState
         return const DashboardBody();
 
       // ============================================================
-      // ALL SETTINGS
+      // SIDEBAR SETTINGS
       // ============================================================
 
-      case 'all_settings':
       case 'settings':
         return PreferencesPage(
           onBack: () {
@@ -157,6 +152,23 @@ class _DashboardPageState
             });
           },
         );
+
+      // ============================================================
+      // SUPER ADMIN -> ALL SETTINGS
+      // ============================================================
+
+      case 'all_settings':
+        return OrganizationPage(
+          onBack: () {
+            setState(() {
+              selectedMenu = 'dashboard';
+            });
+          },
+        );
+
+      // ============================================================
+      // ORGANIZATION
+      // ============================================================
 
       case 'organization':
         return OrganizationPage(
@@ -313,8 +325,7 @@ class _DashboardPageState
 
       case 'help':
         return _comingSoonPage(
-          icon:
-              Icons.help_outline_rounded,
+          icon: Icons.help_outline_rounded,
           title: 'Help',
         );
 
@@ -341,11 +352,9 @@ class _DashboardPageState
       color: const Color(
         0xFFF4F7FA,
       ),
-
       child: Center(
         child: Column(
-          mainAxisSize:
-              MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
@@ -362,11 +371,11 @@ class _DashboardPageState
             Text(
               title,
               style: const TextStyle(
-                color:
-                    Color(0xFF123653),
+                color: Color(
+                  0xFF123653,
+                ),
                 fontSize: 26,
-                fontWeight:
-                    FontWeight.w700,
+                fontWeight: FontWeight.w700,
               ),
             ),
 
@@ -377,8 +386,9 @@ class _DashboardPageState
             const Text(
               'Coming Soon',
               style: TextStyle(
-                color:
-                    Color(0xFF7A8791),
+                color: Color(
+                  0xFF7A8791,
+                ),
                 fontSize: 14,
               ),
             ),
@@ -393,20 +403,27 @@ class _DashboardPageState
   // ================================================================
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
+    if (selectedMenu == 'all_settings') {
+      return OrganizationPage(
+        onBack: () {
+          setState(() {
+            selectedMenu = 'dashboard';
+          });
+        },
+      );
+    }
+
     return Scaffold(
       // ============================================================
       // TOP APP BAR
       // ============================================================
 
       appBar: DashboardAppBar(
-        onMenuPressed:
-            _toggleSidebar,
+        onMenuPressed: _toggleSidebar,
 
-        onProfilePressed:
-          _openOrganizationSettings,
+        // Super Admin click -> All Settings
+        onProfilePressed: _openAllSettings,
       ),
 
       // ============================================================
@@ -420,14 +437,9 @@ class _DashboardPageState
           // ========================================================
 
           DashboardNavBar(
-            isCollapsed:
-                _isSidebarCollapsed,
-
-            selectedMenu:
-                selectedMenu,
-
-            onMenuSelected:
-                _selectMenu,
+            isCollapsed: _isSidebarCollapsed,
+            selectedMenu: selectedMenu,
+            onMenuSelected: _selectMenu,
           ),
 
           // ========================================================
@@ -435,8 +447,7 @@ class _DashboardPageState
           // ========================================================
 
           Expanded(
-            child:
-                _buildSelectedPage(),
+            child: _buildSelectedPage(),
           ),
         ],
       ),

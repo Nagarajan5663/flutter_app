@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'shared/glass_widgets.dart';
 
-import 'item_preferences_page.dart';
-import 'sales_order_preferences_page.dart';
-import 'expense_settings_page.dart';
+import 'general/item_preferences_page.dart';
+import 'sales/sales_order_preferences_page.dart';
+import 'purchases/expanse_settings_page.dart';
 
 import '../organization_page.dart';
-import '../general_settings_page.dart';
-import '../manage_subscription_page.dart';
+import './organization/manage_subscription_page.dart';
+import './organization/general_settings_page.dart';
 
 class SettingsPage extends StatefulWidget {
   final VoidCallback? onClose;
@@ -204,12 +204,13 @@ class _SettingsPageState
     }
 
     return GlassPageBackground(
-      child:
-          SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
             // =======================================================
             // HEADER
             // =======================================================
@@ -612,7 +613,8 @@ class _SettingsPageState
                 ),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );

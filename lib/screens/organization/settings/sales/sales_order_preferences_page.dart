@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'shared/glass_widgets.dart';
+import '../shared/glass_widgets.dart';
 
 class SalesOrderPreferencesPage extends StatefulWidget {
   final VoidCallback? onBack;
