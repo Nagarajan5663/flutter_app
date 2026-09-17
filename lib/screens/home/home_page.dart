@@ -540,6 +540,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _stackedFeatureCard(_Feature f, int index, int total, double progress) {
+    final isLastCard = index == total;
+
     return _AnimatedFeatureBackground(
       accent: f.accent,
       index: index,
@@ -562,99 +564,101 @@ class _HomePageState extends State<HomePage> {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1100),
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final stacked = constraints.maxWidth < 820;
+                    padding: EdgeInsets.fromLTRB(16, isLastCard ? 8 : 0, 16, isLastCard ? 22 : 16),
+                    child: isLastCard
+                        ? _buildFinalFeatureSlide(f)
+                        : LayoutBuilder(
+                            builder: (context, constraints) {
+                              final stacked = constraints.maxWidth < 820;
 
-                        final image = ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: _HoverImage(
-                            imageUrl: f.imageUrl,
-                            height: stacked ? 150 : null,
-                          ),
-                        );
+                              final image = ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: _HoverImage(
+                                  imageUrl: f.imageUrl,
+                                  height: stacked ? 150 : null,
+                                ),
+                              );
 
-                        final copy = Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              f.title,
-                              style: const TextStyle(
-                                color: onSurface,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                height: 1.15,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              f.copy,
-                              style: const TextStyle(
-                                color: onSurfaceVariant,
-                                fontSize: 13,
-                                height: 1.4,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Inspect Workflow',
-                                  style: TextStyle(
-                                    color: f.accent,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                              final copy = Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    f.title,
+                                    style: const TextStyle(
+                                      color: onSurface,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.15,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 6),
-                                Icon(
-                                  Icons.arrow_forward,
-                                  color: f.accent,
-                                  size: 16,
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    f.copy,
+                                    style: const TextStyle(
+                                      color: onSurfaceVariant,
+                                      fontSize: 13,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Inspect Workflow',
+                                        style: TextStyle(
+                                          color: f.accent,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Icon(
+                                        Icons.arrow_forward,
+                                        color: f.accent,
+                                        size: 16,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              );
 
-                        if (stacked) {
-                          return Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(
-                                width: double.infinity,
-                                height: 150,
-                                child: image,
-                              ),
-                              const SizedBox(height: 12),
-                              copy,
-                            ],
-                          );
-                        }
+                              if (stacked) {
+                                return Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 150,
+                                      child: image,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    copy,
+                                  ],
+                                );
+                              }
 
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              flex: 5,
-                              child: SizedBox(
-                                height: 210,
-                                child: image,
-                              ),
-                            ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              flex: 6,
-                              child: copy,
-                            ),
-                          ],
-                        );
-                      },
-                    ),
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    flex: 5,
+                                    child: SizedBox(
+                                      height: 210,
+                                      child: image,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 20),
+                                  Expanded(
+                                    flex: 6,
+                                    child: copy,
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
                   ),
                 ),
               ),
@@ -662,6 +666,53 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFinalFeatureSlide(_Feature f) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 820;
+
+        final heroImage = ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: _HoverImage(
+            imageUrl: f.imageUrl,
+            height: isCompact ? 220 : 340,
+          ),
+        );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: SizedBox(
+                width: double.infinity,
+                child: heroImage,
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              f.title,
+              style: const TextStyle(
+                color: onSurface,
+                fontSize: isCompact ? 30 : 42,
+                fontWeight: FontWeight.w800,
+                height: 1.08,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              f.copy,
+              style: const TextStyle(
+                color: onSurfaceVariant,
+                fontSize: 15,
+                height: 1.5,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

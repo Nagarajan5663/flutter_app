@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// The "CODEXIA" icon + wordmark, reused on the home navbar, the sign in
-/// screen and the create account screen so branding stays consistent.
+/// A lightweight CODEXIA wordmark styled to match the reference image.
 class CodexiaLogo extends StatelessWidget {
   final double iconSize;
   final double fontSize;
@@ -10,12 +9,34 @@ class CodexiaLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textStyle = TextStyle(
+      fontSize: fontSize,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 1.8,
+      color: Colors.white,
+      shadows: const [
+        Shadow(
+          blurRadius: 0,
+          offset: Offset(0, 2),
+          color: Color(0x66000000),
+        ),
+        Shadow(
+          blurRadius: 8,
+          offset: Offset(0, 0),
+          color: Color(0x66B8D8FF),
+        ),
+      ],
+    );
+
     return SizedBox(
       height: iconSize,
-      width: iconSize * 5.2,
-      child: Image.asset(
-        'lib/widgets/Codexia_OG1.8.png',
-        fit: BoxFit.contain,
+      child: Align(
+        alignment: Alignment.center,
+        child: Text(
+          'CODEXIA',
+          style: textStyle,
+          textAlign: TextAlign.center,
+        ),
       ),
     );
   }
