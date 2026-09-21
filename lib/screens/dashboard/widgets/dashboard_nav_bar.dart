@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 class DashboardNavBar extends StatefulWidget {
@@ -21,6 +19,7 @@ class DashboardNavBar extends StatefulWidget {
 class _DashboardNavBarState extends State<DashboardNavBar> {
   String? _openSection;
   String? _hoveredKey;
+  bool _sectionsCollapsed = false;
 
   static const Duration _motionDuration = Duration(milliseconds: 260);
   static const Curve _motionCurve = Curves.easeInOutCubic;
@@ -48,6 +47,15 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
     if (!oldWidget.isCollapsed && widget.isCollapsed) {
       setState(() {
         _openSection = null;
+        _sectionsCollapsed = true;
+      });
+    } else if (oldWidget.isCollapsed && !widget.isCollapsed) {
+      Future<void>.delayed(const Duration(milliseconds: 300), () {
+        if (!mounted || widget.isCollapsed) return;
+
+        setState(() {
+          _sectionsCollapsed = false;
+        });
       });
     }
   }
@@ -68,249 +76,214 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
           ),
         ],
       ),
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: 24,
-            sigmaY: 24,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFF123A5C).withValues(alpha: 0.96),
+                    const Color(0xFF102F4A).withValues(alpha: 0.94),
+                    const Color(0xFF0E2A43).withValues(alpha: 0.96),
+                  ],
+                ),
+                border: Border(
+                  right: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.14),
+                    width: 1,
+                  ),
+                ),
+              ),
+            ),
           ),
-          child: Stack(
+          Positioned(
+            top: -90,
+            left: -70,
+            child: IgnorePointer(
+              child: _NavGlowOrb(
+                size: 220,
+                color: const Color(0xFF3D8DFF),
+                opacity: 0.22,
+              ),
+            ),
+          ),
+          Positioned(
+            top: 290,
+            right: -110,
+            child: IgnorePointer(
+              child: _NavGlowOrb(
+                size: 250,
+                color: const Color(0xFF7457F5),
+                opacity: 0.16,
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -110,
+            left: -60,
+            child: IgnorePointer(
+              child: _NavGlowOrb(
+                size: 240,
+                color: const Color(0xFF2CC7A5),
+                opacity: 0.13,
+              ),
+            ),
+          ),
+          Column(
             children: [
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        const Color(0xFF123A5C).withValues(alpha: 0.96),
-                        const Color(0xFF102F4A).withValues(alpha: 0.94),
-                        const Color(0xFF0E2A43).withValues(alpha: 0.96),
-                      ],
-                    ),
-                    border: Border(
-                      right: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.14),
-                        width: 1,
+              Expanded(
+                child: ScrollConfiguration(
+                  behavior: const _SidebarScrollBehavior(),
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isCollapsed ? 8 : 14,
+                        vertical: 12,
                       ),
-                    ),
-                  ),
-                ),
-              ),
-
-              Positioned(
-                top: -90,
-                left: -70,
-                child: IgnorePointer(
-                  child: _NavGlowOrb(
-                    size: 220,
-                    color: const Color(0xFF3D8DFF),
-                    opacity: 0.22,
-                  ),
-                ),
-              ),
-
-              Positioned(
-                top: 290,
-                right: -110,
-                child: IgnorePointer(
-                  child: _NavGlowOrb(
-                    size: 250,
-                    color: const Color(0xFF7457F5),
-                    opacity: 0.16,
-                  ),
-                ),
-              ),
-
-              Positioned(
-                bottom: -110,
-                left: -60,
-                child: IgnorePointer(
-                  child: _NavGlowOrb(
-                    size: 240,
-                    color: const Color(0xFF2CC7A5),
-                    opacity: 0.13,
-                  ),
-                ),
-              ),
-
-              Column(
-                children: [
-                  Expanded(
-                    child: ScrollConfiguration(
-                      behavior: const _SidebarScrollBehavior(),
-                      child: SingleChildScrollView(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isCollapsed ? 8 : 14,
-                            vertical: 12,
+                      child: Column(
+                        children: [
+                          _menuItem(
+                            icon: Icons.dashboard_outlined,
+                            title: 'Dashboard',
+                            selected: _isSelected('dashboard'),
+                            onTap: () {
+                              onMenuSelected('dashboard');
+                            },
                           ),
-                          child: Column(
-                            children: [
-                              _menuItem(
-                                icon: Icons.dashboard_outlined,
-                                title: 'Dashboard',
-                                selected: _isSelected('dashboard'),
-                                onTap: () {
-                                  onMenuSelected('dashboard');
-                                },
-                              ),
-
-                              const SizedBox(height: 7),
-
-                              _sectionMenu(
-                                icon: Icons.inventory_2_outlined,
-                                title: 'Items',
-                                sectionKey: 'items',
-                                children: const [
-                                  'Items',
-                                  'Parts',
-                                ],
-                              ),
-
-                              const SizedBox(height: 7),
-
-                              _sectionMenu(
-                                icon: Icons.warehouse_outlined,
-                                title: 'Inventory',
-                                sectionKey: 'inventory',
-                                children: const [
-                                  'Current Stock',
-                                  'Inventory Adjustments',
-                                  'Returnable Assets',
-                                ],
-                              ),
-
-                              const SizedBox(height: 7),
-
-                              _sectionMenu(
-                                icon: Icons.show_chart_rounded,
-                                title: 'Sales',
-                                sectionKey: 'sales',
-                                children: const [
-                                  'Customers',
-                                  'Estimates',
-                                  'Sales Order',
-                                  'Invoices',
-                                  'Delivery Challans',
-                                  'Payment Received',
-                                  'Credit Notes',
-                                ],
-                              ),
-
-                              const SizedBox(height: 7),
-
-                              _sectionMenu(
-                                icon: Icons.shopping_cart_outlined,
-                                title: 'Purchase',
-                                sectionKey: 'purchase',
-                                children: const [
-                                  'Vendors',
-                                  'Purchase Orders',
-                                  'Bills',
-                                  'Payment Made',
-                                  'Vendor Credit Notes',
-                                ],
-                              ),
-
-                              const SizedBox(height: 7),
-
-                              _sectionMenu(
-                                icon: Icons.calculate_outlined,
-                                title: 'Accountant',
-                                sectionKey: 'accountant',
-                                children: const [
-                                  'Expense',
-                                  'Reimbursements',
-                                  'Travel Allowance',
-                                  'Other Claims',
-                                  'Investments',
-                                  'Loans',
-                                ],
-                              ),
-
-                              const SizedBox(height: 7),
-
-                              _menuItem(
-                                icon: Icons.description_outlined,
-                                title: 'Reports',
-                                selected: _isSelected('reports'),
-                                onTap: () {
-                                  onMenuSelected('reports');
-                                },
-                              ),
-
-                              const SizedBox(height: 20),
-
-                              Container(
-                                height: 1,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.transparent,
-                                      Colors.white.withValues(alpha: 0.28),
-                                      Colors.transparent,
-                                    ],
-                                  ),
-                                ),
-                              ),
-
-                              const SizedBox(height: 20),
-
-                              _menuItem(
-                                icon: Icons.hub_outlined,
-                                title: 'Fluxa Hub',
-                                selected: _isSelected('fluxa hub'),
-                                onTap: () {
-                                  onMenuSelected('fluxa hub');
-                                },
-                              ),
-
-                              const SizedBox(height: 7),
-
-                              _menuItem(
-                                icon: Icons.settings_outlined,
-                                title: 'Settings',
-                                selected: _isSelected('settings'),
-                                onTap: () {
-                                  onMenuSelected('settings');
-                                },
-                              ),
-
-                              const SizedBox(height: 7),
-
-                              _menuItem(
-                                icon: Icons.account_circle_outlined,
-                                title: 'My Account',
-                                selected: _isSelected('my account'),
-                                onTap: () {
-                                  onMenuSelected('my account');
-                                },
-                              ),
-
-                              const SizedBox(height: 7),
-
-                              _menuItem(
-                                icon: Icons.help_outline_rounded,
-                                title: 'Help',
-                                selected: _isSelected('help'),
-                                onTap: () {
-                                  onMenuSelected('help');
-                                },
-                              ),
-
-                              const SizedBox(height: 25),
+                          const SizedBox(height: 7),
+                          _sectionMenu(
+                            icon: Icons.inventory_2_outlined,
+                            title: 'Items',
+                            sectionKey: 'items',
+                            children: const [
+                              'Items',
+                              'Parts',
                             ],
                           ),
-                        ),
+                          const SizedBox(height: 7),
+                          _sectionMenu(
+                            icon: Icons.warehouse_outlined,
+                            title: 'Inventory',
+                            sectionKey: 'inventory',
+                            children: const [
+                              'Current Stock',
+                              'Inventory Adjustments',
+                              'Returnable Assets',
+                            ],
+                          ),
+                          const SizedBox(height: 7),
+                          _sectionMenu(
+                            icon: Icons.show_chart_rounded,
+                            title: 'Sales',
+                            sectionKey: 'sales',
+                            children: const [
+                              'Customers',
+                              'Estimates',
+                              'Sales Order',
+                              'Invoices',
+                              'Delivery Challans',
+                              'Payment Received',
+                              'Credit Notes',
+                            ],
+                          ),
+                          const SizedBox(height: 7),
+                          _sectionMenu(
+                            icon: Icons.shopping_cart_outlined,
+                            title: 'Purchase',
+                            sectionKey: 'purchase',
+                            children: const [
+                              'Vendors',
+                              'Purchase Orders',
+                              'Bills',
+                              'Payment Made',
+                              'Vendor Credit Notes',
+                            ],
+                          ),
+                          const SizedBox(height: 7),
+                          _sectionMenu(
+                            icon: Icons.calculate_outlined,
+                            title: 'Accountant',
+                            sectionKey: 'accountant',
+                            children: const [
+                              'Expense',
+                              'Reimbursements',
+                              'Travel Allowance',
+                              'Other Claims',
+                              'Investments',
+                              'Loans',
+                            ],
+                          ),
+                          const SizedBox(height: 7),
+                          _menuItem(
+                            icon: Icons.description_outlined,
+                            title: 'Reports',
+                            selected: _isSelected('reports'),
+                            onTap: () {
+                              onMenuSelected('reports');
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                          Container(
+                            height: 1,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.white.withValues(alpha: 0.28),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          _menuItem(
+                            icon: Icons.hub_outlined,
+                            title: 'Fluxa Hub',
+                            selected: _isSelected('fluxa hub'),
+                            onTap: () {
+                              onMenuSelected('fluxa hub');
+                            },
+                          ),
+                          const SizedBox(height: 7),
+                          _menuItem(
+                            icon: Icons.settings_outlined,
+                            title: 'Settings',
+                            selected: _isSelected('settings'),
+                            onTap: () {
+                              onMenuSelected('settings');
+                            },
+                          ),
+                          const SizedBox(height: 7),
+                          _menuItem(
+                            icon: Icons.account_circle_outlined,
+                            title: 'My Account',
+                            selected: _isSelected('my account'),
+                            onTap: () {
+                              onMenuSelected('my account');
+                            },
+                          ),
+                          const SizedBox(height: 7),
+                          _menuItem(
+                            icon: Icons.help_outline_rounded,
+                            title: 'Help',
+                            selected: _isSelected('help'),
+                            onTap: () {
+                              onMenuSelected('help');
+                            },
+                          ),
+                          const SizedBox(height: 25),
+                        ],
                       ),
                     ),
                   ),
-                ],
+                ),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
@@ -392,7 +365,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
     required String sectionKey,
     required List<String> children,
   }) {
-    if (isCollapsed) {
+    if (isCollapsed || _sectionsCollapsed) {
       return _menuItem(
         icon: icon,
         title: title,
@@ -436,8 +409,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
             boxShadow: hovered
                 ? [
                     BoxShadow(
-                      color: const Color(0xFF3D8DFF)
-                          .withValues(alpha: 0.16),
+                      color: const Color(0xFF3D8DFF).withValues(alpha: 0.16),
                       blurRadius: 20,
                       offset: const Offset(0, 7),
                     ),
@@ -452,60 +424,61 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                 splashColor: Colors.white.withValues(alpha: 0.06),
                 highlightColor: Colors.white.withValues(alpha: 0.04),
               ),
-              child: ExpansionTile(
-                key: ValueKey(
-                  '$title-${_openSection == title}',
-                ),
-                initiallyExpanded: expanded,
-                onExpansionChanged: (isExpanded) {
-                  setState(() {
-                    _openSection = isExpanded ? title : null;
-                  });
-                },
-                tilePadding: const EdgeInsets.symmetric(
-                  horizontal: 13,
-                ),
-                childrenPadding: const EdgeInsets.only(
-                  left: 6,
-                  right: 6,
-                  bottom: 7,
-                ),
-                leading: AnimatedContainer(
-                  duration: const Duration(milliseconds: 170),
-                  width: 34,
-                  height: 34,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? const Color(0xFF5AA9F3).withValues(alpha: 0.20)
-                        : Colors.white.withValues(
-                            alpha: hovered ? 0.11 : 0.06,
-                          ),
-                    borderRadius: BorderRadius.circular(10),
+              child: Material(
+                color: Colors.transparent,
+                child: ExpansionTile(
+                  key: ValueKey(
+                    '$title-${_openSection == title}',
                   ),
-                  child: Icon(
-                    icon,
-                    size: 20,
-                    color: Colors.white,
+                  initiallyExpanded: expanded,
+                  onExpansionChanged: (isExpanded) {
+                    setState(() {
+                      _openSection = isExpanded ? title : null;
+                    });
+                  },
+                  tilePadding: const EdgeInsets.symmetric(
+                    horizontal: 13,
                   ),
-                ),
-                iconColor: Colors.white,
-                collapsedIconColor: Colors.white70,
-                title: Text(
-                  title,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: selected
-                        ? FontWeight.w700
-                        : FontWeight.w500,
+                  childrenPadding: const EdgeInsets.only(
+                    left: 6,
+                    right: 6,
+                    bottom: 7,
                   ),
+                  leading: AnimatedContainer(
+                    duration: const Duration(milliseconds: 170),
+                    width: 34,
+                    height: 34,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? const Color(0xFF5AA9F3).withValues(alpha: 0.20)
+                          : Colors.white.withValues(
+                              alpha: hovered ? 0.11 : 0.06,
+                            ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                  ),
+                  iconColor: Colors.white,
+                  collapsedIconColor: Colors.white70,
+                  title: Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                  backgroundColor: Colors.transparent,
+                  collapsedBackgroundColor: Colors.transparent,
+                  children: [
+                    for (final child in children) _subMenuItem(child),
+                  ],
                 ),
-                backgroundColor: Colors.transparent,
-                collapsedBackgroundColor: Colors.transparent,
-                children: [
-                  for (final child in children) _subMenuItem(child),
-                ],
               ),
             ),
           ),
@@ -570,8 +543,8 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                   boxShadow: hovered
                       ? [
                           BoxShadow(
-                            color: const Color(0xFF4EA2F4)
-                                .withValues(alpha: 0.11),
+                            color:
+                                const Color(0xFF4EA2F4).withValues(alpha: 0.11),
                             blurRadius: 14,
                             offset: const Offset(0, 5),
                           ),
@@ -589,14 +562,11 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                       child: Icon(
                         Icons.chevron_right_rounded,
                         size: 18,
-                        color: selected || hovered
-                            ? Colors.white
-                            : Colors.white60,
+                        color:
+                            selected || hovered ? Colors.white : Colors.white60,
                       ),
                     ),
-
                     const SizedBox(width: 6),
-
                     Expanded(
                       child: Text(
                         title,
@@ -607,9 +577,8 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                               ? Colors.white
                               : Colors.white.withValues(alpha: 0.82),
                           fontSize: 13,
-                          fontWeight: selected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
+                          fontWeight:
+                              selected ? FontWeight.w600 : FontWeight.w400,
                         ),
                       ),
                     ),
@@ -740,9 +709,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                       ),
                     ),
                   ),
-
                   if (!isCollapsed) const SizedBox(width: 12),
-
                   if (!isCollapsed)
                     Expanded(
                       child: Text(
@@ -752,9 +719,8 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 15,
-                          fontWeight: selected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
+                          fontWeight:
+                              selected ? FontWeight.w700 : FontWeight.w500,
                         ),
                       ),
                     ),
