@@ -12,6 +12,7 @@ import 'settings/users/manage_users_page.dart';
 import 'settings/taxes/manage_taxes_page.dart';
 import 'settings/customization/transaction_number_series_page.dart';
 
+
 // =====================================================================
 // ORGANIZATION PAGE (All Settings hub)
 //
@@ -133,6 +134,8 @@ if (normalizedLabel == 'transaction number series') {
   );
   return;
 }
+
+
 
     if (normalizedLabel == 'sales orders' ||
         normalizedLabel == 'sales order preferences') {

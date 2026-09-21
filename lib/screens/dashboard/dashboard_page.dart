@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../home/home_page.dart';
+
 // ================================================================
 // DASHBOARD WIDGETS
 // ================================================================
@@ -21,14 +23,11 @@ import '../sidebar/sales/payments_received/payments_received_page.dart';
 import '../sidebar/sales/credit_notes/credit_notes_page.dart';
 
 // ================================================================
-// SETTINGS
+// ORGANIZATION SETTINGS
 // ================================================================
 
-// Sidebar Settings -> Preferences page
-import '../sidebar/settings/preferences_page.dart';
-
-// Super Admin -> All Settings
 import '../organization/organization_page.dart';
+import '../sidebar/settings/preferences_page.dart';
 
 // ================================================================
 // REPORTS
@@ -81,10 +80,12 @@ class DashboardPage extends StatefulWidget {
   });
 
   @override
-  State<DashboardPage> createState() => _DashboardPageState();
+  State<DashboardPage> createState() =>
+      _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState
+    extends State<DashboardPage> {
   // ================================================================
   // SIDEBAR STATE
   // ================================================================
@@ -103,8 +104,36 @@ class _DashboardPageState extends State<DashboardPage> {
 
   void _toggleSidebar() {
     setState(() {
-      _isSidebarCollapsed = !_isSidebarCollapsed;
+      _isSidebarCollapsed =
+          !_isSidebarCollapsed;
     });
+  }
+
+  void _logout() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => const HomePage(),
+      ),
+      (_) => false,
+    );
+  }
+
+  // ================================================================
+  // OPEN ORGANIZATION FULL SCREEN
+  // ================================================================
+
+  Future<void> _openOrganizationSettings() async {
+    await Navigator.of(
+      context,
+      rootNavigator: true,
+    ).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) {
+          return const OrganizationPage();
+        },
+      ),
+    );
   }
 
   // ================================================================
@@ -112,18 +141,20 @@ class _DashboardPageState extends State<DashboardPage> {
   // ================================================================
 
   void _selectMenu(String menu) {
+    final normalized =
+        menu.toLowerCase().trim();
+
+    // --------------------------------------------------------------
+    // ORGANIZATION MUST OPEN OUTSIDE DASHBOARD
+    // --------------------------------------------------------------
+
+    if (normalized == 'organization') {
+      _openOrganizationSettings();
+      return;
+    }
+
     setState(() {
       selectedMenu = menu;
-    });
-  }
-
-  // ================================================================
-  // OPEN SUPER ADMIN -> ALL SETTINGS
-  // ================================================================
-
-  void _openAllSettings() {
-    setState(() {
-      selectedMenu = 'all_settings';
     });
   }
 
@@ -132,7 +163,11 @@ class _DashboardPageState extends State<DashboardPage> {
   // ================================================================
 
   Widget _buildSelectedPage() {
-    switch (selectedMenu.toLowerCase().trim()) {
+    switch (
+      selectedMenu
+          .toLowerCase()
+          .trim()
+    ) {
       // ============================================================
       // DASHBOARD
       // ============================================================
@@ -141,37 +176,12 @@ class _DashboardPageState extends State<DashboardPage> {
         return const DashboardBody();
 
       // ============================================================
-      // SIDEBAR SETTINGS
-      // ============================================================
-
-      case 'settings':
-        return PreferencesPage(
-          onBack: () {
-            setState(() {
-              selectedMenu = 'dashboard';
-            });
-          },
-        );
-
-      // ============================================================
-      // SUPER ADMIN -> ALL SETTINGS
+      // SETTINGS
       // ============================================================
 
       case 'all_settings':
-        return OrganizationPage(
-          onBack: () {
-            setState(() {
-              selectedMenu = 'dashboard';
-            });
-          },
-        );
-
-      // ============================================================
-      // ORGANIZATION
-      // ============================================================
-
-      case 'organization':
-        return OrganizationPage(
+      case 'settings':
+        return PreferencesPage(
           onBack: () {
             setState(() {
               selectedMenu = 'dashboard';
@@ -257,8 +267,6 @@ class _DashboardPageState extends State<DashboardPage> {
       // ============================================================
 
       case 'purchase':
-        return const VendorsPage();
-
       case 'vendors':
         return const VendorsPage();
 
@@ -280,8 +288,6 @@ class _DashboardPageState extends State<DashboardPage> {
       // ============================================================
 
       case 'accountant':
-        return const ExpensesPage();
-
       case 'expense':
       case 'expenses':
         return const ExpensesPage();
@@ -354,7 +360,8 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
       child: Center(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize:
+              MainAxisSize.min,
           children: [
             Icon(
               icon,
@@ -375,7 +382,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   0xFF123653,
                 ),
                 fontSize: 26,
-                fontWeight: FontWeight.w700,
+                fontWeight:
+                    FontWeight.w700,
               ),
             ),
 
@@ -403,31 +411,42 @@ class _DashboardPageState extends State<DashboardPage> {
   // ================================================================
 
   @override
-  Widget build(BuildContext context) {
-    if (selectedMenu == 'all_settings') {
-      return OrganizationPage(
-        onBack: () {
-          setState(() {
-            selectedMenu = 'dashboard';
-          });
-        },
-      );
-    }
-
+  Widget build(
+    BuildContext context,
+  ) {
     return Scaffold(
       // ============================================================
-      // TOP APP BAR
+      // DASHBOARD APP BAR
+      // ============================================================
+      //
+      // This app bar exists ONLY inside DashboardPage.
+      // OrganizationPage is now pushed above this route, so this
+      // app bar will NOT appear on OrganizationPage.
       // ============================================================
 
       appBar: DashboardAppBar(
-        onMenuPressed: _toggleSidebar,
+        onMenuPressed:
+            _toggleSidebar,
 
-        // Super Admin click -> All Settings
-        onProfilePressed: _openAllSettings,
+        // ----------------------------------------------------------
+        // SUPER ADMIN PROFILE
+        // ----------------------------------------------------------
+        //
+        // Clicking the profile now pushes OrganizationPage as
+        // a completely separate full-screen route.
+        // ----------------------------------------------------------
+
+        onProfilePressed:
+            _openOrganizationSettings,
+        onPowerPressed: _logout,
       ),
 
       // ============================================================
-      // SIDEBAR + PAGE CONTENT
+      // DASHBOARD BODY
+      // ============================================================
+      //
+      // Sidebar is only part of DashboardPage.
+      // OrganizationPage is NOT rendered here anymore.
       // ============================================================
 
       body: Row(
@@ -437,9 +456,14 @@ class _DashboardPageState extends State<DashboardPage> {
           // ========================================================
 
           DashboardNavBar(
-            isCollapsed: _isSidebarCollapsed,
-            selectedMenu: selectedMenu,
-            onMenuSelected: _selectMenu,
+            isCollapsed:
+                _isSidebarCollapsed,
+
+            selectedMenu:
+                selectedMenu,
+
+            onMenuSelected:
+                _selectMenu,
           ),
 
           // ========================================================
@@ -447,7 +471,8 @@ class _DashboardPageState extends State<DashboardPage> {
           // ========================================================
 
           Expanded(
-            child: _buildSelectedPage(),
+            child:
+                _buildSelectedPage(),
           ),
         ],
       ),

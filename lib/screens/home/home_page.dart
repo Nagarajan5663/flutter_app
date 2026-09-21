@@ -1,7 +1,7 @@
+import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter/gestures.dart';
 
 import '../auth/login_page.dart';
@@ -10,11 +10,10 @@ import '../../widgets/codexia_logo.dart';
 
 /// ============================================================
 /// CODEXIA — dark navy / gold "executive glass" home page.
-/// Now with a STICKY STACKING CARDS scroll animation: Features,
-/// Showcase, Pricing and About each pin to the top of the
-/// viewport and shrink into a "peek strip" as the next card
-/// slides up and overlaps it — like a deck of cards being
-/// dealt down the page.
+/// Features use an APPLE INVITES-STYLE SPRING COVER-FLOW CAROUSEL.
+/// Performance rewrite: scrolling no longer rebuilds the whole page,
+/// the navbar avoids a full-width live blur, the hero pauses off-screen,
+/// heavy sections are repaint-isolated, and feature images are downsized.
 /// ============================================================
 
 class HomePage extends StatefulWidget {
@@ -28,8 +27,11 @@ class _HomePageState extends State<HomePage> {
   final ScrollController _scrollController = ScrollController();
 
   String? _selectedPlan;
-  double _scrollProgress = 0;
-  bool _scrolledPastTop = false;
+
+  // Only the navbar listens to this value. Scrolling no longer calls
+  // setState() on the entire HomePage for every pixel.
+  final ValueNotifier<bool> _scrolledPastTopNotifier =
+      ValueNotifier<bool>(false);
 
   final GlobalKey featuresKey = GlobalKey();
   final GlobalKey showcaseKey = GlobalKey();
@@ -67,17 +69,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _handleScroll() {
-    if (!_scrollController.hasClients) return;
-    final position = _scrollController.position;
-    final progress = position.maxScrollExtent > 0
-        ? (position.pixels / position.maxScrollExtent).clamp(0.0, 1.0)
-        : 0.0;
-    final pastTop = position.pixels > 20;
-    if (progress != _scrollProgress || pastTop != _scrolledPastTop) {
-      setState(() {
-        _scrollProgress = progress;
-        _scrolledPastTop = pastTop;
-      });
+    if (!_scrollController.hasClients) {
+      return;
+    }
+
+    final pastTop = _scrollController.position.pixels > 20;
+
+    if (_scrolledPastTopNotifier.value != pastTop) {
+      _scrolledPastTopNotifier.value = pastTop;
     }
   }
 
@@ -85,6 +84,7 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
+    _scrolledPastTopNotifier.dispose();
     _toastEntry?.remove();
     super.dispose();
   }
@@ -138,10 +138,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final cardHeight = math.max(620.0, screenHeight * 0.92);
-    const peekHeight = 78.0;
-
     return Scaffold(
       backgroundColor: background,
       body: Stack(
@@ -158,27 +154,33 @@ class _HomePageState extends State<HomePage> {
                 Expanded(
                   child: CustomScrollView(
                     controller: _scrollController,
-                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                    physics: const ClampingScrollPhysics(),
                     slivers: [
-                      SliverToBoxAdapter(child: _buildHeroSection()),
-                      SliverToBoxAdapter(child: _buildStatsSection()),
-                      // FEATURE-ONLY STACK GROUP
-                      // The exit spacer belongs to the feature group. This is important:
-                      // after Card 4, the whole pinned feature stack scrolls out first;
-                      // only then can the Showcase section enter the viewport.
-                      SliverMainAxisGroup(
-                        slivers: [
-                          ..._buildFeatureStackCards(cardHeight, peekHeight),
-                          SliverToBoxAdapter(
-                            child: SizedBox(height: cardHeight * 0.92),
-                          ),
-                        ],
+                      SliverToBoxAdapter(
+                        child: RepaintBoundary(child: _buildHeroSection()),
                       ),
-                      // Normal content starts only after the complete feature stack exits.
-                      SliverToBoxAdapter(child: _buildShowcaseSection()),
-                      SliverToBoxAdapter(child: _buildPricingSection()),
-                      SliverToBoxAdapter(child: _buildAboutSection()),
-                      SliverToBoxAdapter(child: _buildFooter()),
+                      SliverToBoxAdapter(
+                        child: RepaintBoundary(child: _buildStatsSection()),
+                      ),
+                      // APPLE INVITES-STYLE SPRING FEATURE CAROUSEL
+                      // Isolated so its transforms do not repaint the whole page.
+                      SliverToBoxAdapter(
+                        child: RepaintBoundary(
+                          child: _buildFeaturesCarouselSection(),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: RepaintBoundary(child: _buildShowcaseSection()),
+                      ),
+                      SliverToBoxAdapter(
+                        child: RepaintBoundary(child: _buildPricingSection()),
+                      ),
+                      SliverToBoxAdapter(
+                        child: RepaintBoundary(child: _buildAboutSection()),
+                      ),
+                      SliverToBoxAdapter(
+                        child: RepaintBoundary(child: _buildFooter()),
+                      ),
                     ],
                   ),
                 ),
@@ -195,47 +197,109 @@ class _HomePageState extends State<HomePage> {
   // ============================================================
 
   Widget _buildNavbar() {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              decoration: BoxDecoration(
-                color: surfaceContainerHigh.withValues(alpha: _scrolledPastTop ? 0.88 : 0.7),
-                boxShadow: _scrolledPastTop
-                    ? [BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 20, offset: const Offset(0, 8))]
-                    : const [],
-              ),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  if (constraints.maxWidth < 860) return _buildMobileNav();
-                  return _buildDesktopNav();
-                },
+    return RepaintBoundary(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ValueListenableBuilder<bool>(
+            valueListenable: _scrolledPastTopNotifier,
+            builder: (context, scrolledPastTop, child) {
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
+                decoration: BoxDecoration(
+                  // Frosted-glass visual without BackdropFilter. A live blur on
+                  // a full-width navbar is expensive on Flutter Web while scrolling.
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      surfaceContainerHigh.withValues(
+                        alpha: scrolledPastTop ? 0.98 : 0.94,
+                      ),
+                      surfaceContainer.withValues(
+                        alpha: scrolledPastTop ? 0.97 : 0.91,
+                      ),
+                    ],
+                  ),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
+                  ),
+                  boxShadow: scrolledPastTop
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.22),
+                            blurRadius: 14,
+                            offset: const Offset(0, 6),
+                          ),
+                        ]
+                      : const [],
+                ),
+                child: child,
+              );
+            },
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 860) {
+                  return _buildMobileNav();
+                }
+
+                return _buildDesktopNav();
+              },
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: -2,
+            child: AnimatedBuilder(
+              animation: _scrollController,
+              builder: (context, child) {
+                double progress = 0;
+
+                if (_scrollController.hasClients) {
+                  final position = _scrollController.position;
+                  if (position.maxScrollExtent > 0) {
+                    progress = (position.pixels / position.maxScrollExtent)
+                        .clamp(0.0, 1.0);
+                  }
+                }
+
+                return FractionallySizedBox(
+                  widthFactor: progress,
+                  alignment: Alignment.centerLeft,
+                  child: child,
+                );
+              },
+              child: Container(
+                height: 2,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      secondaryContainer,
+                      secondary,
+                      secondaryFixed,
+                      secondary,
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: secondary.withValues(alpha: 0.35),
+                      blurRadius: 5,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: -2,
-          child: FractionallySizedBox(
-            widthFactor: _scrollProgress,
-            alignment: Alignment.centerLeft,
-            child: Container(
-              height: 2,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [secondaryContainer, secondary, secondaryFixed, secondary]),
-                boxShadow: [BoxShadow(color: secondary.withValues(alpha: 0.5), blurRadius: 8)],
-              ),
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -330,6 +394,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildHeroSection() {
     return _FloatingCodexiaHero(
+      scrollController: _scrollController,
       onStartTrial: _goToSignUp,
       onExploreFeatures: () => _scrollTo(featuresKey),
     );
@@ -430,63 +495,78 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ============================================================
-  // STICKY STACKING CARDS
-  // Each entry below becomes one SliverPersistentHeader that
-  // pins to the top and shrinks into a "peek strip" as the next
-  // card scrolls up over it, producing the overlapping-deck
-  // effect down the page: Features (x4) → Showcase → Pricing → About.
+  // APPLE INVITES-STYLE SPRING FEATURE CAROUSEL
   // ============================================================
 
-  // ============================================================
-  // FEATURE-ONLY STICKY STACK
-  // Only the four feature cards use the overlapping sticky animation.
-  // Showcase, Pricing and About continue as normal page sections.
-  // ============================================================
-
-  List<Widget> _buildFeatureStackCards(double cardHeight, double peekHeight) {
+  Widget _buildFeaturesCarouselSection() {
     final features = [
-      _Feature('Sales & CRM Matrix',
-          'Direct pipeline tracking, automated client tiering, lead scoring, and instant customer lifecycle visibility without disconnected third-party integrations.',
-          'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&q=80', Icons.point_of_sale, secondary),
-      _Feature('Purchase & Vendor Orchestration',
-          'Automate multi-tier purchase orders, supplier evaluation metrics, dispatch tracking, and fulfillment reconciliation with zero latency.',
-          'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1200&q=80', Icons.local_shipping, primary),
-      _Feature('Real-Time Inventory Control',
-          'Multi-warehouse inventory routing, proactive low-stock predictive alarms, barcode telemetry, and automated replenishment dispatch.',
-          'https://images.unsplash.com/photo-1553413077-190dd305871c?w=1200&q=80', Icons.inventory_2, tertiary),
-      _Feature('Financial Telemetry & Treasury',
-          'Automated P&L ledger mapping, cash burn analysis, margin trends, and instant export-ready regulatory balance sheets.',
-          'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=1200&q=80', Icons.account_balance_wallet, secondary),
+      _Feature(
+        'Sales & CRM Matrix',
+        'Direct pipeline tracking, automated client tiering, lead scoring, and instant customer lifecycle visibility without disconnected third-party integrations.',
+        'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=900&q=75',
+        Icons.point_of_sale,
+        secondary,
+      ),
+      _Feature(
+        'Purchase & Vendor Orchestration',
+        'Automate multi-tier purchase orders, supplier evaluation metrics, dispatch tracking, and fulfillment reconciliation with zero latency.',
+        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=900&q=75',
+        Icons.local_shipping,
+        primary,
+      ),
+      _Feature(
+        'Real-Time Inventory Control',
+        'Multi-warehouse inventory routing, proactive low-stock predictive alarms, barcode telemetry, and automated replenishment dispatch.',
+        'https://images.unsplash.com/photo-1553413077-190dd305871c?w=900&q=75',
+        Icons.inventory_2,
+        tertiary,
+      ),
+      _Feature(
+        'Financial Telemetry & Treasury',
+        'Automated P&L ledger mapping, cash burn analysis, margin trends, and instant export-ready regulatory balance sheets.',
+        'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=900&q=75',
+        Icons.account_balance_wallet,
+        secondary,
+      ),
     ];
 
-    return List.generate(features.length, (i) {
-      return SliverPersistentHeader(
-        key: i == 0 ? featuresKey : null,
-        pinned: true,
-        delegate: _StackCardDelegate(
-          maxHeight: cardHeight * 0.78,
-          minHeight: peekHeight,
-          contentBuilder: (context, progress) =>
-              _stackedFeatureCard(features[i], i + 1, features.length, progress),
+    return Container(
+      key: featuresKey,
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(24, 58, 24, 70),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1280),
+          child: _AppleInvitesFeatureCarousel(
+            features: features,
+          ),
         ),
-      );
-    });
+      ),
+    );
   }
+
+  // ============================================================
+  // LEGACY SHARED CARD HELPERS
+  // Retained only by the alternate Showcase/Pricing/About card
+  // compositions later in this file. The active Features section
+  // now uses the Apple Invites-style spring carousel above.
+  // ============================================================
+
 
   /// Shared header strip for every stacked card — this is the part
   /// that stays visible once the card has fully collapsed into the
   /// stack, so it must never depend on `progress`.
   Widget _stackHeader({required IconData icon, required Color accent, required String title, required String tag, required int index, required int total}) {
     return Container(
-      height: 78,
-      padding: const EdgeInsets.symmetric(horizontal: 28),
+      height: 62,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(color: accent.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, color: accent, size: 21),
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(color: accent.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(9)),
+            child: Icon(icon, color: accent, size: 16),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -510,145 +590,32 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // ------------------------------------------------------------------
+  // Shared solid card shell for retained alternate compositions.
+  // ------------------------------------------------------------------
+
   Widget _stackCardShell({required Color accent, required Widget child}) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: surfaceContainer,
-        border: Border(top: BorderSide(color: accent.withValues(alpha: 0.25), width: 1)),
-      ),
-      child: child,
-    );
-  }
-
-  Widget _stackedFeatureCard(_Feature f, int index, int total, double progress) {
-    return _AnimatedFeatureBackground(
-      accent: f.accent,
-      index: index,
-      progress: progress,
-      child: _stackCardShell(
-        accent: f.accent,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _stackHeader(
-              icon: f.icon,
-              accent: f.accent,
-              title: f.title,
-              tag: 'FEATURE',
-              index: index,
-              total: total,
-            ),
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1100),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(28, 0, 28, 32),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final stacked = constraints.maxWidth < 820;
-
-                        final image = ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: _HoverImage(
-                            imageUrl: f.imageUrl,
-                            height: stacked ? 220 : null,
-                          ),
-                        );
-
-                        final copy = Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              f.title,
-                              style: const TextStyle(
-                                color: onSurface,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                height: 1.15,
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            Text(
-                              f.copy,
-                              style: const TextStyle(
-                                color: onSurfaceVariant,
-                                fontSize: 15,
-                                height: 1.65,
-                              ),
-                            ),
-                            const SizedBox(height: 22),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Inspect Workflow',
-                                  style: TextStyle(
-                                    color: f.accent,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Icon(
-                                  Icons.arrow_forward,
-                                  color: f.accent,
-                                  size: 16,
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-
-                        if (stacked) {
-                          return Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(
-                                width: double.infinity,
-                                height: 220,
-                                child: image,
-                              ),
-                              const SizedBox(height: 22),
-                              copy,
-                            ],
-                          );
-                        }
-
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              flex: 5,
-                              child: SizedBox(
-                                height: 320,
-                                child: image,
-                              ),
-                            ),
-                            const SizedBox(width: 44),
-                            Expanded(
-                              flex: 6,
-                              child: copy,
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
+    final radius = BorderRadius.circular(24);
+    return RepaintBoundary(
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: surfaceContainer.withValues(alpha: 0.94),
+          borderRadius: radius,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+          boxShadow: [
+            BoxShadow(
+              color: accent.withValues(alpha: 0.12),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
+        child: ClipRRect(borderRadius: radius, child: child),
       ),
     );
   }
 
-  double cardHeightForBody(BoxConstraints c) =>
-      math.min(380.0, c.maxHeight.isFinite ? c.maxHeight : 380.0);
 
   // ============================================================
   // NORMAL SECTIONS AFTER THE FEATURE STACK
@@ -793,7 +760,7 @@ class _HomePageState extends State<HomePage> {
         ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: _HoverImage(
-            imageUrl: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1200&q=80',
+            imageUrl: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=900&q=75',
             height: 400,
           ),
         ),
@@ -1183,7 +1150,7 @@ class _HomePageState extends State<HomePage> {
                         final image = ClipRRect(
                           borderRadius: BorderRadius.circular(20),
                           child: _HoverImage(
-                            imageUrl: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1200&q=80',
+                            imageUrl: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=900&q=75',
                             height: stacked ? 220 : 340,
                           ),
                         );
@@ -1360,11 +1327,6 @@ class _HomePageState extends State<HomePage> {
 }
 
 // ============================================================
-// Supporting data class
-// ============================================================
-
-
-// ============================================================
 // FLOATING CODEXIA HERO ARTWORK
 // Uses the exact supplied hero image as the visual itself.
 // The artwork floats, breathes and tilts gently with the mouse.
@@ -1373,10 +1335,12 @@ class _HomePageState extends State<HomePage> {
 // ============================================================
 
 class _FloatingCodexiaHero extends StatefulWidget {
+  final ScrollController scrollController;
   final VoidCallback onStartTrial;
   final VoidCallback onExploreFeatures;
 
   const _FloatingCodexiaHero({
+    required this.scrollController,
     required this.onStartTrial,
     required this.onExploreFeatures,
   });
@@ -1395,6 +1359,8 @@ class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
 
   static const double _artAspectRatio = 1012 / 510;
 
+  bool _heroAnimationRunning = true;
+
   @override
   void initState() {
     super.initState();
@@ -1403,10 +1369,51 @@ class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
       vsync: this,
       duration: const Duration(seconds: 6),
     )..repeat();
+
+    widget.scrollController.addListener(_handleScrollVisibility);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _handleScrollVisibility();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _FloatingCodexiaHero oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.scrollController != widget.scrollController) {
+      oldWidget.scrollController.removeListener(_handleScrollVisibility);
+      widget.scrollController.addListener(_handleScrollVisibility);
+      _handleScrollVisibility();
+    }
+  }
+
+  void _handleScrollVisibility() {
+    if (!mounted || !widget.scrollController.hasClients) {
+      return;
+    }
+
+    // Hero is roughly 650px tall. Stop its infinite animation after it has
+    // moved far enough off screen so lower sections can scroll without
+    // competing for animation/repaint time.
+    final shouldRun = widget.scrollController.position.pixels < 850;
+
+    if (shouldRun == _heroAnimationRunning) {
+      return;
+    }
+
+    _heroAnimationRunning = shouldRun;
+
+    if (shouldRun) {
+      _controller.repeat();
+    } else {
+      _controller.stop(canceled: false);
+    }
   }
 
   @override
   void dispose() {
+    widget.scrollController.removeListener(_handleScrollVisibility);
     _controller.dispose();
     super.dispose();
   }
@@ -1464,11 +1471,11 @@ class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
             final bool desktop = constraints.maxWidth >= 850;
 
             final double maxArtworkWidth = constraints.maxWidth >= 1400
-                ? 1120
+                ? 1180
                 : constraints.maxWidth >= 1000
-                    ? constraints.maxWidth * 0.90
+                    ? constraints.maxWidth * 0.97
                     : constraints.maxWidth >= 650
-                        ? constraints.maxWidth * 0.94
+                        ? constraints.maxWidth * 0.99
                         : constraints.maxWidth;
 
             final double artworkWidth =
@@ -1498,7 +1505,7 @@ class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
                       math.cos(phase * 0.72) * (desktop ? 3.5 : 1.5);
 
                   final breathe =
-                      1 + (math.sin(phase) * 0.0065);
+                      1.04 + (math.sin(phase) * 0.0065);
 
                   final autoRotation =
                       math.sin(phase * 0.55) * 0.0022;
@@ -1569,8 +1576,9 @@ class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
 
                       Image.asset(
                         'assets/images/codexia_hero.png',
-                        fit: BoxFit.contain,
-                        filterQuality: FilterQuality.high,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
+                        filterQuality: FilterQuality.medium,
                       ),
 
                       // Invisible click target over "Start Your Free Trial".
@@ -1674,176 +1682,798 @@ class _Feature {
   const _Feature(this.title, this.copy, this.imageUrl, this.icon, this.accent);
 }
 
-// ============================================================
-// STICKY STACKING CARD DELEGATE
-// Pinned SliverPersistentHeader delegates naturally stack: as one
-// header shrinks toward minExtent it stays pinned at the top while
-// the next pinned header slides up and covers it — producing the
-// "overlapping cards" scroll effect with zero manual offset math.
-// ============================================================
+class _AppleInvitesFeatureCarousel extends StatefulWidget {
+  final List<_Feature> features;
 
-class _AnimatedFeatureBackground extends StatefulWidget {
-  const _AnimatedFeatureBackground({
-    required this.accent,
-    required this.index,
-    required this.progress,
-    required this.child,
+  const _AppleInvitesFeatureCarousel({
+    required this.features,
   });
 
-  final Color accent;
-  final int index;
-  final double progress;
-  final Widget child;
-
   @override
-  State<_AnimatedFeatureBackground> createState() => _AnimatedFeatureBackgroundState();
+  State<_AppleInvitesFeatureCarousel> createState() =>
+      _AppleInvitesFeatureCarouselState();
 }
 
-class _AnimatedFeatureBackgroundState extends State<_AnimatedFeatureBackground>
+class _AppleInvitesFeatureCarouselState
+    extends State<_AppleInvitesFeatureCarousel>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  bool _hovered = false;
+  late final AnimationController _springController;
+  Timer? _autoTimer;
+
+  int _activeIndex = 0;
+  int _fromIndex = 0;
+  int? _hoveredIndex;
+  bool _pointerInside = false;
+
+  static const Duration _autoInterval = Duration(seconds: 3);
+  static const SpringDescription _spring = SpringDescription(
+    mass: 1,
+    stiffness: 300,
+    damping: 30,
+  );
+
+  int get _count => widget.features.length;
+
+  int _wrap(int value) {
+    if (_count == 0) return 0;
+    return ((value % _count) + _count) % _count;
+  }
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+
+    _springController = AnimationController(
       vsync: this,
-      duration: Duration(seconds: 8 + widget.index * 2),
-    )..repeat(reverse: true);
+      lowerBound: 0,
+      upperBound: 1,
+      value: 1,
+    );
+
+    _restartAutoTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant _AppleInvitesFeatureCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (_count == 0) {
+      _activeIndex = 0;
+      _fromIndex = 0;
+      return;
+    }
+
+    _activeIndex = _wrap(_activeIndex);
+    _fromIndex = _wrap(_fromIndex);
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _autoTimer?.cancel();
+    _springController.dispose();
     super.dispose();
+  }
+
+  void _restartAutoTimer() {
+    _autoTimer?.cancel();
+
+    if (_count <= 1) return;
+
+    _autoTimer = Timer.periodic(
+      _autoInterval,
+      (_) {
+        if (!_pointerInside && mounted) {
+          _moveTo(_wrap(_activeIndex + 1));
+        }
+      },
+    );
+  }
+
+  void _moveTo(int index) {
+    if (_count <= 1) return;
+
+    final next = _wrap(index);
+    if (next == _activeIndex && !_springController.isAnimating) {
+      return;
+    }
+
+    setState(() {
+      _fromIndex = _activeIndex;
+      _activeIndex = next;
+    });
+
+    _springController.stop();
+    _springController.value = 0;
+    _springController.animateWith(
+      SpringSimulation(
+        _spring,
+        0,
+        1,
+        0,
+      ),
+    );
+  }
+
+  int _relativeSlot(int itemIndex, int activeIndex) {
+    if (_count <= 1) return 0;
+
+    var diff = itemIndex - activeIndex;
+    diff = ((diff % _count) + _count) % _count;
+
+    if (diff > _count / 2) {
+      diff -= _count;
+    }
+
+    if (diff == 0) return 0;
+    if (diff == -1) return -1;
+    if (diff == 1) return 1;
+    return diff < 0 ? -2 : 2;
+  }
+
+  _InviteCardVisual _visualForSlot(
+    int slot,
+    double cardWidth,
+  ) {
+    switch (slot) {
+      case -1:
+        return _InviteCardVisual(
+          x: -cardWidth * 0.80,
+          y: 10,
+          rotation: -12 * math.pi / 180,
+          scale: 0.90,
+          opacity: 0.80,
+          depth: 2,
+        );
+      case 1:
+        return _InviteCardVisual(
+          x: cardWidth * 0.80,
+          y: 10,
+          rotation: 12 * math.pi / 180,
+          scale: 0.90,
+          opacity: 0.80,
+          depth: 2,
+        );
+      case -2:
+        return _InviteCardVisual(
+          x: -cardWidth * 1.28,
+          y: 36,
+          rotation: -18 * math.pi / 180,
+          scale: 0.82,
+          opacity: 0,
+          depth: 1,
+        );
+      case 2:
+        return _InviteCardVisual(
+          x: cardWidth * 1.28,
+          y: 36,
+          rotation: 18 * math.pi / 180,
+          scale: 0.82,
+          opacity: 0,
+          depth: 1,
+        );
+      default:
+        return const _InviteCardVisual(
+          x: 0,
+          y: 0,
+          rotation: 0,
+          scale: 1,
+          opacity: 1,
+          depth: 3,
+        );
+    }
+  }
+
+  _InviteCardVisual _lerpVisual(
+    _InviteCardVisual a,
+    _InviteCardVisual b,
+    double t,
+  ) {
+    return _InviteCardVisual(
+      x: _lerpDouble(a.x, b.x, t),
+      y: _lerpDouble(a.y, b.y, t),
+      rotation: _lerpDouble(a.rotation, b.rotation, t),
+      scale: _lerpDouble(a.scale, b.scale, t),
+      opacity: _lerpDouble(a.opacity, b.opacity, t),
+      depth: t < 0.5 ? a.depth : b.depth,
+    );
+  }
+
+  double _lerpDouble(double a, double b, double t) {
+    return a + (b - a) * t;
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.features.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedScale(
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeOutCubic,
-        scale: _hovered ? 1.012 : 1,
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            final t = _controller.value;
-            return Container(
+      onEnter: (_) {
+        _pointerInside = true;
+      },
+      onExit: (_) {
+        _pointerInside = false;
+      },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final isMobile = width < 620;
+          final isTablet = width < 900;
+
+          final cardWidth = isMobile
+              ? math.min(260.0, width * 0.70)
+              : isTablet
+                  ? math.min(310.0, width * 0.38)
+                  : math.min(360.0, width * 0.31);
+
+          final cardHeight = cardWidth * 1.50;
+          final stageHeight = cardHeight + (isMobile ? 54 : 84);
+
+          return Column(
+            children: [
+              const Text(
+                'CORE CAPABILITIES',
+                style: TextStyle(
+                  color: _HomePageState.secondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.8,
+                ),
+              ),
+              const SizedBox(height: 9),
+              const Text(
+                'Explore The Codexia Matrix',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _HomePageState.onSurface,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 650),
+                child: const Text(
+                  'Tap a side card to bring it into focus. The feature deck advances automatically with a soft spring transition.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _HomePageState.onSurfaceVariant,
+                    fontSize: 14,
+                    height: 1.55,
+                  ),
+                ),
+              ),
+              SizedBox(height: isMobile ? 24 : 34),
+              RepaintBoundary(
+                child: SizedBox(
+                  height: stageHeight,
+                  width: double.infinity,
+                  child: AnimatedBuilder(
+                    animation: _springController,
+                    builder: (context, child) {
+                      final t = _springController.isAnimating
+                          ? _springController.value.clamp(0.0, 1.0).toDouble()
+                          : 1.0;
+
+                      final entries = <_InviteRenderEntry>[];
+
+                      for (int i = 0; i < _count; i++) {
+                        final fromSlot = _relativeSlot(i, _fromIndex);
+                        final toSlot = _relativeSlot(i, _activeIndex);
+
+                        final fromVisual =
+                            _visualForSlot(fromSlot, cardWidth);
+                        final toVisual = _visualForSlot(toSlot, cardWidth);
+                        final visual = _lerpVisual(
+                          fromVisual,
+                          toVisual,
+                          t,
+                        );
+
+                        entries.add(
+                          _InviteRenderEntry(
+                            index: i,
+                            visual: visual,
+                          ),
+                        );
+                      }
+
+                      entries.sort(
+                        (a, b) => a.visual.depth.compareTo(b.visual.depth),
+                      );
+
+                      return Stack(
+                        alignment: Alignment.topCenter,
+                        clipBehavior: Clip.none,
+                        children: [
+                          for (final entry in entries)
+                            _buildAnimatedCard(
+                              entry.index,
+                              entry.visual,
+                              cardWidth: cardWidth,
+                              cardHeight: cardHeight,
+                              isMobile: isMobile,
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              _buildPageIndicator(),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildAnimatedCard(
+    int index,
+    _InviteCardVisual visual, {
+    required double cardWidth,
+    required double cardHeight,
+    required bool isMobile,
+  }) {
+    final feature = widget.features[index];
+    final isActive = index == _activeIndex;
+    final hovered = index == _hoveredIndex;
+    final interactive = visual.opacity > 0.25;
+
+    final hoverScale = hovered && !isActive ? 1.025 : 1.0;
+    final activeHoverScale = hovered && isActive ? 1.018 : 1.0;
+
+    return Transform.translate(
+      offset: Offset(visual.x, visual.y),
+      child: Transform.rotate(
+        angle: visual.rotation,
+        child: Transform.scale(
+          scale: visual.scale * hoverScale * activeHoverScale,
+          child: Opacity(
+            opacity: visual.opacity.clamp(0.0, 1.0).toDouble(),
+            child: IgnorePointer(
+              ignoring: !interactive,
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                onEnter: (_) {
+                  setState(() {
+                    _hoveredIndex = index;
+                  });
+                },
+                onExit: (_) {
+                  if (_hoveredIndex == index) {
+                    setState(() {
+                      _hoveredIndex = null;
+                    });
+                  }
+                },
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    if (!isActive) {
+                      _moveTo(index);
+                      _restartAutoTimer();
+                    }
+                  },
+                  child: _buildInviteFeatureCard(
+                    feature,
+                    index,
+                    width: cardWidth,
+                    height: cardHeight,
+                    active: isActive,
+                    hovered: hovered,
+                    mobile: isMobile,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInviteFeatureCard(
+    _Feature feature,
+    int index, {
+    required double width,
+    required double height,
+    required bool active,
+    required bool hovered,
+    required bool mobile,
+  }) {
+    final radius = BorderRadius.circular(mobile ? 24 : 30);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        border: Border.all(
+          color: active
+              ? feature.accent.withValues(alpha: hovered ? 0.95 : 0.70)
+              : Colors.white.withValues(alpha: hovered ? 0.30 : 0.14),
+          width: active ? 1.8 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: feature.accent.withValues(
+              alpha: active
+                  ? (hovered ? 0.30 : 0.20)
+                  : (hovered ? 0.14 : 0.07),
+            ),
+            blurRadius: active ? 34 : 22,
+            spreadRadius: active ? 1 : 0,
+            offset: const Offset(0, 18),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: active ? 0.40 : 0.28),
+            blurRadius: 30,
+            offset: const Offset(0, 20),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _FeatureNetworkImage(
+              imageUrl: feature.imageUrl,
+              fit: BoxFit.cover,
+              requestedWidth: active ? 800 : 520,
+            ),
+
+            const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment(-1 + t * 0.8, -1),
-                  end: Alignment(1, 1 - t * 0.8),
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: [0.0, 0.38, 0.66, 1.0],
                   colors: [
-                    _HomePageState.surfaceContainerLowest,
-                    Color.lerp(_HomePageState.surfaceContainer, widget.accent, 0.10 + (_hovered ? 0.08 : 0.0))!,
-                    _HomePageState.surfaceContainer,
+                    Color(0x12000000),
+                    Color(0x24000000),
+                    Color(0xB0000B17),
+                    Color(0xF4000B17),
                   ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.accent.withValues(alpha: _hovered ? 0.28 : 0.10),
-                    blurRadius: _hovered ? 34 : 18,
-                    spreadRadius: _hovered ? 2 : 0,
-                  ),
-                ],
               ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: -100 + t * 140,
-                    top: 40 + math.sin(t * math.pi) * 80,
-                    child: IgnorePointer(
-                      child: Container(
-                        width: 260,
-                        height: 260,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: widget.accent.withValues(alpha: _hovered ? 0.12 : 0.06),
-                          boxShadow: [
-                            BoxShadow(
-                              color: widget.accent.withValues(alpha: 0.16),
-                              blurRadius: 90,
-                              spreadRadius: 40,
-                            ),
-                          ],
-                        ),
+            ),
+
+            Positioned(
+              top: mobile ? 14 : 18,
+              left: mobile ? 14 : 18,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: mobile ? 10 : 12,
+                  vertical: mobile ? 5 : 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.38),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.16),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      feature.icon,
+                      color: feature.accent,
+                      size: mobile ? 13 : 15,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'FEATURE ${(index + 1).toString().padLeft(2, '0')}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: mobile ? 9 : 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.9,
                       ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+
+            if (active)
+              Positioned(
+                top: mobile ? 14 : 18,
+                right: mobile ? 14 : 18,
+                child: Container(
+                  width: mobile ? 32 : 36,
+                  height: mobile ? 32 : 36,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: feature.accent.withValues(alpha: 0.18),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: feature.accent.withValues(alpha: 0.50),
+                    ),
                   ),
-                  Positioned.fill(child: widget.child),
+                  child: Icon(
+                    Icons.auto_awesome_rounded,
+                    color: feature.accent,
+                    size: mobile ? 16 : 18,
+                  ),
+                ),
+              ),
+
+            Positioned(
+              left: mobile ? 18 : 24,
+              right: mobile ? 18 : 24,
+              bottom: mobile ? 18 : 24,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: mobile ? 34 : 40,
+                        height: mobile ? 34 : 40,
+                        decoration: BoxDecoration(
+                          color: feature.accent.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: feature.accent.withValues(alpha: 0.36),
+                          ),
+                        ),
+                        child: Icon(
+                          feature.icon,
+                          color: feature.accent,
+                          size: mobile ? 17 : 20,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        '${(index + 1).toString().padLeft(2, '0')} / '
+                        '${_count.toString().padLeft(2, '0')}',
+                        style: const TextStyle(
+                          color: _HomePageState.onSurfaceVariant,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.7,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: mobile ? 12 : 16),
+                  Text(
+                    feature.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: mobile ? 20 : 24,
+                      fontWeight: FontWeight.w800,
+                      height: 1.10,
+                    ),
+                  ),
+                  SizedBox(height: mobile ? 8 : 10),
+                  Text(
+                    feature.copy,
+                    maxLines: mobile ? 4 : 5,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.78),
+                      fontSize: mobile ? 11.5 : 12.5,
+                      height: 1.48,
+                    ),
+                  ),
+                  SizedBox(height: mobile ? 12 : 16),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        active ? 'Inspect Workflow' : 'Tap to Focus',
+                        style: TextStyle(
+                          color: feature.accent,
+                          fontSize: mobile ? 11 : 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(
+                        active
+                            ? Icons.arrow_forward_rounded
+                            : Icons.touch_app_outlined,
+                        color: feature.accent,
+                        size: mobile ? 14 : 16,
+                      ),
+                    ],
+                  ),
                 ],
               ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
+            ),
 
-class _StackCardDelegate extends SliverPersistentHeaderDelegate {
-  _StackCardDelegate({
-    required this.maxHeight,
-    required this.minHeight,
-    required this.contentBuilder,
-  });
-
-  final double maxHeight;
-  final double minHeight;
-  final Widget Function(BuildContext context, double progress) contentBuilder;
-
-  @override
-  double get minExtent => minHeight;
-
-  @override
-  double get maxExtent => maxHeight;
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final range = (maxHeight - minHeight).clamp(1.0, double.infinity);
-    final progress = (shrinkOffset / range).clamp(0.0, 1.0);
-    final scale = 1 - progress * 0.04;
-    final radius = 0.0 + progress * 26.0;
-
-    final card = Transform.scale(
-      alignment: Alignment.topCenter,
-      scale: scale,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(radius)),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.35 + progress * 0.15), blurRadius: 24, offset: const Offset(0, 10)),
+            Positioned.fill(
+              child: IgnorePointer(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withValues(alpha: hovered ? 0.13 : 0.07),
+                        Colors.transparent,
+                        feature.accent.withValues(
+                          alpha: active ? 0.06 : 0.02,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
-        clipBehavior: Clip.antiAlias,
-        child: SizedBox(
-          height: maxHeight,
-          width: double.infinity,
-          child: contentBuilder(context, progress),
-        ),
       ),
     );
+  }
 
-    return ClipRect(
-      child: OverflowBox(
-        alignment: Alignment.topCenter,
-        minHeight: 0,
-        maxHeight: maxHeight,
-        child: card,
+  Widget _buildPageIndicator() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(
+        _count,
+        (index) {
+          final selected = index == _activeIndex;
+          final accent = widget.features[index].accent;
+
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              _moveTo(index);
+              _restartAutoTimer();
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              width: selected ? 28 : 8,
+              height: 8,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: selected
+                    ? accent
+                    : Colors.white.withValues(alpha: 0.22),
+                borderRadius: BorderRadius.circular(99),
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: accent.withValues(alpha: 0.30),
+                          blurRadius: 12,
+                        ),
+                      ]
+                    : null,
+              ),
+            ),
+          );
+        },
       ),
     );
+  }
+}
+
+class _InviteCardVisual {
+  final double x;
+  final double y;
+  final double rotation;
+  final double scale;
+  final double opacity;
+  final int depth;
+
+  const _InviteCardVisual({
+    required this.x,
+    required this.y,
+    required this.rotation,
+    required this.scale,
+    required this.opacity,
+    required this.depth,
+  });
+}
+
+class _InviteRenderEntry {
+  final int index;
+  final _InviteCardVisual visual;
+
+  const _InviteRenderEntry({
+    required this.index,
+    required this.visual,
+  });
+}
+
+
+class _FeatureNetworkImage extends StatelessWidget {
+  final String imageUrl;
+  final BoxFit fit;
+  final int requestedWidth;
+
+  const _FeatureNetworkImage({
+    required this.imageUrl,
+    required this.fit,
+    this.requestedWidth = 900,
+  });
+
+  String get _optimizedUrl {
+    var url = imageUrl;
+
+    final widthPattern = RegExp(r'([?&])w=\d+');
+    if (widthPattern.hasMatch(url)) {
+      url = url.replaceFirstMapped(
+        widthPattern,
+        (match) => '${match.group(1)}w=$requestedWidth',
+      );
+    } else {
+      url += url.contains('?')
+          ? '&w=$requestedWidth'
+          : '?w=$requestedWidth';
+    }
+
+    final qualityPattern = RegExp(r'([?&])q=\d+');
+    if (qualityPattern.hasMatch(url)) {
+      url = url.replaceFirstMapped(
+        qualityPattern,
+        (match) => '${match.group(1)}q=75',
+      );
+    } else {
+      url += '&q=75';
+    }
+
+    return url;
   }
 
   @override
-  bool shouldRebuild(covariant _StackCardDelegate oldDelegate) {
-    return oldDelegate.maxHeight != maxHeight || oldDelegate.minHeight != minHeight;
+  Widget build(BuildContext context) {
+    return Image.network(
+      _optimizedUrl,
+      fit: fit,
+      cacheWidth: requestedWidth,
+      filterQuality: FilterQuality.medium,
+      gaplessPlayback: true,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) {
+          return child;
+        }
+
+        return Container(
+          color: _HomePageState.surfaceContainerHigh,
+          alignment: Alignment.center,
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.2,
+              color: _HomePageState.secondary,
+              value: loadingProgress.expectedTotalBytes == null
+                  ? null
+                  : loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!,
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: _HomePageState.surfaceContainerHigh,
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.image_not_supported_outlined,
+            color: _HomePageState.onSurfaceVariant,
+            size: 34,
+          ),
+        );
+      },
+    );
   }
 }
+
 
 // ============================================================
 // AURORA BACKGROUND — approximates the animated WebGL noise
@@ -2394,6 +3024,9 @@ class _HoverImageState extends State<_HoverImage> {
       width: double.infinity,
       height: double.infinity,
       fit: BoxFit.cover,
+      cacheWidth: 1000,
+      filterQuality: FilterQuality.medium,
+      gaplessPlayback: true,
       loadingBuilder: (context, child, loadingProgress) {
         if (loadingProgress == null) return child;
 
@@ -2463,63 +3096,6 @@ class _HoverImageState extends State<_HoverImage> {
     }
 
     return SizedBox.expand(child: content);
-  }
-}
-
-
-// ============================================================
-// CENTER HERO FLOATING ANIMATION
-// ============================================================
-
-class _FloatingHeroContent extends StatefulWidget {
-  final Widget child;
-  const _FloatingHeroContent({required this.child});
-
-  @override
-  State<_FloatingHeroContent> createState() => _FloatingHeroContentState();
-}
-
-class _FloatingHeroContentState extends State<_FloatingHeroContent>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _floatAnimation;
-  late final Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 3800))..repeat(reverse: true);
-    _floatAnimation = Tween<double>(begin: -8, end: 8).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine));
-    _scaleAnimation = Tween<double>(begin: 0.995, end: 1.005).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() { _controller.dispose(); super.dispose(); }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      child: widget.child,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, _floatAnimation.value),
-          child: Transform.scale(
-            scale: _scaleAnimation.value,
-            child: Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
-              children: [
-                Positioned(top: -100, child: Container(width: 360, height: 360, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFFDBA5A).withValues(alpha: 0.045), boxShadow: [BoxShadow(color: const Color(0xFFFDBA5A).withValues(alpha: 0.12), blurRadius: 100, spreadRadius: 30)]))),
-                Positioned(left: -100, bottom: 20, child: Container(width: 180, height: 180, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF4EDEA3).withValues(alpha: 0.035), boxShadow: [BoxShadow(color: const Color(0xFF4EDEA3).withValues(alpha: 0.08), blurRadius: 80, spreadRadius: 20)]))),
-                Positioned(right: -100, top: 80, child: Container(width: 200, height: 200, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFAAC9F4).withValues(alpha: 0.035), boxShadow: [BoxShadow(color: const Color(0xFFAAC9F4).withValues(alpha: 0.08), blurRadius: 90, spreadRadius: 20)]))),
-                child!,
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 }
 

@@ -39,23 +39,21 @@ class DashboardBody extends StatelessWidget {
             // ======================================================
             // DASHBOARD TITLE
             // ======================================================
-            const Text(
-              'Dashboard',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Dashboard',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
 
-            const SizedBox(height: 12),
-
-            // ======================================================
-            // THIS MONTH - RIGHT SIDE NEXT LINE
-            // ======================================================
-            Align(
-              alignment: Alignment.centerRight,
-              child: Container(
+                Container(
                 width: 150,
                 height: 42,
                 padding: const EdgeInsets.symmetric(
@@ -72,37 +70,37 @@ class DashboardBody extends StatelessWidget {
                   child: DropdownButton<String>(
                     value: 'This Month',
                     isExpanded: true,
-                    
 
                     icon: const Icon(
                       Icons.keyboard_arrow_down,
                       color: Color(0xFF555555),
                     ),
 
-                    style: const TextStyle(
-                      color: Color(0xFF444444),
-                      fontSize: 14,
+                      style: const TextStyle(
+                        color: Color(0xFF444444),
+                        fontSize: 14,
+                      ),
+
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'This Month',
+                          child: Text('This Month'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Last Month',
+                          child: Text('Last Month'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'This Year',
+                          child: Text('This Year'),
+                        ),
+                      ],
+
+                      onChanged: (value) {},
                     ),
-
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'This Month',
-                        child: Text('This Month'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'Last Month',
-                        child: Text('Last Month'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'This Year',
-                        child: Text('This Year'),
-                      ),
-                    ],
-
-                    onChanged: (value) {},
                   ),
                 ),
-              ),
+              ],
             ),
 
             const SizedBox(height: 28),
