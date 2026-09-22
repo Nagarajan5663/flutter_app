@@ -2,8 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../dashboard/dashboard_page.dart';
+import '../home/home_page.dart';
 
-import '../../widgets/codexia_logo.dart';
 import '../../widgets/futuristic_auth_widgets.dart';
 import '../../widgets/futuristic_aurora_background.dart';
 
@@ -183,6 +183,44 @@ class _SignUpPageState
     );
   }
 
+  void _goHome() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => const HomePage(),
+      ),
+      (_) => false,
+    );
+  }
+
+  Widget _buildHomeButton() {
+    return Tooltip(
+      message: 'Go to Home',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _goHome,
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.10),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.22),
+              ),
+            ),
+            child: const Icon(
+              Icons.home_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -248,7 +286,10 @@ class _SignUpPageState
       mainAxisSize:
           MainAxisSize.min,
       children: [
-        const CodexiaLogo(),
+        Align(
+          alignment: Alignment.topRight,
+          child: _buildHomeButton(),
+        ),
 
         const SizedBox(
           height: 16,

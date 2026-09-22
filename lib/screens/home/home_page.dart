@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/gestures.dart';
 
@@ -10,7 +12,11 @@ import '../../widgets/codexia_logo.dart';
 
 /// ============================================================
 /// CODEXIA — dark navy / gold "executive glass" home page.
-/// Features use an APPLE INVITES-STYLE SPRING COVER-FLOW CAROUSEL.
+/// Features use an APPLE INVITES-STYLE SPRING COVER-FLOW CAROUSEL that is
+/// SCROLL-DRIVEN: the section pins to the screen, every scroll step brings
+/// the next card to the centre, and after the last card the Showcase section
+/// scrolls in. A debounced SNAP-TO-CARD settles the page on a card centre
+/// when scrolling pauses.
 /// Performance rewrite: scrolling no longer rebuilds the whole page,
 /// the navbar avoids a full-width live blur, the hero pauses off-screen,
 /// heavy sections are repaint-isolated, and feature images are downsized.
@@ -62,6 +68,58 @@ class _HomePageState extends State<HomePage> {
   static const Color onSurface = Color(0xFFD2E4FF);
   static const Color onSurfaceVariant = Color(0xFFC3C6CF);
 
+  // ---- Scroll-driven feature carousel ----------------------------------
+  /// Scroll distance (px) spent on each card. Smaller = faster card flips.
+  static const double _featureStepPx = 320;
+
+  /// Snap-to-card tuning.
+  static const Duration _snapDelay = Duration(milliseconds: 120);
+  static const Duration _snapDuration = Duration(milliseconds: 280);
+
+  /// Fraction of a card step you must scroll (in your scroll direction)
+  /// before the snap advances to the next/previous card instead of falling
+  /// back to the current one. 0.2 means one mouse-wheel notch moves one card.
+  static const double _snapIntent = 0.2;
+
+  static const List<_Feature> _features = [
+    _Feature(
+      'Sales & CRM Matrix',
+      'Direct pipeline tracking, automated client tiering, lead scoring, and instant customer lifecycle visibility without disconnected third-party integrations.',
+      'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=900&q=75',
+      Icons.point_of_sale,
+      secondary,
+    ),
+    _Feature(
+      'Purchase & Vendor Orchestration',
+      'Automate multi-tier purchase orders, supplier evaluation metrics, dispatch tracking, and fulfillment reconciliation with zero latency.',
+      'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=900&q=75',
+      Icons.local_shipping,
+      primary,
+    ),
+    _Feature(
+      'Real-Time Inventory Control',
+      'Multi-warehouse inventory routing, proactive low-stock predictive alarms, barcode telemetry, and automated replenishment dispatch.',
+      'https://images.unsplash.com/photo-1553413077-190dd305871c?w=900&q=75',
+      Icons.inventory_2,
+      tertiary,
+    ),
+    _Feature(
+      'Financial Telemetry & Treasury',
+      'Automated P&L ledger mapping, cash burn analysis, margin trends, and instant export-ready regulatory balance sheets.',
+      'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=900&q=75',
+      Icons.account_balance_wallet,
+      secondary,
+    ),
+  ];
+
+  double get _featureScrollDistance => _features.length * _featureStepPx;
+
+  /// Which card is currently in focus. Only the carousel listens to this.
+  final ValueNotifier<int> _featureIndexNotifier = ValueNotifier<int>(0);
+
+  Timer? _snapTimer;
+  double? _lastSettledPixels;
+
   @override
   void initState() {
     super.initState();
@@ -78,13 +136,128 @@ class _HomePageState extends State<HomePage> {
     if (_scrolledPastTopNotifier.value != pastTop) {
       _scrolledPastTopNotifier.value = pastTop;
     }
+
+    _updateFeatureIndex();
+  }
+
+  /// Scroll offset at which the features section becomes pinned.
+  double? _featuresPinStart() {
+    final ctx = featuresKey.currentContext;
+    if (ctx == null) return null;
+    final ro = ctx.findRenderObject();
+    if (ro is! RenderBox || !ro.attached || !ro.hasSize) return null;
+    final viewport = RenderAbstractViewport.maybeOf(ro);
+    if (viewport == null) return null;
+    return viewport.getOffsetToReveal(ro, 0.0).offset;
+  }
+
+  void _updateFeatureIndex() {
+    final start = _featuresPinStart();
+    if (start == null) return;
+
+    final progress =
+        ((_scrollController.position.pixels - start) / _featureScrollDistance)
+            .clamp(0.0, 1.0)
+            .toDouble();
+
+    final index = math.min(
+      _features.length - 1,
+      (progress * _features.length).floor(),
+    );
+
+    if (_featureIndexNotifier.value != index) {
+      _featureIndexNotifier.value = index;
+    }
+  }
+
+  /// Used when a side card or a dot is tapped: scroll to that card's slot.
+  void _scrollToFeature(int index) {
+    final start = _featuresPinStart();
+    if (start == null || !_scrollController.hasClients) return;
+
+    _scrollController.animateTo(
+      start + (index + 0.5) * _featureStepPx,
+      duration: const Duration(milliseconds: 550),
+      curve: Curves.easeInOutCubic,
+    );
+  }
+
+  // ---- Snap-to-card ------------------------------------------------------
+
+  bool _handleScrollNotification(ScrollNotification notification) {
+    if (notification.depth != 0) return false;
+
+    if (notification is ScrollStartNotification ||
+        notification is ScrollUpdateNotification) {
+      // Still moving (wheel tick, drag, fling, animation): don't snap yet.
+      _snapTimer?.cancel();
+    } else if (notification is ScrollEndNotification) {
+      // Scrolling has stopped. Wait a moment in case another wheel tick
+      // follows, then settle on a card.
+      _snapTimer?.cancel();
+      _snapTimer = Timer(_snapDelay, _snapToNearestFeature);
+    }
+
+    return false;
+  }
+
+  void _snapToNearestFeature() {
+    if (!mounted || !_scrollController.hasClients) return;
+
+    final start = _featuresPinStart();
+    if (start == null) return;
+
+    final pixels = _scrollController.position.pixels;
+    final rel = pixels - start;
+
+    final previous = _lastSettledPixels;
+    _lastSettledPixels = pixels;
+
+    // Only snap while the features section is actually pinned.
+    if (rel <= 0 || rel >= _featureScrollDistance) return;
+
+    // x is measured in "card centres": card i is centred when x == i.
+    final x = rel / _featureStepPx - 0.5;
+
+    // Direction of the last gesture (ignore tiny drifts).
+    double direction = 0;
+    if (previous != null) {
+      final moved = pixels - previous;
+      if (moved.abs() > 8) direction = moved.sign;
+    }
+
+    // Scrolling forward: advance once you are past _snapIntent of a step.
+    // Scrolling backward: retreat once you are past _snapIntent of a step.
+    final int index;
+    if (direction > 0) {
+      index = (x + (1 - _snapIntent)).floor();
+    } else if (direction < 0) {
+      index = (x - (1 - _snapIntent)).ceil();
+    } else {
+      index = x.round();
+    }
+
+    // Beyond the first/last card means "leave the section": let the user
+    // scroll out freely instead of pulling them back.
+    if (index < 0 || index >= _features.length) return;
+
+    final target = start + (index + 0.5) * _featureStepPx;
+    if ((target - pixels).abs() < 1) return;
+
+    _scrollController.animateTo(
+      target,
+      duration: _snapDuration,
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
   void dispose() {
+    _snapTimer?.cancel();
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
     _scrolledPastTopNotifier.dispose();
+    _featureIndexNotifier.dispose();
     _toastEntry?.remove();
     super.dispose();
   }
@@ -152,36 +325,41 @@ class _HomePageState extends State<HomePage> {
               children: [
                 _buildNavbar(),
                 Expanded(
-                  child: CustomScrollView(
-                    controller: _scrollController,
-                    physics: const ClampingScrollPhysics(),
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: RepaintBoundary(child: _buildHeroSection()),
-                      ),
-                      SliverToBoxAdapter(
-                        child: RepaintBoundary(child: _buildStatsSection()),
-                      ),
-                      // APPLE INVITES-STYLE SPRING FEATURE CAROUSEL
-                      // Isolated so its transforms do not repaint the whole page.
-                      SliverToBoxAdapter(
-                        child: RepaintBoundary(
-                          child: _buildFeaturesCarouselSection(),
+                  // LayoutBuilder gives us the scroll viewport height (only
+                  // rebuilds on resize, never per scroll frame) so the pinned
+                  // features section can be exactly one screen tall.
+                  child: LayoutBuilder(
+                    builder: (context, viewport) {
+                      return NotificationListener<ScrollNotification>(
+                        onNotification: _handleScrollNotification,
+                        child: CustomScrollView(
+                          controller: _scrollController,
+                          physics: const ClampingScrollPhysics(),
+                          slivers: [
+                            SliverToBoxAdapter(
+                              child: RepaintBoundary(child: _buildHeroSection()),
+                            ),
+                            SliverToBoxAdapter(
+                              child: RepaintBoundary(child: _buildStatsSection()),
+                            ),
+                            // SCROLL-DRIVEN, PINNED FEATURE CAROUSEL
+                            ..._buildFeaturesPinnedSlivers(viewport.maxHeight),
+                            SliverToBoxAdapter(
+                              child: RepaintBoundary(child: _buildShowcaseSection()),
+                            ),
+                            SliverToBoxAdapter(
+                              child: RepaintBoundary(child: _buildPricingSection()),
+                            ),
+                            SliverToBoxAdapter(
+                              child: RepaintBoundary(child: _buildAboutSection()),
+                            ),
+                            SliverToBoxAdapter(
+                              child: RepaintBoundary(child: _buildFooter()),
+                            ),
+                          ],
                         ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: RepaintBoundary(child: _buildShowcaseSection()),
-                      ),
-                      SliverToBoxAdapter(
-                        child: RepaintBoundary(child: _buildPricingSection()),
-                      ),
-                      SliverToBoxAdapter(
-                        child: RepaintBoundary(child: _buildAboutSection()),
-                      ),
-                      SliverToBoxAdapter(
-                        child: RepaintBoundary(child: _buildFooter()),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
               ],
@@ -495,50 +673,125 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ============================================================
-  // APPLE INVITES-STYLE SPRING FEATURE CAROUSEL
+  // SCROLL-DRIVEN APPLE INVITES-STYLE FEATURE CAROUSEL
+  // The section pins to one screen height. An invisible spacer below the
+  // pinned header supplies the scroll distance (one step per card).
   // ============================================================
 
-  Widget _buildFeaturesCarouselSection() {
-    final features = [
-      _Feature(
-        'Sales & CRM Matrix',
-        'Direct pipeline tracking, automated client tiering, lead scoring, and instant customer lifecycle visibility without disconnected third-party integrations.',
-        'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=900&q=75',
-        Icons.point_of_sale,
-        secondary,
+  List<Widget> _buildFeaturesPinnedSlivers(double viewportHeight) {
+    final pinHeight = math.max(viewportHeight, 640.0);
+
+    return [
+      // Zero-height marker: the "Features" nav link scrolls here (pin start).
+      SliverToBoxAdapter(
+        child: SizedBox(key: featuresKey, height: 0, width: double.infinity),
       ),
-      _Feature(
-        'Purchase & Vendor Orchestration',
-        'Automate multi-tier purchase orders, supplier evaluation metrics, dispatch tracking, and fulfillment reconciliation with zero latency.',
-        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=900&q=75',
-        Icons.local_shipping,
-        primary,
+      // Heading scrolls in normally (NOT pinned) so the pinned box below only
+      // has to reserve room for the card stack + dots — this is what leaves
+      // enough headroom for larger cards without a bottom overflow.
+      SliverToBoxAdapter(
+        child: RepaintBoundary(
+          child: ColoredBox(
+            color: background,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 56, 24, 28),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1280),
+                  child: _buildFeaturesHeading(),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
-      _Feature(
-        'Real-Time Inventory Control',
-        'Multi-warehouse inventory routing, proactive low-stock predictive alarms, barcode telemetry, and automated replenishment dispatch.',
-        'https://images.unsplash.com/photo-1553413077-190dd305871c?w=900&q=75',
-        Icons.inventory_2,
-        tertiary,
-      ),
-      _Feature(
-        'Financial Telemetry & Treasury',
-        'Automated P&L ledger mapping, cash burn analysis, margin trends, and instant export-ready regulatory balance sheets.',
-        'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=900&q=75',
-        Icons.account_balance_wallet,
-        secondary,
+      SliverMainAxisGroup(
+        slivers: [
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _PinnedStageDelegate(
+              height: pinHeight,
+              child: RepaintBoundary(
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: _AuroraBackground(),
+                    ),
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: background.withValues(alpha: 0.18),
+                        ),
+                      ),
+                    ),
+                    _buildFeaturesCarouselSection(pinHeight),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // The scroll distance the user "spends" on the cards.
+          SliverToBoxAdapter(
+            child: SizedBox(height: _featureScrollDistance),
+          ),
+        ],
       ),
     ];
+  }
 
-    return Container(
-      key: featuresKey,
+  Widget _buildFeaturesHeading() {
+    return Column(
+      children: [
+        const Text(
+          'CORE CAPABILITIES',
+          style: TextStyle(
+            color: secondary,
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.8,
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Explore The Codexia Matrix',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: onSurface,
+            fontSize: 32,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 10),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 650),
+          child: const Text(
+            'Scroll down to bring the next feature into focus.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: onSurfaceVariant,
+              fontSize: 14,
+              height: 1.55,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeaturesCarouselSection(double pinHeight) {
+    return SizedBox(
+      height: pinHeight,
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 58, 24, 70),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
-          child: _AppleInvitesFeatureCarousel(
-            features: features,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1280),
+            child: _AppleInvitesFeatureCarousel(
+              features: _features,
+              indexListenable: _featureIndexNotifier,
+              onSelect: _scrollToFeature,
+            ),
           ),
         ),
       ),
@@ -618,7 +871,7 @@ class _HomePageState extends State<HomePage> {
 
 
   // ============================================================
-  // NORMAL SECTIONS AFTER THE FEATURE STACK
+  // NORMAL SECTIONS AFTER THE FEATURE CAROUSEL
   // These sections intentionally use normal scrolling.
   // ============================================================
 
@@ -1327,6 +1580,32 @@ class _HomePageState extends State<HomePage> {
 }
 
 // ============================================================
+// PINNED STAGE DELEGATE
+// Keeps the features section fixed on screen (one viewport tall)
+// while the spacer sliver below it supplies the scroll distance.
+// ============================================================
+
+class _PinnedStageDelegate extends SliverPersistentHeaderDelegate {
+  const _PinnedStageDelegate({required this.height, required this.child});
+
+  final double height;
+  final Widget child;
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) => child;
+
+  @override
+  bool shouldRebuild(covariant _PinnedStageDelegate oldDelegate) =>
+      oldDelegate.height != height || oldDelegate.child != child;
+}
+
+// ============================================================
 // FLOATING CODEXIA HERO ARTWORK
 // Uses the exact supplied hero image as the visual itself.
 // The artwork floats, breathes and tilts gently with the mouse.
@@ -1581,27 +1860,29 @@ class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
                         filterQuality: FilterQuality.medium,
                       ),
 
-                      // Invisible click target over "Start Your Free Trial".
+                      // Flutter button replacing the baked-in CTA.
                       Positioned(
-                        left: artworkWidth * 0.382,
-                        top: artworkHeight * 0.746,
-                        width: artworkWidth * 0.135,
-                        height: artworkHeight * 0.083,
-                        child: _InvisibleHeroAction(
-                          tooltip: 'Start Your Free Trial',
+                        left: artworkWidth * 0.375,
+                        top: artworkHeight * 0.744,
+                        width: artworkWidth * 0.145,
+                        height: artworkHeight * 0.09,
+                        child: _HeroActionButton(
+                          label: 'Start Your Free Trial',
                           onTap: widget.onStartTrial,
+                          primary: true,
                         ),
                       ),
 
-                      // Invisible click target over "Explore Features".
+                      // Flutter button replacing the baked-in CTA.
                       Positioned(
-                        left: artworkWidth * 0.523,
-                        top: artworkHeight * 0.746,
-                        width: artworkWidth * 0.135,
-                        height: artworkHeight * 0.083,
-                        child: _InvisibleHeroAction(
-                          tooltip: 'Explore Features',
+                        left: artworkWidth * 0.525,
+                        top: artworkHeight * 0.744,
+                        width: artworkWidth * 0.145,
+                        height: artworkHeight * 0.09,
+                        child: _HeroActionButton(
+                          label: 'Explore Features',
                           onTap: widget.onExploreFeatures,
+                          primary: false,
                         ),
                       ),
                     ],
@@ -1616,27 +1897,28 @@ class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
   }
 }
 
-class _InvisibleHeroAction extends StatefulWidget {
-  final String tooltip;
+class _HeroActionButton extends StatefulWidget {
+  final String label;
   final VoidCallback onTap;
+  final bool primary;
 
-  const _InvisibleHeroAction({
-    required this.tooltip,
+  const _HeroActionButton({
+    required this.label,
     required this.onTap,
+    required this.primary,
   });
 
   @override
-  State<_InvisibleHeroAction> createState() =>
-      _InvisibleHeroActionState();
+  State<_HeroActionButton> createState() => _HeroActionButtonState();
 }
 
-class _InvisibleHeroActionState extends State<_InvisibleHeroAction> {
+class _HeroActionButtonState extends State<_HeroActionButton> {
   bool _hovering = false;
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: widget.tooltip,
+      message: widget.label,
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         onEnter: (_) {
@@ -1650,21 +1932,53 @@ class _InvisibleHeroActionState extends State<_InvisibleHeroAction> {
           });
         },
         child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
           onTap: widget.onTap,
-          child: AnimatedContainer(
+          child: AnimatedScale(
+            scale: _hovering ? 1.04 : 1,
             duration: const Duration(milliseconds: 160),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: _hovering
-                  ? [
-                      BoxShadow(
-                        color: const Color(0xFFFDBA5A)
-                            .withValues(alpha: 0.20),
-                        blurRadius: 18,
-                      ),
-                    ]
-                  : null,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: widget.primary
+                      ? [
+                          const Color(0xFFFFD78A),
+                          const Color(0xFFE89B32),
+                        ]
+                      : [
+                          const Color(0xFF294766),
+                          const Color(0xFF132B45),
+                        ],
+                ),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: widget.primary
+                      ? const Color(0xFFFFE2B4)
+                      : const Color(0xFF7C9AB5),
+                  width: _hovering ? 2 : 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: (widget.primary
+                            ? const Color(0xFFFDBA5A)
+                            : const Color(0xFF3AA8FF))
+                        .withValues(alpha: _hovering ? 0.75 : 0.48),
+                    blurRadius: _hovering ? 24 : 16,
+                    spreadRadius: _hovering ? 2 : 1,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  widget.label,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -1682,11 +1996,22 @@ class _Feature {
   const _Feature(this.title, this.copy, this.imageUrl, this.icon, this.accent);
 }
 
+// ============================================================
+// SCROLL-DRIVEN SPRING CAROUSEL
+// The active card is fed by [indexListenable] (driven by page scroll).
+// Taps on side cards / dots call [onSelect], which scrolls the page,
+// so the scroll position and the focused card always stay in sync.
+// ============================================================
+
 class _AppleInvitesFeatureCarousel extends StatefulWidget {
   final List<_Feature> features;
+  final ValueListenable<int> indexListenable;
+  final ValueChanged<int> onSelect;
 
   const _AppleInvitesFeatureCarousel({
     required this.features,
+    required this.indexListenable,
+    required this.onSelect,
   });
 
   @override
@@ -1698,14 +2023,16 @@ class _AppleInvitesFeatureCarouselState
     extends State<_AppleInvitesFeatureCarousel>
     with SingleTickerProviderStateMixin {
   late final AnimationController _springController;
-  Timer? _autoTimer;
 
   int _activeIndex = 0;
   int _fromIndex = 0;
   int? _hoveredIndex;
-  bool _pointerInside = false;
 
-  static const Duration _autoInterval = Duration(seconds: 3);
+  // Keeps the motion continuous when the target changes mid-spring
+  // (fast scrolling flips several cards in quick succession).
+  final Map<int, _InviteCardVisual> _currentVisuals = {};
+  Map<int, _InviteCardVisual>? _startVisuals;
+
   static const SpringDescription _spring = SpringDescription(
     mass: 1,
     stiffness: 300,
@@ -1730,12 +2057,19 @@ class _AppleInvitesFeatureCarouselState
       value: 1,
     );
 
-    _restartAutoTimer();
+    _activeIndex = _wrap(widget.indexListenable.value);
+    _fromIndex = _activeIndex;
+    widget.indexListenable.addListener(_handleIndexChanged);
   }
 
   @override
   void didUpdateWidget(covariant _AppleInvitesFeatureCarousel oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.indexListenable != widget.indexListenable) {
+      oldWidget.indexListenable.removeListener(_handleIndexChanged);
+      widget.indexListenable.addListener(_handleIndexChanged);
+    }
 
     if (_count == 0) {
       _activeIndex = 0;
@@ -1749,33 +2083,28 @@ class _AppleInvitesFeatureCarouselState
 
   @override
   void dispose() {
-    _autoTimer?.cancel();
+    widget.indexListenable.removeListener(_handleIndexChanged);
     _springController.dispose();
     super.dispose();
   }
 
-  void _restartAutoTimer() {
-    _autoTimer?.cancel();
-
-    if (_count <= 1) return;
-
-    _autoTimer = Timer.periodic(
-      _autoInterval,
-      (_) {
-        if (!_pointerInside && mounted) {
-          _moveTo(_wrap(_activeIndex + 1));
-        }
-      },
-    );
+  void _handleIndexChanged() {
+    if (!mounted) return;
+    _moveTo(widget.indexListenable.value);
   }
 
   void _moveTo(int index) {
     if (_count <= 1) return;
 
     final next = _wrap(index);
-    if (next == _activeIndex && !_springController.isAnimating) {
-      return;
-    }
+    if (next == _activeIndex) return;
+
+    // If a spring is still running, start the new one from where the
+    // cards visually are right now instead of jumping back.
+    _startVisuals =
+        _springController.isAnimating && _currentVisuals.length == _count
+            ? Map<int, _InviteCardVisual>.of(_currentVisuals)
+            : null;
 
     setState(() {
       _fromIndex = _activeIndex;
@@ -1784,26 +2113,12 @@ class _AppleInvitesFeatureCarouselState
 
     _springController.stop();
     _springController.value = 0;
-    _springController.animateWith(
-      SpringSimulation(
-        _spring,
-        0,
-        1,
-        0,
-      ),
-    );
+    _springController.animateWith(SpringSimulation(_spring, 0, 1, 0));
   }
 
+  // Non-circular: scrolling down = deck moves forward, up = back.
   int _relativeSlot(int itemIndex, int activeIndex) {
-    if (_count <= 1) return 0;
-
-    var diff = itemIndex - activeIndex;
-    diff = ((diff % _count) + _count) % _count;
-
-    if (diff > _count / 2) {
-      diff -= _count;
-    }
-
+    final diff = itemIndex - activeIndex;
     if (diff == 0) return 0;
     if (diff == -1) return -1;
     if (diff == 1) return 1;
@@ -1888,125 +2203,101 @@ class _AppleInvitesFeatureCarouselState
       return const SizedBox.shrink();
     }
 
-    return MouseRegion(
-      onEnter: (_) {
-        _pointerInside = true;
-      },
-      onExit: (_) {
-        _pointerInside = false;
-      },
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final isMobile = width < 620;
-          final isTablet = width < 900;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final isMobile = width < 620;
+        final isTablet = width < 900;
 
-          final cardWidth = isMobile
-              ? math.min(260.0, width * 0.70)
-              : isTablet
-                  ? math.min(310.0, width * 0.38)
-                  : math.min(360.0, width * 0.31);
+        var cardWidth = isMobile
+            ? math.min(300.0, width * 0.76)
+            : isTablet
+                ? math.min(360.0, width * 0.42)
+                : math.min(430.0, width * 0.36);
 
-          final cardHeight = cardWidth * 1.50;
-          final stageHeight = cardHeight + (isMobile ? 54 : 84);
+        var cardHeight = cardWidth * 1.42;
 
-          return Column(
-            children: [
-              const Text(
-                'CORE CAPABILITIES',
-                style: TextStyle(
-                  color: _HomePageState.secondary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.8,
-                ),
-              ),
-              const SizedBox(height: 9),
-              const Text(
-                'Explore The Codexia Matrix',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: _HomePageState.onSurface,
-                  fontSize: 30,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 10),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 650),
-                child: const Text(
-                  'Tap a side card to bring it into focus. The feature deck advances automatically with a soft spring transition.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: _HomePageState.onSurfaceVariant,
-                    fontSize: 14,
-                    height: 1.55,
-                  ),
-                ),
-              ),
-              SizedBox(height: isMobile ? 24 : 34),
-              RepaintBoundary(
-                child: SizedBox(
-                  height: stageHeight,
-                  width: double.infinity,
-                  child: AnimatedBuilder(
-                    animation: _springController,
-                    builder: (context, child) {
-                      final t = _springController.isAnimating
-                          ? _springController.value.clamp(0.0, 1.0).toDouble()
-                          : 1.0;
+        // Extra headroom so the rotated/offset side cards never clip against
+        // the stage box, plus the space the dots row below needs. Both must
+        // be subtracted from the available height BEFORE capping cardHeight
+        // — otherwise they get added back on afterwards and overflow.
+        final stageBuffer = isMobile ? 74.0 : 110.0;
+        const dotsRowReserved = 30.0;
 
-                      final entries = <_InviteRenderEntry>[];
-
-                      for (int i = 0; i < _count; i++) {
-                        final fromSlot = _relativeSlot(i, _fromIndex);
-                        final toSlot = _relativeSlot(i, _activeIndex);
-
-                        final fromVisual =
-                            _visualForSlot(fromSlot, cardWidth);
-                        final toVisual = _visualForSlot(toSlot, cardWidth);
-                        final visual = _lerpVisual(
-                          fromVisual,
-                          toVisual,
-                          t,
-                        );
-
-                        entries.add(
-                          _InviteRenderEntry(
-                            index: i,
-                            visual: visual,
-                          ),
-                        );
-                      }
-
-                      entries.sort(
-                        (a, b) => a.visual.depth.compareTo(b.visual.depth),
-                      );
-
-                      return Stack(
-                        alignment: Alignment.topCenter,
-                        clipBehavior: Clip.none,
-                        children: [
-                          for (final entry in entries)
-                            _buildAnimatedCard(
-                              entry.index,
-                              entry.visual,
-                              cardWidth: cardWidth,
-                              cardHeight: cardHeight,
-                              isMobile: isMobile,
-                            ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              _buildPageIndicator(),
-            ],
+        if (constraints.hasBoundedHeight) {
+          final maxCardHeight = math.max(
+            constraints.maxHeight - stageBuffer - dotsRowReserved,
+            300.0,
           );
-        },
-      ),
+          if (cardHeight > maxCardHeight) {
+            cardHeight = maxCardHeight;
+            cardWidth = cardHeight / 1.42;
+          }
+        }
+
+        final stageHeight = cardHeight + stageBuffer;
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            RepaintBoundary(
+              child: SizedBox(
+                height: stageHeight,
+                width: double.infinity,
+                child: AnimatedBuilder(
+                  animation: _springController,
+                  builder: (context, child) {
+                    final t = _springController.isAnimating
+                        ? _springController.value.clamp(0.0, 1.0).toDouble()
+                        : 1.0;
+
+                    final entries = <_InviteRenderEntry>[];
+
+                    for (int i = 0; i < _count; i++) {
+                      final toVisual = _visualForSlot(
+                        _relativeSlot(i, _activeIndex),
+                        cardWidth,
+                      );
+                      final fromVisual = _startVisuals?[i] ??
+                          _visualForSlot(
+                            _relativeSlot(i, _fromIndex),
+                            cardWidth,
+                          );
+
+                      final visual = _lerpVisual(fromVisual, toVisual, t);
+                      _currentVisuals[i] = visual;
+
+                      entries.add(_InviteRenderEntry(index: i, visual: visual));
+                    }
+
+                    entries.sort(
+                      (a, b) => a.visual.depth.compareTo(b.visual.depth),
+                    );
+
+                    return Stack(
+                      alignment: Alignment.topCenter,
+                      clipBehavior: Clip.none,
+                      children: [
+                        for (final entry in entries)
+                          _buildAnimatedCard(
+                            entry.index,
+                            entry.visual,
+                            cardWidth: cardWidth,
+                            cardHeight: cardHeight,
+                            isMobile: isMobile,
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            _buildPageIndicator(),
+          ],
+        );
+      },
     );
   }
 
@@ -2053,8 +2344,7 @@ class _AppleInvitesFeatureCarouselState
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
                     if (!isActive) {
-                      _moveTo(index);
-                      _restartAutoTimer();
+                      widget.onSelect(index);
                     }
                   },
                   child: _buildInviteFeatureCard(
@@ -2329,10 +2619,7 @@ class _AppleInvitesFeatureCarouselState
 
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () {
-              _moveTo(index);
-              _restartAutoTimer();
-            },
+            onTap: () => widget.onSelect(index),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOutCubic,

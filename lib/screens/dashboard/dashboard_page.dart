@@ -27,6 +27,12 @@ import '../sidebar/sales/credit_notes/credit_notes_page.dart';
 // ================================================================
 
 import '../organization/organization_page.dart';
+
+//
+// SAME BACKGROUND USED BY ORGANIZATION PAGE
+//
+import '../organization/settings/shared/glass_widgets.dart';
+
 import '../sidebar/settings/preferences_page.dart';
 
 // ================================================================
@@ -80,12 +86,10 @@ class DashboardPage extends StatefulWidget {
   });
 
   @override
-  State<DashboardPage> createState() =>
-      _DashboardPageState();
+  State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState
-    extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage> {
   // ================================================================
   // SIDEBAR STATE
   // ================================================================
@@ -104,10 +108,13 @@ class _DashboardPageState
 
   void _toggleSidebar() {
     setState(() {
-      _isSidebarCollapsed =
-          !_isSidebarCollapsed;
+      _isSidebarCollapsed = !_isSidebarCollapsed;
     });
   }
+
+  // ================================================================
+  // LOGOUT
+  // ================================================================
 
   void _logout() {
     Navigator.of(context).pushAndRemoveUntil(
@@ -141,13 +148,9 @@ class _DashboardPageState
   // ================================================================
 
   void _selectMenu(String menu) {
-    final normalized =
-        menu.toLowerCase().trim();
+    final normalized = menu.toLowerCase().trim();
 
-    // --------------------------------------------------------------
-    // ORGANIZATION MUST OPEN OUTSIDE DASHBOARD
-    // --------------------------------------------------------------
-
+    // Organization should remain a completely separate page.
     if (normalized == 'organization') {
       _openOrganizationSettings();
       return;
@@ -163,11 +166,7 @@ class _DashboardPageState
   // ================================================================
 
   Widget _buildSelectedPage() {
-    switch (
-      selectedMenu
-          .toLowerCase()
-          .trim()
-    ) {
+    switch (selectedMenu.toLowerCase().trim()) {
       // ============================================================
       // DASHBOARD
       // ============================================================
@@ -215,10 +214,6 @@ class _DashboardPageState
       // ============================================================
 
       case 'inventory':
-        return const InventoryPage(
-          initialTab: 0,
-        );
-
       case 'current stock':
         return const InventoryPage(
           initialTab: 0,
@@ -347,6 +342,11 @@ class _DashboardPageState
   // ================================================================
   // COMING SOON PAGE
   // ================================================================
+  //
+  // IMPORTANT:
+  // No solid white / grey background here.
+  // This allows the Organization glass background to remain visible.
+  // ================================================================
 
   Widget _comingSoonPage({
     required IconData icon,
@@ -355,52 +355,58 @@ class _DashboardPageState
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: const Color(
-        0xFFF4F7FA,
-      ),
+      color: Colors.transparent,
       child: Center(
-        child: Column(
-          mainAxisSize:
-              MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 52,
-              color: const Color(
-                0xFF245AA6,
-              ),
+        child: GlassPanel(
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 52,
+              vertical: 42,
             ),
-
-            const SizedBox(
-              height: 15,
-            ),
-
-            Text(
-              title,
-              style: const TextStyle(
-                color: Color(
-                  0xFF123653,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF245AA6).withValues(
+                      alpha: 0.14,
+                    ),
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 38,
+                    color: const Color(0xFF245AA6),
+                  ),
                 ),
-                fontSize: 26,
-                fontWeight:
-                    FontWeight.w700,
-              ),
-            ),
 
-            const SizedBox(
-              height: 8,
-            ),
+                const SizedBox(height: 20),
 
-            const Text(
-              'Coming Soon',
-              style: TextStyle(
-                color: Color(
-                  0xFF7A8791,
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF123653),
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                fontSize: 14,
-              ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'Coming Soon',
+                  style: TextStyle(
+                    color: Color(0xFF6B7C8E),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -411,70 +417,64 @@ class _DashboardPageState
   // ================================================================
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-    return Scaffold(
-      // ============================================================
-      // DASHBOARD APP BAR
-      // ============================================================
-      //
-      // This app bar exists ONLY inside DashboardPage.
-      // OrganizationPage is now pushed above this route, so this
-      // app bar will NOT appear on OrganizationPage.
-      // ============================================================
+  Widget build(BuildContext context) {
+    // ==============================================================
+    // SAME BACKGROUND AS ORGANIZATION PAGE
+    // ==============================================================
+    //
+    // OrganizationPage uses:
+    //
+    // GlassPageBackground(
+    //   child: Scaffold(
+    //     backgroundColor: Colors.transparent,
+    //   ),
+    // )
+    //
+    // Dashboard now uses exactly the same background structure.
+    // ==============================================================
 
-      appBar: DashboardAppBar(
-        onMenuPressed:
-            _toggleSidebar,
+    return GlassPageBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
 
-        // ----------------------------------------------------------
-        // SUPER ADMIN PROFILE
-        // ----------------------------------------------------------
-        //
-        // Clicking the profile now pushes OrganizationPage as
-        // a completely separate full-screen route.
-        // ----------------------------------------------------------
+        // ==========================================================
+        // DASHBOARD APP BAR
+        // ==========================================================
 
-        onProfilePressed:
-            _openOrganizationSettings,
-        onPowerPressed: _logout,
-      ),
+        appBar: DashboardAppBar(
+          onMenuPressed: _toggleSidebar,
+          onProfilePressed: _openOrganizationSettings,
+          onPowerPressed: _logout,
+        ),
 
-      // ============================================================
-      // DASHBOARD BODY
-      // ============================================================
-      //
-      // Sidebar is only part of DashboardPage.
-      // OrganizationPage is NOT rendered here anymore.
-      // ============================================================
+        // ==========================================================
+        // DASHBOARD BODY
+        // ==========================================================
 
-      body: Row(
-        children: [
-          // ========================================================
-          // LEFT SIDEBAR
-          // ========================================================
+        body: Row(
+          children: [
+            // ======================================================
+            // LEFT NAVBAR
+            // ======================================================
 
-          DashboardNavBar(
-            isCollapsed:
-                _isSidebarCollapsed,
+            DashboardNavBar(
+              isCollapsed: _isSidebarCollapsed,
+              selectedMenu: selectedMenu,
+              onMenuSelected: _selectMenu,
+            ),
 
-            selectedMenu:
-                selectedMenu,
+            // ======================================================
+            // PAGE CONTENT
+            // ======================================================
 
-            onMenuSelected:
-                _selectMenu,
-          ),
-
-          // ========================================================
-          // RIGHT PAGE CONTENT
-          // ========================================================
-
-          Expanded(
-            child:
-                _buildSelectedPage(),
-          ),
-        ],
+            Expanded(
+              child: Container(
+                color: Colors.transparent,
+                child: _buildSelectedPage(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

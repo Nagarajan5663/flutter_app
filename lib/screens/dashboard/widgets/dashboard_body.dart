@@ -15,20 +15,7 @@ class DashboardBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-
-      // ============================================================
-      // DASHBOARD BACKGROUND
-      // ============================================================
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF0D2B4E),
-            Color(0xFF123A5C),
-          ],
-        ),
-      ),
+      color: Colors.transparent,
 
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
