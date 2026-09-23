@@ -217,12 +217,12 @@ class _CustomersPageState extends State<CustomersPage> {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SizedBox(
-                  width: 950,
+                  width: 820,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        width: 950,
+                        width: 820,
                         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
                         decoration: const BoxDecoration(
                           color: Color(0xFFF7F8FA),
@@ -248,7 +248,7 @@ class _CustomersPageState extends State<CustomersPage> {
                         )
                       else if (_customers.isEmpty)
                         Container(
-                          width: 950,
+                          width: 820,
                           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
                           child: const Text(
                             'No customers found. Click "+ New Customer" to add one!',
@@ -260,7 +260,7 @@ class _CustomersPageState extends State<CustomersPage> {
                           return Column(
                             children: [
                               Container(
-                                width: 950,
+                                width: 820,
                                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                                 child: Row(
                                   children: [

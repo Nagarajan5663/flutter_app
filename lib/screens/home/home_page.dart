@@ -56,7 +56,6 @@ class _HomePageState extends State<HomePage> {
   static const Color outlineVariant = Color(0xFF43474E);
 
   static const Color primary = Color(0xFFAAC9F4);
-  static const Color onPrimary = Color(0xFF0E3255);
 
   static const Color secondary = Color(0xFFFDBA5A); // gold
   static const Color secondaryFixed = Color(0xFFFFDDB5);
@@ -503,13 +502,6 @@ class _HomePageState extends State<HomePage> {
         ),
         const SizedBox(width: 10),
         _GoldButton(label: 'Get Started', onPressed: _goToSignUp),
-        const SizedBox(width: 14),
-        Container(
-          width: 32,
-          height: 32,
-          decoration: const BoxDecoration(color: primary, shape: BoxShape.circle),
-          child: const Icon(Icons.person, color: onPrimary, size: 18),
-        ),
       ],
     );
   }

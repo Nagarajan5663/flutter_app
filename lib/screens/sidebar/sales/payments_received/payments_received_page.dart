@@ -211,12 +211,12 @@ class _PaymentsReceivedPageState extends State<PaymentsReceivedPage> {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SizedBox(
-                  width: 1100,
+                  width: 980,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        width: 1100,
+                        width: 980,
                         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
                         decoration: const BoxDecoration(
                           color: Color(0xFFF7F8FA),
@@ -244,7 +244,7 @@ class _PaymentsReceivedPageState extends State<PaymentsReceivedPage> {
                         )
                       else if (_payments.isEmpty)
                         Container(
-                          width: 1100,
+                          width: 980,
                           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
                           child: const Text(
                             'No payments received yet. Click "+ New Payment" to add one!',
@@ -256,7 +256,7 @@ class _PaymentsReceivedPageState extends State<PaymentsReceivedPage> {
                           return Column(
                             children: [
                               Container(
-                                width: 1100,
+                                width: 980,
                                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                                 child: Row(
                                   children: [

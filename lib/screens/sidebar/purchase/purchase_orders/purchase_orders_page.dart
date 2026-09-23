@@ -203,13 +203,18 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
 
             // TABLE CARD
             GlassPanel(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  width: 1000,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SizedBox(
+                    width: constraints.maxWidth,
+                    child: FittedBox(
+                      alignment: Alignment.topLeft,
+                      fit: BoxFit.scaleDown,
+                      child: SizedBox(
+                        width: 1000,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                       Container(
                         width: 1000,
                         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
@@ -304,9 +309,12 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                             ],
                           );
                         }),
-                    ],
-                  ),
-                ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],

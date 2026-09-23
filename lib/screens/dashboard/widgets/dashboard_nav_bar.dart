@@ -24,6 +24,24 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
   String? _openSection;
   String? _hoveredItem;
 
+  // Visual collapse state is intentionally separated from widget.isCollapsed.
+  //
+  // Why:
+  // When the parent changes isCollapsed from true -> false, AnimatedContainer
+  // still needs ~220 ms to grow from 88 px to 282 px. If the labels are shown
+  // immediately, the Row briefly receives a very small width and Flutter
+  // reports a RenderFlex overflow on the right.
+  //
+  // During OPEN:
+  //   - sidebar width animates first
+  //   - compact/icon-only content stays visible
+  //   - expanded labels are revealed only after the width animation finishes
+  //
+  // During CLOSE:
+  //   - labels are hidden immediately
+  //   - then the sidebar safely shrinks
+  late bool _renderCollapsed;
+
   OverlayEntry? _flyoutEntry;
   String? _flyoutSection;
 
@@ -35,6 +53,8 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
     'Accountant': LayerLink(),
   };
 
+  /// Target state requested by DashboardPage.
+  /// The actual menu content uses [_renderCollapsed] during width animation.
   bool get isCollapsed => widget.isCollapsed;
 
   String get selectedMenu => widget.selectedMenu;
@@ -68,6 +88,12 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
   // ================================================================
 
   @override
+  void initState() {
+    super.initState();
+    _renderCollapsed = widget.isCollapsed;
+  }
+
+  @override
   void didUpdateWidget(
     covariant DashboardNavBar oldWidget,
   ) {
@@ -79,6 +105,9 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
 
     if (!oldWidget.isCollapsed &&
         widget.isCollapsed) {
+      // Hide labels BEFORE the width starts shrinking.
+      // This prevents a temporary right-side RenderFlex overflow.
+      _renderCollapsed = true;
       _openSection = null;
     }
 
@@ -89,6 +118,11 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
     if (oldWidget.isCollapsed &&
         !widget.isCollapsed) {
       _removeFlyout(rebuild: false);
+
+      // IMPORTANT:
+      // Do not set _renderCollapsed = false here.
+      // The sidebar is still physically narrow while AnimatedContainer grows.
+      // Expanded labels are enabled from AnimatedContainer.onEnd instead.
 
       final section =
           _findParentSection(widget.selectedMenu);
@@ -180,6 +214,20 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
       duration:
           const Duration(milliseconds: 220),
       curve: Curves.easeOutCubic,
+
+      // Reveal expanded content only after the sidebar has reached full width.
+      // This is the key fix for:
+      // "A RenderFlex overflowed by ... pixels on the right."
+      onEnd: () {
+        if (!widget.isCollapsed &&
+            _renderCollapsed &&
+            mounted) {
+          setState(() {
+            _renderCollapsed = false;
+          });
+        }
+      },
+
       width: isCollapsed ? 88 : 282,
       height: double.infinity,
       padding: EdgeInsets.fromLTRB(
@@ -192,7 +240,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(
-            isCollapsed ? 24 : 28,
+            _renderCollapsed ? 24 : 28,
           ),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -282,7 +330,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
             Positioned.fill(
               child: Column(
                 children: [
-                  if (!isCollapsed) ...[
+                  if (!_renderCollapsed) ...[
                     const SizedBox(height: 16),
 
                     _buildSectionLabel(
@@ -300,9 +348,9 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                             const ClampingScrollPhysics(),
                         padding:
                             EdgeInsets.fromLTRB(
-                          isCollapsed ? 7 : 10,
+                          _renderCollapsed ? 7 : 10,
                           0,
-                          isCollapsed ? 7 : 10,
+                          _renderCollapsed ? 7 : 10,
                           12,
                         ),
                         child: Column(
@@ -444,7 +492,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
 
                             _buildDivider(),
 
-                            if (!isCollapsed) ...[
+                            if (!_renderCollapsed) ...[
                               const SizedBox(
                                 height: 16,
                               ),
@@ -604,7 +652,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
   Widget _buildDivider() {
     return Container(
       margin: EdgeInsets.symmetric(
-        horizontal: isCollapsed ? 10 : 12,
+        horizontal: _renderCollapsed ? 10 : 12,
       ),
       height: 1,
       decoration: BoxDecoration(
@@ -722,7 +770,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
     // COLLAPSED MODE
     // ==============================================================
 
-    if (isCollapsed) {
+    if (_renderCollapsed) {
       return CompositedTransformTarget(
         link: link,
         child: _menuItem(
@@ -1257,7 +1305,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
       height: 50,
       transform:
           Matrix4.translationValues(
-        hovered && !isCollapsed
+        hovered && !_renderCollapsed
             ? 4
             : 0,
         0,
@@ -1266,7 +1314,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
       padding:
           EdgeInsets.symmetric(
         horizontal:
-            isCollapsed ? 5 : 10,
+            _renderCollapsed ? 5 : 10,
       ),
       decoration:
           BoxDecoration(
@@ -1404,7 +1452,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
           Center(
             child: Row(
               mainAxisAlignment:
-                  isCollapsed
+                  _renderCollapsed
                       ? MainAxisAlignment
                           .center
                       : MainAxisAlignment
@@ -1418,7 +1466,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                       hovered,
                 ),
 
-                if (!isCollapsed) ...[
+                if (!_renderCollapsed) ...[
                   const SizedBox(
                     width: 12,
                   ),
@@ -1496,7 +1544,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
 
     return Tooltip(
       message:
-          isCollapsed ? title : '',
+          _renderCollapsed ? title : '',
       waitDuration:
           const Duration(
         milliseconds: 350,
@@ -1553,9 +1601,9 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
           milliseconds: 160,
         ),
         width:
-            isCollapsed ? 38 : 36,
+            _renderCollapsed ? 38 : 36,
         height:
-            isCollapsed ? 38 : 36,
+            _renderCollapsed ? 38 : 36,
         decoration:
             BoxDecoration(
           borderRadius:

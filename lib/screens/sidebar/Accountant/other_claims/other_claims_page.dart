@@ -163,9 +163,23 @@ class _OtherClaimsPageState extends State<OtherClaimsPage> {
                       ),
                     ],
                   ),
-                  child: _claims.isEmpty
-                      ? _buildEmptyTable()
-                      : _buildClaimTable(),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SizedBox(
+                        width: constraints.maxWidth,
+                        child: FittedBox(
+                          alignment: Alignment.topLeft,
+                          fit: BoxFit.scaleDown,
+                          child: SizedBox(
+                            width: 900,
+                            child: _claims.isEmpty
+                                ? _buildEmptyTable()
+                                : _buildClaimTable(),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
@@ -300,7 +314,7 @@ class _OtherClaimsPageState extends State<OtherClaimsPage> {
                       ),
 
                       SizedBox(
-                        width: 48,
+                        width: 72,
                         child: PopupMenuButton<String>(
                           icon: const Icon(
                             Icons.more_vert,
@@ -415,7 +429,7 @@ class _OtherClaimsPageState extends State<OtherClaimsPage> {
           ),
 
           SizedBox(
-            width: 48,
+            width: 72,
             child: _TableHeaderText('ACTIONS'),
           ),
         ],

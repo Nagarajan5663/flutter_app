@@ -209,7 +209,9 @@ class _LoginPageState
   }
 
   Widget _buildHomeButton() {
-    return Tooltip(
+    return Transform.translate(
+      offset: const Offset(14, -8),
+      child: Tooltip(
       message: 'Go to Home',
       child: Material(
         color: Colors.transparent,
@@ -229,10 +231,11 @@ class _LoginPageState
             child: const Icon(
               Icons.home_rounded,
               color: Colors.white,
-              size: 28,
+              size: 22,
             ),
           ),
         ),
+      ),
       ),
     );
   }
