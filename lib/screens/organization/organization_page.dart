@@ -11,6 +11,7 @@ import 'settings/users/manage_roles_page.dart';
 import 'settings/users/manage_users_page.dart';
 import 'settings/taxes/manage_taxes_page.dart';
 import 'settings/customization/transaction_number_series_page.dart';
+import 'settings/customization/pdf_templates/pdf_templates_page.dart';
 
 
 // =====================================================================
@@ -129,6 +130,16 @@ if (normalizedLabel == 'transaction number series') {
           TransactionNumberSeriesPage(
         onBack: () =>
             Navigator.of(context).pop(),
+      ),
+    ),
+  );
+  return;
+}
+if (normalizedLabel == 'pdf templates') {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => PdfTemplatesPage(
+        onBack: () => Navigator.of(context).pop(),
       ),
     ),
   );
