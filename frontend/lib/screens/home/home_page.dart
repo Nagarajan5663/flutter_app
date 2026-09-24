@@ -694,7 +694,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 18),
             Text(
               f.title,
-              style: const TextStyle(
+              style: TextStyle(
                 color: onSurface,
                 fontSize: isCompact ? 30 : 42,
                 fontWeight: FontWeight.w800,
@@ -715,9 +715,6 @@ class _HomePageState extends State<HomePage> {
       },
     );
   }
-
-  double cardHeightForBody(BoxConstraints c) =>
-      math.min(380.0, c.maxHeight.isFinite ? c.maxHeight : 380.0);
 
   // ============================================================
   // NORMAL SECTIONS AFTER THE FEATURE STACK
