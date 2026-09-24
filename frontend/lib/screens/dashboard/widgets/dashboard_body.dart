@@ -15,20 +15,7 @@ class DashboardBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-
-      // ============================================================
-      // DASHBOARD BACKGROUND
-      // ============================================================
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF0D2B4E),
-            Color(0xFF123A5C),
-          ],
-        ),
-      ),
+      color: Colors.transparent,
 
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -54,18 +41,18 @@ class DashboardBody extends StatelessWidget {
                 ),
 
                 Container(
-                width: 150,
-                height: 42,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: const Color(0xFFE5E7EB),
+                  width: 150,
+                  height: 42,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
                   ),
-                ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFFE5E7EB),
+                    ),
+                  ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: 'This Month',

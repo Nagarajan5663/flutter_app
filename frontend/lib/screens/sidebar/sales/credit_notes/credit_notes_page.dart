@@ -372,7 +372,7 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
         40;
 
     final screenWidth = MediaQuery.of(context).size.width;
-    final available = screenWidth - 90;
+    final available = screenWidth - 360;
 
     return available > fixedColumnsWidth ? available : fixedColumnsWidth;
   }

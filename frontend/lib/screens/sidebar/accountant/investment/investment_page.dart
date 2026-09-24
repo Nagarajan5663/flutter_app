@@ -163,9 +163,23 @@ class _InvestmentPageState extends State<InvestmentPage> {
                       ),
                     ],
                   ),
-                  child: _investments.isEmpty
-                      ? _buildEmptyTable()
-                      : _buildInvestmentTable(),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SizedBox(
+                        width: constraints.maxWidth,
+                        child: FittedBox(
+                          alignment: Alignment.topLeft,
+                          fit: BoxFit.scaleDown,
+                          child: SizedBox(
+                            width: 900,
+                            child: _investments.isEmpty
+                                ? _buildEmptyTable()
+                                : _buildInvestmentTable(),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
@@ -302,7 +316,7 @@ class _InvestmentPageState extends State<InvestmentPage> {
                       ),
 
                       SizedBox(
-                        width: 48,
+                        width: 72,
                         child: PopupMenuButton<String>(
                           icon: const Icon(
                             Icons.more_vert,
@@ -417,7 +431,7 @@ class _InvestmentPageState extends State<InvestmentPage> {
           ),
 
           SizedBox(
-            width: 48,
+            width: 72,
             child: _TableHeaderText('ACTIONS'),
           ),
         ],

@@ -18,7 +18,7 @@ class InventoryAdjustmentsTab
         context,
         constraints,
       ) {
-        const double minimumWidth = 980;
+        const double minimumWidth = 820;
 
         final double tableWidth =
             constraints.maxWidth <
@@ -61,8 +61,8 @@ class InventoryAdjustmentsTab
                         padding:
                             const EdgeInsets
                                 .symmetric(
-                          horizontal: 20,
-                          vertical: 18,
+                          horizontal: 14,
+                          vertical: 15,
                         ),
                         decoration:
                             BoxDecoration(
@@ -136,7 +136,7 @@ class InventoryAdjustmentsTab
                               ),
                             ),
                             Expanded(
-                              flex: 2,
+                              flex: 1,
                               child:
                                   InventoryTableHeader(
                                 title:

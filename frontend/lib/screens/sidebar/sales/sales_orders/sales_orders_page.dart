@@ -328,16 +328,24 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minWidth: _tableMinWidth(context),
-                        ),
-                        child: orders.isEmpty
-                            ? _buildEmptyTable()
-                            : _buildOrderTable(orders),
-                      ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final tableWidth = _tableMinWidth(context);
+
+                        return SizedBox(
+                          width: constraints.maxWidth,
+                          child: FittedBox(
+                            alignment: Alignment.topLeft,
+                            fit: BoxFit.scaleDown,
+                            child: SizedBox(
+                              width: tableWidth,
+                              child: orders.isEmpty
+                                  ? _buildEmptyTable()
+                                  : _buildOrderTable(orders),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -377,7 +385,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
         40;
 
     final screenWidth = MediaQuery.of(context).size.width;
-    final available = screenWidth - 90;
+    final available = screenWidth - 360;
 
     return available > fixedColumnsWidth ? available : fixedColumnsWidth;
   }
