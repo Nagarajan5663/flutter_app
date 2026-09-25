@@ -1,3 +1,5 @@
+const itemsRoutes = require('./routes/items');
+const partsRoutes = require('./routes/parts');
 require('dotenv').config();
 
 const express = require('express');
@@ -8,6 +10,8 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use('/api/items', itemsRoutes);
+app.use('/api/parts', partsRoutes);
 
 app.get('/', (req, res) => {
   res.json({
