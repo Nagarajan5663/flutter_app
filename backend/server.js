@@ -1,13 +1,22 @@
 require('dotenv').config();
 
-const express = require('express');
-const cors = require('cors');
+const express =
+  require('express');
 
-const db = require('./config/db');
+const cors =
+  require('cors');
+
+const db =
+  require('./config/db');
 
 // ============================================================
 // ROUTES
 // ============================================================
+
+const transactionNumberSeriesRoutes =
+  require(
+    './routes/transaction_number_series'
+  );
 
 const itemsRoutes =
   require('./routes/items');
@@ -37,7 +46,8 @@ const billsRoutes =
 // APP
 // ============================================================
 
-const app = express();
+const app =
+  express();
 
 // ============================================================
 // MIDDLEWARE
@@ -45,21 +55,28 @@ const app = express();
 
 app.use(
   cors({
-    origin: true,
-    credentials: true,
+    origin:
+      true,
+
+    credentials:
+      true,
   })
 );
 
 app.use(
   express.json({
-    limit: '10mb',
+    limit:
+      '10mb',
   })
 );
 
 app.use(
   express.urlencoded({
-    extended: true,
-    limit: '10mb',
+    extended:
+      true,
+
+    limit:
+      '10mb',
   })
 );
 
@@ -71,7 +88,8 @@ app.get(
   '/',
   (req, res) => {
     res.status(200).json({
-      success: true,
+      success:
+        true,
 
       message:
         'Codexia backend is running',
@@ -99,30 +117,36 @@ app.get(
           `
         );
 
-      res.status(200).json({
-        success: true,
+      return res
+        .status(200)
+        .json({
+          success:
+            true,
 
-        message:
-          'Hostinger MySQL connected successfully',
+          message:
+            'Hostinger MySQL connected successfully',
 
-        data:
-          rows[0],
-      });
+          data:
+            rows[0],
+        });
     } catch (error) {
       console.error(
         'Database test error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(500)
+        .json({
+          success:
+            false,
 
-        message:
-          'Database connection failed',
+          message:
+            'Database connection failed',
 
-        error:
-          error.message,
-      });
+          error:
+            error.message,
+        });
     }
   }
 );
@@ -142,32 +166,47 @@ app.get(
           `
         );
 
-      res.status(200).json({
-        success: true,
+      return res
+        .status(200)
+        .json({
+          success:
+            true,
 
-        message:
-          'MySQL database connected successfully',
+          message:
+            'MySQL database connected successfully',
 
-        data:
-          rows,
-      });
+          data:
+            rows,
+        });
     } catch (error) {
       console.error(
         'MySQL test error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(500)
+        .json({
+          success:
+            false,
 
-        message:
-          'MySQL connection failed',
+          message:
+            'MySQL connection failed',
 
-        error:
-          error.message,
-      });
+          error:
+            error.message,
+        });
     }
   }
+);
+
+// ============================================================
+// TRANSACTION NUMBER SERIES
+// ============================================================
+
+app.use(
+  '/api/transaction-number-series',
+  transactionNumberSeriesRoutes
 );
 
 // ============================================================
@@ -243,14 +282,15 @@ app.use(
 );
 
 // ============================================================
-// HEALTH CHECK
+// HEALTH
 // ============================================================
 
 app.get(
   '/api/health',
   (req, res) => {
     res.status(200).json({
-      success: true,
+      success:
+        true,
 
       message:
         'Codexia API is healthy',
@@ -258,6 +298,9 @@ app.get(
       services: {
         backend:
           true,
+
+        transactionNumberSeries:
+          '/api/transaction-number-series',
 
         items:
           '/api/items',
@@ -294,7 +337,8 @@ app.get(
 app.use(
   (req, res) => {
     res.status(404).json({
-      success: false,
+      success:
+        false,
 
       message:
         `API route not found: ${req.method} ${req.originalUrl}`,
@@ -319,7 +363,8 @@ app.use(
     );
 
     res.status(500).json({
-      success: false,
+      success:
+        false,
 
       message:
         'Internal server error',
@@ -343,7 +388,7 @@ app.listen(
   PORT,
   () => {
     console.log(
-      '===================================================='
+      '======================================================'
     );
 
     console.log(
@@ -351,55 +396,63 @@ app.listen(
     );
 
     console.log(
-      '----------------------------------------------------'
+      '------------------------------------------------------'
     );
 
     console.log(
-      `DB Test         : http://localhost:${PORT}/api/test-db`
+      `DB Test              : http://localhost:${PORT}/api/test-db`
     );
 
     console.log(
-      `Items           : http://localhost:${PORT}/api/items`
+      `Transaction Series   : http://localhost:${PORT}/api/transaction-number-series`
     );
 
     console.log(
-      `Parts           : http://localhost:${PORT}/api/parts`
+      `Items                : http://localhost:${PORT}/api/items`
     );
 
     console.log(
-      `Customers       : http://localhost:${PORT}/api/customers`
+      `Parts                : http://localhost:${PORT}/api/parts`
     );
 
     console.log(
-      `Estimates       : http://localhost:${PORT}/api/estimates`
+      `Customers            : http://localhost:${PORT}/api/customers`
     );
 
     console.log(
-      `Sales Orders    : http://localhost:${PORT}/api/sales-orders`
+      `Estimates            : http://localhost:${PORT}/api/estimates`
     );
 
     console.log(
-      `Vendors         : http://localhost:${PORT}/api/vendors`
+      `Sales Orders         : http://localhost:${PORT}/api/sales-orders`
     );
 
     console.log(
-      `Purchase Orders : http://localhost:${PORT}/api/purchase-orders`
+      `Next Sales Order     : http://localhost:${PORT}/api/sales-orders/next-number`
     );
 
     console.log(
-      `Bills           : http://localhost:${PORT}/api/bills`
+      `Vendors              : http://localhost:${PORT}/api/vendors`
     );
 
     console.log(
-      `Next Bill       : http://localhost:${PORT}/api/bills/next-number`
+      `Purchase Orders      : http://localhost:${PORT}/api/purchase-orders`
     );
 
     console.log(
-      `Health          : http://localhost:${PORT}/api/health`
+      `Next Purchase Order  : http://localhost:${PORT}/api/purchase-orders/next-number`
     );
 
     console.log(
-      '===================================================='
+      `Bills                : http://localhost:${PORT}/api/bills`
+    );
+
+    console.log(
+      `Health               : http://localhost:${PORT}/api/health`
+    );
+
+    console.log(
+      '======================================================'
     );
   }
 );
