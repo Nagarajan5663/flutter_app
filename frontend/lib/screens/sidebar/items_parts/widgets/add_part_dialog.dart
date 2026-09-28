@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../part_model.dart';
 import 'glass_widgets.dart';
 
 class AddPartDialog extends StatefulWidget {
+  final PartModel? initialPart;
+
   const AddPartDialog({
     super.key,
+    this.initialPart,
   });
 
   @override
@@ -17,19 +21,40 @@ class _AddPartDialogState
   final GlobalKey<FormState> _formKey =
       GlobalKey<FormState>();
 
-  final TextEditingController nameController =
-      TextEditingController();
+  late final TextEditingController nameController;
+  late final TextEditingController skuController;
+  late final TextEditingController
+      purchasePriceController;
+  late final TextEditingController
+      descriptionController;
 
-  final TextEditingController skuController =
-      TextEditingController();
+  bool get isEditing =>
+      widget.initialPart != null;
 
-  final TextEditingController
-      purchasePriceController =
-      TextEditingController();
+  @override
+  void initState() {
+    super.initState();
 
-  final TextEditingController
-      descriptionController =
-      TextEditingController();
+    final part = widget.initialPart;
+
+    nameController = TextEditingController(
+      text: part?.name ?? '',
+    );
+
+    skuController = TextEditingController(
+      text: part?.sku ?? '',
+    );
+
+    purchasePriceController =
+        TextEditingController(
+      text: part?.purchasePrice ?? '',
+    );
+
+    descriptionController =
+        TextEditingController(
+      text: part?.description ?? '',
+    );
+  }
 
   @override
   void dispose() {
@@ -41,51 +66,42 @@ class _AddPartDialogState
     super.dispose();
   }
 
-  // ============================================================
-  // SAVE PART
-  // ============================================================
+  String? _validatePrice(String? value) {
+    if (value == null ||
+        value.trim().isEmpty) {
+      return 'Please enter purchase price';
+    }
+
+    final number =
+        double.tryParse(value.trim());
+
+    if (number == null) {
+      return 'Enter a valid number';
+    }
+
+    if (number < 0) {
+      return 'Price cannot be negative';
+    }
+
+    return null;
+  }
 
   void _savePart() {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    final messenger =
-        ScaffoldMessenger.of(context);
-
-    Navigator.of(context).pop();
-
-    messenger.showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor:
-            const Color(0xFF163F5E),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        content: const Row(
-          children: [
-            Icon(
-              Icons.check_circle_outline_rounded,
-              color: Colors.white,
-            ),
-            SizedBox(width: 10),
-            Text(
-              'Part added successfully.',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
+    final PartModel part = PartModel(
+      name: nameController.text.trim(),
+      sku: skuController.text.trim(),
+      purchasePrice:
+          purchasePriceController.text.trim(),
+      description:
+          descriptionController.text.trim(),
     );
-  }
 
-  // ============================================================
-  // BUILD
-  // ============================================================
+    Navigator.of(context).pop(part);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,26 +121,21 @@ class _AddPartDialogState
             crossAxisAlignment:
                 CrossAxisAlignment.start,
             children: [
-              // ==================================================
-              // HEADER
-              // ==================================================
-
               GlassDialogHeader(
-                title: 'Add New Part',
-                subtitle:
-                    'Create a new component for your inventory.',
-                icon:
-                    Icons.precision_manufacturing_outlined,
+                title: isEditing
+                    ? 'Edit Part'
+                    : 'Add New Part',
+                subtitle: isEditing
+                    ? 'Update your inventory part details.'
+                    : 'Create a new component for your inventory.',
+                icon: Icons
+                    .precision_manufacturing_outlined,
                 onClose: () {
                   Navigator.of(context).pop();
                 },
               ),
 
               const SizedBox(height: 28),
-
-              // ==================================================
-              // PART NAME
-              // ==================================================
 
               const GlassLabel(
                 'Part Name',
@@ -148,10 +159,6 @@ class _AddPartDialogState
 
               const SizedBox(height: 19),
 
-              // ==================================================
-              // RESPONSIVE SKU + PRICE
-              // ==================================================
-
               LayoutBuilder(
                 builder: (
                   context,
@@ -160,7 +167,7 @@ class _AddPartDialogState
                   final bool twoColumns =
                       constraints.maxWidth >= 520;
 
-                  final skuField = Column(
+                  final sku = Column(
                     crossAxisAlignment:
                         CrossAxisAlignment.start,
                     children: [
@@ -168,7 +175,6 @@ class _AddPartDialogState
                         'SKU',
                         required: true,
                       ),
-
                       GlassTextField(
                         controller: skuController,
                         hintText: 'Enter SKU',
@@ -188,7 +194,7 @@ class _AddPartDialogState
                     ],
                   );
 
-                  final priceField = Column(
+                  final price = Column(
                     crossAxisAlignment:
                         CrossAxisAlignment.start,
                     children: [
@@ -196,7 +202,6 @@ class _AddPartDialogState
                         'Purchase Price',
                         required: true,
                       ),
-
                       GlassTextField(
                         controller:
                             purchasePriceController,
@@ -208,16 +213,7 @@ class _AddPartDialogState
                                 .numberWithOptions(
                           decimal: true,
                         ),
-                        validator: (value) {
-                          if (value == null ||
-                              value
-                                  .trim()
-                                  .isEmpty) {
-                            return 'Please enter purchase price';
-                          }
-
-                          return null;
-                        },
+                        validator: _validatePrice,
                       ),
                     ],
                   );
@@ -227,22 +223,18 @@ class _AddPartDialogState
                       crossAxisAlignment:
                           CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: skuField,
-                        ),
+                        Expanded(child: sku),
                         const SizedBox(width: 16),
-                        Expanded(
-                          child: priceField,
-                        ),
+                        Expanded(child: price),
                       ],
                     );
                   }
 
                   return Column(
                     children: [
-                      skuField,
+                      sku,
                       const SizedBox(height: 19),
-                      priceField,
+                      price,
                     ],
                   );
                 },
@@ -250,13 +242,7 @@ class _AddPartDialogState
 
               const SizedBox(height: 19),
 
-              // ==================================================
-              // DESCRIPTION
-              // ==================================================
-
-              const GlassLabel(
-                'Description',
-              ),
+              const GlassLabel('Description'),
 
               GlassTextField(
                 controller:
@@ -270,34 +256,25 @@ class _AddPartDialogState
 
               const SizedBox(height: 30),
 
-              // ==================================================
-              // BUTTONS
-              // ==================================================
-
               Align(
-                alignment:
-                    Alignment.centerRight,
+                alignment: Alignment.centerRight,
                 child: Wrap(
                   spacing: 12,
                   runSpacing: 10,
-                  alignment:
-                      WrapAlignment.end,
                   children: [
                     GlassButton(
                       label: 'Close',
-                      icon:
-                          Icons.close_rounded,
+                      icon: Icons.close_rounded,
                       primary: false,
                       onPressed: () {
-                        Navigator.of(context)
-                            .pop();
+                        Navigator.of(context).pop();
                       },
                     ),
-
                     GlassButton(
-                      label: 'Save Part',
-                      icon:
-                          Icons.save_outlined,
+                      label: isEditing
+                          ? 'Update Part'
+                          : 'Save Part',
+                      icon: Icons.save_outlined,
                       onPressed: _savePart,
                     ),
                   ],

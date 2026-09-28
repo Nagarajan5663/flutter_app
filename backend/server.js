@@ -1,49 +1,405 @@
-const itemsRoutes = require('./routes/items');
-const partsRoutes = require('./routes/parts');
 require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+
 const db = require('./config/db');
+
+// ============================================================
+// ROUTES
+// ============================================================
+
+const itemsRoutes =
+  require('./routes/items');
+
+const partsRoutes =
+  require('./routes/parts');
+
+const customersRoutes =
+  require('./routes/customers');
+
+const estimatesRoutes =
+  require('./routes/estimates');
+
+const salesOrdersRoutes =
+  require('./routes/sales_orders');
+
+const vendorsRoutes =
+  require('./routes/vendors');
+
+const purchaseOrdersRoutes =
+  require('./routes/purchase_orders');
+
+const billsRoutes =
+  require('./routes/bills');
+
+// ============================================================
+// APP
+// ============================================================
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
-app.use('/api/items', itemsRoutes);
-app.use('/api/parts', partsRoutes);
+// ============================================================
+// MIDDLEWARE
+// ============================================================
 
-app.get('/', (req, res) => {
-  res.json({
-    success: true,
-    message: 'Codexia backend is running',
-  });
-});
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 
-app.get('/api/test-db', async (req, res) => {
-  try {
-    const [rows] = await db.query(
-      'SELECT DATABASE() AS database_name, NOW() AS server_time'
-    );
+app.use(
+  express.json({
+    limit: '10mb',
+  })
+);
 
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: '10mb',
+  })
+);
+
+// ============================================================
+// ROOT
+// ============================================================
+
+app.get(
+  '/',
+  (req, res) => {
     res.status(200).json({
       success: true,
-      message: 'Hostinger MySQL connected successfully',
-      data: rows[0],
+
+      message:
+        'Codexia backend is running',
     });
-  } catch (error) {
-    console.error('Database connection error:', error.message);
+  }
+);
+
+// ============================================================
+// DATABASE TEST
+// ============================================================
+
+app.get(
+  '/api/test-db',
+  async (req, res) => {
+    try {
+      const [rows] =
+        await db.query(
+          `
+          SELECT
+            DATABASE()
+              AS database_name,
+
+            NOW()
+              AS server_time
+          `
+        );
+
+      res.status(200).json({
+        success: true,
+
+        message:
+          'Hostinger MySQL connected successfully',
+
+        data:
+          rows[0],
+      });
+    } catch (error) {
+      console.error(
+        'Database test error:',
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+
+        message:
+          'Database connection failed',
+
+        error:
+          error.message,
+      });
+    }
+  }
+);
+
+// ============================================================
+// MYSQL SIMPLE TEST
+// ============================================================
+
+app.get(
+  '/api/mysql-test',
+  async (req, res) => {
+    try {
+      const [rows] =
+        await db.query(
+          `
+          SELECT 1 AS test
+          `
+        );
+
+      res.status(200).json({
+        success: true,
+
+        message:
+          'MySQL database connected successfully',
+
+        data:
+          rows,
+      });
+    } catch (error) {
+      console.error(
+        'MySQL test error:',
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+
+        message:
+          'MySQL connection failed',
+
+        error:
+          error.message,
+      });
+    }
+  }
+);
+
+// ============================================================
+// ITEMS
+// ============================================================
+
+app.use(
+  '/api/items',
+  itemsRoutes
+);
+
+// ============================================================
+// PARTS
+// ============================================================
+
+app.use(
+  '/api/parts',
+  partsRoutes
+);
+
+// ============================================================
+// CUSTOMERS
+// ============================================================
+
+app.use(
+  '/api/customers',
+  customersRoutes
+);
+
+// ============================================================
+// ESTIMATES
+// ============================================================
+
+app.use(
+  '/api/estimates',
+  estimatesRoutes
+);
+
+// ============================================================
+// SALES ORDERS
+// ============================================================
+
+app.use(
+  '/api/sales-orders',
+  salesOrdersRoutes
+);
+
+// ============================================================
+// VENDORS
+// ============================================================
+
+app.use(
+  '/api/vendors',
+  vendorsRoutes
+);
+
+// ============================================================
+// PURCHASE ORDERS
+// ============================================================
+
+app.use(
+  '/api/purchase-orders',
+  purchaseOrdersRoutes
+);
+
+// ============================================================
+// BILLS
+// ============================================================
+
+app.use(
+  '/api/bills',
+  billsRoutes
+);
+
+// ============================================================
+// HEALTH CHECK
+// ============================================================
+
+app.get(
+  '/api/health',
+  (req, res) => {
+    res.status(200).json({
+      success: true,
+
+      message:
+        'Codexia API is healthy',
+
+      services: {
+        backend:
+          true,
+
+        items:
+          '/api/items',
+
+        parts:
+          '/api/parts',
+
+        customers:
+          '/api/customers',
+
+        estimates:
+          '/api/estimates',
+
+        salesOrders:
+          '/api/sales-orders',
+
+        vendors:
+          '/api/vendors',
+
+        purchaseOrders:
+          '/api/purchase-orders',
+
+        bills:
+          '/api/bills',
+      },
+    });
+  }
+);
+
+// ============================================================
+// 404
+// ============================================================
+
+app.use(
+  (req, res) => {
+    res.status(404).json({
+      success: false,
+
+      message:
+        `API route not found: ${req.method} ${req.originalUrl}`,
+    });
+  }
+);
+
+// ============================================================
+// GLOBAL ERROR HANDLER
+// ============================================================
+
+app.use(
+  (
+    error,
+    req,
+    res,
+    next
+  ) => {
+    console.error(
+      'Unhandled server error:',
+      error
+    );
 
     res.status(500).json({
       success: false,
-      message: 'Database connection failed',
-      error: error.message,
+
+      message:
+        'Internal server error',
+
+      error:
+        error.message,
     });
   }
-});
+);
 
-const PORT = process.env.PORT || 3000;
+// ============================================================
+// START SERVER
+// ============================================================
 
-app.listen(PORT, () => {
-  console.log(`Codexia backend running on http://localhost:${PORT}`);
-});
+const PORT =
+  Number(
+    process.env.PORT
+  ) || 3000;
+
+app.listen(
+  PORT,
+  () => {
+    console.log(
+      '===================================================='
+    );
+
+    console.log(
+      `Codexia backend running on http://localhost:${PORT}`
+    );
+
+    console.log(
+      '----------------------------------------------------'
+    );
+
+    console.log(
+      `DB Test         : http://localhost:${PORT}/api/test-db`
+    );
+
+    console.log(
+      `Items           : http://localhost:${PORT}/api/items`
+    );
+
+    console.log(
+      `Parts           : http://localhost:${PORT}/api/parts`
+    );
+
+    console.log(
+      `Customers       : http://localhost:${PORT}/api/customers`
+    );
+
+    console.log(
+      `Estimates       : http://localhost:${PORT}/api/estimates`
+    );
+
+    console.log(
+      `Sales Orders    : http://localhost:${PORT}/api/sales-orders`
+    );
+
+    console.log(
+      `Vendors         : http://localhost:${PORT}/api/vendors`
+    );
+
+    console.log(
+      `Purchase Orders : http://localhost:${PORT}/api/purchase-orders`
+    );
+
+    console.log(
+      `Bills           : http://localhost:${PORT}/api/bills`
+    );
+
+    console.log(
+      `Next Bill       : http://localhost:${PORT}/api/bills/next-number`
+    );
+
+    console.log(
+      `Health          : http://localhost:${PORT}/api/health`
+    );
+
+    console.log(
+      '===================================================='
+    );
+  }
+);

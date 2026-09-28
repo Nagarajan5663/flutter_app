@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 
-import '../item_model.dart';
+import '../part_model.dart';
 
-class ItemsTab extends StatelessWidget {
-  final List<ItemModel> items;
-  final VoidCallback onAddItem;
-  final ValueChanged<int> onEditItem;
-  final ValueChanged<int> onDeleteItem;
+class PartsTab extends StatelessWidget {
+  final List<PartModel> parts;
+  final VoidCallback onAddPart;
+  final ValueChanged<int> onEditPart;
+  final ValueChanged<int> onDeletePart;
 
-  const ItemsTab({
+  const PartsTab({
     super.key,
-    required this.items,
-    required this.onAddItem,
-    required this.onEditItem,
-    required this.onDeleteItem,
+    required this.parts,
+    required this.onAddPart,
+    required this.onEditPart,
+    required this.onDeletePart,
   });
 
   @override
   Widget build(BuildContext context) {
-    const double minimumTableWidth = 900;
+    const double minimumTableWidth = 760;
 
     return Container(
       width: double.infinity,
@@ -26,13 +26,15 @@ class ItemsTab extends StatelessWidget {
         color: Colors.white.withValues(
           alpha: 0.78,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius:
+            BorderRadius.circular(16),
         border: Border.all(
           color: const Color(0xFFE4E9EF),
         ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius:
+            BorderRadius.circular(16),
         child: LayoutBuilder(
           builder: (
             context,
@@ -45,28 +47,29 @@ class ItemsTab extends StatelessWidget {
                     : constraints.maxWidth;
 
             return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
+              scrollDirection:
+                  Axis.horizontal,
               child: SizedBox(
                 width: tableWidth,
                 child: Column(
                   children: [
                     _buildHeader(),
 
-                    if (items.isEmpty)
+                    if (parts.isEmpty)
                       _buildEmptyState(
                         tableWidth,
                       )
                     else
                       ...List.generate(
-                        items.length,
-                        (index) {
-                          return _buildItemRow(
-                            item: items[index],
-                            index: index,
-                            tableWidth:
-                                tableWidth,
-                          );
-                        },
+                        parts.length,
+                        (index) =>
+                            _buildPartRow(
+                          part:
+                              parts[index],
+                          index: index,
+                          tableWidth:
+                              tableWidth,
+                        ),
                       ),
                   ],
                 ),
@@ -113,12 +116,6 @@ class ItemsTab extends StatelessWidget {
             ),
           ),
           Expanded(
-            flex: 3,
-            child: _TableHeading(
-              title: 'SALES PRICE',
-            ),
-          ),
-          Expanded(
             flex: 2,
             child: _TableHeading(
               title: 'ACTIONS',
@@ -136,8 +133,8 @@ class ItemsTab extends StatelessWidget {
       width: tableWidth,
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          vertical: 58,
           horizontal: 20,
+          vertical: 58,
         ),
         child: Column(
           children: [
@@ -151,14 +148,15 @@ class ItemsTab extends StatelessWidget {
                     BorderRadius.circular(22),
               ),
               child: const Icon(
-                Icons.inventory_2_outlined,
+                Icons
+                    .precision_manufacturing_outlined,
                 size: 36,
                 color: Color(0xFF487EA6),
               ),
             ),
             const SizedBox(height: 20),
             const Text(
-              'No items yet',
+              'No parts yet',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight:
@@ -168,7 +166,7 @@ class ItemsTab extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Add your first inventory item to start managing products.',
+              'Add your first part to start managing inventory components.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -177,12 +175,12 @@ class ItemsTab extends StatelessWidget {
             ),
             const SizedBox(height: 21),
             OutlinedButton.icon(
-              onPressed: onAddItem,
+              onPressed: onAddPart,
               icon: const Icon(
                 Icons.add_rounded,
               ),
               label: const Text(
-                'Add First Item',
+                'Add First Part',
               ),
             ),
           ],
@@ -191,8 +189,8 @@ class ItemsTab extends StatelessWidget {
     );
   }
 
-  Widget _buildItemRow({
-    required ItemModel item,
+  Widget _buildPartRow({
+    required PartModel part,
     required int index,
     required double tableWidth,
   }) {
@@ -215,7 +213,7 @@ class ItemsTab extends StatelessWidget {
           Expanded(
             flex: 3,
             child: Text(
-              item.name,
+              part.name,
               overflow:
                   TextOverflow.ellipsis,
               style: const TextStyle(
@@ -228,7 +226,7 @@ class ItemsTab extends StatelessWidget {
           Expanded(
             flex: 2,
             child: Text(
-              item.sku,
+              part.sku,
               overflow:
                   TextOverflow.ellipsis,
               style: const TextStyle(
@@ -239,20 +237,9 @@ class ItemsTab extends StatelessWidget {
           Expanded(
             flex: 3,
             child: Text(
-              '₹${item.purchasePrice}',
+              '₹${part.purchasePrice}',
               style: const TextStyle(
                 color: Color(0xFF425B6C),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              '₹${item.salesPrice}',
-              style: const TextStyle(
-                fontWeight:
-                    FontWeight.w600,
-                color: Color(0xFF245F83),
               ),
             ),
           ),
@@ -263,7 +250,7 @@ class ItemsTab extends StatelessWidget {
                 IconButton(
                   tooltip: 'Edit',
                   onPressed: () {
-                    onEditItem(index);
+                    onEditPart(index);
                   },
                   icon: const Icon(
                     Icons.edit_outlined,
@@ -274,7 +261,7 @@ class ItemsTab extends StatelessWidget {
                 IconButton(
                   tooltip: 'Delete',
                   onPressed: () {
-                    onDeleteItem(index);
+                    onDeletePart(index);
                   },
                   icon: const Icon(
                     Icons.delete_outline_rounded,

@@ -56,6 +56,7 @@ class _SalesGlassPageFrameState extends State<SalesGlassPageFrame> {
     final width = MediaQuery.of(context).size.width;
     final isMobile = width < 700;
     final enableTilt = width >= 850;
+    final theme = Theme.of(context);
 
     return Container(
       width: double.infinity,
@@ -205,7 +206,20 @@ class _SalesGlassPageFrameState extends State<SalesGlassPageFrame> {
                           ),
                           child: Stack(
                             children: [
-                              Positioned.fill(child: widget.child),
+                              Positioned.fill(
+                                child: Theme(
+                                  data: theme.copyWith(
+                                    textTheme: theme.textTheme.apply(
+                                      bodyColor: Colors.black,
+                                      displayColor: Colors.black,
+                                    ),
+                                  ),
+                                  child: DefaultTextStyle.merge(
+                                    style: const TextStyle(color: Colors.black),
+                                    child: widget.child,
+                                  ),
+                                ),
+                              ),
 
                               // Main panel glass shine.
                               Positioned(
@@ -292,6 +306,8 @@ class _SalesGlassDialogState extends State<SalesGlassDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Dialog(
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
@@ -350,7 +366,18 @@ class _SalesGlassDialogState extends State<SalesGlassDialog> {
                   ),
                   child: Stack(
                     children: [
-                      widget.child,
+                      Theme(
+                        data: theme.copyWith(
+                          textTheme: theme.textTheme.apply(
+                            bodyColor: Colors.black,
+                            displayColor: Colors.black,
+                          ),
+                        ),
+                        child: DefaultTextStyle.merge(
+                          style: const TextStyle(color: Colors.black),
+                          child: widget.child,
+                        ),
+                      ),
 
                       // Same blue glass highlight used in Inventory popups.
                       Positioned(

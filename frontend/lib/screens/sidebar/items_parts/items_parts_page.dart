@@ -1,17 +1,18 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
+import 'item_model.dart';
+import 'part_model.dart';
+import 'services/items_parts_api.dart';
 import 'widgets/add_item_dialog.dart';
 import 'widgets/add_part_dialog.dart';
 import 'widgets/items_tab.dart';
+import 'widgets/parts_tab.dart';
 
 class ItemsPartsPage extends StatefulWidget {
   /// 0 = Items
   /// 1 = Parts
   final int initialTab;
 
-  /// Sync internal tab with dashboard/sidebar.
   final ValueChanged<String>? onSectionChanged;
 
   const ItemsPartsPage({
@@ -21,26 +22,46 @@ class ItemsPartsPage extends StatefulWidget {
   });
 
   @override
-  State<ItemsPartsPage> createState() => _ItemsPartsPageState();
+  State<ItemsPartsPage> createState() =>
+      _ItemsPartsPageState();
 }
 
-class _ItemsPartsPageState extends State<ItemsPartsPage> {
+class _ItemsPartsPageState
+    extends State<ItemsPartsPage> {
   late int selectedTab;
+
+  final List<ItemModel> _items = [];
+  final List<PartModel> _parts = [];
+
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  bool get isItemsTab => selectedTab == 0;
 
   @override
   void initState() {
     super.initState();
-    selectedTab = _validTab(widget.initialTab);
+
+    selectedTab = _validateTab(
+      widget.initialTab,
+    );
+
+    _loadData();
   }
 
   @override
-  void didUpdateWidget(covariant ItemsPartsPage oldWidget) {
+  void didUpdateWidget(
+    covariant ItemsPartsPage oldWidget,
+  ) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.initialTab != widget.initialTab) {
-      final int newTab = _validTab(widget.initialTab);
+    if (oldWidget.initialTab !=
+        widget.initialTab) {
+      final newTab = _validateTab(
+        widget.initialTab,
+      );
 
-      if (selectedTab != newTab) {
+      if (newTab != selectedTab) {
         setState(() {
           selectedTab = newTab;
         });
@@ -48,56 +69,490 @@ class _ItemsPartsPageState extends State<ItemsPartsPage> {
     }
   }
 
-  int _validTab(int tab) {
-    if (tab < 0) return 0;
-    if (tab > 1) return 1;
-    return tab;
+  int _validateTab(int value) {
+    return value == 1 ? 1 : 0;
   }
 
   // ============================================================
-  // TAB CHANGE
+  // LOAD ITEMS + PARTS FROM DATABASE
+  // ============================================================
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final results = await Future.wait([
+        ItemsPartsApi.getItems(),
+        ItemsPartsApi.getParts(),
+      ]);
+
+      if (!mounted) return;
+
+      final items =
+          results[0] as List<ItemModel>;
+
+      final parts =
+          results[1] as List<PartModel>;
+
+      setState(() {
+        _items
+          ..clear()
+          ..addAll(items);
+
+        _parts
+          ..clear()
+          ..addAll(parts);
+
+        _isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+        _errorMessage =
+            _cleanError(error);
+      });
+    }
+  }
+
+  // ============================================================
+  // TAB
   // ============================================================
 
   void _changeTab(int index) {
-    final int validIndex = _validTab(index);
+    final value = _validateTab(index);
 
-    if (selectedTab != validIndex) {
+    if (selectedTab != value) {
       setState(() {
-        selectedTab = validIndex;
+        selectedTab = value;
       });
     }
 
     widget.onSectionChanged?.call(
-      validIndex == 0 ? 'Items' : 'Parts',
+      value == 0 ? 'Items' : 'Parts',
     );
   }
 
   // ============================================================
-  // ADD ITEM
+  // ADD / EDIT ITEM
   // ============================================================
 
-  void _openAddItem() {
-    showDialog(
+  Future<void> _openItemDialog({
+    int? editIndex,
+  }) async {
+    final ItemModel? existingItem =
+        editIndex == null
+            ? null
+            : _items[editIndex];
+
+    final ItemModel? result =
+        await showDialog<ItemModel>(
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        return const AddItemDialog();
+        return AddItemDialog(
+          initialItem: existingItem,
+        );
       },
     );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    try {
+      if (editIndex == null) {
+        // CREATE
+        final createdItem =
+            await ItemsPartsApi.createItem(
+          result,
+        );
+
+        if (!mounted) return;
+
+        setState(() {
+          // API GET uses newest first.
+          _items.insert(0, createdItem);
+        });
+
+        _showSuccess(
+          'Item added successfully.',
+        );
+      } else {
+        // UPDATE
+        final currentItem =
+            _items[editIndex];
+
+        if (currentItem.id == null) {
+          throw Exception(
+            'Item ID is missing',
+          );
+        }
+
+        final itemToUpdate =
+            result.copyWith(
+          id: currentItem.id,
+        );
+
+        final updatedItem =
+            await ItemsPartsApi.updateItem(
+          itemToUpdate,
+        );
+
+        if (!mounted) return;
+
+        setState(() {
+          _items[editIndex] =
+              updatedItem;
+        });
+
+        _showSuccess(
+          'Item updated successfully.',
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+
+      _showError(
+        _cleanError(error),
+      );
+    }
   }
 
   // ============================================================
-  // ADD PART
+  // ADD / EDIT PART
   // ============================================================
 
-  void _openAddPart() {
-    showDialog(
+  Future<void> _openPartDialog({
+    int? editIndex,
+  }) async {
+    final PartModel? existingPart =
+        editIndex == null
+            ? null
+            : _parts[editIndex];
+
+    final PartModel? result =
+        await showDialog<PartModel>(
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        return const AddPartDialog();
+        return AddPartDialog(
+          initialPart: existingPart,
+        );
       },
     );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    try {
+      if (editIndex == null) {
+        // CREATE
+        final createdPart =
+            await ItemsPartsApi.createPart(
+          result,
+        );
+
+        if (!mounted) return;
+
+        setState(() {
+          _parts.insert(0, createdPart);
+        });
+
+        _showSuccess(
+          'Part added successfully.',
+        );
+      } else {
+        // UPDATE
+        final currentPart =
+            _parts[editIndex];
+
+        if (currentPart.id == null) {
+          throw Exception(
+            'Part ID is missing',
+          );
+        }
+
+        final partToUpdate =
+            result.copyWith(
+          id: currentPart.id,
+        );
+
+        final updatedPart =
+            await ItemsPartsApi.updatePart(
+          partToUpdate,
+        );
+
+        if (!mounted) return;
+
+        setState(() {
+          _parts[editIndex] =
+              updatedPart;
+        });
+
+        _showSuccess(
+          'Part updated successfully.',
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+
+      _showError(
+        _cleanError(error),
+      );
+    }
+  }
+
+  // ============================================================
+  // DELETE CONFIRMATION
+  // ============================================================
+
+  Future<bool> _confirmDelete({
+    required String type,
+    required String name,
+  }) async {
+    final bool? result =
+        await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            'Delete $type?',
+          ),
+          content: Text(
+            'Are you sure you want to delete "$name"?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context)
+                    .pop(false);
+              },
+              child: const Text(
+                'Cancel',
+              ),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context)
+                    .pop(true);
+              },
+              style:
+                  FilledButton.styleFrom(
+                backgroundColor:
+                    const Color(
+                  0xFFC65555,
+                ),
+              ),
+              child: const Text(
+                'Delete',
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
+  }
+
+  // ============================================================
+  // DELETE ITEM
+  // ============================================================
+
+  Future<void> _deleteItem(
+    int index,
+  ) async {
+    final item = _items[index];
+
+    if (item.id == null) {
+      _showError(
+        'Item ID is missing.',
+      );
+      return;
+    }
+
+    final confirmed =
+        await _confirmDelete(
+      type: 'Item',
+      name: item.name,
+    );
+
+    if (!confirmed || !mounted) {
+      return;
+    }
+
+    try {
+      await ItemsPartsApi.deleteItem(
+        item.id!,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _items.removeAt(index);
+      });
+
+      _showSuccess(
+        'Item deleted successfully.',
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      _showError(
+        _cleanError(error),
+      );
+    }
+  }
+
+  // ============================================================
+  // DELETE PART
+  // ============================================================
+
+  Future<void> _deletePart(
+    int index,
+  ) async {
+    final part = _parts[index];
+
+    if (part.id == null) {
+      _showError(
+        'Part ID is missing.',
+      );
+      return;
+    }
+
+    final confirmed =
+        await _confirmDelete(
+      type: 'Part',
+      name: part.name,
+    );
+
+    if (!confirmed || !mounted) {
+      return;
+    }
+
+    try {
+      await ItemsPartsApi.deletePart(
+        part.id!,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _parts.removeAt(index);
+      });
+
+      _showSuccess(
+        'Part deleted successfully.',
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      _showError(
+        _cleanError(error),
+      );
+    }
+  }
+
+  // ============================================================
+  // MESSAGES
+  // ============================================================
+
+  String _cleanError(Object error) {
+    return error
+        .toString()
+        .replaceFirst(
+          'Exception: ',
+          '',
+        );
+  }
+
+  void _showSuccess(
+    String message,
+  ) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior:
+              SnackBarBehavior.floating,
+          backgroundColor:
+              const Color(
+            0xFF163F5E,
+          ),
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(12),
+          ),
+          content: Row(
+            children: [
+              const Icon(
+                Icons
+                    .check_circle_outline_rounded,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight:
+                        FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+  }
+
+  void _showError(
+    String message,
+  ) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior:
+              SnackBarBehavior.floating,
+          backgroundColor:
+              const Color(
+            0xFFA94442,
+          ),
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(12),
+          ),
+          content: Row(
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight:
+                        FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
   }
 
   // ============================================================
@@ -106,259 +561,123 @@ class _ItemsPartsPageState extends State<ItemsPartsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isItemsTab = selectedTab == 0;
-
     return LayoutBuilder(
-      builder: (context, constraints) {
-        final bool isMobile = constraints.maxWidth < 700;
-        final bool enableTilt = constraints.maxWidth >= 850;
+      builder: (
+        context,
+        constraints,
+      ) {
+        final bool isMobile =
+            constraints.maxWidth < 700;
 
         return Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: const BoxDecoration(
-  gradient: LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      Color(0xFFCADAE7),
-      Color(0xFFD2D6E3),
-      Color(0xFFC7DCD9),
-    ],
-  ),
-),
-          child: Stack(
-            children: [
-              // ====================================================
-              // BACKGROUND ORB 1
-              // ====================================================
-
-              Positioned(
-                top: -100,
-                right: -60,
-                child: IgnorePointer(
-                  child: Container(
-                    width: 340,
-                    height: 340,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          const Color(0xFF3984BA)
-                              .withValues(alpha: 0.23),
-                          const Color(0xFF3984BA)
-                              .withValues(alpha: 0.03),
-                          Colors.transparent,
-                        ],
-                      ),
+          decoration:
+              const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end:
+                  Alignment.bottomRight,
+              colors: [
+                Color(0xFFCADAE7),
+                Color(0xFFD2D6E3),
+                Color(0xFFC7DCD9),
+              ],
+            ),
+          ),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(
+              isMobile ? 14 : 30,
+            ),
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color:
+                    Colors.white.withValues(
+                  alpha: 0.48,
+                ),
+                borderRadius:
+                    BorderRadius.circular(
+                  isMobile ? 20 : 28,
+                ),
+                border: Border.all(
+                  color:
+                      Colors.white.withValues(
+                    alpha: 0.75,
+                  ),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color:
+                        const Color(
+                      0xFF173D59,
+                    ).withValues(
+                      alpha: 0.09,
+                    ),
+                    blurRadius: 35,
+                    offset:
+                        const Offset(
+                      0,
+                      14,
                     ),
                   ),
-                ),
+                ],
               ),
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(
+                    isMobile,
+                  ),
 
-              // ====================================================
-              // BACKGROUND ORB 2
-              // ====================================================
-
-              Positioned(
-                bottom: -160,
-                left: 30,
-                child: IgnorePointer(
-                  child: Container(
-                    width: 430,
-                    height: 430,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          const Color(0xFF7563AD)
-                              .withValues(alpha: 0.16),
-                          const Color(0xFF7563AD)
-                              .withValues(alpha: 0.02),
-                          Colors.transparent,
-                        ],
-                      ),
+                  Padding(
+                    padding:
+                        EdgeInsets.symmetric(
+                      horizontal:
+                          isMobile
+                              ? 18
+                              : 38,
+                    ),
+                    child: _buildTabs(
+                      isMobile,
                     ),
                   ),
-                ),
-              ),
 
-              // ====================================================
-              // BACKGROUND ORB 3
-              // ====================================================
+                  const SizedBox(
+                    height: 25,
+                  ),
 
-              Positioned(
-                top: 250,
-                left: -120,
-                child: IgnorePointer(
-                  child: Container(
-                    width: 310,
-                    height: 310,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          const Color(0xFF45B6A1)
-                              .withValues(alpha: 0.13),
-                          Colors.transparent,
-                        ],
-                      ),
+                  Padding(
+                    padding:
+                        EdgeInsets.symmetric(
+                      horizontal:
+                          isMobile
+                              ? 18
+                              : 38,
                     ),
+                    child:
+                        _buildInfoBox(),
                   ),
-                ),
-              ),
 
-              // ====================================================
-              // PAGE CONTENT
-              // ====================================================
-
-              SingleChildScrollView(
-                padding: EdgeInsets.all(
-                  isMobile ? 14 : 30,
-                ),
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween<double>(
-                    begin: 0,
-                    end: 1,
+                  const SizedBox(
+                    height: 18,
                   ),
-                  duration: const Duration(
-                    milliseconds: 500,
-                  ),
-                  curve: Curves.easeOutCubic,
-                  builder: (
-                    context,
-                    value,
-                    child,
-                  ) {
-                    return Opacity(
-                      opacity: value,
-                      child: Transform.translate(
-                        offset: Offset(
-                          0,
-                          25 * (1 - value),
-                        ),
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: GlassTiltPanel(
-                    enableTilt: enableTilt,
-                    borderRadius: isMobile ? 20 : 28,
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        // ==========================================
-                        // HEADER
-                        // ==========================================
 
-                        _buildHeader(
-                          isMobile: isMobile,
-                          isItemsTab: isItemsTab,
-                        ),
-
-                        // ==========================================
-                        // TAB AREA
-                        // ==========================================
-
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal:
-                                isMobile ? 18 : 38,
-                          ),
-                          child: _buildTabs(
-                            isMobile: isMobile,
-                          ),
-                        ),
-
-                        const SizedBox(height: 25),
-
-                        // ==========================================
-                        // SECTION INFO
-                        // ==========================================
-
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal:
-                                isMobile ? 18 : 38,
-                          ),
-                          child: _buildSectionInfo(
-                            isItemsTab: isItemsTab,
-                            isMobile: isMobile,
-                          ),
-                        ),
-
-                        const SizedBox(height: 18),
-
-                        // ==========================================
-                        // TAB CONTENT
-                        // ==========================================
-
-                        Padding(
-                          padding: EdgeInsets.only(
-                            left: isMobile ? 18 : 38,
-                            right: isMobile ? 18 : 38,
-                            bottom: isMobile ? 20 : 38,
-                          ),
-                          child: AnimatedSwitcher(
-                            duration: const Duration(
-                              milliseconds: 320,
-                            ),
-                            switchInCurve:
-                                Curves.easeOutCubic,
-                            switchOutCurve:
-                                Curves.easeInCubic,
-                            transitionBuilder: (
-                              child,
-                              animation,
-                            ) {
-                              final slideAnimation =
-                                  Tween<Offset>(
-                                begin: const Offset(
-                                  0.03,
-                                  0,
-                                ),
-                                end: Offset.zero,
-                              ).animate(
-                                CurvedAnimation(
-                                  parent: animation,
-                                  curve:
-                                      Curves.easeOutCubic,
-                                ),
-                              );
-
-                              return FadeTransition(
-                                opacity: animation,
-                                child: SlideTransition(
-                                  position:
-                                      slideAnimation,
-                                  child: child,
-                                ),
-                              );
-                            },
-                            child: isItemsTab
-                                ? ItemsTab(
-                                    key: const ValueKey(
-                                      'items',
-                                    ),
-                                    onAddItem:
-                                        _openAddItem,
-                                  )
-                                : _buildPartsContent(
-                                    key: const ValueKey(
-                                      'parts',
-                                    ),
-                                    isMobile:
-                                        isMobile,
-                                  ),
-                          ),
-                        ),
-                      ],
+                  Padding(
+                    padding:
+                        EdgeInsets.fromLTRB(
+                      isMobile ? 18 : 38,
+                      0,
+                      isMobile ? 18 : 38,
+                      isMobile ? 20 : 38,
                     ),
+                    child:
+                        _buildContent(),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
@@ -366,38 +685,148 @@ class _ItemsPartsPageState extends State<ItemsPartsPage> {
   }
 
   // ============================================================
+  // CONTENT
+  // ============================================================
+
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const SizedBox(
+        height: 280,
+        child: Center(
+          child:
+              CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Container(
+        width: double.infinity,
+        padding:
+            const EdgeInsets.all(35),
+        child: Column(
+          children: [
+            const Icon(
+              Icons
+                  .cloud_off_outlined,
+              size: 48,
+              color:
+                  Color(0xFFA65B5B),
+            ),
+
+            const SizedBox(
+              height: 15,
+            ),
+
+            const Text(
+              'Unable to load data',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight:
+                    FontWeight.w700,
+                color:
+                    Color(0xFF25394B),
+              ),
+            ),
+
+            const SizedBox(
+              height: 8,
+            ),
+
+            Text(
+              _errorMessage!,
+              textAlign:
+                  TextAlign.center,
+              style: const TextStyle(
+                color:
+                    Color(0xFF748693),
+              ),
+            ),
+
+            const SizedBox(
+              height: 18,
+            ),
+
+            ElevatedButton.icon(
+              onPressed: _loadData,
+              icon: const Icon(
+                Icons.refresh_rounded,
+              ),
+              label:
+                  const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return AnimatedSwitcher(
+      duration: const Duration(
+        milliseconds: 250,
+      ),
+      child: isItemsTab
+          ? ItemsTab(
+              key:
+                  const ValueKey(
+                'items',
+              ),
+              items: _items,
+              onAddItem: () {
+                _openItemDialog();
+              },
+              onEditItem: (index) {
+                _openItemDialog(
+                  editIndex: index,
+                );
+              },
+              onDeleteItem:
+                  _deleteItem,
+            )
+          : PartsTab(
+              key:
+                  const ValueKey(
+                'parts',
+              ),
+              parts: _parts,
+              onAddPart: () {
+                _openPartDialog();
+              },
+              onEditPart: (index) {
+                _openPartDialog(
+                  editIndex: index,
+                );
+              },
+              onDeletePart:
+                  _deletePart,
+            ),
+    );
+  }
+
+  // ============================================================
   // HEADER
   // ============================================================
 
-  Widget _buildHeader({
-    required bool isMobile,
-    required bool isItemsTab,
-  }) {
-    final titleArea = Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+  Widget _buildHeader(
+    bool isMobile,
+  ) {
+    final titleContent = Row(
       children: [
         if (!isMobile) ...[
           Container(
             width: 58,
             height: 58,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+              gradient:
+                  const LinearGradient(
                 colors: [
                   Color(0xFF123F61),
                   Color(0xFF3E83B6),
                 ],
               ),
-              borderRadius: BorderRadius.circular(17),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF174C72)
-                      .withValues(alpha: 0.22),
-                  blurRadius: 18,
-                  offset: const Offset(0, 7),
-                ),
-              ],
+              borderRadius:
+                  BorderRadius.circular(
+                17,
+              ),
             ),
             child: const Icon(
               Icons.inventory_2_outlined,
@@ -407,60 +836,121 @@ class _ItemsPartsPageState extends State<ItemsPartsPage> {
           ),
           const SizedBox(width: 18),
         ],
+
         Expanded(
           child: Column(
             crossAxisAlignment:
                 CrossAxisAlignment.start,
             children: [
-              Row(
+              const Row(
                 children: [
-                  Container(
-                    width: 7,
-                    height: 7,
-                    decoration:
-                        const BoxDecoration(
-                      color: Color(0xFF438DC0),
-                      shape: BoxShape.circle,
+                  CircleAvatar(
+                    radius: 4,
+                    backgroundColor:
+                        Color(
+                      0xFF438DC0,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text(
                     'INVENTORY MANAGEMENT',
                     style: TextStyle(
-                      fontSize: isMobile ? 9 : 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.4,
-                      color:
-                          const Color(0xFF60778A),
+                      fontSize: 10,
+                      fontWeight:
+                          FontWeight.w700,
+                      letterSpacing:
+                          1.4,
+                      color: Color(
+                        0xFF60778A,
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+
+              const SizedBox(
+                height: 10,
+              ),
+
               Text(
                 'Manage Items & Parts',
                 style: TextStyle(
-                  fontSize: isMobile ? 26 : 35,
-                  height: 1.1,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF123456),
+                  fontSize:
+                      isMobile
+                          ? 26
+                          : 35,
+                  fontWeight:
+                      FontWeight.w800,
+                  color:
+                      const Color(
+                    0xFF123456,
+                  ),
                 ),
               ),
-              const SizedBox(height: 9),
+
+              const SizedBox(
+                height: 9,
+              ),
+
               Text(
                 isItemsTab
                     ? 'Create and manage your inventory items in one place.'
                     : 'Manage components and individual parts in your inventory.',
-                style: TextStyle(
-                  fontSize: isMobile ? 13 : 14,
-                  height: 1.5,
-                  color: const Color(0xFF6F8292),
+                style:
+                    const TextStyle(
+                  fontSize: 14,
+                  color:
+                      Color(
+                    0xFF6F8292,
+                  ),
                 ),
               ),
             ],
           ),
         ),
       ],
+    );
+
+    final addButton =
+        ElevatedButton.icon(
+      onPressed: _isLoading
+          ? null
+          : isItemsTab
+              ? () {
+                  _openItemDialog();
+                }
+              : () {
+                  _openPartDialog();
+                },
+      icon: const Icon(
+        Icons.add_rounded,
+      ),
+      label: Text(
+        isItemsTab
+            ? 'Add New Item'
+            : 'Add New Part',
+      ),
+      style:
+          ElevatedButton.styleFrom(
+        foregroundColor: Colors.white,
+        backgroundColor:
+            const Color(
+          0xFF194E75,
+        ),
+        elevation: 0,
+        padding:
+            const EdgeInsets.symmetric(
+          horizontal: 23,
+          vertical: 18,
+        ),
+        shape:
+            RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.circular(
+            13,
+          ),
+        ),
+      ),
     );
 
     return Padding(
@@ -475,130 +965,82 @@ class _ItemsPartsPageState extends State<ItemsPartsPage> {
               crossAxisAlignment:
                   CrossAxisAlignment.start,
               children: [
-                titleArea,
-                const SizedBox(height: 22),
+                titleContent,
+                const SizedBox(
+                  height: 22,
+                ),
                 SizedBox(
-                  width: double.infinity,
-                  child: _buildAddButton(
-                    isItemsTab: isItemsTab,
-                  ),
+                  width:
+                      double.infinity,
+                  child: addButton,
                 ),
               ],
             )
           : Row(
               children: [
                 Expanded(
-                  child: titleArea,
+                  child:
+                      titleContent,
                 ),
-                const SizedBox(width: 24),
-                _buildAddButton(
-                  isItemsTab: isItemsTab,
+                const SizedBox(
+                  width: 24,
                 ),
+                addButton,
               ],
             ),
     );
   }
 
   // ============================================================
-  // ADD BUTTON
+  // TABS
   // ============================================================
 
-  Widget _buildAddButton({
-    required bool isItemsTab,
-  }) {
-    return _HoverScale(
-      scale: 1.025,
-      child: ElevatedButton.icon(
-        onPressed:
-            isItemsTab ? _openAddItem : _openAddPart,
-        icon: const Icon(
-          Icons.add_rounded,
-          size: 21,
+  Widget _buildTabs(
+    bool isMobile,
+  ) {
+    return Container(
+      padding:
+          const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color:
+            Colors.white.withValues(
+          alpha: 0.34,
         ),
-        label: Text(
-          isItemsTab
-              ? 'Add New Item'
-              : 'Add New Part',
-        ),
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor:
-              const Color(0xFF194E75),
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 23,
-            vertical: 18,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(13),
+        borderRadius:
+            BorderRadius.circular(15),
+        border: Border.all(
+          color:
+              Colors.white.withValues(
+            alpha: 0.68,
           ),
         ),
+      ),
+      child: Row(
+        mainAxisSize: isMobile
+            ? MainAxisSize.max
+            : MainAxisSize.min,
+        children: [
+          _tabButton(
+            title: 'Items',
+            icon:
+                Icons.inventory_2_outlined,
+            index: 0,
+            isMobile: isMobile,
+          ),
+
+          _tabButton(
+            title: 'Parts',
+            icon:
+                Icons.settings_outlined,
+            index: 1,
+            isMobile: isMobile,
+          ),
+        ],
       ),
     );
   }
 
-  // ============================================================
-  // GLASS TABS
-  // ============================================================
-
-  Widget _buildTabs({
-    required bool isMobile,
-  }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(15),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(
-          sigmaX: 12,
-          sigmaY: 12,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(
-              alpha: 0.34,
-            ),
-            borderRadius:
-                BorderRadius.circular(15),
-            border: Border.all(
-              color: Colors.white.withValues(
-                alpha: 0.68,
-              ),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF143B57)
-                    .withValues(alpha: 0.05),
-                blurRadius: 20,
-                offset: const Offset(0, 7),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: isMobile
-                ? MainAxisSize.max
-                : MainAxisSize.min,
-            children: [
-              _buildTab(
-                title: 'Items',
-                icon:
-                    Icons.inventory_2_outlined,
-                index: 0,
-                isMobile: isMobile,
-              ),
-              _buildTab(
-                title: 'Parts',
-                icon: Icons.settings_outlined,
-                index: 1,
-                isMobile: isMobile,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTab({
+  Widget _tabButton({
     required String title,
     required IconData icon,
     required int index,
@@ -607,113 +1049,117 @@ class _ItemsPartsPageState extends State<ItemsPartsPage> {
     final bool selected =
         selectedTab == index;
 
-    final tab = AnimatedContainer(
-      duration:
-          const Duration(milliseconds: 250),
-      curve: Curves.easeOutCubic,
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 15 : 23,
-        vertical: 12,
-      ),
-      decoration: BoxDecoration(
-        color: selected
-            ? Colors.white.withValues(
-                alpha: 0.82,
-              )
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(11),
-        border: selected
-            ? Border.all(
-                color: Colors.white.withValues(
-                  alpha: 0.88,
-                ),
-              )
-            : null,
-        boxShadow: selected
-            ? [
-                BoxShadow(
-                  color: const Color(0xFF123456)
-                      .withValues(alpha: 0.08),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
-      child: Row(
-        mainAxisAlignment:
-            MainAxisAlignment.center,
-        children: [
-          AnimatedSwitcher(
-            duration:
-                const Duration(milliseconds: 220),
-            child: Icon(
+    final button = InkWell(
+      onTap: () {
+        _changeTab(index);
+      },
+      borderRadius:
+          BorderRadius.circular(11),
+      child: AnimatedContainer(
+        duration: const Duration(
+          milliseconds: 220,
+        ),
+        padding:
+            const EdgeInsets.symmetric(
+          horizontal: 23,
+          vertical: 12,
+        ),
+        decoration: BoxDecoration(
+          color: selected
+              ? Colors.white
+                  .withValues(
+                  alpha: 0.86,
+                )
+              : Colors.transparent,
+          borderRadius:
+              BorderRadius.circular(
+            11,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment:
+              MainAxisAlignment.center,
+          children: [
+            Icon(
               icon,
-              key: ValueKey(selected),
               size: 18,
               color: selected
-                  ? const Color(0xFF153F5F)
-                  : const Color(0xFF80909D),
+                  ? const Color(
+                      0xFF153F5F,
+                    )
+                  : const Color(
+                      0xFF80909D,
+                    ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: selected
-                  ? FontWeight.w700
-                  : FontWeight.w500,
-              color: selected
-                  ? const Color(0xFF153F5F)
-                  : const Color(0xFF748693),
+
+            const SizedBox(
+              width: 8,
             ),
-          ),
-        ],
+
+            Text(
+              title,
+              style: TextStyle(
+                fontWeight: selected
+                    ? FontWeight.w700
+                    : FontWeight.w500,
+                color: selected
+                    ? const Color(
+                        0xFF153F5F,
+                      )
+                    : const Color(
+                        0xFF748693,
+                      ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
 
-    final clickable = Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius:
-            BorderRadius.circular(11),
-        onTap: () => _changeTab(index),
-        child: tab,
-      ),
-    );
-
-    if (isMobile) {
-      return Expanded(
-        child: clickable,
-      );
-    }
-
-    return clickable;
+    return isMobile
+        ? Expanded(
+            child: button,
+          )
+        : button;
   }
 
   // ============================================================
-  // SECTION INFORMATION
+  // INFO
   // ============================================================
 
-  Widget _buildSectionInfo({
-    required bool isItemsTab,
-    required bool isMobile,
-  }) {
+  Widget _buildInfoBox() {
+    String message;
+
+    if (_isLoading) {
+      message =
+          'Loading inventory data...';
+    } else if (isItemsTab) {
+      message = _items.isEmpty
+          ? 'Your inventory items will appear below.'
+          : '${_items.length} item${_items.length == 1 ? '' : 's'} available.';
+    } else {
+      message = _parts.isEmpty
+          ? 'Your available parts will appear below.'
+          : '${_parts.length} part${_parts.length == 1 ? '' : 's'} available.';
+    }
+
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 14 : 17,
+      padding:
+          const EdgeInsets.symmetric(
+        horizontal: 17,
         vertical: 13,
       ),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(
+        color:
+            Colors.white.withValues(
           alpha: 0.28,
         ),
         borderRadius:
             BorderRadius.circular(13),
         border: Border.all(
-          color: Colors.white.withValues(
+          color:
+              Colors.white.withValues(
             alpha: 0.60,
           ),
         ),
@@ -724,612 +1170,67 @@ class _ItemsPartsPageState extends State<ItemsPartsPage> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: const Color(0xFF3F82B4)
-                  .withValues(alpha: 0.10),
+              color:
+                  const Color(
+                0xFF3F82B4,
+              ).withValues(
+                alpha: 0.10,
+              ),
               borderRadius:
-                  BorderRadius.circular(10),
+                  BorderRadius.circular(
+                10,
+              ),
             ),
             child: Icon(
               isItemsTab
-                  ? Icons.inventory_2_outlined
-                  : Icons.precision_manufacturing_outlined,
+                  ? Icons
+                      .inventory_2_outlined
+                  : Icons
+                      .precision_manufacturing_outlined,
               size: 19,
-              color: const Color(0xFF3979A7),
+              color:
+                  const Color(
+                0xFF3979A7,
+              ),
             ),
           ),
-          const SizedBox(width: 12),
+
+          const SizedBox(
+            width: 12,
+          ),
+
           Expanded(
             child: Text(
-              isItemsTab
-                  ? 'Your inventory items will appear below.'
-                  : 'Your available parts will appear below.',
-              style: TextStyle(
-                fontSize: isMobile ? 12 : 13,
-                color: const Color(0xFF667A8A),
-                fontWeight: FontWeight.w500,
+              message,
+              style:
+                  const TextStyle(
+                fontSize: 13,
+                color:
+                    Color(
+                  0xFF667A8A,
+                ),
+                fontWeight:
+                    FontWeight.w500,
+              ),
+            ),
+          ),
+
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed:
+                _isLoading
+                    ? null
+                    : _loadData,
+            icon: const Icon(
+              Icons.refresh_rounded,
+              size: 20,
+              color:
+                  Color(
+                0xFF3979A7,
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // PARTS TABLE
-  // ============================================================
-
-  Widget _buildPartsContent({
-    Key? key,
-    required bool isMobile,
-  }) {
-    return _GlassTable(
-      key: key,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          const double minWidth = 760;
-
-          final double width =
-              constraints.maxWidth < minWidth
-                  ? minWidth
-                  : constraints.maxWidth;
-
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: width,
-              child: Column(
-                children: [
-                  // ================================================
-                  // HEADER
-                  // ================================================
-
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 22,
-                      vertical: 18,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(
-                        alpha: 0.33,
-                      ),
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Colors.white
-                              .withValues(
-                            alpha: 0.72,
-                          ),
-                        ),
-                      ),
-                    ),
-                    child: const Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: _TableHeader(
-                            title: 'NAME',
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: _TableHeader(
-                            title: 'SKU',
-                          ),
-                        ),
-                        Expanded(
-                          flex: 3,
-                          child: _TableHeader(
-                            title:
-                                'PURCHASE PRICE',
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: _TableHeader(
-                            title: 'ACTIONS',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // ================================================
-                  // EMPTY STATE
-                  // ================================================
-
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 55,
-                    ),
-                    child: Column(
-                      children: [
-                        _HoverScale(
-                          scale: 1.06,
-                          child: Container(
-                            width: 78,
-                            height: 78,
-                            decoration: BoxDecoration(
-                              color: Colors.white
-                                  .withValues(
-                                alpha: 0.40,
-                              ),
-                              borderRadius:
-                                  BorderRadius.circular(
-                                23,
-                              ),
-                              border: Border.all(
-                                color: Colors.white
-                                    .withValues(
-                                  alpha: 0.75,
-                                ),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      const Color(
-                                    0xFF24587E,
-                                  ).withValues(
-                                    alpha: 0.08,
-                                  ),
-                                  blurRadius: 18,
-                                  offset:
-                                      const Offset(
-                                    0,
-                                    8,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons
-                                  .settings_suggest_outlined,
-                              size: 37,
-                              color:
-                                  Color(0xFF427FA8),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'No parts yet',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight:
-                                FontWeight.w700,
-                            color:
-                                Color(0xFF203A4D),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Start by adding your first part to your inventory.',
-                          textAlign:
-                              TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 13,
-                            height: 1.5,
-                            color:
-                                Color(0xFF778A98),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        _HoverScale(
-                          scale: 1.035,
-                          child:
-                              OutlinedButton.icon(
-                            onPressed:
-                                _openAddPart,
-                            icon: const Icon(
-                              Icons.add_rounded,
-                              size: 18,
-                            ),
-                            label: const Text(
-                              'Add First Part',
-                            ),
-                            style:
-                                OutlinedButton
-                                    .styleFrom(
-                              foregroundColor:
-                                  const Color(
-                                0xFF1A537A,
-                              ),
-                              backgroundColor:
-                                  Colors.white
-                                      .withValues(
-                                alpha: 0.25,
-                              ),
-                              side: BorderSide(
-                                color: Colors.white
-                                    .withValues(
-                                  alpha: 0.90,
-                                ),
-                              ),
-                              padding:
-                                  const EdgeInsets
-                                      .symmetric(
-                                horizontal: 19,
-                                vertical: 13,
-                              ),
-                              shape:
-                                  RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius
-                                        .circular(
-                                  11,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// GLASS + 3D HOVER TILT PANEL
-// ============================================================================
-
-class GlassTiltPanel extends StatefulWidget {
-  final Widget child;
-  final bool enableTilt;
-  final double borderRadius;
-
-  const GlassTiltPanel({
-    super.key,
-    required this.child,
-    this.enableTilt = true,
-    this.borderRadius = 28,
-  });
-
-  @override
-  State<GlassTiltPanel> createState() =>
-      _GlassTiltPanelState();
-}
-
-class _GlassTiltPanelState
-    extends State<GlassTiltPanel> {
-  double rotateX = 0;
-  double rotateY = 0;
-
-  bool hovering = false;
-
-  void _onHover(PointerEvent event) {
-    if (!widget.enableTilt) return;
-
-    final RenderObject? object =
-        context.findRenderObject();
-
-    if (object is! RenderBox) return;
-
-    final Size size = object.size;
-
-    if (size.width == 0 ||
-        size.height == 0) {
-      return;
-    }
-
-    final double x =
-        (event.localPosition.dx / size.width) -
-            0.5;
-
-    final double y =
-        (event.localPosition.dy / size.height) -
-            0.5;
-
-    // Small professional tilt.
-    const double maxTilt = 0.025;
-
-    setState(() {
-      rotateY = x * maxTilt;
-      rotateX = -y * maxTilt;
-    });
-  }
-
-  void _reset() {
-    if (!mounted) return;
-
-    setState(() {
-      hovering = false;
-      rotateX = 0;
-      rotateY = 0;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) {
-        if (!widget.enableTilt) return;
-
-        setState(() {
-          hovering = true;
-        });
-      },
-      onHover: _onHover,
-      onExit: (_) => _reset(),
-      child: AnimatedContainer(
-        duration: Duration(
-          milliseconds: hovering ? 100 : 350,
-        ),
-        curve: hovering
-            ? Curves.linear
-            : Curves.easeOutCubic,
-        transformAlignment: Alignment.center,
-        transform: Matrix4.identity()
-          ..setEntry(3, 2, 0.001)
-          ..rotateX(rotateX)
-          ..rotateY(rotateY),
-        decoration: BoxDecoration(
-          borderRadius:
-              BorderRadius.circular(
-            widget.borderRadius,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF173D59)
-                  .withValues(
-                alpha: hovering ? 0.15 : 0.09,
-              ),
-              blurRadius: hovering ? 48 : 35,
-              spreadRadius: hovering ? 2 : 0,
-              offset: Offset(
-                rotateY * 120,
-                14 + (rotateX * 80),
-              ),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius:
-              BorderRadius.circular(
-            widget.borderRadius,
-          ),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(
-              sigmaX: 24,
-              sigmaY: 24,
-            ),
-            child: AnimatedContainer(
-              duration:
-                  const Duration(milliseconds: 230),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(
-                  alpha:
-                      hovering ? 0.59 : 0.49,
-                ),
-                borderRadius:
-                    BorderRadius.circular(
-                  widget.borderRadius,
-                ),
-                border: Border.all(
-                  width: 1.3,
-                  color: Colors.white.withValues(
-                    alpha:
-                        hovering ? 0.88 : 0.68,
-                  ),
-                ),
-              ),
-              child: Stack(
-                children: [
-                  widget.child,
-
-                  // ================================================
-                  // TOP GLASS SHINE
-                  // ================================================
-
-                  Positioned(
-                    top: -120,
-                    right: -70,
-                    child: IgnorePointer(
-                      child: AnimatedContainer(
-                        duration: const Duration(
-                          milliseconds: 300,
-                        ),
-                        width: 320,
-                        height: 320,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [
-                              Colors.white.withValues(
-                                alpha: hovering
-                                    ? 0.24
-                                    : 0.13,
-                              ),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // ================================================
-                  // GLASS EDGE LIGHT
-                  // ================================================
-
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    child: IgnorePointer(
-                      child: Container(
-                        height: 1,
-                        decoration: BoxDecoration(
-                          gradient:
-                              LinearGradient(
-                            colors: [
-                              Colors.transparent,
-                              Colors.white
-                                  .withValues(
-                                alpha: 0.95,
-                              ),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// GLASS TABLE WRAPPER
-// ============================================================================
-
-class _GlassTable extends StatefulWidget {
-  final Widget child;
-
-  const _GlassTable({
-    super.key,
-    required this.child,
-  });
-
-  @override
-  State<_GlassTable> createState() =>
-      _GlassTableState();
-}
-
-class _GlassTableState
-    extends State<_GlassTable> {
-  bool hovering = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) {
-        setState(() {
-          hovering = true;
-        });
-      },
-      onExit: (_) {
-        setState(() {
-          hovering = false;
-        });
-      },
-      child: AnimatedContainer(
-        duration:
-            const Duration(milliseconds: 250),
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(
-            alpha: hovering ? 0.37 : 0.27,
-          ),
-          borderRadius:
-              BorderRadius.circular(17),
-          border: Border.all(
-            color: Colors.white.withValues(
-              alpha: hovering ? 0.88 : 0.65,
-            ),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF163E5A)
-                  .withValues(
-                alpha: hovering ? 0.10 : 0.05,
-              ),
-              blurRadius: hovering ? 25 : 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius:
-              BorderRadius.circular(17),
-          child: widget.child,
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// SMALL HOVER SCALE
-// ============================================================================
-
-class _HoverScale extends StatefulWidget {
-  final Widget child;
-  final double scale;
-
-  const _HoverScale({
-    required this.child,
-    this.scale = 1.03,
-  });
-
-  @override
-  State<_HoverScale> createState() =>
-      _HoverScaleState();
-}
-
-class _HoverScaleState
-    extends State<_HoverScale> {
-  bool hovering = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) {
-        setState(() {
-          hovering = true;
-        });
-      },
-      onExit: (_) {
-        setState(() {
-          hovering = false;
-        });
-      },
-      child: AnimatedScale(
-        duration:
-            const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        scale:
-            hovering ? widget.scale : 1,
-        child: widget.child,
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// TABLE HEADER
-// ============================================================================
-
-class _TableHeader extends StatelessWidget {
-  final String title;
-
-  const _TableHeader({
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 11,
-        letterSpacing: 0.65,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFF5C7283),
       ),
     );
   }
