@@ -16,11 +16,15 @@ const ALLOWED_PURCHASE_STATUSES = [
   'Completed',
 ];
 
+
 // ============================================================
 // HELPERS
 // ============================================================
 
-function toNumber(value, fallback = 0) {
+function toNumber(
+  value,
+  fallback = 0,
+) {
   const number = Number(value);
 
   return Number.isFinite(number)
@@ -28,13 +32,13 @@ function toNumber(value, fallback = 0) {
     : fallback;
 }
 
+
 function mapSalesOrderItem(row) {
   return {
     id: Number(row.id),
 
-    salesOrderId: Number(
-      row.sales_order_id,
-    ),
+    salesOrderId:
+      Number(row.sales_order_id),
 
     sourceType:
       row.source_type ?? 'Item',
@@ -55,20 +59,25 @@ function mapSalesOrderItem(row) {
     description:
       row.description ?? '',
 
-    qty: toNumber(row.qty),
+    qty:
+      toNumber(row.qty),
 
-    rate: toNumber(row.rate),
+    rate:
+      toNumber(row.rate),
 
-    amount: toNumber(row.amount),
+    amount:
+      toNumber(row.amount),
   };
 }
+
 
 function mapSalesOrder(
   row,
   items = [],
 ) {
   return {
-    id: Number(row.id),
+    id:
+      Number(row.id),
 
     orderNumber:
       row.so_number ?? '',
@@ -126,6 +135,7 @@ function mapSalesOrder(
   };
 }
 
+
 // ============================================================
 // NEXT SALES ORDER NUMBER
 //
@@ -136,54 +146,159 @@ router.get(
   '/next-number',
   async (req, res) => {
     try {
+      // --------------------------------------------------------
+      // GET SALES ORDER NUMBER SERIES CONFIGURATION
+      // --------------------------------------------------------
+
+      const [seriesRows] =
+        await db.query(
+          `
+          SELECT
+            prefix,
+            starting_number
+
+          FROM transaction_number_series
+
+          WHERE module = 'Sales Order'
+
+          LIMIT 1
+          `
+        );
+
+      if (
+        seriesRows.length === 0
+      ) {
+        return res
+          .status(404)
+          .json({
+            success: false,
+
+            message:
+              'Sales Order number series is not configured',
+          });
+      }
+
+
+      // --------------------------------------------------------
+      // CURRENT PREFIX
+      // --------------------------------------------------------
+
+      const prefix =
+        seriesRows[0].prefix ?? '';
+
+
+      // --------------------------------------------------------
+      // STARTING NUMBER
+      // --------------------------------------------------------
+
+      const startingNumber =
+        Number(
+          seriesRows[0]
+            .starting_number ?? 1
+        );
+
+
+      // --------------------------------------------------------
+      // FIND HIGHEST EXISTING NUMBER FOR CURRENT PREFIX
+      // --------------------------------------------------------
+
       const [rows] =
-        await db.query(`
+        await db.query(
+          `
           SELECT
             MAX(
               CAST(
                 SUBSTRING(
                   so_number,
-                  4
+                  CHAR_LENGTH(?) + 1
                 ) AS UNSIGNED
               )
             ) AS max_number
 
           FROM sales_orders
 
-          WHERE so_number LIKE 'SO-%'
-        `);
+          WHERE so_number LIKE ?
+          `,
+          [
+            prefix,
+            `${prefix}%`,
+          ]
+        );
+
 
       const maxNumber =
         Number(
           rows[0]?.max_number ?? 0
         );
 
-      res.status(200).json({
-        success: true,
 
-        data: {
-          orderNumber:
-            `SO-${maxNumber + 1}`,
-        },
-      });
+      // --------------------------------------------------------
+      // CALCULATE NEXT NUMBER
+      // --------------------------------------------------------
+
+      const nextNumber =
+        maxNumber > 0
+          ? maxNumber + 1
+          : startingNumber;
+
+
+      // --------------------------------------------------------
+      // FORMAT NUMBER
+      //
+      // 1   -> 0001
+      // 25  -> 0025
+      // 100 -> 0100
+      // --------------------------------------------------------
+
+      const paddedNumber =
+        String(nextNumber)
+          .padStart(
+            4,
+            '0',
+          );
+
+
+      // --------------------------------------------------------
+      // FINAL ORDER NUMBER
+      // --------------------------------------------------------
+
+      const orderNumber =
+        `${prefix}${paddedNumber}`;
+
+
+      return res
+        .status(200)
+        .json({
+          success: true,
+
+          data: {
+            orderNumber,
+            prefix,
+            startingNumber,
+            nextNumber,
+          },
+        });
     } catch (error) {
       console.error(
         'Get next sales order number error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(500)
+        .json({
+          success: false,
 
-        message:
-          'Failed to generate sales order number',
+          message:
+            'Failed to generate sales order number',
 
-        error:
-          error.message,
-      });
+          error:
+            error.message,
+        });
     }
   }
 );
+
 
 // ============================================================
 // GET ALL SALES ORDERS
@@ -201,6 +316,7 @@ router.get(
         dateFrom,
         dateTo,
       } = req.query;
+
 
       let sql = `
         SELECT
@@ -242,7 +358,13 @@ router.get(
         WHERE 1 = 1
       `;
 
+
       const values = [];
+
+
+      // --------------------------------------------------------
+      // STATUS FILTER
+      // --------------------------------------------------------
 
       if (
         status &&
@@ -254,6 +376,11 @@ router.get(
 
         values.push(status);
       }
+
+
+      // --------------------------------------------------------
+      // CUSTOMER FILTER
+      // --------------------------------------------------------
 
       if (
         customer &&
@@ -268,6 +395,11 @@ router.get(
         );
       }
 
+
+      // --------------------------------------------------------
+      // DATE FROM
+      // --------------------------------------------------------
+
       if (
         dateFrom &&
         dateFrom.trim() !== ''
@@ -280,6 +412,11 @@ router.get(
           dateFrom.trim()
         );
       }
+
+
+      // --------------------------------------------------------
+      // DATE TO
+      // --------------------------------------------------------
 
       if (
         dateTo &&
@@ -294,43 +431,51 @@ router.get(
         );
       }
 
+
       sql += `
         ORDER BY id DESC
       `;
 
+
       const [rows] =
         await db.query(
           sql,
-          values
+          values,
         );
 
-      res.status(200).json({
-        success: true,
 
-        data:
-          rows.map(
-            (row) =>
+      return res
+        .status(200)
+        .json({
+          success: true,
+
+          data:
+            rows.map(
+              (row) =>
                 mapSalesOrder(row),
-          ),
-      });
+            ),
+        });
     } catch (error) {
       console.error(
         'Get sales orders error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(500)
+        .json({
+          success: false,
 
-        message:
-          'Failed to fetch sales orders',
+          message:
+            'Failed to fetch sales orders',
 
-        error:
-          error.message,
-      });
+          error:
+            error.message,
+        });
     }
   }
 );
+
 
 // ============================================================
 // GET SINGLE SALES ORDER
@@ -342,7 +487,9 @@ router.get(
   '/:id',
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } =
+        req.params;
+
 
       const [orderRows] =
         await db.query(
@@ -390,18 +537,20 @@ router.get(
           [id]
         );
 
+
       if (
         orderRows.length === 0
       ) {
         return res
-            .status(404)
-            .json({
-          success: false,
+          .status(404)
+          .json({
+            success: false,
 
-          message:
-            'Sales order not found',
-        });
+            message:
+              'Sales order not found',
+          });
       }
+
 
       const [itemRows] =
         await db.query(
@@ -427,36 +576,42 @@ router.get(
           [id]
         );
 
-      res.status(200).json({
-        success: true,
 
-        data:
-          mapSalesOrder(
-            orderRows[0],
+      return res
+        .status(200)
+        .json({
+          success: true,
 
-            itemRows.map(
-              mapSalesOrderItem
+          data:
+            mapSalesOrder(
+              orderRows[0],
+
+              itemRows.map(
+                mapSalesOrderItem
+              ),
             ),
-          ),
-      });
+        });
     } catch (error) {
       console.error(
         'Get sales order error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(500)
+        .json({
+          success: false,
 
-        message:
-          'Failed to fetch sales order',
+          message:
+            'Failed to fetch sales order',
 
-        error:
-          error.message,
-      });
+          error:
+            error.message,
+        });
     }
   }
 );
+
 
 // ============================================================
 // CREATE SALES ORDER
@@ -468,6 +623,7 @@ router.post(
   '/',
   async (req, res) => {
     let connection;
+
 
     try {
       const {
@@ -488,6 +644,7 @@ router.post(
         termsAndConditions,
       } = req.body;
 
+
       // --------------------------------------------------------
       // BASIC VALIDATION
       // --------------------------------------------------------
@@ -497,17 +654,19 @@ router.post(
         orderNumber.trim() === ''
       ) {
         return res
-            .status(400)
-            .json({
-          success: false,
+          .status(400)
+          .json({
+            success: false,
 
-          message:
-            'Sales order number is required',
-        });
+            message:
+              'Sales order number is required',
+          });
       }
+
 
       const parsedCustomerId =
         Number(customerId);
+
 
       if (
         !Number.isInteger(
@@ -516,48 +675,53 @@ router.post(
         parsedCustomerId <= 0
       ) {
         return res
-            .status(400)
-            .json({
-          success: false,
+          .status(400)
+          .json({
+            success: false,
 
-          message:
-            'Please select a valid customer',
-        });
+            message:
+              'Please select a valid customer',
+          });
       }
+
 
       if (
         !date ||
         date.trim() === ''
       ) {
         return res
-            .status(400)
-            .json({
-          success: false,
+          .status(400)
+          .json({
+            success: false,
 
-          message:
-            'Sales order date is required',
-        });
+            message:
+              'Sales order date is required',
+          });
       }
+
 
       if (
         !Array.isArray(items) ||
         items.length === 0
       ) {
         return res
-            .status(400)
-            .json({
-          success: false,
+          .status(400)
+          .json({
+            success: false,
 
-          message:
-            'At least one item is required',
-        });
+            message:
+              'At least one item is required',
+          });
       }
+
 
       connection =
         await db.getConnection();
 
+
       await connection
-          .beginTransaction();
+        .beginTransaction();
+
 
       // --------------------------------------------------------
       // CUSTOMER
@@ -576,8 +740,11 @@ router.post(
 
           LIMIT 1
           `,
-          [parsedCustomerId]
+          [
+            parsedCustomerId,
+          ]
         );
+
 
       if (
         customerRows.length === 0
@@ -585,28 +752,33 @@ router.post(
         await connection.rollback();
 
         return res
-            .status(404)
-            .json({
-          success: false,
+          .status(404)
+          .json({
+            success: false,
 
-          message:
-            'Selected customer not found',
-        });
+            message:
+              'Selected customer not found',
+          });
       }
+
 
       const customer =
         customerRows[0];
+
 
       // --------------------------------------------------------
       // OPTIONAL ESTIMATE
       // --------------------------------------------------------
 
-      let finalEstimateId = null;
+      let finalEstimateId =
+        null;
+
       let finalEstimateNumber =
         estimateNumber &&
         estimateNumber.trim() !== ''
           ? estimateNumber.trim()
           : null;
+
 
       if (
         estimateId != null &&
@@ -614,6 +786,7 @@ router.post(
       ) {
         const parsedEstimateId =
           Number(estimateId);
+
 
         const [estimateRows] =
           await connection.query(
@@ -628,8 +801,11 @@ router.post(
 
             LIMIT 1
             `,
-            [parsedEstimateId]
+            [
+              parsedEstimateId,
+            ]
           );
+
 
         if (
           estimateRows.length === 0
@@ -637,22 +813,25 @@ router.post(
           await connection.rollback();
 
           return res
-              .status(404)
-              .json({
-            success: false,
+            .status(404)
+            .json({
+              success: false,
 
-            message:
-              'Selected estimate not found',
-          });
+              message:
+                'Selected estimate not found',
+            });
         }
+
 
         finalEstimateId =
           parsedEstimateId;
 
+
         finalEstimateNumber =
           estimateRows[0]
-              .estimate_number;
+            .estimate_number;
       }
+
 
       // --------------------------------------------------------
       // PREPARE ITEMS
@@ -660,13 +839,16 @@ router.post(
 
       const preparedItems = [];
 
-      let calculatedSubTotal = 0;
+      let calculatedSubTotal =
+        0;
+
 
       for (
         const line of items
       ) {
         const sourceType =
           line.sourceType;
+
 
         if (
           sourceType !== 'Item' &&
@@ -675,24 +857,27 @@ router.post(
           await connection.rollback();
 
           return res
-              .status(400)
-              .json({
-            success: false,
+            .status(400)
+            .json({
+              success: false,
 
-            message:
-              'Invalid item source type',
-          });
+              message:
+                'Invalid item source type',
+            });
         }
+
 
         const itemId =
           sourceType === 'Item'
             ? Number(line.itemId)
             : null;
 
+
         const partId =
           sourceType === 'Part'
             ? Number(line.partId)
             : null;
+
 
         if (
           sourceType === 'Item' &&
@@ -706,14 +891,15 @@ router.post(
           await connection.rollback();
 
           return res
-              .status(400)
-              .json({
-            success: false,
+            .status(400)
+            .json({
+              success: false,
 
-            message:
-              'Invalid item selected',
-          });
+              message:
+                'Invalid item selected',
+            });
         }
+
 
         if (
           sourceType === 'Part' &&
@@ -727,49 +913,59 @@ router.post(
           await connection.rollback();
 
           return res
-              .status(400)
-              .json({
-            success: false,
+            .status(400)
+            .json({
+              success: false,
 
-            message:
-              'Invalid part selected',
-          });
+              message:
+                'Invalid part selected',
+            });
         }
+
 
         const qty =
           toNumber(line.qty);
 
+
         const rate =
           toNumber(line.rate);
 
-        if (qty <= 0) {
+
+        if (
+          qty <= 0
+        ) {
           await connection.rollback();
 
           return res
-              .status(400)
-              .json({
-            success: false,
+            .status(400)
+            .json({
+              success: false,
 
-            message:
-              'Quantity must be greater than zero',
-          });
+              message:
+                'Quantity must be greater than zero',
+            });
         }
 
-        if (rate < 0) {
+
+        if (
+          rate < 0
+        ) {
           await connection.rollback();
 
           return res
-              .status(400)
-              .json({
-            success: false,
+            .status(400)
+            .json({
+              success: false,
 
-            message:
-              'Rate cannot be negative',
-          });
+              message:
+                'Rate cannot be negative',
+            });
         }
+
 
         let itemName = '';
         let description = '';
+
 
         // ------------------------------------------------------
         // ITEM
@@ -792,8 +988,11 @@ router.post(
 
               LIMIT 1
               `,
-              [itemId]
+              [
+                itemId,
+              ]
             );
+
 
           if (
             rows.length === 0
@@ -801,23 +1000,26 @@ router.post(
             await connection.rollback();
 
             return res
-                .status(404)
-                .json({
-              success: false,
+              .status(404)
+              .json({
+                success: false,
 
-              message:
-                'Selected item not found',
-            });
+                message:
+                  'Selected item not found',
+              });
           }
+
 
           itemName =
             rows[0].name ?? '';
+
 
           description =
             line.description ??
             rows[0].description ??
             '';
         }
+
 
         // ------------------------------------------------------
         // PART
@@ -840,8 +1042,11 @@ router.post(
 
               LIMIT 1
               `,
-              [partId]
+              [
+                partId,
+              ]
             );
+
 
           if (
             rows.length === 0
@@ -849,17 +1054,19 @@ router.post(
             await connection.rollback();
 
             return res
-                .status(404)
-                .json({
-              success: false,
+              .status(404)
+              .json({
+                success: false,
 
-              message:
-                'Selected part not found',
-            });
+                message:
+                  'Selected part not found',
+              });
           }
+
 
           itemName =
             rows[0].name ?? '';
+
 
           description =
             line.description ??
@@ -867,14 +1074,18 @@ router.post(
             '';
         }
 
+
         const amount =
           Number(
-            (qty * rate)
-                .toFixed(2)
+            (
+              qty * rate
+            ).toFixed(2)
           );
+
 
         calculatedSubTotal +=
           amount;
+
 
         preparedItems.push({
           sourceType,
@@ -898,14 +1109,17 @@ router.post(
         });
       }
 
+
       calculatedSubTotal =
         Number(
           calculatedSubTotal
-              .toFixed(2)
+            .toFixed(2)
         );
+
 
       const calculatedTotal =
         calculatedSubTotal;
+
 
       // --------------------------------------------------------
       // INSERT SALES ORDER
@@ -964,7 +1178,8 @@ router.post(
             date,
 
             expectedShipmentDate &&
-            expectedShipmentDate.trim() !== ''
+            expectedShipmentDate
+              .trim() !== ''
               ? expectedShipmentDate
               : null,
 
@@ -977,8 +1192,10 @@ router.post(
               : null,
 
             termsAndConditions &&
-            termsAndConditions.trim() !== ''
-              ? termsAndConditions.trim()
+            termsAndConditions
+              .trim() !== ''
+              ? termsAndConditions
+                  .trim()
               : null,
 
             'Draft',
@@ -986,8 +1203,10 @@ router.post(
           ]
         );
 
+
       const salesOrderId =
         orderResult.insertId;
+
 
       // --------------------------------------------------------
       // INSERT ITEMS
@@ -1038,7 +1257,9 @@ router.post(
         );
       }
 
+
       await connection.commit();
+
 
       // --------------------------------------------------------
       // RETURN SAVED ORDER
@@ -1087,8 +1308,11 @@ router.post(
 
           LIMIT 1
           `,
-          [salesOrderId]
+          [
+            salesOrderId,
+          ]
         );
+
 
       const [savedItems] =
         await db.query(
@@ -1111,24 +1335,29 @@ router.post(
 
           ORDER BY id ASC
           `,
-          [salesOrderId]
+          [
+            salesOrderId,
+          ]
         );
 
-      res.status(201).json({
-        success: true,
 
-        message:
-          'Sales order created successfully',
+      return res
+        .status(201)
+        .json({
+          success: true,
 
-        data:
-          mapSalesOrder(
-            savedRows[0],
+          message:
+            'Sales order created successfully',
 
-            savedItems.map(
-              mapSalesOrderItem
+          data:
+            mapSalesOrder(
+              savedRows[0],
+
+              savedItems.map(
+                mapSalesOrderItem
+              ),
             ),
-          ),
-      });
+        });
     } catch (error) {
       if (connection) {
         try {
@@ -1136,34 +1365,39 @@ router.post(
         } catch (_) {}
       }
 
+
       console.error(
         'Create sales order error:',
         error
       );
+
 
       if (
         error.code ===
         'ER_DUP_ENTRY'
       ) {
         return res
-            .status(409)
-            .json({
+          .status(409)
+          .json({
+            success: false,
+
+            message:
+              'Sales order number already exists',
+          });
+      }
+
+
+      return res
+        .status(500)
+        .json({
           success: false,
 
           message:
-            'Sales order number already exists',
+            'Failed to create sales order',
+
+          error:
+            error.message,
         });
-      }
-
-      res.status(500).json({
-        success: false,
-
-        message:
-          'Failed to create sales order',
-
-        error:
-          error.message,
-      });
     } finally {
       if (connection) {
         connection.release();
@@ -1171,6 +1405,7 @@ router.post(
     }
   }
 );
+
 
 // ============================================================
 // UPDATE SALES ORDER STATUS
@@ -1182,10 +1417,13 @@ router.put(
   '/:id/status',
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } =
+        req.params;
+
 
       const { status } =
         req.body;
+
 
       if (
         !ALLOWED_STATUSES.includes(
@@ -1193,14 +1431,15 @@ router.put(
         )
       ) {
         return res
-            .status(400)
-            .json({
-          success: false,
+          .status(400)
+          .json({
+            success: false,
 
-          message:
-            'Invalid sales order status',
-        });
+            message:
+              'Invalid sales order status',
+          });
       }
+
 
       const [result] =
         await db.query(
@@ -1217,43 +1456,51 @@ router.put(
           ]
         );
 
+
       if (
         result.affectedRows === 0
       ) {
         return res
-            .status(404)
-            .json({
-          success: false,
+          .status(404)
+          .json({
+            success: false,
 
-          message:
-            'Sales order not found',
-        });
+            message:
+              'Sales order not found',
+          });
       }
 
-      res.status(200).json({
-        success: true,
 
-        message:
-          'Sales order status updated successfully',
-      });
+      return res
+        .status(200)
+        .json({
+          success: true,
+
+          message:
+            'Sales order status updated successfully',
+        });
     } catch (error) {
       console.error(
         'Update sales order status error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
 
-        message:
-          'Failed to update sales order status',
+      return res
+        .status(500)
+        .json({
+          success: false,
 
-        error:
-          error.message,
-      });
+          message:
+            'Failed to update sales order status',
+
+          error:
+            error.message,
+        });
     }
   }
 );
+
 
 // ============================================================
 // UPDATE PURCHASE STATUS
@@ -1265,26 +1512,31 @@ router.put(
   '/:id/purchase-status',
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } =
+        req.params;
 
-      const { purchaseStatus } =
-        req.body;
+
+      const {
+        purchaseStatus,
+      } = req.body;
+
 
       if (
         !ALLOWED_PURCHASE_STATUSES
-            .includes(
-          purchaseStatus
-        )
+          .includes(
+            purchaseStatus
+          )
       ) {
         return res
-            .status(400)
-            .json({
-          success: false,
+          .status(400)
+          .json({
+            success: false,
 
-          message:
-            'Invalid purchase status',
-        });
+            message:
+              'Invalid purchase status',
+          });
       }
+
 
       const [result] =
         await db.query(
@@ -1301,43 +1553,51 @@ router.put(
           ]
         );
 
+
       if (
         result.affectedRows === 0
       ) {
         return res
-            .status(404)
-            .json({
-          success: false,
+          .status(404)
+          .json({
+            success: false,
 
-          message:
-            'Sales order not found',
-        });
+            message:
+              'Sales order not found',
+          });
       }
 
-      res.status(200).json({
-        success: true,
 
-        message:
-          'Purchase status updated successfully',
-      });
+      return res
+        .status(200)
+        .json({
+          success: true,
+
+          message:
+            'Purchase status updated successfully',
+        });
     } catch (error) {
       console.error(
         'Update purchase status error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
 
-        message:
-          'Failed to update purchase status',
+      return res
+        .status(500)
+        .json({
+          success: false,
 
-        error:
-          error.message,
-      });
+          message:
+            'Failed to update purchase status',
+
+          error:
+            error.message,
+        });
     }
   }
 );
+
 
 // ============================================================
 // DELETE SALES ORDER
@@ -1349,7 +1609,9 @@ router.delete(
   '/:id',
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } =
+        req.params;
+
 
       const [result] =
         await db.query(
@@ -1358,45 +1620,55 @@ router.delete(
 
           WHERE id = ?
           `,
-          [id]
+          [
+            id,
+          ]
         );
+
 
       if (
         result.affectedRows === 0
       ) {
         return res
-            .status(404)
-            .json({
-          success: false,
+          .status(404)
+          .json({
+            success: false,
 
-          message:
-            'Sales order not found',
-        });
+            message:
+              'Sales order not found',
+          });
       }
 
-      res.status(200).json({
-        success: true,
 
-        message:
-          'Sales order deleted successfully',
-      });
+      return res
+        .status(200)
+        .json({
+          success: true,
+
+          message:
+            'Sales order deleted successfully',
+        });
     } catch (error) {
       console.error(
         'Delete sales order error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
 
-        message:
-          'Failed to delete sales order',
+      return res
+        .status(500)
+        .json({
+          success: false,
 
-        error:
-          error.message,
-      });
+          message:
+            'Failed to delete sales order',
+
+          error:
+            error.message,
+        });
     }
   }
 );
+
 
 module.exports = router;
