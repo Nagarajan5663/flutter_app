@@ -11,18 +11,15 @@ class CustomersPage extends StatefulWidget {
   const CustomersPage({super.key});
 
   @override
-  State<CustomersPage> createState() =>
-      _CustomersPageState();
+  State<CustomersPage> createState() => _CustomersPageState();
 }
 
-class _CustomersPageState
-    extends State<CustomersPage> {
+class _CustomersPageState extends State<CustomersPage> {
   // ============================================================
   // REAL API REPOSITORY
   // ============================================================
 
-  final CustomerRepository _repository =
-      ApiCustomerRepository();
+  final CustomerRepository _repository = ApiCustomerRepository();
 
   // ============================================================
   // STATE
@@ -38,14 +35,11 @@ class _CustomersPageState
   // FILTER CONTROLLERS
   // ============================================================
 
-  final cityController =
-      TextEditingController();
+  final cityController = TextEditingController();
 
-  final stateController =
-      TextEditingController();
+  final stateController = TextEditingController();
 
-  final countryController =
-      TextEditingController();
+  final countryController = TextEditingController();
 
   String statusFilter = 'All';
 
@@ -99,8 +93,7 @@ class _CustomersPageState
     }
 
     try {
-      final result =
-          await _repository.getCustomers(
+      final result = await _repository.getCustomers(
         filter: _currentFilter,
       );
 
@@ -117,8 +110,7 @@ class _CustomersPageState
       setState(() {
         _customers = [];
         _isLoading = false;
-        _errorMessage =
-            error.toString();
+        _errorMessage = error.toString();
       });
     }
   }
@@ -128,18 +120,14 @@ class _CustomersPageState
   // ============================================================
 
   Future<void> _openAddCustomer() async {
-    final CustomerModel? customer =
-        await showDialog<CustomerModel>(
+    final CustomerModel? customer = await showDialog<CustomerModel>(
       context: context,
-      barrierColor:
-          const Color(0x9A12202C),
+      barrierColor: const Color(0x9A12202C),
       barrierDismissible: false,
-      builder: (_) =>
-          const AddCustomerDialog(),
+      builder: (_) => const AddCustomerDialog(),
     );
 
-    if (!mounted ||
-        customer == null) {
+    if (!mounted || customer == null) {
       return;
     }
 
@@ -152,27 +140,23 @@ class _CustomersPageState
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
             'Customer added successfully',
           ),
-          backgroundColor:
-              Color(0xFF1E7B34),
+          backgroundColor: Color(0xFF1E7B34),
         ),
       );
     } catch (error) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             'Failed to add customer: $error',
           ),
-          backgroundColor:
-              const Color(0xFFAB2A2A),
+          backgroundColor: const Color(0xFFAB2A2A),
         ),
       );
     }
@@ -189,13 +173,11 @@ class _CustomersPageState
       return;
     }
 
-    final bool? confirmed =
-        await showDialog<bool>(
+    final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title:
-              const Text('Delete Customer'),
+          title: const Text('Delete Customer'),
           content: Text(
             'Are you sure you want to delete "${customer.vendorName}"?',
           ),
@@ -207,8 +189,7 @@ class _CustomersPageState
                   false,
                 );
               },
-              child:
-                  const Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
@@ -217,17 +198,13 @@ class _CustomersPageState
                   true,
                 );
               },
-              style:
-                  ElevatedButton.styleFrom(
-                backgroundColor:
-                    const Color(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(
                   0xFFAB2A2A,
                 ),
-                foregroundColor:
-                    Colors.white,
+                foregroundColor: Colors.white,
               ),
-              child:
-                  const Text('Delete'),
+              child: const Text('Delete'),
             ),
           ],
         );
@@ -247,8 +224,7 @@ class _CustomersPageState
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
             'Customer deleted successfully',
@@ -258,14 +234,12 @@ class _CustomersPageState
     } catch (error) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             'Failed to delete customer: $error',
           ),
-          backgroundColor:
-              const Color(0xFFAB2A2A),
+          backgroundColor: const Color(0xFFAB2A2A),
         ),
       );
     }
@@ -295,11 +269,9 @@ class _CustomersPageState
   Widget build(BuildContext context) {
     return SalesGlassPageFrame(
       child: SingleChildScrollView(
-        padding:
-            const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ==================================================
             // PAGE HEADER
@@ -312,26 +284,19 @@ class _CustomersPageState
                     'All Customers',
                     style: TextStyle(
                       fontSize: 28,
-                      fontWeight:
-                          FontWeight.bold,
-                      color:
-                          Color(0xFF123456),
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF123456),
                     ),
                   ),
                 ),
 
                 // Refresh
                 IconButton(
-                  onPressed:
-                      _isLoading
-                          ? null
-                          : _loadCustomers,
-                  tooltip:
-                      'Refresh Customers',
+                  onPressed: _isLoading ? null : _loadCustomers,
+                  tooltip: 'Refresh Customers',
                   icon: const Icon(
                     Icons.refresh,
-                    color:
-                        Color(0xFF123456),
+                    color: Color(0xFF123456),
                   ),
                 ),
 
@@ -339,8 +304,7 @@ class _CustomersPageState
 
                 // Add Customer
                 ElevatedButton.icon(
-                  onPressed:
-                      _openAddCustomer,
+                  onPressed: _openAddCustomer,
                   icon: const Icon(
                     Icons.add,
                     size: 20,
@@ -348,26 +312,17 @@ class _CustomersPageState
                   label: const Text(
                     'New Customer',
                   ),
-                  style:
-                      ElevatedButton
-                          .styleFrom(
-                    backgroundColor:
-                        const Color(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(
                       0xFF123456,
                     ),
-                    foregroundColor:
-                        Colors.white,
-                    padding:
-                        const EdgeInsets
-                            .symmetric(
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 20,
                       vertical: 15,
                     ),
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius
-                              .circular(7),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(7),
                     ),
                   ),
                 ),
@@ -382,18 +337,14 @@ class _CustomersPageState
 
             Container(
               width: double.infinity,
-              padding:
-                  const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color:
-                    const Color(0x4FFFFFFF),
-                borderRadius:
-                    BorderRadius.circular(
+                color: const Color(0x4FFFFFFF),
+                borderRadius: BorderRadius.circular(
                   18,
                 ),
                 border: Border.all(
-                  color:
-                      const Color(
+                  color: const Color(
                     0xC7FFFFFF,
                   ),
                 ),
@@ -401,82 +352,61 @@ class _CustomersPageState
               child: Wrap(
                 spacing: 16,
                 runSpacing: 16,
-                crossAxisAlignment:
-                    WrapCrossAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.end,
                 children: [
                   // Status
                   _filterField(
                     label: 'Status',
                     child: Container(
                       width: 160,
-                      padding:
-                          const EdgeInsets
-                              .symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                       ),
-                      decoration:
-                          BoxDecoration(
-                        color:
-                            const Color(
+                      decoration: BoxDecoration(
+                        color: const Color(
                           0x6EFFFFFF,
                         ),
-                        borderRadius:
-                            BorderRadius
-                                .circular(
+                        borderRadius: BorderRadius.circular(
                           11,
                         ),
-                        border:
-                            Border.all(
-                          color:
-                              const Color(
+                        border: Border.all(
+                          color: const Color(
                             0xC7FFFFFF,
                           ),
                         ),
                       ),
-                      child:
-                          DropdownButtonHideUnderline(
-                        child:
-                            DropdownButton<
-                                String>(
-                          value:
-                              statusFilter,
-                          style:
-                              const TextStyle(
-                            color:
-                                Colors.black,
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: statusFilter,
+                          style: const TextStyle(
+                            color: Colors.black,
                           ),
                           isExpanded: true,
                           items: const [
                             DropdownMenuItem(
                               value: 'All',
-                              child:
-                                  Text('All'),
+                              child: Text('All'),
                             ),
                             DropdownMenuItem(
-                              value:
-                                  'Active',
+                              value: 'Active',
                               child: Text(
                                 'Active',
                               ),
                             ),
                             DropdownMenuItem(
-                              value:
-                                  'Inactive',
+                              value: 'Inactive',
                               child: Text(
                                 'Inactive',
                               ),
                             ),
                           ],
-                          onChanged:
-                              (value) {
-                            if (value ==
-                                null) {
+                          onChanged: (value) {
+                            if (value == null) {
                               return;
                             }
 
                             setState(() {
-                              statusFilter =
-                                  value;
+                              statusFilter = value;
                             });
                           },
                         ),
@@ -489,8 +419,7 @@ class _CustomersPageState
                     label: 'City',
                     child: SizedBox(
                       width: 160,
-                      child:
-                          _filterTextField(
+                      child: _filterTextField(
                         cityController,
                       ),
                     ),
@@ -501,8 +430,7 @@ class _CustomersPageState
                     label: 'State',
                     child: SizedBox(
                       width: 160,
-                      child:
-                          _filterTextField(
+                      child: _filterTextField(
                         stateController,
                       ),
                     ),
@@ -513,8 +441,7 @@ class _CustomersPageState
                     label: 'Country',
                     child: SizedBox(
                       width: 160,
-                      child:
-                          _filterTextField(
+                      child: _filterTextField(
                         countryController,
                       ),
                     ),
@@ -522,38 +449,25 @@ class _CustomersPageState
 
                   // Filter Button
                   ElevatedButton.icon(
-                    onPressed:
-                        _isLoading
-                            ? null
-                            : _loadCustomers,
+                    onPressed: _isLoading ? null : _loadCustomers,
                     icon: const Icon(
                       Icons.filter_alt,
                       size: 18,
                     ),
-                    label:
-                        const Text(
+                    label: const Text(
                       'Filter',
                     ),
-                    style:
-                        ElevatedButton
-                            .styleFrom(
-                      backgroundColor:
-                          const Color(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(
                         0xFF2E7DD1,
                       ),
-                      foregroundColor:
-                          Colors.white,
-                      padding:
-                          const EdgeInsets
-                              .symmetric(
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 22,
                         vertical: 15,
                       ),
-                      shape:
-                          RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius
-                                .circular(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
                           7,
                         ),
                       ),
@@ -562,40 +476,27 @@ class _CustomersPageState
 
                   // Clear Button
                   ElevatedButton.icon(
-                    onPressed:
-                        _isLoading
-                            ? null
-                            : _clearFilters,
+                    onPressed: _isLoading ? null : _clearFilters,
                     icon: const Icon(
                       Icons.clear,
                       size: 18,
                     ),
-                    label:
-                        const Text(
+                    label: const Text(
                       'Clear',
                     ),
-                    style:
-                        ElevatedButton
-                            .styleFrom(
-                      backgroundColor:
-                          const Color(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(
                         0xFFE2E5E9,
                       ),
-                      foregroundColor:
-                          const Color(
+                      foregroundColor: const Color(
                         0xFF3D4147,
                       ),
-                      padding:
-                          const EdgeInsets
-                              .symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 22,
                         vertical: 15,
                       ),
-                      shape:
-                          RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius
-                                .circular(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
                           7,
                         ),
                       ),
@@ -614,26 +515,19 @@ class _CustomersPageState
             if (_errorMessage != null)
               Container(
                 width: double.infinity,
-                margin:
-                    const EdgeInsets.only(
+                margin: const EdgeInsets.only(
                   bottom: 16,
                 ),
-                padding:
-                    const EdgeInsets.all(
+                padding: const EdgeInsets.all(
                   16,
                 ),
-                decoration:
-                    BoxDecoration(
-                  color:
-                      const Color(
+                decoration: BoxDecoration(
+                  color: const Color(
                     0xFFFFECEC,
                   ),
-                  borderRadius:
-                      BorderRadius
-                          .circular(10),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color:
-                        const Color(
+                    color: const Color(
                       0xFFFFB8B8,
                     ),
                   ),
@@ -642,8 +536,7 @@ class _CustomersPageState
                   children: [
                     const Icon(
                       Icons.error_outline,
-                      color:
-                          Color(
+                      color: Color(
                         0xFFAB2A2A,
                       ),
                     ),
@@ -653,20 +546,16 @@ class _CustomersPageState
                     Expanded(
                       child: Text(
                         _errorMessage!,
-                        style:
-                            const TextStyle(
-                          color:
-                              Color(
+                        style: const TextStyle(
+                          color: Color(
                             0xFFAB2A2A,
                           ),
                         ),
                       ),
                     ),
                     TextButton(
-                      onPressed:
-                          _loadCustomers,
-                      child:
-                          const Text(
+                      onPressed: _loadCustomers,
+                      child: const Text(
                         'Retry',
                       ),
                     ),
@@ -681,382 +570,290 @@ class _CustomersPageState
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color:
-                    const Color(
+                color: const Color(
                   0x4FFFFFFF,
                 ),
-                borderRadius:
-                    BorderRadius.circular(
+                borderRadius: BorderRadius.circular(
                   18,
                 ),
                 border: Border.all(
-                  color:
-                      const Color(
+                  color: const Color(
                     0xC7FFFFFF,
                   ),
                 ),
               ),
-              child:
-                  SingleChildScrollView(
-                scrollDirection:
-                    Axis.horizontal,
-                child: SizedBox(
-                  width: 900,
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
-                    children: [
-                      // ================================
-                      // TABLE HEADER
-                      // ================================
+              child: SizedBox(
+                width: double.infinity,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ================================
+                    // TABLE HEADER
+                    // ================================
 
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 18,
+                      ),
+                      decoration: const BoxDecoration(
+                        color: Color(
+                          0xFFF7F8FA,
+                        ),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(
+                            14,
+                          ),
+                        ),
+                      ),
+                      child: const Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: _HeaderText(
+                              'CUSTOMER NAME',
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: _HeaderText(
+                              'COMPANY NAME',
+                            ),
+                          ),
+                          Expanded(
+                            flex: 5,
+                            child: _HeaderText(
+                              'EMAIL',
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: _HeaderText(
+                              'PHONE',
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: _HeaderText(
+                              'STATUS',
+                            ),
+                          ),
+                          Expanded(
+                            flex: 1,
+                            child: _HeaderText(
+                              'ACTIONS',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const Divider(
+                      height: 1,
+                      color: Color(
+                        0xFFD9DEE5,
+                      ),
+                    ),
+
+                    // ================================
+                    // LOADING
+                    // ================================
+
+                    if (_isLoading)
+                      const SizedBox(
+                        width: double.infinity,
+                        height: 160,
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+
+                    // ================================
+                    // EMPTY
+                    // ================================
+
+                    else if (_customers.isEmpty)
                       Container(
-                        width: 900,
-                        padding:
-                            const EdgeInsets
-                                .symmetric(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 18,
-                          vertical: 18,
+                          vertical: 40,
                         ),
-                        decoration:
-                            const BoxDecoration(
-                          color:
-                              Color(
-                            0xFFF7F8FA,
-                          ),
-                          borderRadius:
-                              BorderRadius
-                                  .vertical(
-                            top:
-                                Radius
-                                    .circular(
-                              14,
-                            ),
-                          ),
-                        ),
-                        child:
-                            const Row(
+                        child: Column(
                           children: [
-                            Expanded(
-                              flex: 2,
-                              child:
-                                  _HeaderText(
-                                'CUSTOMER NAME',
+                            const Icon(
+                              Icons.people_outline,
+                              size: 42,
+                              color: Color(
+                                0xFF8A949E,
                               ),
                             ),
-                            Expanded(
-                              flex: 2,
-                              child:
-                                  _HeaderText(
-                                'COMPANY NAME',
+                            const SizedBox(
+                              height: 12,
+                            ),
+                            const Text(
+                              'No customers found',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                                color: Color(
+                                  0xFF42474D,
+                                ),
                               ),
                             ),
-                            Expanded(
-                              flex: 3,
-                              child:
-                                  _HeaderText(
-                                'EMAIL',
-                              ),
+                            const SizedBox(
+                              height: 6,
                             ),
-                            Expanded(
-                              flex: 2,
-                              child:
-                                  _HeaderText(
-                                'PHONE',
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child:
-                                  _HeaderText(
-                                'STATUS',
-                              ),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child:
-                                  _HeaderText(
-                                'ACTIONS',
+                            const Text(
+                              'Click "+ New Customer" to add your first customer.',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(
+                                  0xFF6F7881,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
+                      )
 
-                      const Divider(
-                        height: 1,
-                        color:
-                            Color(
-                          0xFFD9DEE5,
-                        ),
-                      ),
+                    // ================================
+                    // CUSTOMER ROWS
+                    // ================================
 
-                      // ================================
-                      // LOADING
-                      // ================================
-
-                      if (_isLoading)
-                        const SizedBox(
-                          width: 900,
-                          height: 160,
-                          child: Center(
-                            child:
-                                CircularProgressIndicator(),
-                          ),
-                        )
-
-                      // ================================
-                      // EMPTY
-                      // ================================
-
-                      else if (_customers
-                          .isEmpty)
-                        Container(
-                          width: 900,
-                          padding:
-                              const EdgeInsets
-                                  .symmetric(
-                            horizontal: 18,
-                            vertical: 40,
-                          ),
-                          child: Column(
+                    else
+                      ..._customers.map(
+                        (customer) {
+                          return Column(
                             children: [
-                              const Icon(
-                                Icons
-                                    .people_outline,
-                                size: 42,
-                                color:
-                                    Color(
-                                  0xFF8A949E,
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 16,
+                                ),
+                                child: Row(
+                                  children: [
+                                    // Customer Name
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        customer.vendorName,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(
+                                            0xFF263238,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+
+                                    // Company
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        customer.companyName.isEmpty
+                                            ? '-'
+                                            : customer.companyName,
+                                      ),
+                                    ),
+
+                                    // Email
+                                    Expanded(
+                                      flex: 5,
+                                      child: Text(
+                                        customer.email.isEmpty
+                                            ? '-'
+                                            : customer.email,
+                                        maxLines: 1,
+                                        softWrap: false,
+                                      ),
+                                    ),
+
+                                    // Phone
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        customer.phone.isEmpty
+                                            ? '-'
+                                            : customer.phone,
+                                      ),
+                                    ),
+
+                                    // Status
+                                    Expanded(
+                                      flex: 2,
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: customer.status == 'Active'
+                                                ? const Color(
+                                                    0xFFE3F6E8,
+                                                  )
+                                                : const Color(
+                                                    0xFFF4E3E3,
+                                                  ),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            customer.status,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: customer.status == 'Active'
+                                                  ? const Color(
+                                                      0xFF1E7B34,
+                                                    )
+                                                  : const Color(
+                                                      0xFFAB2A2A,
+                                                    ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+
+                                    // Delete
+                                    Expanded(
+                                      flex: 1,
+                                      child: IconButton(
+                                        onPressed: () {
+                                          _deleteCustomer(
+                                            customer,
+                                          );
+                                        },
+                                        icon: const Icon(
+                                          Icons.delete_outline,
+                                          color: Color(
+                                            0xFFAB2A2A,
+                                          ),
+                                          size: 20,
+                                        ),
+                                        tooltip: 'Delete customer',
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              const Text(
-                                'No customers found',
-                                style:
-                                    TextStyle(
-                                  fontSize:
-                                      17,
-                                  fontWeight:
-                                      FontWeight
-                                          .w600,
-                                  color:
-                                      Color(
-                                    0xFF42474D,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(
-                                height: 6,
-                              ),
-                              const Text(
-                                'Click "+ New Customer" to add your first customer.',
-                                style:
-                                    TextStyle(
-                                  fontSize:
-                                      14,
-                                  color:
-                                      Color(
-                                    0xFF6F7881,
-                                  ),
+                              const Divider(
+                                height: 1,
+                                color: Color(
+                                  0xFFEDEFF2,
                                 ),
                               ),
                             ],
-                          ),
-                        )
-
-                      // ================================
-                      // CUSTOMER ROWS
-                      // ================================
-
-                      else
-                        ..._customers.map(
-                          (customer) {
-                            return Column(
-                              children: [
-                                Container(
-                                  width:
-                                      900,
-                                  padding:
-                                      const EdgeInsets
-                                          .symmetric(
-                                    horizontal:
-                                        18,
-                                    vertical:
-                                        16,
-                                  ),
-                                  child:
-                                      Row(
-                                    children: [
-                                      // Customer Name
-                                      Expanded(
-                                        flex:
-                                            2,
-                                        child:
-                                            Text(
-                                          customer
-                                              .vendorName,
-                                          style:
-                                              const TextStyle(
-                                            fontWeight:
-                                                FontWeight.w600,
-                                            color:
-                                                Color(
-                                              0xFF263238,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-
-                                      // Company
-                                      Expanded(
-                                        flex:
-                                            2,
-                                        child:
-                                            Text(
-                                          customer
-                                                  .companyName
-                                                  .isEmpty
-                                              ? '-'
-                                              : customer
-                                                  .companyName,
-                                        ),
-                                      ),
-
-                                      // Email
-                                      Expanded(
-                                        flex:
-                                            3,
-                                        child:
-                                            Text(
-                                          customer
-                                                  .email
-                                                  .isEmpty
-                                              ? '-'
-                                              : customer
-                                                  .email,
-                                        ),
-                                      ),
-
-                                      // Phone
-                                      Expanded(
-                                        flex:
-                                            2,
-                                        child:
-                                            Text(
-                                          customer
-                                                  .phone
-                                                  .isEmpty
-                                              ? '-'
-                                              : customer
-                                                  .phone,
-                                        ),
-                                      ),
-
-                                      // Status
-                                      Expanded(
-                                        flex:
-                                            2,
-                                        child:
-                                            Align(
-                                          alignment:
-                                              Alignment.centerLeft,
-                                          child:
-                                              Container(
-                                            padding:
-                                                const EdgeInsets
-                                                    .symmetric(
-                                              horizontal:
-                                                  10,
-                                              vertical:
-                                                  4,
-                                            ),
-                                            decoration:
-                                                BoxDecoration(
-                                              color: customer.status ==
-                                                      'Active'
-                                                  ? const Color(
-                                                      0xFFE3F6E8,
-                                                    )
-                                                  : const Color(
-                                                      0xFFF4E3E3,
-                                                    ),
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                20,
-                                              ),
-                                            ),
-                                            child:
-                                                Text(
-                                              customer
-                                                  .status,
-                                              style:
-                                                  TextStyle(
-                                                fontSize:
-                                                    12,
-                                                fontWeight:
-                                                    FontWeight.w600,
-                                                color: customer.status ==
-                                                        'Active'
-                                                    ? const Color(
-                                                        0xFF1E7B34,
-                                                      )
-                                                    : const Color(
-                                                        0xFFAB2A2A,
-                                                      ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-
-                                      // Delete
-                                      Expanded(
-                                        flex:
-                                            1,
-                                        child:
-                                            IconButton(
-                                          onPressed:
-                                              () {
-                                            _deleteCustomer(
-                                              customer,
-                                            );
-                                          },
-                                          icon:
-                                              const Icon(
-                                            Icons
-                                                .delete_outline,
-                                            color:
-                                                Color(
-                                              0xFFAB2A2A,
-                                            ),
-                                            size:
-                                                20,
-                                          ),
-                                          tooltip:
-                                              'Delete customer',
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                const Divider(
-                                  height: 1,
-                                  color:
-                                      Color(
-                                    0xFFEDEFF2,
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                    ],
-                  ),
+                          );
+                        },
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -1077,18 +874,14 @@ class _CustomersPageState
     return SizedBox(
       width: 160,
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style:
-                const TextStyle(
+            style: const TextStyle(
               fontSize: 13,
-              fontWeight:
-                  FontWeight.w600,
-              color:
-                  Color(0xFF5B5B5B),
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF5B5B5B),
             ),
           ),
           const SizedBox(height: 6),
@@ -1113,54 +906,39 @@ class _CustomersPageState
       onSubmitted: (_) {
         _loadCustomers();
       },
-      decoration:
-          InputDecoration(
-        hintStyle:
-            const TextStyle(
+      decoration: InputDecoration(
+        hintStyle: const TextStyle(
           color: Colors.black,
         ),
         filled: true,
-        fillColor:
-            const Color(
+        fillColor: const Color(
           0x6EFFFFFF,
         ),
-        contentPadding:
-            const EdgeInsets
-                .symmetric(
+        contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 12,
         ),
-        border:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(
             7,
           ),
         ),
-        enabledBorder:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(
             11,
           ),
-          borderSide:
-              const BorderSide(
-            color:
-                Color(
+          borderSide: const BorderSide(
+            color: Color(
               0xFFD9DEE5,
             ),
           ),
         ),
-        focusedBorder:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(
             11,
           ),
-          borderSide:
-              const BorderSide(
-            color:
-                Color(
+          borderSide: const BorderSide(
+            color: Color(
               0xFF123456,
             ),
             width: 2,
@@ -1175,8 +953,7 @@ class _CustomersPageState
 // TABLE HEADER TEXT
 // ============================================================
 
-class _HeaderText
-    extends StatelessWidget {
+class _HeaderText extends StatelessWidget {
   final String text;
 
   const _HeaderText(this.text);
@@ -1187,13 +964,10 @@ class _HeaderText
   ) {
     return Text(
       text,
-      style:
-          const TextStyle(
+      style: const TextStyle(
         fontSize: 13,
-        fontWeight:
-            FontWeight.bold,
-        color:
-            Color(
+        fontWeight: FontWeight.bold,
+        color: Color(
           0xFF5B5B5B,
         ),
       ),
