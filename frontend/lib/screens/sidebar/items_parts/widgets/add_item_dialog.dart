@@ -1,59 +1,79 @@
 import 'package:flutter/material.dart';
 
+import '../item_model.dart';
 import 'glass_widgets.dart';
 
 class AddItemDialog extends StatefulWidget {
+  final ItemModel? initialItem;
+
   const AddItemDialog({
     super.key,
+    this.initialItem,
   });
 
   @override
-  State<AddItemDialog> createState() =>
-      _AddItemDialogState();
+  State<AddItemDialog> createState() => _AddItemDialogState();
 }
 
-class _AddItemDialogState
-    extends State<AddItemDialog> {
-  final GlobalKey<FormState> _formKey =
-      GlobalKey<FormState>();
+class _AddItemDialogState extends State<AddItemDialog> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey _taxBoxKey = GlobalKey();
 
-  final GlobalKey _taxBoxKey =
-      GlobalKey();
-
-  final TextEditingController nameController =
-      TextEditingController();
-
-  final TextEditingController skuController =
-      TextEditingController();
-
-  final TextEditingController
-      purchasePriceController =
-      TextEditingController();
-
-  final TextEditingController
-      salesPriceController =
-      TextEditingController();
-
-  final TextEditingController
-      descriptionController =
-      TextEditingController();
-
-  // ============================================================
-  // TAX OPTIONS
-  // ============================================================
+  late final TextEditingController nameController;
+  late final TextEditingController skuController;
+  late final TextEditingController purchasePriceController;
+  late final TextEditingController salesPriceController;
+  late final TextEditingController descriptionController;
 
   final List<String> taxOptions = [
     'GST0 (Tax Group)',
+    'GST5 (Tax Group)',
     'GST12 (Tax Group)',
     'GST18 (Tax Group)',
-    'GST5 (Tax Group)',
     'IGST0',
+    'IGST5',
     'IGST12',
     'IGST18',
-    'IGST5',
   ];
 
   String? selectedTax;
+
+  bool get isEditing => widget.initialItem != null;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final item = widget.initialItem;
+
+    nameController = TextEditingController(
+      text: item?.name ?? '',
+    );
+
+    skuController = TextEditingController(
+      text: item?.sku ?? '',
+    );
+
+    purchasePriceController = TextEditingController(
+      text: item?.purchasePrice ?? '',
+    );
+
+    salesPriceController = TextEditingController(
+      text: item?.salesPrice ?? '',
+    );
+
+    descriptionController = TextEditingController(
+      text: item?.description ?? '',
+    );
+
+    if (item != null && item.tax.trim().isNotEmpty) {
+      selectedTax = item.tax;
+
+      if (!taxOptions.contains(item.tax)) {
+        taxOptions.add(item.tax);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -66,224 +86,156 @@ class _AddItemDialogState
     super.dispose();
   }
 
-  // ============================================================
-  // OPEN TAX DROPDOWN
-  // ============================================================
+  String? _validatePrice(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter price';
+    }
+
+    final number = double.tryParse(value.trim());
+
+    if (number == null) {
+      return 'Enter a valid number';
+    }
+
+    if (number < 0) {
+      return 'Price cannot be negative';
+    }
+
+    return null;
+  }
 
   Future<void> _openTaxDropdown() async {
     final RenderBox? renderBox =
-        _taxBoxKey.currentContext
-            ?.findRenderObject() as RenderBox?;
+        _taxBoxKey.currentContext?.findRenderObject() as RenderBox?;
 
     if (renderBox == null) {
       return;
     }
 
-    final Offset position =
-        renderBox.localToGlobal(
+    final Offset position = renderBox.localToGlobal(
       Offset.zero,
     );
 
     final Size size = renderBox.size;
-
-    final Size screenSize =
-        MediaQuery.of(context).size;
+    final Size screenSize = MediaQuery.of(context).size;
 
     const double itemHeight = 46;
 
-    final double menuHeight =
-        ((taxOptions.length + 1) *
-                itemHeight) +
-            10;
+    final double estimatedHeight =
+        ((taxOptions.length + 1) * itemHeight) + 10;
 
-    double menuTop =
-        position.dy + size.height + 6;
+    final double menuHeight = estimatedHeight > 350
+        ? 350
+        : estimatedHeight;
 
-    // If not enough space below,
-    // open menu above.
-    if (menuTop + menuHeight >
-        screenSize.height - 15) {
-      menuTop =
-          position.dy - menuHeight - 6;
+    double menuTop = position.dy + size.height + 6;
+
+    if (menuTop + menuHeight > screenSize.height - 15) {
+      menuTop = position.dy - menuHeight - 6;
     }
 
     if (menuTop < 10) {
       menuTop = 10;
     }
 
-    final double menuLeft =
-        position.dx;
-
-    final double menuRight =
-        screenSize.width -
-            (position.dx + size.width);
-
-    final String? result =
-        await showMenu<String>(
+    final String? result = await showMenu<String>(
       context: context,
-
-      color: const Color(0xFF223A52)
-          .withValues(
-        alpha: 0.97,
+      color: const Color(0xFF223A52).withValues(
+        alpha: 0.98,
       ),
-
       elevation: 20,
-
-      shadowColor: Colors.black
-          .withValues(
+      shadowColor: Colors.black.withValues(
         alpha: 0.35,
       ),
-
       shape: RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14),
         side: BorderSide(
-          color: Colors.white
-              .withValues(
+          color: Colors.white.withValues(
             alpha: 0.25,
           ),
         ),
       ),
-
       position: RelativeRect.fromLTRB(
-        menuLeft,
+        position.dx,
         menuTop,
-        menuRight,
-        screenSize.height -
-            menuTop -
-            menuHeight,
+        screenSize.width - (position.dx + size.width),
+        screenSize.height - menuTop - menuHeight,
       ),
-
       constraints: BoxConstraints(
         minWidth: size.width,
         maxWidth: size.width,
         maxHeight: 350,
       ),
-
       items: [
-        // ======================================================
-        // NONE
-        // ======================================================
-
-        PopupMenuItem<String>(
+        const PopupMenuItem<String>(
           value: '__none__',
-          height: itemHeight,
           child: Row(
             children: [
               Icon(
-                Icons
-                    .remove_circle_outline_rounded,
+                Icons.remove_circle_outline_rounded,
+                color: Colors.white70,
                 size: 18,
-                color: Colors.white
-                    .withValues(
-                  alpha: 0.60,
-                ),
               ),
-
-              const SizedBox(width: 10),
-
+              SizedBox(width: 10),
               Text(
-                'Select Tax',
+                'No Tax',
                 style: TextStyle(
-                  color: Colors.white
-                      .withValues(
-                    alpha: 0.65,
-                  ),
-                  fontSize: 14,
+                  color: Colors.white70,
                 ),
               ),
             ],
           ),
         ),
-
-        // ======================================================
-        // TAX OPTIONS
-        // ======================================================
-
         ...taxOptions.map(
-          (String tax) {
-            final bool selected =
-                selectedTax == tax;
-
-            return PopupMenuItem<String>(
-              value: tax,
-              height: itemHeight,
-              child: Row(
-                children: [
-                  Icon(
-                    selected
-                        ? Icons
-                            .check_circle_rounded
-                        : Icons
-                            .receipt_long_outlined,
-                    size: 18,
-                    color: selected
-                        ? const Color(
-                            0xFF75C7FF,
-                          )
-                        : Colors.white
-                            .withValues(
-                            alpha: 0.72,
-                          ),
-                  ),
-
-                  const SizedBox(width: 10),
-
-                  Expanded(
-                    child: Text(
-                      tax,
-                      style: TextStyle(
-                        color: selected
-                            ? const Color(
-                                0xFF9AD5FF,
-                              )
-                            : Colors.white,
-                        fontSize: 14,
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                      ),
+          (tax) => PopupMenuItem<String>(
+            value: tax,
+            child: Row(
+              children: [
+                Icon(
+                  selectedTax == tax
+                      ? Icons.check_circle_rounded
+                      : Icons.receipt_long_outlined,
+                  size: 18,
+                  color: selectedTax == tax
+                      ? const Color(0xFF9AD5FF)
+                      : Colors.white70,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    tax,
+                    style: TextStyle(
+                      color: selectedTax == tax
+                          ? const Color(0xFF9AD5FF)
+                          : Colors.white,
+                      fontWeight: selectedTax == tax
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                     ),
                   ),
-                ],
-              ),
-            );
-          },
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
 
-    if (!mounted ||
-        result == null) {
+    if (!mounted || result == null) {
       return;
     }
 
     setState(() {
-      if (result == '__none__') {
-        selectedTax = null;
-      } else {
-        selectedTax = result;
-      }
+      selectedTax =
+          result == '__none__' ? null : result;
     });
   }
 
-  // ============================================================
-  // ADD NEW TAX
-  // ============================================================
-
   Future<void> _addNewTax() async {
-    final String? newTax =
-        await showDialog<String>(
+    final String? newTax = await showDialog<String>(
       context: context,
-
       barrierDismissible: false,
-
-      barrierColor:
-          const Color(0xA30F1A24),
-
-      builder: (
-        BuildContext context,
-      ) {
+      builder: (context) {
         return const AddTaxRateDialog();
       },
     );
@@ -294,63 +246,35 @@ class _AddItemDialogState
       return;
     }
 
+    final value = newTax.trim();
+
     setState(() {
-      if (!taxOptions.contains(newTax)) {
-        taxOptions.add(newTax);
+      if (!taxOptions.contains(value)) {
+        taxOptions.add(value);
       }
 
-      selectedTax = newTax;
+      selectedTax = value;
     });
   }
-
-  // ============================================================
-  // SAVE ITEM
-  // ============================================================
 
   void _saveItem() {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    final messenger =
-        ScaffoldMessenger.of(context);
-
-    Navigator.of(context).pop();
-
-    messenger.showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor:
-            const Color(0xFF163F5E),
-        shape: RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.circular(12),
-        ),
-        content: const Row(
-          children: [
-            Icon(
-              Icons
-                  .check_circle_outline_rounded,
-              color: Colors.white,
-            ),
-            SizedBox(width: 10),
-            Text(
-              'Item added successfully.',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight:
-                    FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
+    final ItemModel item = ItemModel(
+      name: nameController.text.trim(),
+      sku: skuController.text.trim(),
+      purchasePrice:
+          purchasePriceController.text.trim(),
+      salesPrice: salesPriceController.text.trim(),
+      tax: selectedTax ?? '',
+      description:
+          descriptionController.text.trim(),
     );
-  }
 
-  // ============================================================
-  // BUILD
-  // ============================================================
+    Navigator.of(context).pop(item);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -370,26 +294,20 @@ class _AddItemDialogState
             crossAxisAlignment:
                 CrossAxisAlignment.start,
             children: [
-              // ==================================================
-              // HEADER
-              // ==================================================
-
               GlassDialogHeader(
-                title: 'Add New Item',
-                subtitle:
-                    'Create a new product for your inventory.',
-                icon:
-                    Icons.inventory_2_outlined,
+                title: isEditing
+                    ? 'Edit Item'
+                    : 'Add New Item',
+                subtitle: isEditing
+                    ? 'Update your inventory item details.'
+                    : 'Create a new product for your inventory.',
+                icon: Icons.inventory_2_outlined,
                 onClose: () {
                   Navigator.of(context).pop();
                 },
               ),
 
               const SizedBox(height: 28),
-
-              // ==================================================
-              // ITEM NAME
-              // ==================================================
 
               const GlassLabel(
                 'Item Name',
@@ -413,10 +331,6 @@ class _AddItemDialogState
 
               const SizedBox(height: 19),
 
-              // ==================================================
-              // SKU
-              // ==================================================
-
               const GlassLabel(
                 'SKU',
                 required: true,
@@ -439,20 +353,12 @@ class _AddItemDialogState
 
               const SizedBox(height: 19),
 
-              // ==================================================
-              // PRICES
-              // ==================================================
-
               LayoutBuilder(
-                builder: (
-                  context,
-                  constraints,
-                ) {
+                builder: (context, constraints) {
                   final bool twoColumns =
                       constraints.maxWidth >= 520;
 
-                  final purchasePrice =
-                      Column(
+                  final purchase = Column(
                     crossAxisAlignment:
                         CrossAxisAlignment.start,
                     children: [
@@ -460,7 +366,6 @@ class _AddItemDialogState
                         'Purchase Price',
                         required: true,
                       ),
-
                       GlassTextField(
                         controller:
                             purchasePriceController,
@@ -472,21 +377,12 @@ class _AddItemDialogState
                                 .numberWithOptions(
                           decimal: true,
                         ),
-                        validator: (value) {
-                          if (value == null ||
-                              value
-                                  .trim()
-                                  .isEmpty) {
-                            return 'Please enter purchase price';
-                          }
-
-                          return null;
-                        },
+                        validator: _validatePrice,
                       ),
                     ],
                   );
 
-                  final salesPrice = Column(
+                  final sales = Column(
                     crossAxisAlignment:
                         CrossAxisAlignment.start,
                     children: [
@@ -494,28 +390,18 @@ class _AddItemDialogState
                         'Sales Price',
                         required: true,
                       ),
-
                       GlassTextField(
                         controller:
                             salesPriceController,
                         hintText: '0.00',
-                        prefixIcon: Icons
-                            .sell_outlined,
+                        prefixIcon:
+                            Icons.sell_outlined,
                         keyboardType:
                             const TextInputType
                                 .numberWithOptions(
                           decimal: true,
                         ),
-                        validator: (value) {
-                          if (value == null ||
-                              value
-                                  .trim()
-                                  .isEmpty) {
-                            return 'Please enter sales price';
-                          }
-
-                          return null;
-                        },
+                        validator: _validatePrice,
                       ),
                     ],
                   );
@@ -525,31 +411,18 @@ class _AddItemDialogState
                       crossAxisAlignment:
                           CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child:
-                              purchasePrice,
-                        ),
-
-                        const SizedBox(
-                          width: 16,
-                        ),
-
-                        Expanded(
-                          child: salesPrice,
-                        ),
+                        Expanded(child: purchase),
+                        const SizedBox(width: 16),
+                        Expanded(child: sales),
                       ],
                     );
                   }
 
                   return Column(
                     children: [
-                      purchasePrice,
-
-                      const SizedBox(
-                        height: 19,
-                      ),
-
-                      salesPrice,
+                      purchase,
+                      const SizedBox(height: 19),
+                      sales,
                     ],
                   );
                 },
@@ -557,27 +430,16 @@ class _AddItemDialogState
 
               const SizedBox(height: 19),
 
-              // ==================================================
-              // TAX LABEL
-              // ==================================================
-
               Row(
                 children: [
                   const Expanded(
-                    child: GlassLabel(
-                      'Tax',
-                    ),
+                    child: GlassLabel('Tax'),
                   ),
-
                   GlassAddNewLink(
                     onTap: _addNewTax,
                   ),
                 ],
               ),
-
-              // ==================================================
-              // TAX SELECT BOX
-              // ==================================================
 
               GlassSelectBox(
                 boxKey: _taxBoxKey,
@@ -590,17 +452,10 @@ class _AddItemDialogState
 
               const SizedBox(height: 19),
 
-              // ==================================================
-              // DESCRIPTION
-              // ==================================================
-
-              const GlassLabel(
-                'Description',
-              ),
+              const GlassLabel('Description'),
 
               GlassTextField(
-                controller:
-                    descriptionController,
+                controller: descriptionController,
                 hintText:
                     'Enter item description',
                 prefixIcon:
@@ -610,34 +465,25 @@ class _AddItemDialogState
 
               const SizedBox(height: 30),
 
-              // ==================================================
-              // BUTTONS
-              // ==================================================
-
               Align(
-                alignment:
-                    Alignment.centerRight,
+                alignment: Alignment.centerRight,
                 child: Wrap(
                   spacing: 12,
                   runSpacing: 10,
-                  alignment:
-                      WrapAlignment.end,
                   children: [
                     GlassButton(
                       label: 'Close',
-                      icon:
-                          Icons.close_rounded,
+                      icon: Icons.close_rounded,
                       primary: false,
                       onPressed: () {
-                        Navigator.of(context)
-                            .pop();
+                        Navigator.of(context).pop();
                       },
                     ),
-
                     GlassButton(
-                      label: 'Save Item',
-                      icon:
-                          Icons.save_outlined,
+                      label: isEditing
+                          ? 'Update Item'
+                          : 'Save Item',
+                      icon: Icons.save_outlined,
                       onPressed: _saveItem,
                     ),
                   ],
@@ -651,12 +497,7 @@ class _AddItemDialogState
   }
 }
 
-// ============================================================================
-// ADD NEW TAX RATE DIALOG
-// ============================================================================
-
-class AddTaxRateDialog
-    extends StatefulWidget {
+class AddTaxRateDialog extends StatefulWidget {
   const AddTaxRateDialog({
     super.key,
   });
@@ -671,20 +512,16 @@ class _AddTaxRateDialogState
   final GlobalKey<FormState> _formKey =
       GlobalKey<FormState>();
 
-  final TextEditingController
-      taxNameController =
+  final TextEditingController taxNameController =
       TextEditingController();
 
-  final TextEditingController
-      rateController =
+  final TextEditingController rateController =
       TextEditingController();
 
-  final TextEditingController
-      cgstController =
+  final TextEditingController cgstController =
       TextEditingController();
 
-  final TextEditingController
-      sgstController =
+  final TextEditingController sgstController =
       TextEditingController();
 
   @override
@@ -697,26 +534,42 @@ class _AddTaxRateDialogState
     super.dispose();
   }
 
-  // ============================================================
-  // SAVE TAX
-  // ============================================================
+  String? _validateNumber(
+    String? value, {
+    bool required = false,
+  }) {
+    final input = value?.trim() ?? '';
+
+    if (required && input.isEmpty) {
+      return 'Please enter rate';
+    }
+
+    if (input.isEmpty) {
+      return null;
+    }
+
+    final number = double.tryParse(input);
+
+    if (number == null) {
+      return 'Enter a valid number';
+    }
+
+    if (number < 0 || number > 100) {
+      return 'Rate must be between 0 and 100';
+    }
+
+    return null;
+  }
 
   void _saveTax() {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    final String taxName =
-        taxNameController.text.trim();
-
     Navigator.of(context).pop(
-      taxName,
+      taxNameController.text.trim(),
     );
   }
-
-  // ============================================================
-  // BUILD
-  // ============================================================
 
   @override
   Widget build(BuildContext context) {
@@ -736,16 +589,11 @@ class _AddTaxRateDialogState
             crossAxisAlignment:
                 CrossAxisAlignment.start,
             children: [
-              // ==================================================
-              // HEADER
-              // ==================================================
-
               GlassDialogHeader(
                 title: 'Add New Tax Rate',
                 subtitle:
                     'Create a custom tax rate for this item.',
-                icon:
-                    Icons.percent_rounded,
+                icon: Icons.percent_rounded,
                 onClose: () {
                   Navigator.of(context).pop();
                 },
@@ -753,20 +601,14 @@ class _AddTaxRateDialogState
 
               const SizedBox(height: 27),
 
-              // ==================================================
-              // TAX NAME
-              // ==================================================
-
               const GlassLabel(
                 'Tax Name',
                 required: true,
               ),
 
               GlassTextField(
-                controller:
-                    taxNameController,
-                hintText:
-                    'Enter tax name',
+                controller: taxNameController,
+                hintText: 'Enter tax name',
                 prefixIcon:
                     Icons.label_outline_rounded,
                 validator: (value) {
@@ -781,18 +623,13 @@ class _AddTaxRateDialogState
 
               const SizedBox(height: 19),
 
-              // ==================================================
-              // RATE
-              // ==================================================
-
               const GlassLabel(
                 'Rate (%)',
                 required: true,
               ),
 
               GlassTextField(
-                controller:
-                    rateController,
+                controller: rateController,
                 hintText: '0.00',
                 prefixIcon:
                     Icons.percent_rounded,
@@ -801,27 +638,17 @@ class _AddTaxRateDialogState
                         .numberWithOptions(
                   decimal: true,
                 ),
-                validator: (value) {
-                  if (value == null ||
-                      value.trim().isEmpty) {
-                    return 'Please enter rate';
-                  }
-
-                  return null;
-                },
+                validator: (value) =>
+                    _validateNumber(
+                  value,
+                  required: true,
+                ),
               ),
 
               const SizedBox(height: 19),
 
-              // ==================================================
-              // CGST + SGST
-              // ==================================================
-
               LayoutBuilder(
-                builder: (
-                  context,
-                  constraints,
-                ) {
+                builder: (context, constraints) {
                   final bool twoColumns =
                       constraints.maxWidth >= 450;
 
@@ -832,10 +659,8 @@ class _AddTaxRateDialogState
                       const GlassLabel(
                         'CGST Rate (%)',
                       ),
-
                       GlassTextField(
-                        controller:
-                            cgstController,
+                        controller: cgstController,
                         hintText: '0.00',
                         prefixIcon:
                             Icons.percent_rounded,
@@ -844,6 +669,8 @@ class _AddTaxRateDialogState
                                 .numberWithOptions(
                           decimal: true,
                         ),
+                        validator:
+                            _validateNumber,
                       ),
                     ],
                   );
@@ -855,10 +682,8 @@ class _AddTaxRateDialogState
                       const GlassLabel(
                         'SGST Rate (%)',
                       ),
-
                       GlassTextField(
-                        controller:
-                            sgstController,
+                        controller: sgstController,
                         hintText: '0.00',
                         prefixIcon:
                             Icons.percent_rounded,
@@ -867,6 +692,8 @@ class _AddTaxRateDialogState
                                 .numberWithOptions(
                           decimal: true,
                         ),
+                        validator:
+                            _validateNumber,
                       ),
                     ],
                   );
@@ -876,17 +703,9 @@ class _AddTaxRateDialogState
                       crossAxisAlignment:
                           CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: cgst,
-                        ),
-
-                        const SizedBox(
-                          width: 16,
-                        ),
-
-                        Expanded(
-                          child: sgst,
-                        ),
+                        Expanded(child: cgst),
+                        const SizedBox(width: 16),
+                        Expanded(child: sgst),
                       ],
                     );
                   }
@@ -894,11 +713,7 @@ class _AddTaxRateDialogState
                   return Column(
                     children: [
                       cgst,
-
-                      const SizedBox(
-                        height: 19,
-                      ),
-
+                      const SizedBox(height: 19),
                       sgst,
                     ],
                   );
@@ -907,34 +722,22 @@ class _AddTaxRateDialogState
 
               const SizedBox(height: 30),
 
-              // ==================================================
-              // ACTIONS
-              // ==================================================
-
               Align(
-                alignment:
-                    Alignment.centerRight,
+                alignment: Alignment.centerRight,
                 child: Wrap(
                   spacing: 12,
-                  runSpacing: 10,
-                  alignment:
-                      WrapAlignment.end,
                   children: [
                     GlassButton(
                       label: 'Close',
-                      icon:
-                          Icons.close_rounded,
+                      icon: Icons.close_rounded,
                       primary: false,
                       onPressed: () {
-                        Navigator.of(context)
-                            .pop();
+                        Navigator.of(context).pop();
                       },
                     ),
-
                     GlassButton(
                       label: 'Save Tax',
-                      icon:
-                          Icons.save_outlined,
+                      icon: Icons.save_outlined,
                       onPressed: _saveTax,
                     ),
                   ],

@@ -1,42 +1,309 @@
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
 import 'customer_filter.dart';
 import 'customer_model.dart';
 
+// ============================================================
+// CUSTOMER REPOSITORY INTERFACE
+// ============================================================
+
 abstract class CustomerRepository {
-  Future<List<CustomerModel>> getCustomers({CustomerFilter? filter});
-  Future<CustomerModel> addCustomer(CustomerModel customer);
-  Future<void> deleteCustomer(String id);
+  Future<List<CustomerModel>> getCustomers({
+    CustomerFilter? filter,
+  });
+
+  Future<CustomerModel> addCustomer(
+    CustomerModel customer,
+  );
+
+  Future<void> deleteCustomer(
+    String id,
+  );
 }
 
-/// Singleton so every page (Vendors, Purchase Orders, Bills, ...)
-/// sees the same in-memory vendor list instead of its own empty copy.
-/// Swap for ApiVendorRepository later using the same interface.
-class InMemoryCustomerRepository implements CustomerRepository {
-  InMemoryCustomerRepository._internal();
-  static final InMemoryCustomerRepository instance = InMemoryCustomerRepository._internal();
-  factory InMemoryCustomerRepository() => instance;
+// ============================================================
+// REAL API CUSTOMER REPOSITORY
+// ============================================================
 
-  final List<CustomerModel> _customers = [];
-  int _nextId = 1;
+class ApiCustomerRepository
+    implements CustomerRepository {
+  static const String baseUrl =
+      'http://localhost:3000/api';
 
-  @override
-  Future<List<CustomerModel>> getCustomers({CustomerFilter? filter}) async {
-    await Future.delayed(const Duration(milliseconds: 150));
-    final all = List<CustomerModel>.from(_customers);
-    if (filter == null) return all;
-    return all.where(filter.matches).toList();
-  }
+  // ==========================================================
+  // GET CUSTOMERS
+  // GET /api/customers
+  // ==========================================================
 
   @override
-  Future<CustomerModel> addCustomer(CustomerModel customer) async {
-    await Future.delayed(const Duration(milliseconds: 150));
-    final withId = customer.copyWith(id: (_nextId++).toString());
-    _customers.add(withId);
-    return withId;
+  Future<List<CustomerModel>> getCustomers({
+    CustomerFilter? filter,
+  }) async {
+    try {
+      final Map<String, String> queryParams =
+          filter?.toQueryParams() ??
+              <String, String>{};
+
+      final Uri uri = Uri.parse(
+        '$baseUrl/customers',
+      ).replace(
+        queryParameters:
+            queryParams.isEmpty
+                ? null
+                : queryParams,
+      );
+
+      final http.Response response =
+          await http.get(
+        uri,
+        headers: {
+          'Accept': 'application/json',
+        },
+      );
+
+      final dynamic body =
+          jsonDecode(response.body);
+
+      if (body is! Map<String, dynamic>) {
+        throw Exception(
+          'Invalid response from server',
+        );
+      }
+
+      if (response.statusCode != 200 ||
+          body['success'] != true) {
+        throw Exception(
+          body['message'] ??
+              'Failed to fetch customers',
+        );
+      }
+
+      final List<dynamic> data =
+          body['data'] is List
+              ? body['data']
+              : <dynamic>[];
+
+      return data.map((dynamic item) {
+        return CustomerModel.fromJson(
+          Map<String, dynamic>.from(
+            item as Map,
+          ),
+        );
+      }).toList();
+    } catch (error) {
+      throw Exception(
+        'Unable to load customers: $error',
+      );
+    }
   }
 
+  // ==========================================================
+  // ADD CUSTOMER
+  // POST /api/customers
+  // ==========================================================
+
   @override
-  Future<void> deleteCustomer(String id) async {
-    await Future.delayed(const Duration(milliseconds: 150));
-    _customers.removeWhere((customer) => customer.id == id);
+  Future<CustomerModel> addCustomer(
+    CustomerModel customer,
+  ) async {
+    try {
+      final Uri uri = Uri.parse(
+        '$baseUrl/customers',
+      );
+
+      final http.Response response =
+          await http.post(
+        uri,
+        headers: {
+          'Content-Type':
+              'application/json',
+          'Accept':
+              'application/json',
+        },
+        body: jsonEncode(
+          customer.toJson(),
+        ),
+      );
+
+      final dynamic body =
+          jsonDecode(response.body);
+
+      if (body is! Map<String, dynamic>) {
+        throw Exception(
+          'Invalid response from server',
+        );
+      }
+
+      if (response.statusCode != 201 ||
+          body['success'] != true) {
+        throw Exception(
+          body['message'] ??
+              'Failed to create customer',
+        );
+      }
+
+      if (body['data'] == null) {
+        throw Exception(
+          'Customer data missing from server response',
+        );
+      }
+
+      return CustomerModel.fromJson(
+        Map<String, dynamic>.from(
+          body['data'] as Map,
+        ),
+      );
+    } catch (error) {
+      throw Exception(
+        'Unable to add customer: $error',
+      );
+    }
   }
+
+  // ==========================================================
+  // DELETE CUSTOMER
+  // DELETE /api/customers/:id
+  // ==========================================================
+
+  @override
+  Future<void> deleteCustomer(
+    String id,
+  ) async {
+    try {
+      final Uri uri = Uri.parse(
+        '$baseUrl/customers/$id',
+      );
+
+      final http.Response response =
+          await http.delete(
+        uri,
+        headers: {
+          'Accept': 'application/json',
+        },
+      );
+
+      final dynamic body =
+          jsonDecode(response.body);
+
+      if (body is! Map<String, dynamic>) {
+        throw Exception(
+          'Invalid response from server',
+        );
+      }
+
+      if (response.statusCode != 200 ||
+          body['success'] != true) {
+        throw Exception(
+          body['message'] ??
+              'Failed to delete customer',
+        );
+      }
+    } catch (error) {
+      throw Exception(
+        'Unable to delete customer: $error',
+      );
+    }
+  }
+
+  // ==========================================================
+  // UPDATE CUSTOMER
+  // PUT /api/customers/:id
+  //
+  // Not part of the current interface yet.
+  // Kept here because backend already supports update.
+  // ==========================================================
+
+  Future<CustomerModel> updateCustomer(
+    CustomerModel customer,
+  ) async {
+    try {
+      if (customer.id == null ||
+          customer.id!.trim().isEmpty) {
+        throw Exception(
+          'Customer ID is missing',
+        );
+      }
+
+      final Uri uri = Uri.parse(
+        '$baseUrl/customers/${customer.id}',
+      );
+
+      final http.Response response =
+          await http.put(
+        uri,
+        headers: {
+          'Content-Type':
+              'application/json',
+          'Accept':
+              'application/json',
+        },
+        body: jsonEncode(
+          customer.toJson(),
+        ),
+      );
+
+      final dynamic body =
+          jsonDecode(response.body);
+
+      if (body is! Map<String, dynamic>) {
+        throw Exception(
+          'Invalid response from server',
+        );
+      }
+
+      if (response.statusCode != 200 ||
+          body['success'] != true) {
+        throw Exception(
+          body['message'] ??
+              'Failed to update customer',
+        );
+      }
+
+      if (body['data'] == null) {
+        throw Exception(
+          'Customer data missing from server response',
+        );
+      }
+
+      return CustomerModel.fromJson(
+        Map<String, dynamic>.from(
+          body['data'] as Map,
+        ),
+      );
+    } catch (error) {
+      throw Exception(
+        'Unable to update customer: $error',
+      );
+    }
+  }
+}
+
+// ============================================================
+// BACKWARD COMPATIBILITY
+// ============================================================
+//
+// Some existing Sales modules still call:
+//
+// InMemoryCustomerRepository()
+//
+// Examples:
+// - Invoice
+// - Delivery Challan
+// - Payment Received
+//
+// Instead of breaking those screens,
+// this class redirects them to the same real API repository.
+//
+// So even old code using:
+//
+// InMemoryCustomerRepository()
+//
+// will now load customers from MySQL through the Node API.
+// ============================================================
+
+class InMemoryCustomerRepository
+    extends ApiCustomerRepository {
+  InMemoryCustomerRepository();
 }

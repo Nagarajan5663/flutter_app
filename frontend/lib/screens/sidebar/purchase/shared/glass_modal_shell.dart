@@ -26,6 +26,7 @@ class GlassModalShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 650;
+    final theme = Theme.of(context);
 
     return Material(
       type: MaterialType.transparency,
@@ -180,7 +181,18 @@ class GlassModalShell extends StatelessWidget {
                             // CONTENT
                             // ======================================
 
-                            child,
+                            Theme(
+                              data: theme.copyWith(
+                                textTheme: theme.textTheme.apply(
+                                  bodyColor: Colors.black,
+                                  displayColor: Colors.black,
+                                ),
+                              ),
+                              child: DefaultTextStyle.merge(
+                                style: const TextStyle(color: Colors.black),
+                                child: child,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -487,6 +499,8 @@ class GlassPageBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -541,7 +555,18 @@ class GlassPageBackground extends StatelessWidget {
               ),
             ),
           ),
-          child,
+          Theme(
+            data: theme.copyWith(
+              textTheme: theme.textTheme.apply(
+                bodyColor: Colors.black,
+                displayColor: Colors.black,
+              ),
+            ),
+            child: DefaultTextStyle.merge(
+              style: const TextStyle(color: Colors.black),
+              child: child,
+            ),
+          ),
         ],
       ),
     );
