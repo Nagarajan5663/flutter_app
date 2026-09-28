@@ -1,6 +1,10 @@
 const express = require('express');
 const db = require('../config/db');
 
+const {
+  getNextTransactionNumber,
+} = require('../utils/transaction_number');
+
 const router = express.Router();
 
 const ALLOWED_STATUSES = [
@@ -14,7 +18,10 @@ const ALLOWED_STATUSES = [
 // HELPERS
 // ============================================================
 
-function toNumber(value, fallback = 0) {
+function toNumber(
+  value,
+  fallback = 0
+) {
   const number = Number(value);
 
   return Number.isFinite(number)
@@ -22,30 +29,42 @@ function toNumber(value, fallback = 0) {
     : fallback;
 }
 
-function normalizeDate(value) {
+function normalizeDate(
+  value
+) {
   if (!value) {
     return null;
   }
 
-  const text = value.toString().trim();
+  const text =
+    value
+      .toString()
+      .trim();
 
   if (!text) {
     return null;
   }
 
   return text.length >= 10
-    ? text.substring(0, 10)
+    ? text.substring(
+        0,
+        10
+      )
     : text;
 }
 
-function mapPurchaseOrderItem(row) {
+function mapPurchaseOrderItem(
+  row
+) {
   return {
     id:
-      row.id?.toString() ?? null,
+      row.id
+        ?.toString() ??
+      null,
 
     purchaseOrderId:
       row.purchase_order_id
-          ?.toString() ??
+        ?.toString() ??
       '',
 
     sourceType:
@@ -53,13 +72,15 @@ function mapPurchaseOrderItem(row) {
 
     itemId:
       row.item_id == null
-          ? null
-          : row.item_id.toString(),
+        ? null
+        : row.item_id
+            .toString(),
 
     partId:
       row.part_id == null
-          ? null
-          : row.part_id.toString(),
+        ? null
+        : row.part_id
+            .toString(),
 
     itemName:
       row.item_name ?? '',
@@ -68,30 +89,38 @@ function mapPurchaseOrderItem(row) {
       row.description ?? '',
 
     qty:
-      toNumber(row.qty),
+      toNumber(
+        row.qty
+      ),
 
     rate:
-      toNumber(row.rate),
+      toNumber(
+        row.rate
+      ),
 
     amount:
-      toNumber(row.amount),
+      toNumber(
+        row.amount
+      ),
   };
 }
 
 function mapPurchaseOrder(
   row,
-  items = [],
+  items = []
 ) {
   return {
     id:
-      row.id?.toString() ?? null,
+      row.id
+        ?.toString() ??
+      null,
 
     poNumber:
       row.po_number ?? '',
 
     vendorId:
       row.vendor_id
-          ?.toString() ??
+        ?.toString() ??
       '',
 
     vendorName:
@@ -111,16 +140,17 @@ function mapPurchaseOrder(
       row.due_date ?? null,
 
     referenceNumber:
-      row.reference_number ?? '',
+      row.reference_number ??
+      '',
 
     subTotal:
       toNumber(
-        row.sub_total,
+        row.sub_total
       ),
 
     total:
       toNumber(
-        row.total,
+        row.total
       ),
 
     items,
@@ -137,16 +167,7 @@ function mapPurchaseOrder(
 }
 
 // ============================================================
-// RESOLVE EXISTING ITEM / PART
-//
-// Current Flutter PurchaseOrderItemModel does not contain
-// itemId / partId / sourceType.
-//
-// Therefore we resolve the selected saved product by its exact
-// item name.
-//
-// If the same name exists in BOTH items and parts, purchase price
-// is also used to distinguish them.
+// RESOLVE ITEM / PART
 // ============================================================
 
 async function resolveCatalogProduct(
@@ -155,7 +176,10 @@ async function resolveCatalogProduct(
   rate
 ) {
   const name =
-    itemName?.trim() ?? '';
+    itemName
+      ?.toString()
+      .trim() ??
+    '';
 
   if (!name) {
     const error =
@@ -163,7 +187,8 @@ async function resolveCatalogProduct(
         'Item name is required'
       );
 
-    error.statusCode = 400;
+    error.statusCode =
+      400;
 
     throw error;
   }
@@ -181,7 +206,9 @@ async function resolveCatalogProduct(
 
       WHERE name = ?
       `,
-      [name]
+      [
+        name,
+      ]
     );
 
   const [partRows] =
@@ -197,18 +224,26 @@ async function resolveCatalogProduct(
 
       WHERE name = ?
       `,
-      [name]
+      [
+        name,
+      ]
     );
 
-  const candidates = [];
+  const candidates =
+    [];
 
-  for (const row of itemRows) {
+  for (
+    const row
+    of itemRows
+  ) {
     candidates.push({
       sourceType:
         'Item',
 
       itemId:
-        Number(row.id),
+        Number(
+          row.id
+        ),
 
       partId:
         null,
@@ -222,11 +257,15 @@ async function resolveCatalogProduct(
         ),
 
       description:
-        row.description ?? '',
+        row.description ??
+        '',
     });
   }
 
-  for (const row of partRows) {
+  for (
+    const row
+    of partRows
+  ) {
     candidates.push({
       sourceType:
         'Part',
@@ -235,7 +274,9 @@ async function resolveCatalogProduct(
         null,
 
       partId:
-        Number(row.id),
+        Number(
+          row.id
+        ),
 
       name:
         row.name,
@@ -246,29 +287,30 @@ async function resolveCatalogProduct(
         ),
 
       description:
-        row.description ?? '',
+        row.description ??
+        '',
     });
   }
 
-  if (candidates.length === 0) {
+  if (
+    candidates.length === 0
+  ) {
     const error =
       new Error(
         `Selected item "${name}" was not found in Items or Parts`
       );
 
-    error.statusCode = 404;
+    error.statusCode =
+      404;
 
     throw error;
   }
 
-  if (candidates.length === 1) {
+  if (
+    candidates.length === 1
+  ) {
     return candidates[0];
   }
-
-  // ----------------------------------------------------------
-  // Same name found more than once.
-  // Try purchase price to identify the selected record.
-  // ----------------------------------------------------------
 
   const matchingRate =
     candidates.filter(
@@ -279,7 +321,9 @@ async function resolveCatalogProduct(
         ) < 0.005
     );
 
-  if (matchingRate.length === 1) {
+  if (
+    matchingRate.length === 1
+  ) {
     return matchingRate[0];
   }
 
@@ -288,88 +332,78 @@ async function resolveCatalogProduct(
       `More than one Item/Part uses the name "${name}". Please use unique Item/Part names.`
     );
 
-  error.statusCode = 400;
+  error.statusCode =
+    400;
 
   throw error;
 }
 
 // ============================================================
-// NEXT PO NUMBER
-//
-// GET /api/purchase-orders/next-number
+// NEXT PURCHASE ORDER NUMBER
 // ============================================================
 
 router.get(
   '/next-number',
   async (req, res) => {
     try {
-      const [rows] =
-        await db.query(
-          `
-          SELECT
-            MAX(
-              CAST(
-                SUBSTRING(
-                  po_number,
-                  4
-                )
-                AS UNSIGNED
-              )
-            ) AS max_number
+      const result =
+        await getNextTransactionNumber({
+          module:
+            'Purchase Order',
 
-          FROM purchase_orders
+          table:
+            'purchase_orders',
 
-          WHERE po_number
-            LIKE 'PO-%'
-          `
-        );
+          numberColumn:
+            'po_number',
 
-      const maxNumber =
-        Number(
-          rows[0]
-              ?.max_number ??
-            0
-        );
+          padding:
+            4,
+        });
 
-      res.status(200).json({
-        success: true,
+      return res
+        .status(200)
+        .json({
+          success: true,
 
-        data: {
-          poNumber:
-            `PO-${maxNumber + 1}`,
-        },
-      });
+          data: {
+            poNumber:
+              result.transactionNumber,
+
+            prefix:
+              result.prefix,
+
+            startingNumber:
+              result.startingNumber,
+
+            nextNumber:
+              result.nextNumber,
+          },
+        });
     } catch (error) {
       console.error(
         'Get next PO number error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(
+          error.statusCode ??
+            500
+        )
+        .json({
+          success: false,
 
-        message:
-          'Failed to generate purchase order number',
-
-        error:
-          error.message,
-      });
+          message:
+            error.message ||
+            'Failed to generate purchase order number',
+        });
     }
   }
 );
 
 // ============================================================
-// GET ALL PURCHASE ORDERS
-//
-// GET /api/purchase-orders
-//
-// Supports existing PurchaseOrderFilter:
-//
-// status_filter
-// vendor_filter
-// reference_filter
-// date_from
-// date_to
+// GET ALL
 // ============================================================
 
 router.get(
@@ -401,6 +435,7 @@ router.get(
             WHEN delivery_expected_date
               IS NULL
               THEN NULL
+
             ELSE DATE_FORMAT(
               delivery_expected_date,
               '%Y-%m-%d'
@@ -413,6 +448,7 @@ router.get(
             WHEN due_date
               IS NULL
               THEN NULL
+
             ELSE DATE_FORMAT(
               due_date,
               '%Y-%m-%d'
@@ -420,12 +456,9 @@ router.get(
           END AS due_date,
 
           reference_number,
-
           sub_total,
           total,
-
           status,
-
           created_at,
           updated_at
 
@@ -434,15 +467,13 @@ router.get(
         WHERE 1 = 1
       `;
 
-      const values = [];
-
-      // --------------------------------------------------------
-      // STATUS
-      // --------------------------------------------------------
+      const values =
+        [];
 
       if (
         status_filter &&
-        status_filter !== 'All'
+        status_filter !==
+          'All'
       ) {
         sql += `
           AND status = ?
@@ -453,17 +484,14 @@ router.get(
         );
       }
 
-      // --------------------------------------------------------
-      // VENDOR
-      // --------------------------------------------------------
-
       if (
         vendor_filter &&
         vendor_filter
-            .trim() !== ''
+          .trim() !== ''
       ) {
         sql += `
-          AND vendor_name LIKE ?
+          AND vendor_name
+            LIKE ?
         `;
 
         values.push(
@@ -471,14 +499,10 @@ router.get(
         );
       }
 
-      // --------------------------------------------------------
-      // REFERENCE
-      // --------------------------------------------------------
-
       if (
         reference_filter &&
         reference_filter
-            .trim() !== ''
+          .trim() !== ''
       ) {
         sql += `
           AND reference_number
@@ -489,10 +513,6 @@ router.get(
           `%${reference_filter.trim()}%`
         );
       }
-
-      // --------------------------------------------------------
-      // DATE FROM
-      // --------------------------------------------------------
 
       const dateFrom =
         normalizeDate(
@@ -508,10 +528,6 @@ router.get(
           dateFrom
         );
       }
-
-      // --------------------------------------------------------
-      // DATE TO
-      // --------------------------------------------------------
 
       const dateTo =
         normalizeDate(
@@ -542,30 +558,25 @@ router.get(
         orderRows.length === 0
       ) {
         return res
-            .status(200)
-            .json({
-          success: true,
-          data: [],
-        });
+          .status(200)
+          .json({
+            success: true,
+            data: [],
+          });
       }
-
-      // --------------------------------------------------------
-      // Load all line items too.
-      //
-      // This is important because your current Flutter
-      // PurchaseOrderModel calculates total from items.
-      // --------------------------------------------------------
 
       const ids =
         orderRows.map(
           (row) =>
-            Number(row.id)
+            Number(
+              row.id
+            )
         );
 
       const placeholders =
-        ids.map(
-          () => '?'
-        ).join(',');
+        ids
+          .map(() => '?')
+          .join(',');
 
       const [itemRows] =
         await db.query(
@@ -573,14 +584,11 @@ router.get(
           SELECT
             id,
             purchase_order_id,
-
             source_type,
             item_id,
             part_id,
-
             item_name,
             description,
-
             qty,
             rate,
             amount
@@ -597,18 +605,26 @@ router.get(
           ids
         );
 
-      const groupedItems = {};
+      const groupedItems =
+        {};
 
-      for (const item of itemRows) {
+      for (
+        const item
+        of itemRows
+      ) {
         const orderId =
           Number(
             item.purchase_order_id
           );
 
         if (
-          !groupedItems[orderId]
+          !groupedItems[
+            orderId
+          ]
         ) {
-          groupedItems[orderId] = [];
+          groupedItems[
+            orderId
+          ] = [];
         }
 
         groupedItems[
@@ -624,7 +640,9 @@ router.get(
         orderRows.map(
           (order) => {
             const orderId =
-              Number(order.id);
+              Number(
+                order.id
+              );
 
             return mapPurchaseOrder(
               order,
@@ -636,41 +654,44 @@ router.get(
           }
         );
 
-      res.status(200).json({
-        success: true,
-        data,
-      });
+      return res
+        .status(200)
+        .json({
+          success: true,
+          data,
+        });
     } catch (error) {
       console.error(
         'Get purchase orders error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(500)
+        .json({
+          success: false,
 
-        message:
-          'Failed to fetch purchase orders',
+          message:
+            'Failed to fetch purchase orders',
 
-        error:
-          error.message,
-      });
+          error:
+            error.message,
+        });
     }
   }
 );
 
 // ============================================================
-// GET SINGLE PURCHASE ORDER
-//
-// GET /api/purchase-orders/:id
+// GET SINGLE
 // ============================================================
 
 router.get(
   '/:id',
   async (req, res) => {
     try {
-      const { id } =
-        req.params;
+      const {
+        id,
+      } = req.params;
 
       const [orderRows] =
         await db.query(
@@ -678,7 +699,6 @@ router.get(
           SELECT
             id,
             po_number,
-
             vendor_id,
             vendor_name,
 
@@ -691,6 +711,7 @@ router.get(
               WHEN delivery_expected_date
                 IS NULL
                 THEN NULL
+
               ELSE DATE_FORMAT(
                 delivery_expected_date,
                 '%Y-%m-%d'
@@ -703,6 +724,7 @@ router.get(
               WHEN due_date
                 IS NULL
                 THEN NULL
+
               ELSE DATE_FORMAT(
                 due_date,
                 '%Y-%m-%d'
@@ -710,12 +732,9 @@ router.get(
             END AS due_date,
 
             reference_number,
-
             sub_total,
             total,
-
             status,
-
             created_at,
             updated_at
 
@@ -725,20 +744,22 @@ router.get(
 
           LIMIT 1
           `,
-          [id]
+          [
+            id,
+          ]
         );
 
       if (
         orderRows.length === 0
       ) {
         return res
-            .status(404)
-            .json({
-          success: false,
+          .status(404)
+          .json({
+            success: false,
 
-          message:
-            'Purchase order not found',
-        });
+            message:
+              'Purchase order not found',
+          });
       }
 
       const [itemRows] =
@@ -747,14 +768,11 @@ router.get(
           SELECT
             id,
             purchase_order_id,
-
             source_type,
             item_id,
             part_id,
-
             item_name,
             description,
-
             qty,
             rate,
             amount
@@ -765,44 +783,48 @@ router.get(
 
           ORDER BY id ASC
           `,
-          [id]
+          [
+            id,
+          ]
         );
 
-      res.status(200).json({
-        success: true,
+      return res
+        .status(200)
+        .json({
+          success: true,
 
-        data:
-          mapPurchaseOrder(
-            orderRows[0],
+          data:
+            mapPurchaseOrder(
+              orderRows[0],
 
-            itemRows.map(
-              mapPurchaseOrderItem
-            )
-          ),
-      });
+              itemRows.map(
+                mapPurchaseOrderItem
+              )
+            ),
+        });
     } catch (error) {
       console.error(
         'Get purchase order error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(500)
+        .json({
+          success: false,
 
-        message:
-          'Failed to fetch purchase order',
+          message:
+            'Failed to fetch purchase order',
 
-        error:
-          error.message,
-      });
+          error:
+            error.message,
+        });
     }
   }
 );
 
 // ============================================================
 // CREATE PURCHASE ORDER
-//
-// POST /api/purchase-orders
 // ============================================================
 
 router.post(
@@ -814,45 +836,33 @@ router.post(
       const {
         poNumber,
         vendorId,
-
         date,
-
         deliveryExpectedDate,
-
         paymentTerms,
-
         dueDate,
-
         referenceNumber,
-
         items,
       } = req.body;
-
-      // --------------------------------------------------------
-      // PO NUMBER
-      // --------------------------------------------------------
 
       if (
         !poNumber ||
         poNumber
-            .trim() === ''
+          .trim() === ''
       ) {
         return res
-            .status(400)
-            .json({
-          success: false,
+          .status(400)
+          .json({
+            success: false,
 
-          message:
-            'Purchase order number is required',
-        });
+            message:
+              'Purchase order number is required',
+          });
       }
 
-      // --------------------------------------------------------
-      // VENDOR
-      // --------------------------------------------------------
-
       const parsedVendorId =
-        Number(vendorId);
+        Number(
+          vendorId
+        );
 
       if (
         !Number.isInteger(
@@ -861,60 +871,50 @@ router.post(
         parsedVendorId <= 0
       ) {
         return res
-            .status(400)
-            .json({
-          success: false,
+          .status(400)
+          .json({
+            success: false,
 
-          message:
-            'Please select a valid vendor',
-        });
+            message:
+              'Please select a valid vendor',
+          });
       }
 
-      // --------------------------------------------------------
-      // DATE
-      // --------------------------------------------------------
-
       const orderDate =
-        normalizeDate(date);
+        normalizeDate(
+          date
+        );
 
       if (!orderDate) {
         return res
-            .status(400)
-            .json({
-          success: false,
+          .status(400)
+          .json({
+            success: false,
 
-          message:
-            'Purchase order date is required',
-        });
+            message:
+              'Purchase order date is required',
+          });
       }
-
-      // --------------------------------------------------------
-      // ITEMS
-      // --------------------------------------------------------
 
       if (
         !Array.isArray(items) ||
         items.length === 0
       ) {
         return res
-            .status(400)
-            .json({
-          success: false,
+          .status(400)
+          .json({
+            success: false,
 
-          message:
-            'At least one item is required',
-        });
+            message:
+              'At least one item is required',
+          });
       }
 
       connection =
         await db.getConnection();
 
       await connection
-          .beginTransaction();
-
-      // --------------------------------------------------------
-      // GET SAVED VENDOR
-      // --------------------------------------------------------
+        .beginTransaction();
 
       const [vendorRows] =
         await connection.query(
@@ -930,35 +930,34 @@ router.post(
           LIMIT 1
           `,
           [
-            parsedVendorId
+            parsedVendorId,
           ]
         );
 
       if (
         vendorRows.length === 0
       ) {
-        await connection.rollback();
+        await connection
+          .rollback();
 
         return res
-            .status(404)
-            .json({
-          success: false,
+          .status(404)
+          .json({
+            success: false,
 
-          message:
-            'Selected vendor not found',
-        });
+            message:
+              'Selected vendor not found',
+          });
       }
 
       const vendor =
         vendorRows[0];
 
-      // --------------------------------------------------------
-      // PREPARE ITEMS
-      // --------------------------------------------------------
+      const preparedItems =
+        [];
 
-      const preparedItems = [];
-
-      let subTotal = 0;
+      let subTotal =
+        0;
 
       for (
         const line
@@ -966,21 +965,22 @@ router.post(
       ) {
         const itemName =
           line.itemName
-              ?.toString()
-              .trim() ??
+            ?.toString()
+            .trim() ??
           '';
 
         if (!itemName) {
-          await connection.rollback();
+          await connection
+            .rollback();
 
           return res
-              .status(400)
-              .json({
-            success: false,
+            .status(400)
+            .json({
+              success: false,
 
-            message:
-              'Every purchase order row must have an item',
-          });
+              message:
+                'Every purchase order row must have an item',
+            });
         }
 
         const qty =
@@ -993,30 +993,36 @@ router.post(
             line.rate
           );
 
-        if (qty <= 0) {
-          await connection.rollback();
+        if (
+          qty <= 0
+        ) {
+          await connection
+            .rollback();
 
           return res
-              .status(400)
-              .json({
-            success: false,
+            .status(400)
+            .json({
+              success: false,
 
-            message:
-              `Quantity for "${itemName}" must be greater than zero`,
-          });
+              message:
+                `Quantity for "${itemName}" must be greater than zero`,
+            });
         }
 
-        if (rate < 0) {
-          await connection.rollback();
+        if (
+          rate < 0
+        ) {
+          await connection
+            .rollback();
 
           return res
-              .status(400)
-              .json({
-            success: false,
+            .status(400)
+            .json({
+              success: false,
 
-            message:
-              `Rate for "${itemName}" cannot be negative`,
-          });
+              message:
+                `Rate for "${itemName}" cannot be negative`,
+            });
         }
 
         const product =
@@ -1033,7 +1039,8 @@ router.post(
             ).toFixed(2)
           );
 
-        subTotal += amount;
+        subTotal +=
+          amount;
 
         preparedItems.push({
           sourceType:
@@ -1050,13 +1057,15 @@ router.post(
 
           description:
             line.description
-                ?.toString()
-                .trim() ||
+              ?.toString()
+              .trim() ||
             product.description ||
             '',
 
           qty,
+
           rate,
+
           amount,
         });
       }
@@ -1069,32 +1078,20 @@ router.post(
       const total =
         subTotal;
 
-      // --------------------------------------------------------
-      // INSERT PO
-      // --------------------------------------------------------
-
       const [orderResult] =
         await connection.query(
           `
           INSERT INTO purchase_orders (
             po_number,
-
             vendor_id,
             vendor_name,
-
             order_date,
-
             delivery_expected_date,
-
             payment_terms,
-
             due_date,
-
             reference_number,
-
             sub_total,
             total,
-
             status
           )
           VALUES (
@@ -1116,8 +1113,11 @@ router.post(
 
             paymentTerms &&
             paymentTerms
-                .trim() !== ''
-              ? paymentTerms.trim()
+              .toString()
+              .trim() !== ''
+              ? paymentTerms
+                  .toString()
+                  .trim()
               : '100% Advance',
 
             normalizeDate(
@@ -1126,11 +1126,15 @@ router.post(
 
             referenceNumber &&
             referenceNumber
-                .trim() !== ''
-              ? referenceNumber.trim()
+              .toString()
+              .trim() !== ''
+              ? referenceNumber
+                  .toString()
+                  .trim()
               : null,
 
             subTotal,
+
             total,
 
             'Draft',
@@ -1140,10 +1144,6 @@ router.post(
       const purchaseOrderId =
         orderResult.insertId;
 
-      // --------------------------------------------------------
-      // INSERT PO ITEMS
-      // --------------------------------------------------------
-
       for (
         const line
         of preparedItems
@@ -1152,15 +1152,11 @@ router.post(
           `
           INSERT INTO purchase_order_items (
             purchase_order_id,
-
             source_type,
-
             item_id,
             part_id,
-
             item_name,
             description,
-
             qty,
             rate,
             amount
@@ -1181,7 +1177,7 @@ router.post(
             line.itemName,
 
             line.description ||
-              null,
+            null,
 
             line.qty,
 
@@ -1192,11 +1188,8 @@ router.post(
         );
       }
 
-      await connection.commit();
-
-      // --------------------------------------------------------
-      // FETCH SAVED PO
-      // --------------------------------------------------------
+      await connection
+        .commit();
 
       const [savedRows] =
         await db.query(
@@ -1204,7 +1197,6 @@ router.post(
           SELECT
             id,
             po_number,
-
             vendor_id,
             vendor_name,
 
@@ -1217,6 +1209,7 @@ router.post(
               WHEN delivery_expected_date
                 IS NULL
                 THEN NULL
+
               ELSE DATE_FORMAT(
                 delivery_expected_date,
                 '%Y-%m-%d'
@@ -1229,6 +1222,7 @@ router.post(
               WHEN due_date
                 IS NULL
                 THEN NULL
+
               ELSE DATE_FORMAT(
                 due_date,
                 '%Y-%m-%d'
@@ -1236,12 +1230,9 @@ router.post(
             END AS due_date,
 
             reference_number,
-
             sub_total,
             total,
-
             status,
-
             created_at,
             updated_at
 
@@ -1252,7 +1243,7 @@ router.post(
           LIMIT 1
           `,
           [
-            purchaseOrderId
+            purchaseOrderId,
           ]
         );
 
@@ -1262,14 +1253,11 @@ router.post(
           SELECT
             id,
             purchase_order_id,
-
             source_type,
             item_id,
             part_id,
-
             item_name,
             description,
-
             qty,
             rate,
             amount
@@ -1281,30 +1269,32 @@ router.post(
           ORDER BY id ASC
           `,
           [
-            purchaseOrderId
+            purchaseOrderId,
           ]
         );
 
-      res.status(201).json({
-        success: true,
+      return res
+        .status(201)
+        .json({
+          success: true,
 
-        message:
-          'Purchase order created successfully',
+          message:
+            'Purchase order created successfully',
 
-        data:
-          mapPurchaseOrder(
-            savedRows[0],
+          data:
+            mapPurchaseOrder(
+              savedRows[0],
 
-            savedItems.map(
-              mapPurchaseOrderItem
-            )
-          ),
-      });
+              savedItems.map(
+                mapPurchaseOrderItem
+              )
+            ),
+        });
     } catch (error) {
       if (connection) {
         try {
           await connection
-              .rollback();
+            .rollback();
         } catch (_) {}
       }
 
@@ -1318,37 +1308,41 @@ router.post(
         'ER_DUP_ENTRY'
       ) {
         return res
-            .status(409)
-            .json({
-          success: false,
+          .status(409)
+          .json({
+            success: false,
 
-          message:
-            'Purchase order number already exists',
-        });
+            message:
+              'Purchase order number already exists',
+          });
       }
 
-      if (error.statusCode) {
+      if (
+        error.statusCode
+      ) {
         return res
-            .status(
-              error.statusCode
-            )
-            .json({
+          .status(
+            error.statusCode
+          )
+          .json({
+            success: false,
+
+            message:
+              error.message,
+          });
+      }
+
+      return res
+        .status(500)
+        .json({
           success: false,
 
           message:
+            'Failed to create purchase order',
+
+          error:
             error.message,
         });
-      }
-
-      res.status(500).json({
-        success: false,
-
-        message:
-          'Failed to create purchase order',
-
-        error:
-          error.message,
-      });
     } finally {
       if (connection) {
         connection.release();
@@ -1359,33 +1353,32 @@ router.post(
 
 // ============================================================
 // UPDATE STATUS
-//
-// PUT /api/purchase-orders/:id/status
 // ============================================================
 
 router.put(
   '/:id/status',
   async (req, res) => {
     try {
-      const { id } =
-        req.params;
+      const {
+        id,
+      } = req.params;
 
-      const { status } =
-        req.body;
+      const {
+        status,
+      } = req.body;
 
       if (
-        !ALLOWED_STATUSES.includes(
-          status
-        )
+        !ALLOWED_STATUSES
+          .includes(status)
       ) {
         return res
-            .status(400)
-            .json({
-          success: false,
+          .status(400)
+          .json({
+            success: false,
 
-          message:
-            'Invalid purchase order status',
-        });
+            message:
+              'Invalid purchase order status',
+          });
       }
 
       const [result] =
@@ -1407,53 +1400,55 @@ router.put(
         result.affectedRows === 0
       ) {
         return res
-            .status(404)
-            .json({
-          success: false,
+          .status(404)
+          .json({
+            success: false,
 
-          message:
-            'Purchase order not found',
-        });
+            message:
+              'Purchase order not found',
+          });
       }
 
-      res.status(200).json({
-        success: true,
+      return res
+        .status(200)
+        .json({
+          success: true,
 
-        message:
-          'Purchase order status updated successfully',
-      });
+          message:
+            'Purchase order status updated successfully',
+        });
     } catch (error) {
       console.error(
         'Update PO status error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(500)
+        .json({
+          success: false,
 
-        message:
-          'Failed to update purchase order status',
+          message:
+            'Failed to update purchase order status',
 
-        error:
-          error.message,
-      });
+          error:
+            error.message,
+        });
     }
   }
 );
 
 // ============================================================
-// DELETE PURCHASE ORDER
-//
-// purchase_order_items delete automatically because
-// ON DELETE CASCADE.
+// DELETE
 // ============================================================
 
 router.delete(
   '/:id',
   async (req, res) => {
     try {
-      const { id } =
-        req.params;
+      const {
+        id,
+      } = req.params;
 
       const [result] =
         await db.query(
@@ -1462,43 +1457,49 @@ router.delete(
 
           WHERE id = ?
           `,
-          [id]
+          [
+            id,
+          ]
         );
 
       if (
         result.affectedRows === 0
       ) {
         return res
-            .status(404)
-            .json({
-          success: false,
+          .status(404)
+          .json({
+            success: false,
 
-          message:
-            'Purchase order not found',
-        });
+            message:
+              'Purchase order not found',
+          });
       }
 
-      res.status(200).json({
-        success: true,
+      return res
+        .status(200)
+        .json({
+          success: true,
 
-        message:
-          'Purchase order deleted successfully',
-      });
+          message:
+            'Purchase order deleted successfully',
+        });
     } catch (error) {
       console.error(
         'Delete purchase order error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(500)
+        .json({
+          success: false,
 
-        message:
-          'Failed to delete purchase order',
+          message:
+            'Failed to delete purchase order',
 
-        error:
-          error.message,
-      });
+          error:
+            error.message,
+        });
     }
   }
 );

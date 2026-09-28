@@ -1,13 +1,20 @@
 const express = require('express');
 const db = require('../config/db');
 
+const {
+  getNextTransactionNumber,
+} = require('../utils/transaction_number');
+
 const router = express.Router();
 
 // ============================================================
 // HELPERS
 // ============================================================
 
-function toNumber(value, fallback = 0) {
+function toNumber(
+  value,
+  fallback = 0
+) {
   const number = Number(value);
 
   return Number.isFinite(number)
@@ -16,15 +23,16 @@ function toNumber(value, fallback = 0) {
 }
 
 function normalizeDate(value) {
-  if (!value) {
+  if (value == null) {
     return null;
   }
 
-  const text = value
-    .toString()
-    .trim();
+  const text =
+    value
+      .toString()
+      .trim();
 
-  if (!text) {
+  if (text === '') {
     return null;
   }
 
@@ -33,56 +41,41 @@ function normalizeDate(value) {
     : text;
 }
 
-function calculateStatus(
-  total,
-  amountPaid
-) {
-  const finalTotal =
-    toNumber(total);
-
-  const paid =
-    toNumber(amountPaid);
-
-  if (paid <= 0) {
-    return 'Unpaid';
-  }
-
-  if (paid >= finalTotal) {
-    return 'Paid';
-  }
-
-  return 'Partially Paid';
-}
-
 function mapBillItem(row) {
   return {
     id:
-      row.id?.toString() ??
+      row.id
+        ?.toString() ??
       null,
 
     billId:
       row.bill_id
-          ?.toString() ??
+        ?.toString() ??
       '',
 
     sourceType:
-      row.source_type ?? '',
+      row.source_type ??
+      '',
 
     itemId:
       row.item_id == null
         ? null
-        : row.item_id.toString(),
+        : row.item_id
+            .toString(),
 
     partId:
       row.part_id == null
         ? null
-        : row.part_id.toString(),
+        : row.part_id
+            .toString(),
 
     itemName:
-      row.item_name ?? '',
+      row.item_name ??
+      '',
 
     description:
-      row.description ?? '',
+      row.description ??
+      '',
 
     qty:
       toNumber(
@@ -107,11 +100,13 @@ function mapBill(
 ) {
   return {
     id:
-      row.id?.toString() ??
+      row.id
+        ?.toString() ??
       null,
 
     billNumber:
-      row.bill_number ?? '',
+      row.bill_number ??
+      '',
 
     vendorInvoiceNumber:
       row.vendor_invoice_number ??
@@ -123,44 +118,37 @@ function mapBill(
 
     vendorId:
       row.vendor_id
-          ?.toString() ??
+        ?.toString() ??
       '',
 
     vendorName:
-      row.vendor_name ?? '',
+      row.vendor_name ??
+      '',
 
     purchaseOrderId:
       row.purchase_order_id ==
-              null
-          ? null
-          : row.purchase_order_id
-              .toString(),
+      null
+        ? null
+        : row.purchase_order_id
+            .toString(),
 
     purchaseOrderNumber:
       row.purchase_order_number ??
       null,
 
     billDate:
-      row.bill_date ?? '',
+      row.bill_date ??
+      '',
 
     dueDate:
-      row.due_date ?? null,
+      row.due_date ??
+      null,
 
     items,
-
-    subTotal:
-      toNumber(
-        row.sub_total
-      ),
 
     taxAmount:
       toNumber(
         row.tax_amount
-      ),
-
-    total:
-      toNumber(
-        row.total
       ),
 
     amountPaid:
@@ -168,39 +156,28 @@ function mapBill(
         row.amount_paid
       ),
 
-    amountDue:
-      Math.max(
-        0,
-        toNumber(row.total) -
-            toNumber(
-              row.amount_paid
-            )
+    subTotal:
+      toNumber(
+        row.sub_total
       ),
 
-    status:
-      row.status ??
-      calculateStatus(
-        row.total,
-        row.amount_paid
+    total:
+      toNumber(
+        row.total
       ),
 
     createdAt:
-      row.created_at ?? null,
+      row.created_at ??
+      null,
 
     updatedAt:
-      row.updated_at ?? null,
+      row.updated_at ??
+      null,
   };
 }
 
 // ============================================================
-// CURRENT PURCHASE ITEM MODEL ONLY SENDS:
-//
-// itemName
-// description
-// qty
-// rate
-//
-// So resolve actual Item / Part from DB by exact name.
+// RESOLVE ITEM / PART FROM EXISTING CATALOG
 // ============================================================
 
 async function resolveCatalogProduct(
@@ -210,8 +187,8 @@ async function resolveCatalogProduct(
 ) {
   const name =
     itemName
-        ?.toString()
-        .trim() ??
+      ?.toString()
+      .trim() ??
     '';
 
   if (!name) {
@@ -220,7 +197,8 @@ async function resolveCatalogProduct(
         'Item name is required'
       );
 
-    error.statusCode = 400;
+    error.statusCode =
+      400;
 
     throw error;
   }
@@ -238,7 +216,9 @@ async function resolveCatalogProduct(
 
       WHERE name = ?
       `,
-      [name]
+      [
+        name,
+      ]
     );
 
   const [partRows] =
@@ -254,18 +234,25 @@ async function resolveCatalogProduct(
 
       WHERE name = ?
       `,
-      [name]
+      [
+        name,
+      ]
     );
 
   const candidates = [];
 
-  for (const row of itemRows) {
+  for (
+    const row
+    of itemRows
+  ) {
     candidates.push({
       sourceType:
         'Item',
 
       itemId:
-        Number(row.id),
+        Number(
+          row.id
+        ),
 
       partId:
         null,
@@ -273,17 +260,21 @@ async function resolveCatalogProduct(
       name:
         row.name,
 
-      description:
-        row.description ?? '',
-
       purchasePrice:
         toNumber(
           row.purchase_price
         ),
+
+      description:
+        row.description ??
+        '',
     });
   }
 
-  for (const row of partRows) {
+  for (
+    const row
+    of partRows
+  ) {
     candidates.push({
       sourceType:
         'Part',
@@ -292,38 +283,43 @@ async function resolveCatalogProduct(
         null,
 
       partId:
-        Number(row.id),
+        Number(
+          row.id
+        ),
 
       name:
         row.name,
-
-      description:
-        row.description ?? '',
 
       purchasePrice:
         toNumber(
           row.purchase_price
         ),
+
+      description:
+        row.description ??
+        '',
     });
   }
 
-  if (candidates.length === 0) {
+  if (
+    candidates.length === 0
+  ) {
     const error =
       new Error(
         `Selected item "${name}" was not found in Items or Parts`
       );
 
-    error.statusCode = 404;
+    error.statusCode =
+      404;
 
     throw error;
   }
 
-  if (candidates.length === 1) {
+  if (
+    candidates.length === 1
+  ) {
     return candidates[0];
   }
-
-  // Same name exists in Items and Parts.
-  // Use purchase price to identify the selected one.
 
   const matchingRate =
     candidates.filter(
@@ -334,81 +330,88 @@ async function resolveCatalogProduct(
         ) < 0.005
     );
 
-  if (matchingRate.length === 1) {
+  if (
+    matchingRate.length === 1
+  ) {
     return matchingRate[0];
   }
 
   const error =
     new Error(
-      `More than one Item/Part uses the name "${name}". Please keep Item/Part names unique.`
+      `More than one Item/Part uses the name "${name}".`
     );
 
-  error.statusCode = 400;
+  error.statusCode =
+    400;
 
   throw error;
 }
 
 // ============================================================
-// GET NEXT BILL NUMBER
+// NEXT BILL NUMBER
 //
 // GET /api/bills/next-number
+//
+// module = Bill
+// Prefix and starting number are fully dynamic.
 // ============================================================
 
 router.get(
   '/next-number',
   async (req, res) => {
     try {
-      const [rows] =
-        await db.query(
-          `
-          SELECT
-            MAX(
-              CAST(
-                SUBSTRING(
-                  bill_number,
-                  6
-                )
-                AS UNSIGNED
-              )
-            ) AS max_number
+      const result =
+        await getNextTransactionNumber({
+          module:
+            'Bill',
 
-          FROM bills
+          table:
+            'bills',
 
-          WHERE bill_number
-            LIKE 'BILL-%'
-          `
-        );
+          numberColumn:
+            'bill_number',
 
-      const maxNumber =
-        Number(
-          rows[0]
-              ?.max_number ??
-            0
-        );
+          padding:
+            4,
+        });
 
-      res.status(200).json({
-        success: true,
+      return res
+        .status(200)
+        .json({
+          success: true,
 
-        data: {
-          billNumber:
-            `BILL-${maxNumber + 1}`,
-        },
-      });
+          data: {
+            billNumber:
+              result.transactionNumber,
+
+            prefix:
+              result.prefix,
+
+            startingNumber:
+              result.startingNumber,
+
+            nextNumber:
+              result.nextNumber,
+          },
+        });
     } catch (error) {
       console.error(
         'Get next bill number error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(
+          error.statusCode ??
+            500
+        )
+        .json({
+          success: false,
 
-        message:
-          'Failed to generate bill number',
-
-        error:
-          error.message,
-      });
+          message:
+            error.message ||
+            'Failed to generate bill number',
+        });
     }
   }
 );
@@ -417,12 +420,6 @@ router.get(
 // GET ALL BILLS
 //
 // GET /api/bills
-//
-// Filters:
-// status_filter
-// vendor_filter
-// date_from
-// date_to
 // ============================================================
 
 router.get(
@@ -430,11 +427,36 @@ router.get(
   async (req, res) => {
     try {
       const {
-        status_filter,
-        vendor_filter,
+        vendor,
+        vendorName,
+
+        dateFrom,
+        dateTo,
+
         date_from,
         date_to,
       } = req.query;
+
+      const finalVendor =
+        (
+          vendor ??
+          vendorName ??
+          ''
+        )
+          .toString()
+          .trim();
+
+      const finalDateFrom =
+        normalizeDate(
+          dateFrom ??
+          date_from
+        );
+
+      const finalDateTo =
+        normalizeDate(
+          dateTo ??
+          date_to
+        );
 
       let sql = `
         SELECT
@@ -443,7 +465,6 @@ router.get(
           bill_number,
 
           vendor_invoice_number,
-
           invoice_attachment_path,
 
           vendor_id,
@@ -458,8 +479,10 @@ router.get(
           ) AS bill_date,
 
           CASE
-            WHEN due_date IS NULL
+            WHEN due_date
+              IS NULL
               THEN NULL
+
             ELSE DATE_FORMAT(
               due_date,
               '%Y-%m-%d'
@@ -470,7 +493,6 @@ router.get(
           tax_amount,
           total,
           amount_paid,
-          status,
 
           created_at,
           updated_at
@@ -482,76 +504,40 @@ router.get(
 
       const values = [];
 
-      // --------------------------------------------------------
-      // STATUS FILTER
-      // --------------------------------------------------------
-
       if (
-        status_filter &&
-        status_filter !== 'All'
+        finalVendor !== ''
       ) {
         sql += `
-          AND status = ?
+          AND vendor_name
+            LIKE ?
         `;
 
         values.push(
-          status_filter
+          `%${finalVendor}%`
         );
       }
-
-      // --------------------------------------------------------
-      // VENDOR FILTER
-      // --------------------------------------------------------
 
       if (
-        vendor_filter &&
-        vendor_filter
-            .trim() !== ''
+        finalDateFrom
       ) {
-        sql += `
-          AND vendor_name LIKE ?
-        `;
-
-        values.push(
-          `%${vendor_filter.trim()}%`
-        );
-      }
-
-      // --------------------------------------------------------
-      // DATE FROM
-      // --------------------------------------------------------
-
-      const dateFrom =
-        normalizeDate(
-          date_from
-        );
-
-      if (dateFrom) {
         sql += `
           AND bill_date >= ?
         `;
 
         values.push(
-          dateFrom
+          finalDateFrom
         );
       }
 
-      // --------------------------------------------------------
-      // DATE TO
-      // --------------------------------------------------------
-
-      const dateTo =
-        normalizeDate(
-          date_to
-        );
-
-      if (dateTo) {
+      if (
+        finalDateTo
+      ) {
         sql += `
           AND bill_date <= ?
         `;
 
         values.push(
-          dateTo
+          finalDateTo
         );
       }
 
@@ -572,21 +558,17 @@ router.get(
           .status(200)
           .json({
             success: true,
+
             data: [],
           });
       }
 
-      // --------------------------------------------------------
-      // LOAD ITEMS FOR ALL BILLS
-      //
-      // Flutter BillModel calculates total from its items,
-      // therefore GET needs to include line items.
-      // --------------------------------------------------------
-
       const ids =
         billRows.map(
           (row) =>
-            Number(row.id)
+            Number(
+              row.id
+            )
         );
 
       const placeholders =
@@ -615,9 +597,8 @@ router.get(
 
           FROM bill_items
 
-          WHERE bill_id IN (
-            ${placeholders}
-          )
+          WHERE bill_id
+            IN (${placeholders})
 
           ORDER BY
             bill_id ASC,
@@ -626,18 +607,26 @@ router.get(
           ids
         );
 
-      const groupedItems = {};
+      const groupedItems =
+        {};
 
-      for (const row of itemRows) {
+      for (
+        const row
+        of itemRows
+      ) {
         const billId =
           Number(
             row.bill_id
           );
 
         if (
-          !groupedItems[billId]
+          !groupedItems[
+            billId
+          ]
         ) {
-          groupedItems[billId] = [];
+          groupedItems[
+            billId
+          ] = [];
         }
 
         groupedItems[
@@ -652,39 +641,45 @@ router.get(
       const data =
         billRows.map(
           (row) => {
-            const billId =
-              Number(row.id);
+            const id =
+              Number(
+                row.id
+              );
 
             return mapBill(
               row,
 
               groupedItems[
-                billId
+                id
               ] ?? []
             );
           }
         );
 
-      res.status(200).json({
-        success: true,
+      return res
+        .status(200)
+        .json({
+          success: true,
 
-        data,
-      });
+          data,
+        });
     } catch (error) {
       console.error(
         'Get bills error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(500)
+        .json({
+          success: false,
 
-        message:
-          'Failed to fetch bills',
+          message:
+            'Failed to fetch bills',
 
-        error:
-          error.message,
-      });
+          error:
+            error.message,
+        });
     }
   }
 );
@@ -699,8 +694,9 @@ router.get(
   '/:id',
   async (req, res) => {
     try {
-      const { id } =
-        req.params;
+      const {
+        id,
+      } = req.params;
 
       const [billRows] =
         await db.query(
@@ -711,7 +707,6 @@ router.get(
             bill_number,
 
             vendor_invoice_number,
-
             invoice_attachment_path,
 
             vendor_id,
@@ -726,8 +721,10 @@ router.get(
             ) AS bill_date,
 
             CASE
-              WHEN due_date IS NULL
+              WHEN due_date
+                IS NULL
                 THEN NULL
+
               ELSE DATE_FORMAT(
                 due_date,
                 '%Y-%m-%d'
@@ -738,7 +735,6 @@ router.get(
             tax_amount,
             total,
             amount_paid,
-            status,
 
             created_at,
             updated_at
@@ -749,7 +745,9 @@ router.get(
 
           LIMIT 1
           `,
-          [id]
+          [
+            id,
+          ]
         );
 
       if (
@@ -790,36 +788,42 @@ router.get(
 
           ORDER BY id ASC
           `,
-          [id]
+          [
+            id,
+          ]
         );
 
-      res.status(200).json({
-        success: true,
+      return res
+        .status(200)
+        .json({
+          success: true,
 
-        data:
-          mapBill(
-            billRows[0],
+          data:
+            mapBill(
+              billRows[0],
 
-            itemRows.map(
-              mapBillItem
-            )
-          ),
-      });
+              itemRows.map(
+                mapBillItem
+              )
+            ),
+        });
     } catch (error) {
       console.error(
         'Get bill error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(500)
+        .json({
+          success: false,
 
-        message:
-          'Failed to fetch bill',
+          message:
+            'Failed to fetch bill',
 
-        error:
-          error.message,
-      });
+          error:
+            error.message,
+        });
     }
   }
 );
@@ -846,11 +850,9 @@ router.post(
         vendorId,
 
         purchaseOrderId,
-
         purchaseOrderNumber,
 
         billDate,
-
         dueDate,
 
         items,
@@ -861,12 +863,13 @@ router.post(
       } = req.body;
 
       // --------------------------------------------------------
-      // BILL NUMBER
+      // VALIDATION
       // --------------------------------------------------------
 
       if (
         !billNumber ||
         billNumber
+          .toString()
           .trim() === ''
       ) {
         return res
@@ -878,10 +881,6 @@ router.post(
               'Bill number is required',
           });
       }
-
-      // --------------------------------------------------------
-      // VENDOR
-      // --------------------------------------------------------
 
       const parsedVendorId =
         Number(
@@ -904,16 +903,14 @@ router.post(
           });
       }
 
-      // --------------------------------------------------------
-      // DATE
-      // --------------------------------------------------------
-
       const finalBillDate =
         normalizeDate(
           billDate
         );
 
-      if (!finalBillDate) {
+      if (
+        !finalBillDate
+      ) {
         return res
           .status(400)
           .json({
@@ -924,12 +921,10 @@ router.post(
           });
       }
 
-      // --------------------------------------------------------
-      // ITEMS
-      // --------------------------------------------------------
-
       if (
-        !Array.isArray(items) ||
+        !Array.isArray(
+          items
+        ) ||
         items.length === 0
       ) {
         return res
@@ -949,7 +944,7 @@ router.post(
         .beginTransaction();
 
       // --------------------------------------------------------
-      // LOAD VENDOR FROM DB
+      // VENDOR
       // --------------------------------------------------------
 
       const [vendorRows] =
@@ -966,14 +961,15 @@ router.post(
           LIMIT 1
           `,
           [
-            parsedVendorId
+            parsedVendorId,
           ]
         );
 
       if (
         vendorRows.length === 0
       ) {
-        await connection.rollback();
+        await connection
+          .rollback();
 
         return res
           .status(404)
@@ -1021,8 +1017,7 @@ router.post(
             `
             SELECT
               id,
-              po_number,
-              vendor_id
+              po_number
 
             FROM purchase_orders
 
@@ -1030,13 +1025,16 @@ router.post(
 
             LIMIT 1
             `,
-            [parsedPoId]
+            [
+              parsedPoId,
+            ]
           );
 
         if (
           poRows.length === 0
         ) {
-          await connection.rollback();
+          await connection
+            .rollback();
 
           return res
             .status(404)
@@ -1045,24 +1043,6 @@ router.post(
 
               message:
                 'Selected purchase order not found',
-            });
-        }
-
-        if (
-          Number(
-            poRows[0].vendor_id
-          ) !==
-          parsedVendorId
-        ) {
-          await connection.rollback();
-
-          return res
-            .status(400)
-            .json({
-              success: false,
-
-              message:
-                'Purchase order does not belong to selected vendor',
             });
         }
 
@@ -1075,12 +1055,14 @@ router.post(
       }
 
       // --------------------------------------------------------
-      // PREPARE ITEMS
+      // ITEMS
       // --------------------------------------------------------
 
-      const preparedItems = [];
+      const preparedItems =
+        [];
 
-      let subTotal = 0;
+      let calculatedSubTotal =
+        0;
 
       for (
         const line
@@ -1092,8 +1074,11 @@ router.post(
             .trim() ??
           '';
 
-        if (!itemName) {
-          await connection.rollback();
+        if (
+          itemName === ''
+        ) {
+          await connection
+            .rollback();
 
           return res
             .status(400)
@@ -1101,7 +1086,7 @@ router.post(
               success: false,
 
               message:
-                'Every bill row must contain an item',
+                'Every bill row must have an item',
             });
         }
 
@@ -1115,8 +1100,11 @@ router.post(
             line.rate
           );
 
-        if (qty <= 0) {
-          await connection.rollback();
+        if (
+          qty <= 0
+        ) {
+          await connection
+            .rollback();
 
           return res
             .status(400)
@@ -1128,8 +1116,11 @@ router.post(
             });
         }
 
-        if (rate < 0) {
-          await connection.rollback();
+        if (
+          rate < 0
+        ) {
+          await connection
+            .rollback();
 
           return res
             .status(400)
@@ -1144,7 +1135,9 @@ router.post(
         const product =
           await resolveCatalogProduct(
             connection,
+
             itemName,
+
             rate
           );
 
@@ -1155,7 +1148,7 @@ router.post(
             ).toFixed(2)
           );
 
-        subTotal +=
+        calculatedSubTotal +=
           amount;
 
         preparedItems.push({
@@ -1186,40 +1179,25 @@ router.post(
         });
       }
 
-      subTotal =
+      calculatedSubTotal =
         Number(
-          subTotal
+          calculatedSubTotal
             .toFixed(2)
         );
 
-      // --------------------------------------------------------
-      // TAX / TOTAL
-      // --------------------------------------------------------
-
       const finalTaxAmount =
-        toNumber(
-          taxAmount
+        Math.max(
+          0,
+
+          toNumber(
+            taxAmount
+          )
         );
 
-      if (
-        finalTaxAmount < 0
-      ) {
-        await connection.rollback();
-
-        return res
-          .status(400)
-          .json({
-            success: false,
-
-            message:
-              'Tax cannot be negative',
-          });
-      }
-
-      const total =
+      const calculatedTotal =
         Number(
           (
-            subTotal +
+            calculatedSubTotal +
             finalTaxAmount
           ).toFixed(2)
         );
@@ -1227,31 +1205,10 @@ router.post(
       const finalAmountPaid =
         Math.max(
           0,
+
           toNumber(
             amountPaid
           )
-        );
-
-      if (
-        finalAmountPaid >
-        total
-      ) {
-        await connection.rollback();
-
-        return res
-          .status(400)
-          .json({
-            success: false,
-
-            message:
-              'Amount paid cannot be greater than bill total',
-          });
-      }
-
-      const status =
-        calculateStatus(
-          total,
-          finalAmountPaid
         );
 
       // --------------------------------------------------------
@@ -1265,7 +1222,6 @@ router.post(
             bill_number,
 
             vendor_invoice_number,
-
             invoice_attachment_path,
 
             vendor_id,
@@ -1281,15 +1237,17 @@ router.post(
             tax_amount,
             total,
 
-            amount_paid,
-            status
+            amount_paid
           )
           VALUES (
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?
           )
           `,
           [
-            billNumber.trim(),
+            billNumber
+              .toString()
+              .trim(),
 
             vendorInvoiceNumber &&
             vendorInvoiceNumber
@@ -1323,15 +1281,13 @@ router.post(
               dueDate
             ),
 
-            subTotal,
+            calculatedSubTotal,
 
             finalTaxAmount,
 
-            total,
+            calculatedTotal,
 
             finalAmountPaid,
-
-            status,
           ]
         );
 
@@ -1390,10 +1346,11 @@ router.post(
         );
       }
 
-      await connection.commit();
+      await connection
+        .commit();
 
       // --------------------------------------------------------
-      // FETCH SAVED BILL
+      // RETURN CREATED BILL
       // --------------------------------------------------------
 
       const [savedRows] =
@@ -1405,7 +1362,6 @@ router.post(
             bill_number,
 
             vendor_invoice_number,
-
             invoice_attachment_path,
 
             vendor_id,
@@ -1420,8 +1376,10 @@ router.post(
             ) AS bill_date,
 
             CASE
-              WHEN due_date IS NULL
+              WHEN due_date
+                IS NULL
                 THEN NULL
+
               ELSE DATE_FORMAT(
                 due_date,
                 '%Y-%m-%d'
@@ -1432,7 +1390,6 @@ router.post(
             tax_amount,
             total,
             amount_paid,
-            status,
 
             created_at,
             updated_at
@@ -1443,7 +1400,9 @@ router.post(
 
           LIMIT 1
           `,
-          [billId]
+          [
+            billId,
+          ]
         );
 
       const [savedItems] =
@@ -1471,24 +1430,28 @@ router.post(
 
           ORDER BY id ASC
           `,
-          [billId]
+          [
+            billId,
+          ]
         );
 
-      res.status(201).json({
-        success: true,
+      return res
+        .status(201)
+        .json({
+          success: true,
 
-        message:
-          'Bill created successfully',
+          message:
+            'Bill created successfully',
 
-        data:
-          mapBill(
-            savedRows[0],
+          data:
+            mapBill(
+              savedRows[0],
 
-            savedItems.map(
-              mapBillItem
-            )
-          ),
-      });
+              savedItems.map(
+                mapBillItem
+              )
+            ),
+        });
     } catch (error) {
       if (connection) {
         try {
@@ -1531,15 +1494,17 @@ router.post(
           });
       }
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(500)
+        .json({
+          success: false,
 
-        message:
-          'Failed to create bill',
+          message:
+            'Failed to create bill',
 
-        error:
-          error.message,
-      });
+          error:
+            error.message,
+        });
     } finally {
       if (connection) {
         connection.release();
@@ -1553,23 +1518,21 @@ router.post(
 //
 // PUT /api/bills/:id/payment
 //
-// Body:
+// body:
 // {
 //   "amountPaid": 1000
 // }
 //
-// amountPaid here means NEW payment amount.
-// It gets added to existing amount_paid.
+// This amount is ADDED to existing amount_paid.
 // ============================================================
 
 router.put(
   '/:id/payment',
   async (req, res) => {
-    let connection;
-
     try {
-      const { id } =
-        req.params;
+      const {
+        id,
+      } = req.params;
 
       const payment =
         toNumber(
@@ -1589,14 +1552,8 @@ router.put(
           });
       }
 
-      connection =
-        await db.getConnection();
-
-      await connection
-        .beginTransaction();
-
-      const [rows] =
-        await connection.query(
+      const [billRows] =
+        await db.query(
           `
           SELECT
             id,
@@ -1607,16 +1564,16 @@ router.put(
 
           WHERE id = ?
 
-          FOR UPDATE
+          LIMIT 1
           `,
-          [id]
+          [
+            id,
+          ]
         );
 
       if (
-        rows.length === 0
+        billRows.length === 0
       ) {
-        await connection.rollback();
-
         return res
           .status(404)
           .json({
@@ -1627,93 +1584,46 @@ router.put(
           });
       }
 
-      const total =
+      const currentAmountPaid =
         toNumber(
-          rows[0].total
-        );
-
-      const currentPaid =
-        toNumber(
-          rows[0]
+          billRows[0]
             .amount_paid
         );
 
-      const amountDue =
-        Math.max(
-          0,
-          total -
-            currentPaid
+      const total =
+        toNumber(
+          billRows[0]
+            .total
         );
-
-      if (
-        amountDue <= 0
-      ) {
-        await connection.rollback();
-
-        return res
-          .status(400)
-          .json({
-            success: false,
-
-            message:
-              'This bill is already fully paid',
-          });
-      }
-
-      if (
-        payment >
-        amountDue
-      ) {
-        await connection.rollback();
-
-        return res
-          .status(400)
-          .json({
-            success: false,
-
-            message:
-              `Payment cannot exceed amount due (${amountDue.toFixed(2)})`,
-          });
-      }
 
       const newAmountPaid =
-        Number(
-          (
-            currentPaid +
-            payment
-          ).toFixed(2)
-        );
-
-      const newStatus =
-        calculateStatus(
+        Math.min(
           total,
-          newAmountPaid
+
+          Number(
+            (
+              currentAmountPaid +
+              payment
+            ).toFixed(2)
+          )
         );
 
-      await connection.query(
+      await db.query(
         `
         UPDATE bills
 
-        SET
-          amount_paid = ?,
-          status = ?
+        SET amount_paid = ?
 
         WHERE id = ?
         `,
         [
           newAmountPaid,
-          newStatus,
+
           id,
         ]
       );
 
-      await connection.commit();
-
-      // --------------------------------------------------------
-      // Return updated bill
-      // --------------------------------------------------------
-
-      const [billRows] =
+      const [updatedRows] =
         await db.query(
           `
           SELECT
@@ -1722,7 +1632,6 @@ router.put(
             bill_number,
 
             vendor_invoice_number,
-
             invoice_attachment_path,
 
             vendor_id,
@@ -1737,8 +1646,10 @@ router.put(
             ) AS bill_date,
 
             CASE
-              WHEN due_date IS NULL
+              WHEN due_date
+                IS NULL
                 THEN NULL
+
               ELSE DATE_FORMAT(
                 due_date,
                 '%Y-%m-%d'
@@ -1749,7 +1660,6 @@ router.put(
             tax_amount,
             total,
             amount_paid,
-            status,
 
             created_at,
             updated_at
@@ -1760,7 +1670,9 @@ router.put(
 
           LIMIT 1
           `,
-          [id]
+          [
+            id,
+          ]
         );
 
       const [itemRows] =
@@ -1771,6 +1683,7 @@ router.put(
             bill_id,
 
             source_type,
+
             item_id,
             part_id,
 
@@ -1787,50 +1700,45 @@ router.put(
 
           ORDER BY id ASC
           `,
-          [id]
+          [
+            id,
+          ]
         );
 
-      res.status(200).json({
-        success: true,
+      return res
+        .status(200)
+        .json({
+          success: true,
 
-        message:
-          'Payment recorded successfully',
+          message:
+            'Payment recorded successfully',
 
-        data:
-          mapBill(
-            billRows[0],
+          data:
+            mapBill(
+              updatedRows[0],
 
-            itemRows.map(
-              mapBillItem
-            )
-          ),
-      });
+              itemRows.map(
+                mapBillItem
+              )
+            ),
+        });
     } catch (error) {
-      if (connection) {
-        try {
-          await connection
-            .rollback();
-        } catch (_) {}
-      }
-
       console.error(
         'Record bill payment error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(500)
+        .json({
+          success: false,
 
-        message:
-          'Failed to record payment',
+          message:
+            'Failed to record payment',
 
-        error:
-          error.message,
-      });
-    } finally {
-      if (connection) {
-        connection.release();
-      }
+          error:
+            error.message,
+        });
     }
   }
 );
@@ -1845,8 +1753,9 @@ router.delete(
   '/:id',
   async (req, res) => {
     try {
-      const { id } =
-        req.params;
+      const {
+        id,
+      } = req.params;
 
       const [result] =
         await db.query(
@@ -1855,7 +1764,9 @@ router.delete(
 
           WHERE id = ?
           `,
-          [id]
+          [
+            id,
+          ]
         );
 
       if (
@@ -1871,27 +1782,31 @@ router.delete(
           });
       }
 
-      res.status(200).json({
-        success: true,
+      return res
+        .status(200)
+        .json({
+          success: true,
 
-        message:
-          'Bill deleted successfully',
-      });
+          message:
+            'Bill deleted successfully',
+        });
     } catch (error) {
       console.error(
         'Delete bill error:',
         error
       );
 
-      res.status(500).json({
-        success: false,
+      return res
+        .status(500)
+        .json({
+          success: false,
 
-        message:
-          'Failed to delete bill',
+          message:
+            'Failed to delete bill',
 
-        error:
-          error.message,
-      });
+          error:
+            error.message,
+        });
     }
   }
 );

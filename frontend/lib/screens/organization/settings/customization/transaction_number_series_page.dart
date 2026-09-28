@@ -1,640 +1,694 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'dart:convert';
 
-class TransactionNumberSeriesPage extends StatefulWidget {
-  final VoidCallback onBack;
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+// ============================================================
+// MODEL
+// ============================================================
+
+class TransactionNumberSeriesItem {
+  final int? id;
+
+  final String module;
+
+  final TextEditingController
+      prefixController;
+
+  final TextEditingController
+      startingNumberController;
+
+  TransactionNumberSeriesItem({
+    this.id,
+
+    required this.module,
+
+    required String prefix,
+
+    required int startingNumber,
+  })  : prefixController =
+            TextEditingController(
+          text: prefix,
+        ),
+        startingNumberController =
+            TextEditingController(
+          text:
+              startingNumber
+                  .toString(),
+        );
+
+  String get prefix =>
+      prefixController.text;
+
+  int get startingNumber =>
+      int.tryParse(
+        startingNumberController
+            .text
+            .trim(),
+      ) ??
+      1;
+
+  String get preview {
+    final int number =
+        startingNumber <= 0
+            ? 1
+            : startingNumber;
+
+    return '$prefix${number.toString().padLeft(4, '0')}';
+  }
+
+  Map<String, dynamic>
+      toJson() {
+    return {
+      'module':
+          module,
+
+      'prefix':
+          prefixController.text,
+
+      'startingNumber':
+          startingNumber <= 0
+              ? 1
+              : startingNumber,
+    };
+  }
+
+  void dispose() {
+    prefixController.dispose();
+
+    startingNumberController
+        .dispose();
+  }
+}
+
+// ============================================================
+// PAGE
+// ============================================================
+
+class TransactionNumberSeriesPage
+    extends StatefulWidget {
+  final VoidCallback? onBack;
 
   const TransactionNumberSeriesPage({
     super.key,
-    required this.onBack,
+    this.onBack,
   });
 
   @override
-  State<TransactionNumberSeriesPage> createState() =>
-      _TransactionNumberSeriesPageState();
+  State<TransactionNumberSeriesPage>
+      createState() =>
+          _TransactionNumberSeriesPageState();
 }
 
 class _TransactionNumberSeriesPageState
-    extends State<TransactionNumberSeriesPage> {
-  bool _showSuccess = true;
+    extends State<
+        TransactionNumberSeriesPage> {
+  static const String _baseUrl =
+      'http://localhost:3000/api';
 
-  final List<_NumberSeriesItem> _items = [
-    _NumberSeriesItem('Journal'),
-    _NumberSeriesItem('Credit Note'),
-    _NumberSeriesItem('Customer Payment'),
-    _NumberSeriesItem('Purchase Order'),
-    _NumberSeriesItem('Sales Order'),
-    _NumberSeriesItem('Vendor Payment'),
-    _NumberSeriesItem('Retainer Invoice'),
-    _NumberSeriesItem('Vendor Credits'),
-    _NumberSeriesItem('Bill Of Supply'),
-    _NumberSeriesItem('Debit Note'),
-    _NumberSeriesItem('Invoice'),
-  ];
+  List<TransactionNumberSeriesItem>
+      _items = [];
+
+  bool _isLoading = true;
+
+  bool _isSaving = false;
+
+  String? _errorMessage;
+
+  // ==========================================================
+  // INIT
+  // ==========================================================
 
   @override
   void initState() {
     super.initState();
 
-    for (final item in _items) {
-      item.prefixController.addListener(_refreshPreview);
-      item.startController.addListener(_refreshPreview);
-    }
+    _loadSeries();
   }
+
+  // ==========================================================
+  // DISPOSE
+  // ==========================================================
 
   @override
   void dispose() {
-    for (final item in _items) {
-      item.prefixController.removeListener(_refreshPreview);
-      item.startController.removeListener(_refreshPreview);
-
-      item.prefixController.dispose();
-      item.startController.dispose();
-    }
+    _disposeItems();
 
     super.dispose();
   }
 
-  void _refreshPreview() {
-    if (!mounted) return;
-
-    setState(() {});
+  void _disposeItems() {
+    for (
+      final item
+      in _items
+    ) {
+      item.dispose();
+    }
   }
 
-  String _preview(_NumberSeriesItem item) {
-    final String prefix =
-        item.prefixController.text;
+  // ==========================================================
+  // LOAD FROM MYSQL THROUGH NODE API
+  // ==========================================================
 
-    final int number =
-        int.tryParse(
-              item.startController.text.trim(),
-            ) ??
-            1;
-
-    final String paddedNumber =
-        number.toString().padLeft(4, '0');
-
-    return '$prefix$paddedNumber';
-  }
-
-  void _saveChanges() {
+  Future<void>
+      _loadSeries() async {
     setState(() {
-      _showSuccess = true;
+      _isLoading = true;
+
+      _errorMessage = null;
     });
 
-    Future.delayed(
-      const Duration(seconds: 4),
-      () {
-        if (!mounted) return;
-
-        setState(() {
-          _showSuccess = false;
-        });
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor:
-          const Color(0xFFF3F8FA),
-
-      body: SingleChildScrollView(
-        padding:
-            const EdgeInsets.fromLTRB(
-          18,
-          20,
-          18,
-          35,
+    try {
+      final http.Response response =
+          await http.get(
+        Uri.parse(
+          '$_baseUrl/transaction-number-series',
         ),
+        headers: const {
+          'Accept':
+              'application/json',
+        },
+      );
 
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            // =====================================================
-            // HEADER
-            // =====================================================
+      final dynamic body =
+          jsonDecode(
+        response.body,
+      );
 
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Transaction Number Series',
-                    style: TextStyle(
-                      color:
-                          Color(0xFF252A2E),
-                      fontSize: 28,
-                      fontWeight:
-                          FontWeight.w700,
-                    ),
-                  ),
-                ),
+      if (
+        body is! Map<String, dynamic>
+      ) {
+        throw Exception(
+          'Invalid response from server',
+        );
+      }
 
-                TextButton.icon(
-                  onPressed:
-                      widget.onBack,
+      if (
+        response.statusCode != 200 ||
+        body['success'] != true
+      ) {
+        throw Exception(
+          body['message'] ??
+              'Unable to load transaction number series',
+        );
+      }
 
-                  icon: const Icon(
-                    Icons.arrow_back_rounded,
-                    size: 16,
-                  ),
+      final List<dynamic> data =
+          body['data'] is List
+              ? body['data']
+              : <dynamic>[];
 
-                  label: const Text(
-                    'Back to Settings',
-                  ),
+      final List<
+              TransactionNumberSeriesItem>
+          newItems = [];
 
-                  style:
-                      TextButton.styleFrom(
-                    foregroundColor:
-                        const Color(
-                      0xFF5965CF,
-                    ),
+      for (
+        final dynamic raw
+        in data
+      ) {
+        final Map<String, dynamic>
+            item =
+            Map<String, dynamic>.from(
+          raw as Map,
+        );
 
-                    backgroundColor:
-                        const Color(
-                      0xFFEFF1FF,
-                    ),
+        newItems.add(
+          TransactionNumberSeriesItem(
+            id:
+                item['id'] == null
+                    ? null
+                    : int.tryParse(
+                        item['id']
+                            .toString(),
+                      ),
 
-                    padding:
-                        const EdgeInsets
-                            .symmetric(
-                      horizontal: 14,
-                      vertical: 11,
-                    ),
+            module:
+                item['module']
+                        ?.toString() ??
+                    '',
 
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius
-                              .circular(5),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            prefix:
+                item['prefix']
+                        ?.toString() ??
+                    '',
 
-            const SizedBox(
-              height: 16,
-            ),
-
-            // =====================================================
-            // SUCCESS MESSAGE
-            // =====================================================
-
-            if (_showSuccess) ...[
-              Container(
-                width:
-                    double.infinity,
-
-                padding:
-                    const EdgeInsets
-                        .symmetric(
-                  horizontal: 14,
-                  vertical: 13,
-                ),
-
-                decoration:
-                    BoxDecoration(
-                  color:
-                      const Color(
-                    0xFFDDF4E2,
-                  ),
-
-                  borderRadius:
-                      BorderRadius
-                          .circular(4),
-                ),
-
-                child:
-                    const Text(
-                  'Transaction Number Series have been updated!',
-                  style:
-                      TextStyle(
-                    color:
-                        Color(
-                      0xFF327B43,
-                    ),
-                    fontSize: 12,
-                    fontWeight:
-                        FontWeight
-                            .w500,
-                  ),
-                ),
-              ),
-
-              const SizedBox(
-                height: 18,
-              ),
-            ],
-
-            // =====================================================
-            // TABLE
-            // =====================================================
-
-            LayoutBuilder(
-              builder: (
-                context,
-                constraints,
-              ) {
-                return SingleChildScrollView(
-                  scrollDirection:
-                      Axis.horizontal,
-
-                  child: SizedBox(
-                    width:
-                        constraints
-                                    .maxWidth <
-                                900
-                            ? 900
-                            : constraints
-                                .maxWidth,
-
-                    child: Column(
-                      children: [
-                        // HEADER ROW
-                        Container(
-                          height: 46,
-
-                          decoration:
-                              const BoxDecoration(
-                            color:
-                                Color(
-                              0xFFF7F9FA,
-                            ),
-
-                            border:
-                                Border(
-                              bottom:
-                                  BorderSide(
-                                color:
-                                    Color(
-                                  0xFFE3E7E9,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          child:
-                              const Row(
-                            children: [
-                              Expanded(
-                                flex: 22,
-                                child:
-                                    _HeaderCell(
-                                  'MODULE',
-                                ),
-                              ),
-
-                              Expanded(
-                                flex: 31,
-                                child:
-                                    _HeaderCell(
-                                  'PREFIX',
-                                ),
-                              ),
-
-                              Expanded(
-                                flex: 33,
-                                child:
-                                    _HeaderCell(
-                                  'STARTING NUMBER',
-                                ),
-                              ),
-
-                              Expanded(
-                                flex: 14,
-                                child:
-                                    _HeaderCell(
-                                  'PREVIEW',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // DATA ROWS
-                        for (
-                          int i = 0;
-                          i < _items.length;
-                          i++
-                        )
-                          _NumberSeriesRow(
-                            item:
-                                _items[i],
-
-                            preview:
-                                _preview(
-                              _items[i],
-                            ),
-
-                            showBottomBorder:
-                                i !=
-                                    _items.length -
-                                        1,
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(
-              height: 14,
-            ),
-
-            // =====================================================
-            // SAVE
-            // =====================================================
-
-            Align(
-              alignment:
-                  Alignment.centerRight,
-
-              child:
-                  ElevatedButton.icon(
-                onPressed:
-                    _saveChanges,
-
-                icon:
-                    const Icon(
-                  Icons.save_rounded,
-                  size: 15,
-                ),
-
-                label:
-                    const Text(
-                  'Save Changes',
-                ),
-
-                style:
-                    ElevatedButton
-                        .styleFrom(
-                  backgroundColor:
-                      const Color(
-                    0xFF28A745,
-                  ),
-
-                  foregroundColor:
-                      Colors.white,
-
-                  elevation: 0,
-
-                  padding:
-                      const EdgeInsets
-                          .symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-
-                  shape:
-                      RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius
-                            .circular(5),
-                  ),
-
-                  textStyle:
-                      const TextStyle(
-                    fontSize: 12,
-                    fontWeight:
-                        FontWeight
-                            .w600,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ==================================================================
-// HEADER CELL
-// ==================================================================
-
-class _HeaderCell extends StatelessWidget {
-  final String text;
-
-  const _HeaderCell(
-    this.text,
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding:
-          const EdgeInsets.symmetric(
-        horizontal: 12,
-      ),
-
-      child: Text(
-        text,
-
-        style:
-            const TextStyle(
-          color:
-              Color(
-            0xFF545D62,
+            startingNumber:
+                int.tryParse(
+                      item['startingNumber']
+                              ?.toString() ??
+                          '1',
+                    ) ??
+                    1,
           ),
-          fontSize: 10,
-          fontWeight:
-              FontWeight.w700,
+        );
+      }
+
+      if (!mounted) {
+        for (
+          final item
+          in newItems
+        ) {
+          item.dispose();
+        }
+
+        return;
+      }
+
+      _disposeItems();
+
+      setState(() {
+        _items = newItems;
+
+        _isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isLoading = false;
+
+        _errorMessage =
+            error.toString();
+      });
+    }
+  }
+
+  // ==========================================================
+  // SAVE
+  // ==========================================================
+
+  Future<void>
+      _saveChanges() async {
+    if (_isSaving) {
+      return;
+    }
+
+    for (
+      final item
+      in _items
+    ) {
+      final int? number =
+          int.tryParse(
+        item.startingNumberController
+            .text
+            .trim(),
+      );
+
+      if (
+        number == null ||
+        number <= 0
+      ) {
+        _showMessage(
+          '${item.module}: Starting Number must be greater than 0.',
+          error: true,
+        );
+
+        return;
+      }
+    }
+
+    setState(() {
+      _isSaving = true;
+
+      _errorMessage = null;
+    });
+
+    try {
+      final http.Response response =
+          await http.put(
+        Uri.parse(
+          '$_baseUrl/transaction-number-series',
         ),
+        headers: const {
+          'Content-Type':
+              'application/json',
+
+          'Accept':
+              'application/json',
+        },
+        body: jsonEncode({
+          'series':
+              _items
+                  .map(
+                    (
+                      item,
+                    ) =>
+                        item.toJson(),
+                  )
+                  .toList(),
+        }),
+      );
+
+      final dynamic body =
+          jsonDecode(
+        response.body,
+      );
+
+      if (
+        body is! Map<String, dynamic>
+      ) {
+        throw Exception(
+          'Invalid response from server',
+        );
+      }
+
+      if (
+        response.statusCode != 200 ||
+        body['success'] != true
+      ) {
+        throw Exception(
+          body['message'] ??
+              'Failed to save transaction number series',
+        );
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isSaving = false;
+      });
+
+      _showMessage(
+        'Transaction number series saved successfully.',
+      );
+
+      await _loadSeries();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isSaving = false;
+
+        _errorMessage =
+            error.toString();
+      });
+
+      _showMessage(
+        'Failed to save: $error',
+        error: true,
+      );
+    }
+  }
+
+  // ==========================================================
+  // BACK
+  // ==========================================================
+
+  void _goBack() {
+    if (
+      widget.onBack != null
+    ) {
+      widget.onBack!();
+
+      return;
+    }
+
+    if (
+      Navigator.of(context)
+          .canPop()
+    ) {
+      Navigator.of(context)
+          .pop();
+    }
+  }
+
+  // ==========================================================
+  // MESSAGE
+  // ==========================================================
+
+  void _showMessage(
+    String message, {
+    bool error = false,
+  }) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      SnackBar(
+        content:
+            Text(
+          message,
+        ),
+
+        backgroundColor:
+            error
+                ? const Color(
+                    0xFFB3261E,
+                  )
+                : const Color(
+                    0xFF188038,
+                  ),
       ),
     );
   }
-}
 
-// ==================================================================
-// DATA ROW
-// ==================================================================
-
-class _NumberSeriesRow
-    extends StatefulWidget {
-  final _NumberSeriesItem item;
-  final String preview;
-  final bool showBottomBorder;
-
-  const _NumberSeriesRow({
-    required this.item,
-    required this.preview,
-    required this.showBottomBorder,
-  });
-
-  @override
-  State<_NumberSeriesRow>
-      createState() =>
-          _NumberSeriesRowState();
-}
-
-class _NumberSeriesRowState
-    extends State<_NumberSeriesRow> {
-  bool _hovered = false;
+  // ==========================================================
+  // BUILD
+  // ==========================================================
 
   @override
   Widget build(
     BuildContext context,
   ) {
-    return MouseRegion(
-      onEnter: (_) {
-        setState(() {
-          _hovered = true;
-        });
-      },
+    return Scaffold(
+      backgroundColor:
+          const Color(
+        0xFFF5F8FA,
+      ),
 
-      onExit: (_) {
-        setState(() {
-          _hovered = false;
-        });
-      },
+      body:
+          SafeArea(
+        child:
+            Column(
+          children: [
+            // ==================================================
+            // HEADER
+            // ==================================================
 
-      child:
-          AnimatedContainer(
-        duration:
-            const Duration(
-          milliseconds: 100,
-        ),
+            Container(
+              padding:
+                  const EdgeInsets
+                      .symmetric(
+                horizontal: 24,
+                vertical: 18,
+              ),
 
-        constraints:
-            const BoxConstraints(
-          minHeight: 52,
-        ),
+              decoration:
+                  const BoxDecoration(
+                color:
+                    Colors.white,
 
-        decoration:
-            BoxDecoration(
-          color: _hovered
-              ? const Color(
-                  0xFFFAFBFB,
-                )
-              : Colors.white,
-
-          border: widget
-                  .showBottomBorder
-              ? const Border(
+                border:
+                    Border(
                   bottom:
                       BorderSide(
                     color:
                         Color(
-                      0xFFE4E8EA,
+                      0xFFE2E7EC,
                     ),
                   ),
-                )
-              : null,
-        ),
-
-        child: Row(
-          children: [
-            // MODULE
-            Expanded(
-              flex: 22,
-
-              child: Padding(
-                padding:
-                    const EdgeInsets
-                        .symmetric(
-                  horizontal: 12,
                 ),
+              ),
 
-                child: Text(
-                  widget.item.module,
+              child:
+                  Row(
+                children: [
+                  IconButton(
+                    onPressed:
+                        _goBack,
 
-                  style:
-                      const TextStyle(
+                    icon:
+                        const Icon(
+                      Icons
+                          .arrow_back,
+                    ),
+                  ),
+
+                  const SizedBox(
+                    width: 8,
+                  ),
+
+                  const Expanded(
+                    child:
+                        Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment
+                              .start,
+
+                      children: [
+                        Text(
+                          'Transaction Number Series',
+
+                          style:
+                              TextStyle(
+                            fontSize:
+                                25,
+
+                            fontWeight:
+                                FontWeight
+                                    .w700,
+
+                            color:
+                                Color(
+                              0xFF263B4E,
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(
+                          height: 3,
+                        ),
+
+                        Text(
+                          'Configure prefixes and starting numbers for transactions.',
+
+                          style:
+                              TextStyle(
+                            color:
+                                Color(
+                              0xFF73808C,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  IconButton(
+                    tooltip:
+                        'Refresh',
+
+                    onPressed:
+                        _isLoading ||
+                                _isSaving
+                            ? null
+                            : _loadSeries,
+
+                    icon:
+                        const Icon(
+                      Icons.refresh,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ==================================================
+            // CONTENT
+            // ==================================================
+
+            Expanded(
+              child:
+                  _buildContent(),
+            ),
+
+            // ==================================================
+            // FOOTER
+            // ==================================================
+
+            Container(
+              padding:
+                  const EdgeInsets
+                      .fromLTRB(
+                24,
+                14,
+                24,
+                14,
+              ),
+
+              decoration:
+                  const BoxDecoration(
+                color:
+                    Colors.white,
+
+                border:
+                    Border(
+                  top:
+                      BorderSide(
                     color:
                         Color(
-                      0xFF454C50,
+                      0xFFE2E7EC,
                     ),
-                    fontSize: 12,
-                    fontWeight:
-                        FontWeight
-                            .w400,
                   ),
                 ),
               ),
-            ),
 
-            // PREFIX
-            Expanded(
-              flex: 31,
+              child:
+                  Row(
+                mainAxisAlignment:
+                    MainAxisAlignment
+                        .end,
 
-              child: Padding(
-                padding:
-                    const EdgeInsets
-                        .symmetric(
-                  horizontal: 10,
-                  vertical: 7,
-                ),
+                children: [
+                  ElevatedButton.icon(
+                    onPressed:
+                        _isSaving ||
+                                _isLoading
+                            ? null
+                            : _saveChanges,
 
-                child:
-                    _SmallTextField(
-                  controller:
-                      widget.item
-                          .prefixController,
-                ),
-              ),
-            ),
+                    icon:
+                        _isSaving
+                            ? const SizedBox(
+                                width: 17,
+                                height: 17,
 
-            // START NUMBER
-            Expanded(
-              flex: 33,
+                                child:
+                                    CircularProgressIndicator(
+                                  strokeWidth:
+                                      2,
 
-              child: Padding(
-                padding:
-                    const EdgeInsets
-                        .symmetric(
-                  horizontal: 10,
-                  vertical: 7,
-                ),
+                                  color:
+                                      Colors.white,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.save,
+                              ),
 
-                child:
-                    _SmallTextField(
-                  controller:
-                      widget.item
-                          .startController,
-
-                  keyboardType:
-                      TextInputType
-                          .number,
-
-                  inputFormatters: [
-                    FilteringTextInputFormatter
-                        .digitsOnly,
-                  ],
-                ),
-              ),
-            ),
-
-            // PREVIEW
-            Expanded(
-              flex: 14,
-
-              child: Padding(
-                padding:
-                    const EdgeInsets
-                        .symmetric(
-                  horizontal: 12,
-                ),
-
-                child: Text(
-                  widget.preview,
-
-                  style:
-                      const TextStyle(
-                    color:
-                        Color(
-                      0xFF4D5559,
+                    label:
+                        Text(
+                      _isSaving
+                          ? 'Saving...'
+                          : 'Save Changes',
                     ),
-                    fontSize: 11,
-                    fontWeight:
-                        FontWeight
-                            .w500,
+
+                    style:
+                        ElevatedButton
+                            .styleFrom(
+                      backgroundColor:
+                          const Color(
+                        0xFF20A840,
+                      ),
+
+                      foregroundColor:
+                          Colors.white,
+
+                      padding:
+                          const EdgeInsets
+                              .symmetric(
+                        horizontal:
+                            22,
+
+                        vertical:
+                            15,
+                      ),
+
+                      shape:
+                          RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius
+                                .circular(
+                          6,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ],
@@ -642,123 +696,464 @@ class _NumberSeriesRowState
       ),
     );
   }
-}
 
-// ==================================================================
-// SMALL INPUT
-// ==================================================================
+  // ==========================================================
+  // CONTENT
+  // ==========================================================
 
-class _SmallTextField
-    extends StatelessWidget {
-  final TextEditingController controller;
-  final TextInputType? keyboardType;
-  final List<TextInputFormatter>?
-      inputFormatters;
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const Center(
+        child:
+            CircularProgressIndicator(),
+      );
+    }
 
-  const _SmallTextField({
-    required this.controller,
-    this.keyboardType,
-    this.inputFormatters,
-  });
-
-  @override
-  Widget build(
-    BuildContext context,
-  ) {
-    return SizedBox(
-      height: 31,
-
-      child: TextFormField(
-        controller:
-            controller,
-
-        keyboardType:
-            keyboardType,
-
-        inputFormatters:
-            inputFormatters,
-
-        style:
-            const TextStyle(
-          color:
-              Color(
-            0xFF3D4549,
+    if (
+      _errorMessage != null
+    ) {
+      return Center(
+        child:
+            Padding(
+          padding:
+              const EdgeInsets
+                  .all(
+            30,
           ),
-          fontSize: 11,
+
+          child:
+              Column(
+            mainAxisSize:
+                MainAxisSize.min,
+
+            children: [
+              const Icon(
+                Icons
+                    .error_outline,
+
+                size:
+                    45,
+
+                color:
+                    Colors.red,
+              ),
+
+              const SizedBox(
+                height:
+                    12,
+              ),
+
+              Text(
+                _errorMessage!,
+
+                textAlign:
+                    TextAlign
+                        .center,
+              ),
+
+              const SizedBox(
+                height:
+                    16,
+              ),
+
+              ElevatedButton(
+                onPressed:
+                    _loadSeries,
+
+                child:
+                    const Text(
+                  'Retry',
+                ),
+              ),
+            ],
+          ),
         ),
+      );
+    }
 
+    return SingleChildScrollView(
+      padding:
+          const EdgeInsets
+              .all(
+        24,
+      ),
+
+      child:
+          Container(
         decoration:
-            InputDecoration(
-          isDense: true,
-
-          filled: true,
-          fillColor:
+            BoxDecoration(
+          color:
               Colors.white,
 
-          contentPadding:
-              const EdgeInsets
-                  .symmetric(
-            horizontal: 8,
-            vertical: 8,
+          borderRadius:
+              BorderRadius
+                  .circular(
+            8,
           ),
 
-          enabledBorder:
-              OutlineInputBorder(
-            borderRadius:
-                BorderRadius
-                    .circular(
-              3,
+          border:
+              Border.all(
+            color:
+                const Color(
+              0xFFE1E6EA,
+            ),
+          ),
+        ),
+
+        child:
+            Column(
+          children: [
+            // ==================================================
+            // TABLE HEADER
+            // ==================================================
+
+            Container(
+              padding:
+                  const EdgeInsets
+                      .symmetric(
+                horizontal:
+                    16,
+
+                vertical:
+                    17,
+              ),
+
+              decoration:
+                  const BoxDecoration(
+                color:
+                    Color(
+                  0xFFF8FAFB,
+                ),
+
+                border:
+                    Border(
+                  bottom:
+                      BorderSide(
+                    color:
+                        Color(
+                      0xFFE1E6EA,
+                    ),
+                  ),
+                ),
+              ),
+
+              child:
+                  const Row(
+                children: [
+                  Expanded(
+                    flex:
+                        2,
+
+                    child:
+                        _HeaderText(
+                      'MODULE',
+                    ),
+                  ),
+
+                  Expanded(
+                    flex:
+                        3,
+
+                    child:
+                        _HeaderText(
+                      'PREFIX',
+                    ),
+                  ),
+
+                  SizedBox(
+                    width:
+                        28,
+                  ),
+
+                  Expanded(
+                    flex:
+                        3,
+
+                    child:
+                        _HeaderText(
+                      'STARTING NUMBER',
+                    ),
+                  ),
+
+                  SizedBox(
+                    width:
+                        28,
+                  ),
+
+                  Expanded(
+                    flex:
+                        1,
+
+                    child:
+                        _HeaderText(
+                      'PREVIEW',
+                    ),
+                  ),
+                ],
+              ),
             ),
 
-            borderSide:
-                const BorderSide(
-              color:
-                  Color(
-                0xFFD9DFE2,
+            // ==================================================
+            // ROWS
+            // ==================================================
+
+            ..._items.map(
+              (
+                TransactionNumberSeriesItem
+                    item,
+              ) {
+                return _buildRow(
+                  item,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // TABLE ROW
+  // ==========================================================
+
+  Widget _buildRow(
+    TransactionNumberSeriesItem item,
+  ) {
+    return Container(
+      padding:
+          const EdgeInsets
+              .symmetric(
+        horizontal:
+            16,
+
+        vertical:
+            14,
+      ),
+
+      decoration:
+          const BoxDecoration(
+        border:
+            Border(
+          bottom:
+              BorderSide(
+            color:
+                Color(
+              0xFFE5E9ED,
+            ),
+          ),
+        ),
+      ),
+
+      child:
+          Row(
+        children: [
+          Expanded(
+            flex:
+                2,
+
+            child:
+                Text(
+              item.module,
+
+              style:
+                  const TextStyle(
+                fontSize:
+                    15,
+
+                color:
+                    Color(
+                  0xFF4B545C,
+                ),
               ),
             ),
           ),
 
-          focusedBorder:
-              OutlineInputBorder(
-            borderRadius:
-                BorderRadius
-                    .circular(
-              3,
-            ),
+          Expanded(
+            flex:
+                3,
 
-            borderSide:
-                const BorderSide(
-              color:
-                  Color(
-                0xFF80BDFF,
+            child:
+                TextField(
+              controller:
+                  item.prefixController,
+
+              onChanged:
+                  (_) {
+                setState(() {});
+              },
+
+              decoration:
+                  _inputDecoration(),
+            ),
+          ),
+
+          const SizedBox(
+            width:
+                28,
+          ),
+
+          Expanded(
+            flex:
+                3,
+
+            child:
+                TextField(
+              controller:
+                  item
+                      .startingNumberController,
+
+              keyboardType:
+                  TextInputType.number,
+
+              onChanged:
+                  (_) {
+                setState(() {});
+              },
+
+              decoration:
+                  _inputDecoration(),
+            ),
+          ),
+
+          const SizedBox(
+            width:
+                28,
+          ),
+
+          Expanded(
+            flex:
+                1,
+
+            child:
+                Text(
+              item.preview,
+
+              style:
+                  const TextStyle(
+                fontSize:
+                    15,
+
+                color:
+                    Color(
+                  0xFF5F6870,
+                ),
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration
+      _inputDecoration() {
+    return InputDecoration(
+      isDense:
+          true,
+
+      filled:
+          true,
+
+      fillColor:
+          Colors.white,
+
+      contentPadding:
+          const EdgeInsets
+              .symmetric(
+        horizontal:
+            12,
+
+        vertical:
+            13,
+      ),
+
+      border:
+          OutlineInputBorder(
+        borderRadius:
+            BorderRadius.circular(
+          5,
+        ),
+
+        borderSide:
+            const BorderSide(
+          color:
+              Color(
+            0xFFD5DDE4,
+          ),
+        ),
+      ),
+
+      enabledBorder:
+          OutlineInputBorder(
+        borderRadius:
+            BorderRadius.circular(
+          5,
+        ),
+
+        borderSide:
+            const BorderSide(
+          color:
+              Color(
+            0xFFD5DDE4,
+          ),
+        ),
+      ),
+
+      focusedBorder:
+          OutlineInputBorder(
+        borderRadius:
+            BorderRadius.circular(
+          5,
+        ),
+
+        borderSide:
+            const BorderSide(
+          color:
+              Color(
+            0xFF2D7FF9,
+          ),
+
+          width:
+              1.5,
         ),
       ),
     );
   }
 }
 
-// ==================================================================
-// MODEL
-// ==================================================================
+// ============================================================
+// HEADER TEXT
+// ============================================================
 
-class _NumberSeriesItem {
-  final String module;
+class _HeaderText
+    extends StatelessWidget {
+  final String text;
 
-  final TextEditingController
-      prefixController =
-      TextEditingController();
-
-  final TextEditingController
-      startController =
-      TextEditingController(
-    text: '1',
+  const _HeaderText(
+    this.text,
   );
 
-  _NumberSeriesItem(
-    this.module,
-  );
+  @override
+  Widget build(
+    BuildContext context,
+  ) {
+    return Text(
+      text,
+
+      style:
+          const TextStyle(
+        fontSize:
+            12,
+
+        fontWeight:
+            FontWeight.w700,
+
+        color:
+            Color(
+          0xFF59636D,
+        ),
+      ),
+    );
+  }
 }
