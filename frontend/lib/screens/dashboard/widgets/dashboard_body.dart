@@ -24,8 +24,8 @@ class DashboardBody extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFF0D2B4E),
-            Color(0xFF123A5C),
+            Color.fromARGB(0, 0, 0, 0),
+            Color.fromARGB(0, 0, 0, 0),
           ],
         ),
       ),

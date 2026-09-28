@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class TransactionNumberSeriesPage extends StatefulWidget {
   final VoidCallback onBack;
@@ -16,6 +18,8 @@ class TransactionNumberSeriesPage extends StatefulWidget {
 
 class _TransactionNumberSeriesPageState
     extends State<TransactionNumberSeriesPage> {
+  static const String _baseUrl ='http://localhost:3000';
+    
   bool _showSuccess = true;
 
   final List<_NumberSeriesItem> _items = [
@@ -40,6 +44,7 @@ class _TransactionNumberSeriesPageState
       item.prefixController.addListener(_refreshPreview);
       item.startController.addListener(_refreshPreview);
     }
+    _loadNumberSeries();
   }
 
   @override
@@ -76,6 +81,64 @@ class _TransactionNumberSeriesPageState
 
     return '$prefix$paddedNumber';
   }
+  Future<void> _loadNumberSeries() async {
+  try {
+    final response = await http.get(
+      Uri.parse(
+        '$_baseUrl/api/transaction-number-series',
+      ),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to load number series',
+      );
+    }
+
+    final Map<String, dynamic> data =
+        jsonDecode(response.body);
+
+    if (data['success'] != true) {
+      throw Exception(
+        'API returned failure',
+      );
+    }
+
+    final List<dynamic> rows =
+        data['data'] ?? [];
+
+    for (final row in rows) {
+      final String module =
+          row['module'].toString();
+
+      for (final item in _items) {
+        if (item.module == module) {
+          item.prefixController.text =
+              row['prefix']
+                      ?.toString() ??
+                  '';
+
+          item.startController.text =
+              row['starting_number']
+                      ?.toString() ??
+                  '1';
+
+          break;
+        }
+      }
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
+  } catch (e) {
+    debugPrint(
+      'Error loading number series: $e',
+    );
+  }
+}
+
+  
 
   void _saveChanges() {
     setState(() {
