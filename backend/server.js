@@ -1,22 +1,15 @@
 require('dotenv').config();
 
-const express =
-  require('express');
-
-const cors =
-  require('cors');
-
-const db =
-  require('./config/db');
+const express = require('express');
+const cors = require('cors');
+const db = require('./config/db');
 
 // ============================================================
 // ROUTES
 // ============================================================
 
 const transactionNumberSeriesRoutes =
-  require(
-    './routes/transaction_number_series'
-  );
+  require('./routes/transaction_number_series');
 
 const itemsRoutes =
   require('./routes/items');
@@ -42,12 +35,14 @@ const purchaseOrdersRoutes =
 const billsRoutes =
   require('./routes/bills');
 
+const usersRoutes =
+  require('./routes/users');
+
 // ============================================================
 // APP
 // ============================================================
 
-const app =
-  express();
+const app = express();
 
 // ============================================================
 // MIDDLEWARE
@@ -55,28 +50,21 @@ const app =
 
 app.use(
   cors({
-    origin:
-      true,
-
-    credentials:
-      true,
+    origin: true,
+    credentials: true,
   })
 );
 
 app.use(
   express.json({
-    limit:
-      '10mb',
+    limit: '10mb',
   })
 );
 
 app.use(
   express.urlencoded({
-    extended:
-      true,
-
-    limit:
-      '10mb',
+    extended: true,
+    limit: '10mb',
   })
 );
 
@@ -87,18 +75,17 @@ app.use(
 app.get(
   '/',
   (req, res) => {
-    res.status(200).json({
-      success:
-        true,
-
-      message:
-        'Codexia backend is running',
+    return res.status(200).json({
+      success: true,
+      message: 'Codexia backend is running',
     });
   }
 );
 
 // ============================================================
 // DATABASE TEST
+//
+// GET /api/test-db
 // ============================================================
 
 app.get(
@@ -106,53 +93,38 @@ app.get(
   async (req, res) => {
     try {
       const [rows] =
-        await db.query(
-          `
+        await db.query(`
           SELECT
-            DATABASE()
-              AS database_name,
+            DATABASE() AS database_name,
+            NOW() AS server_time
+        `);
 
-            NOW()
-              AS server_time
-          `
-        );
-
-      return res
-        .status(200)
-        .json({
-          success:
-            true,
-
-          message:
-            'Hostinger MySQL connected successfully',
-
-          data:
-            rows[0],
-        });
+      return res.status(200).json({
+        success: true,
+        message:
+          'Hostinger MySQL connected successfully',
+        data: rows[0],
+      });
     } catch (error) {
       console.error(
         'Database test error:',
         error
       );
 
-      return res
-        .status(500)
-        .json({
-          success:
-            false,
-
-          message:
-            'Database connection failed',
-
-          error:
-            error.message,
-        });
+      return res.status(500).json({
+        success: false,
+        message:
+          'Database connection failed',
+        error: error.message,
+      });
     }
   }
 );
 
 // ============================================================
 // MYSQL SIMPLE TEST
+//
+// GET /api/mysql-test
 // ============================================================
 
 app.get(
@@ -160,48 +132,36 @@ app.get(
   async (req, res) => {
     try {
       const [rows] =
-        await db.query(
-          `
+        await db.query(`
           SELECT 1 AS test
-          `
-        );
+        `);
 
-      return res
-        .status(200)
-        .json({
-          success:
-            true,
-
-          message:
-            'MySQL database connected successfully',
-
-          data:
-            rows,
-        });
+      return res.status(200).json({
+        success: true,
+        message:
+          'MySQL database connected successfully',
+        data: rows,
+      });
     } catch (error) {
       console.error(
         'MySQL test error:',
         error
       );
 
-      return res
-        .status(500)
-        .json({
-          success:
-            false,
-
-          message:
-            'MySQL connection failed',
-
-          error:
-            error.message,
-        });
+      return res.status(500).json({
+        success: false,
+        message:
+          'MySQL connection failed',
+        error: error.message,
+      });
     }
   }
 );
 
 // ============================================================
 // TRANSACTION NUMBER SERIES
+//
+// /api/transaction-number-series
 // ============================================================
 
 app.use(
@@ -211,6 +171,8 @@ app.use(
 
 // ============================================================
 // ITEMS
+//
+// /api/items
 // ============================================================
 
 app.use(
@@ -220,6 +182,8 @@ app.use(
 
 // ============================================================
 // PARTS
+//
+// /api/parts
 // ============================================================
 
 app.use(
@@ -229,6 +193,8 @@ app.use(
 
 // ============================================================
 // CUSTOMERS
+//
+// /api/customers
 // ============================================================
 
 app.use(
@@ -238,6 +204,8 @@ app.use(
 
 // ============================================================
 // ESTIMATES
+//
+// /api/estimates
 // ============================================================
 
 app.use(
@@ -247,6 +215,8 @@ app.use(
 
 // ============================================================
 // SALES ORDERS
+//
+// /api/sales-orders
 // ============================================================
 
 app.use(
@@ -256,6 +226,8 @@ app.use(
 
 // ============================================================
 // VENDORS
+//
+// /api/vendors
 // ============================================================
 
 app.use(
@@ -265,6 +237,8 @@ app.use(
 
 // ============================================================
 // PURCHASE ORDERS
+//
+// /api/purchase-orders
 // ============================================================
 
 app.use(
@@ -274,6 +248,8 @@ app.use(
 
 // ============================================================
 // BILLS
+//
+// /api/bills
 // ============================================================
 
 app.use(
@@ -282,22 +258,39 @@ app.use(
 );
 
 // ============================================================
+// USERS
+//
+// Manage Users API
+//
+// GET    /api/users
+// GET    /api/users/:id
+// POST   /api/users
+// PUT    /api/users/:id
+// PUT    /api/users/:id/status
+// ============================================================
+
+app.use(
+  '/api/users',
+  usersRoutes
+);
+
+// ============================================================
 // HEALTH
+//
+// GET /api/health
 // ============================================================
 
 app.get(
   '/api/health',
   (req, res) => {
-    res.status(200).json({
-      success:
-        true,
+    return res.status(200).json({
+      success: true,
 
       message:
         'Codexia API is healthy',
 
       services: {
-        backend:
-          true,
+        backend: true,
 
         transactionNumberSeries:
           '/api/transaction-number-series',
@@ -325,6 +318,9 @@ app.get(
 
         bills:
           '/api/bills',
+
+        users:
+          '/api/users',
       },
     });
   }
@@ -332,13 +328,14 @@ app.get(
 
 // ============================================================
 // 404
+//
+// This must stay AFTER all API routes.
 // ============================================================
 
 app.use(
   (req, res) => {
-    res.status(404).json({
-      success:
-        false,
+    return res.status(404).json({
+      success: false,
 
       message:
         `API route not found: ${req.method} ${req.originalUrl}`,
@@ -348,6 +345,8 @@ app.use(
 
 // ============================================================
 // GLOBAL ERROR HANDLER
+//
+// This must stay at the bottom before app.listen().
 // ============================================================
 
 app.use(
@@ -362,9 +361,8 @@ app.use(
       error
     );
 
-    res.status(500).json({
-      success:
-        false,
+    return res.status(500).json({
+      success: false,
 
       message:
         'Internal server error',
@@ -380,9 +378,8 @@ app.use(
 // ============================================================
 
 const PORT =
-  Number(
-    process.env.PORT
-  ) || 3000;
+  Number(process.env.PORT) ||
+  3000;
 
 app.listen(
   PORT,
@@ -401,6 +398,10 @@ app.listen(
 
     console.log(
       `DB Test              : http://localhost:${PORT}/api/test-db`
+    );
+
+    console.log(
+      `MySQL Test           : http://localhost:${PORT}/api/mysql-test`
     );
 
     console.log(
@@ -445,6 +446,10 @@ app.listen(
 
     console.log(
       `Bills                : http://localhost:${PORT}/api/bills`
+    );
+
+    console.log(
+      `Users                : http://localhost:${PORT}/api/users`
     );
 
     console.log(
