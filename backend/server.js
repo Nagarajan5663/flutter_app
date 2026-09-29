@@ -38,6 +38,9 @@ const billsRoutes =
 const usersRoutes =
   require('./routes/users');
 
+const rolesRoutes =
+  require('./routes/roles');
+
 // ============================================================
 // APP
 // ============================================================
@@ -257,21 +260,14 @@ app.use(
   billsRoutes
 );
 
-// ============================================================
-// USERS
-//
-// Manage Users API
-//
-// GET    /api/users
-// GET    /api/users/:id
-// POST   /api/users
-// PUT    /api/users/:id
-// PUT    /api/users/:id/status
-// ============================================================
-
 app.use(
   '/api/users',
   usersRoutes
+);
+
+app.use(
+  '/api/roles',
+  rolesRoutes
 );
 
 // ============================================================

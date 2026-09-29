@@ -67,8 +67,16 @@ class _OrganizationProfilePageState
   String timeZone =
       '(GMT +05:30) India Standard Time (Asia/Kolkata)';
   String dateFormat = 'dd/MM/yyyy';
+  late final TextEditingController dateFormatController;
+  DateTime? selectedDate;
 
   String selectedLogoName = 'No file chosen';
+
+  @override
+  void initState() {
+    super.initState();
+    dateFormatController = TextEditingController(text: dateFormat);
+  }
 
   @override
   void dispose() {
@@ -84,6 +92,7 @@ class _OrganizationProfilePageState
     websiteController.dispose();
     gstNumberController.dispose();
     cinNumberController.dispose();
+    dateFormatController.dispose();
 
     super.dispose();
   }
@@ -100,8 +109,71 @@ class _OrganizationProfilePageState
     );
   }
 
+  Future<void> _pickDate() async {
+    final DateTime now = DateTime.now();
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: selectedDate ?? now,
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+    );
+
+    if (pickedDate == null || !mounted) return;
+
+    setState(() {
+      selectedDate = pickedDate;
+      dateFormatController.text = _formatDate(pickedDate, dateFormat);
+    });
+  }
+
+  String _formatDate(DateTime date, String format) {
+    final String day = date.day.toString().padLeft(2, '0');
+    final String month = date.month.toString().padLeft(2, '0');
+    final String year = date.year.toString();
+
+    switch (format) {
+      case 'MM/dd/yyyy':
+        return '$month/$day/$year';
+      case 'yyyy-MM-dd':
+        return '$year-$month-$day';
+      case 'dd/MM/yyyy':
+      default:
+        return '$day/$month/$year';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    void selectGst(bool value) {
+      setState(() {
+        gstApplicable = value;
+        if (!gstApplicable) {
+          gstNumberController.clear();
+        }
+      });
+    }
+
+    Widget gstOption(bool value, String label) {
+      return InkWell(
+        onTap: () => selectGst(value),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Radio<bool>(
+              value: value,
+              groupValue: gstApplicable,
+              activeColor: const Color(0xFF168AE5),
+              onChanged: (_) => selectGst(value),
+            ),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3F8FA),
       body: SingleChildScrollView(
@@ -133,32 +205,6 @@ class _OrganizationProfilePageState
                           color: Color(0xFF222A2E),
                           fontSize: 28,
                           fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-
-                    TextButton.icon(
-                      onPressed: widget.onBack,
-                      icon: const Icon(
-                        Icons.arrow_back_rounded,
-                        size: 17,
-                      ),
-                      label: const Text(
-                        'Back to All Settings',
-                      ),
-                      style: TextButton.styleFrom(
-                        foregroundColor:
-                            const Color(0xFF4A60D8),
-                        backgroundColor:
-                            const Color(0xFFE9ECFF),
-                        padding:
-                            const EdgeInsets.symmetric(
-                          horizontal: 15,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(5),
                         ),
                       ),
                     ),
@@ -456,49 +502,9 @@ class _OrganizationProfilePageState
 
                       Row(
                         children: [
-                          Radio<bool>(
-                            value: true,
-                            groupValue:
-                                gstApplicable,
-                            onChanged: (value) {
-                              setState(() {
-                                gstApplicable =
-                                    value ?? true;
-                              });
-                            },
-                          ),
-                          const Text(
-                            'Yes',
-                            style: TextStyle(
-                              fontSize: 12,
-                            ),
-                          ),
-
-                          const SizedBox(width: 16),
-
-                          Radio<bool>(
-                            value: false,
-                            groupValue:
-                                gstApplicable,
-                            onChanged: (value) {
-                              setState(() {
-                                gstApplicable =
-                                    value ?? false;
-
-                                if (!gstApplicable) {
-                                  gstNumberController
-                                      .clear();
-                                }
-                              });
-                            },
-                          ),
-
-                          const Text(
-                            'No',
-                            style: TextStyle(
-                              fontSize: 12,
-                            ),
-                          ),
+                          gstOption(true, 'Yes'),
+                          const SizedBox(width: 30),
+                          gstOption(false, 'No'),
                         ],
                       ),
 
@@ -592,6 +598,8 @@ class _OrganizationProfilePageState
                               organizationLanguage,
                           items: const [
                             'English',
+                            'Tamil (தமிழ்)',
+                            'Hindi (हिन्दी)',
                           ],
                           onChanged:
                               (value) {
@@ -601,23 +609,82 @@ class _OrganizationProfilePageState
                             });
                           },
                         ),
-                        right: _buildDropdown(
-                          label:
+                        right: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
                               'Date Format',
-                          value:
-                              dateFormat,
-                          items: const [
-                            'dd/MM/yyyy',
-                            'MM/dd/yyyy',
-                            'yyyy-MM-dd',
+                              style: TextStyle(
+                                color: Color(0xFF3F474C),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: dateFormatController,
+                              readOnly: true,
+                              onTap: _pickDate,
+                              style: const TextStyle(
+                                color: Color(0xFF333333),
+                                fontSize: 12,
+                              ),
+                              decoration: _inputDecoration().copyWith(
+                                suffixIconConstraints:
+                                    const BoxConstraints(
+                                  minWidth: 96,
+                                  minHeight: 48,
+                                ),
+                                suffixIcon: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    PopupMenuButton<String>(
+                                      icon: const Icon(
+                                        Icons.arrow_drop_down,
+                                        color: Color(0xFF454B50),
+                                      ),
+                                      tooltip: 'Select date format',
+                                      onSelected: (value) {
+                                        setState(() {
+                                          dateFormat = value;
+                                          dateFormatController.text =
+                                              selectedDate == null
+                                                  ? value
+                                                  : _formatDate(
+                                                      selectedDate!,
+                                                      value,
+                                                    );
+                                        });
+                                      },
+                                      itemBuilder: (context) => const [
+                                        PopupMenuItem(
+                                          value: 'dd/MM/yyyy',
+                                          child: Text('dd/MM/yyyy'),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'MM/dd/yyyy',
+                                          child: Text('MM/dd/yyyy'),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'yyyy-MM-dd',
+                                          child: Text('yyyy-MM-dd'),
+                                        ),
+                                      ],
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Select date',
+                                      onPressed: _pickDate,
+                                      icon: const Icon(
+                                        Icons.calendar_today_outlined,
+                                        color: Color(0xFF454B50),
+                                        size: 18,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ],
-                          onChanged:
-                              (value) {
-                            setState(() {
-                              dateFormat =
-                                  value!;
-                            });
-                          },
                         ),
                       ),
 
@@ -663,6 +730,9 @@ class _OrganizationProfilePageState
                             ),
                             label: const Text(
                               'Back to All Settings',
+                            ),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.black,
                             ),
                           ),
 
@@ -766,7 +836,7 @@ class _OrganizationProfilePageState
         Text(
           label,
           style: const TextStyle(
-            color: Color(0xFF505A60),
+            color: Color(0xFF3F474C),
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -815,6 +885,15 @@ class _OrganizationProfilePageState
         DropdownButtonFormField<String>(
           initialValue: value,
           isExpanded: true,
+          style: const TextStyle(
+            color: Color(0xFF333333),
+            fontSize: 12,
+          ),
+          dropdownColor: Colors.white,
+          icon: const Icon(
+            Icons.arrow_drop_down,
+            color: Color(0xFF454B50),
+          ),
           decoration:
               _inputDecoration(),
           items: items
@@ -830,6 +909,7 @@ class _OrganizationProfilePageState
                             .ellipsis,
                     style:
                         const TextStyle(
+                      color: Color(0xFF333333),
                       fontSize: 12,
                     ),
                   ),

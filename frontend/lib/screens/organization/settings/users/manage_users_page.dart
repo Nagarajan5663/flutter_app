@@ -260,10 +260,8 @@ class _ManageUsersPageState extends State<ManageUsersPage> {
   // ==========================================================================
 
   Future<void> _addUser() async {
-    if (_busy) return;
-
-    final _UserFormData? form =
-        await showDialog<_UserFormData>(
+    final _UserData? newUser =
+        await showDialog<_UserData>(
       context: context,
       barrierDismissible: false,
       barrierColor: Colors.black.withValues(
@@ -683,16 +681,12 @@ class _ManageUsersPageState extends State<ManageUsersPage> {
   // ==========================================================================
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-    final bool firstSetupRequired =
-        !_loading && _users.isEmpty;
-
+  Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       height: double.infinity,
       color: const Color(0xFFF3F8FA),
+
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
           28,
@@ -700,141 +694,92 @@ class _ManageUsersPageState extends State<ManageUsersPage> {
           28,
           40,
         ),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            // ---------------------------------------------------------------
-            // HEADER
-            // ---------------------------------------------------------------
 
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Manage Users',
-                    style: TextStyle(
-                      color: Color(0xFF252A2E),
-                      fontSize: 29,
-                      fontWeight: FontWeight.w700,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // =======================================================
+            // TITLE + BUTTONS
+            // =======================================================
+
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Manage Users',
+                      style: TextStyle(
+                        color: Color(0xFF252A2E),
+                        fontSize: 29,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
 
+                // BACK TO SETTINGS
                 _TopButton(
                   icon: Icons.arrow_back_rounded,
                   label: 'Back to Settings',
-                  background: const Color(0xFFECEEFF),
-                  foreground: const Color(0xFF5059B8),
+                  background:
+                      const Color(0xFFECEEFF),
+                  foreground:
+                      const Color(0xFF5059B8),
                   hoverBackground:
                       const Color(0xFFE1E4FF),
                   onTap: widget.onBack,
                 ),
 
-                const SizedBox(
-                  width: 15,
-                ),
+                const SizedBox(width: 15),
 
+                // ADD NEW USER
                 _TopButton(
-                  icon: firstSetupRequired
-                      ? Icons.admin_panel_settings_rounded
-                      : Icons.add_rounded,
-                  label: firstSetupRequired
-                      ? 'Create Primary Super Admin'
-                      : 'Add New User',
+                  icon: Icons.add_rounded,
+                  label: 'Add New User',
                   background:
                       const Color(0xFF1FAE4B),
                   foreground: Colors.white,
                   hoverBackground:
                       const Color(0xFF168F3B),
-                  onTap: _busy
-                      ? () {}
-                      : firstSetupRequired
-                          ? _createPrimarySuperAdmin
-                          : _addUser,
+                  onTap: _addUser,
                 ),
               ],
             ),
 
-            const SizedBox(
-              height: 22,
-            ),
+            const SizedBox(height: 22),
 
-            // ---------------------------------------------------------------
-            // SETUP MESSAGE
-            // ---------------------------------------------------------------
+            // =======================================================
+            // SUCCESS BANNER
+            // =======================================================
 
-            if (firstSetupRequired) ...[
+            if (_showSuccess) ...[
               Container(
                 width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 15,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFE7E7),
-                  borderRadius:
-                      BorderRadius.circular(5),
+                  color: const Color(0xFFDDF4E2),
+                  borderRadius: BorderRadius.circular(5),
                 ),
                 child: const Text(
-                  'No users exist yet. Create the Primary Super Admin through the initial setup.',
+                  'User updated successfully!',
                   style: TextStyle(
-                    color: Color(0xFFB42318),
+                    color: Color(0xFF327B43),
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
-
-              const SizedBox(
-                height: 20,
-              ),
+              const SizedBox(height: 20),
             ],
 
-            // ---------------------------------------------------------------
-            // MESSAGE
-            // ---------------------------------------------------------------
-
-            if (_showMessage) ...[
-              Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 15,
-                ),
-                decoration: BoxDecoration(
-                  color: _messageIsError
-                      ? const Color(0xFFFFE7E7)
-                      : const Color(0xFFDDF4E2),
-                  borderRadius:
-                      BorderRadius.circular(5),
-                ),
-                child: Text(
-                  _message,
-                  style: TextStyle(
-                    color: _messageIsError
-                        ? const Color(0xFFB42318)
-                        : const Color(0xFF327B43),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              const SizedBox(
-                height: 20,
-              ),
-            ],
-
-            // ---------------------------------------------------------------
-            // USERS CARD
-            // ---------------------------------------------------------------
+            // =======================================================
+            // EXISTING USERS CARD
+            // =======================================================
 
             Container(
               width: double.infinity,
-              padding:
-                  const EdgeInsets.fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 25,
                 25,
                 25,
@@ -842,8 +787,7 @@ class _ManageUsersPageState extends State<ManageUsersPage> {
               ),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius:
-                    BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: const Color(0xFFE6EAEC),
                 ),
@@ -852,88 +796,41 @@ class _ManageUsersPageState extends State<ManageUsersPage> {
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Existing Users',
-                          style: TextStyle(
-                            color: Color(0xFF252A2E),
-                            fontSize: 20,
-                            fontWeight:
-                                FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      if (_busy)
-                        const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child:
-                              CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(
-                    height: 20,
-                  ),
-
-                  const Divider(
-                    height: 1,
-                    color: Color(0xFFE2E6E8),
-                  ),
-
-                  const SizedBox(
-                    height: 20,
-                  ),
-
-                  if (_loading)
-                    const SizedBox(
-                      height: 150,
-                      child: Center(
-                        child:
-                            CircularProgressIndicator(),
-                      ),
-                    )
-                  else if (_users.isEmpty)
-                    const SizedBox(
-                      height: 120,
-                      child: Center(
-                        child: Text(
-                          'No users found.',
-                          style: TextStyle(
-                            color:
-                                Color(0xFF777D81),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    LayoutBuilder(
-                      builder: (
-                        context,
-                        constraints,
-                      ) {
-                        return SingleChildScrollView(
-                          scrollDirection:
-                              Axis.horizontal,
-                          child: SizedBox(
-                            width:
-                                constraints.maxWidth <
-                                        1000
-                                    ? 1000
-                                    : constraints
-                                        .maxWidth,
-                            child:
-                                _buildUsersTable(),
-                          ),
-                        );
-                      },
+                  const Text(
+                    'Existing Users',
+                    style: TextStyle(
+                      color: Color(0xFF252A2E),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
                     ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                    const Divider(
+                      height: 1,
+                      color: Color(0xFFE2E6E8),
+                    ),
+
+                  const SizedBox(height: 20),
+
+                  // =================================================
+                  // TABLE
+                  // =================================================
+
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: SizedBox(
+                          width: constraints.maxWidth < 900
+                              ? 900
+                              : constraints.maxWidth,
+                          child: _buildUsersTable(),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -1032,9 +929,8 @@ class _ManageUsersPageState extends State<ManageUsersPage> {
         style: TextStyle(
           color: const Color(0xFF373C40),
           fontSize: 13,
-          fontWeight: bold
-              ? FontWeight.w500
-              : FontWeight.w400,
+          fontWeight:
+              bold ? FontWeight.w500 : FontWeight.w400,
         ),
       ),
     );
@@ -1106,8 +1002,7 @@ class _ManageUsersPageState extends State<ManageUsersPage> {
             color: user.active
                 ? const Color(0xFF20B34B)
                 : const Color(0xFF90999E),
-            borderRadius:
-                BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             user.active
@@ -1247,8 +1142,7 @@ class _TopButton extends StatefulWidget {
   });
 
   @override
-  State<_TopButton> createState() =>
-      _TopButtonState();
+  State<_TopButton> createState() => _TopButtonState();
 }
 
 class _TopButtonState
@@ -1274,10 +1168,11 @@ class _TopButtonState
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration:
-              const Duration(milliseconds: 140),
-          padding:
-              const EdgeInsets.symmetric(
+          duration: const Duration(
+            milliseconds: 140,
+          ),
+
+          padding: const EdgeInsets.symmetric(
             horizontal: 18,
             vertical: 13,
           ),
@@ -1285,8 +1180,8 @@ class _TopButtonState
             color: _hovered
                 ? widget.hoverBackground
                 : widget.background,
-            borderRadius:
-                BorderRadius.circular(7),
+
+            borderRadius: BorderRadius.circular(7),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1338,8 +1233,7 @@ class _HoverAction extends StatefulWidget {
   });
 
   @override
-  State<_HoverAction> createState() =>
-      _HoverActionState();
+  State<_HoverAction> createState() => _HoverActionState();
 }
 
 class _HoverActionState
@@ -1354,6 +1248,7 @@ class _HoverActionState
       cursor: widget.enabled
           ? SystemMouseCursors.click
           : SystemMouseCursors.basic,
+
       onEnter: (_) {
         if (!widget.enabled) return;
 
@@ -1372,11 +1267,12 @@ class _HoverActionState
         onTap: widget.enabled
             ? widget.onTap
             : null,
+
         child: AnimatedContainer(
           duration:
               const Duration(milliseconds: 120),
-          padding:
-              const EdgeInsets.symmetric(
+
+          padding: const EdgeInsets.symmetric(
             horizontal: 5,
             vertical: 6,
           ),
@@ -1384,8 +1280,8 @@ class _HoverActionState
             color: _hovered
                 ? widget.hoverColor
                 : Colors.transparent,
-            borderRadius:
-                BorderRadius.circular(4),
+
+            borderRadius: BorderRadius.circular(4),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1714,17 +1610,13 @@ class _EditUserDialog
   });
 
   @override
-  State<_EditUserDialog> createState() =>
-      _EditUserDialogState();
+  State<_EditUserDialog> createState() => _EditUserDialogState();
 }
 
-class _EditUserDialogState
-    extends State<_EditUserDialog> {
-  late final TextEditingController
-      _emailController;
+class _EditUserDialogState extends State<_EditUserDialog> {
+  late final TextEditingController _emailController;
 
-  final TextEditingController
-      _passwordController =
+  final TextEditingController _passwordController =
       TextEditingController();
 
   late String _role;
@@ -1788,155 +1680,111 @@ class _EditUserDialogState
   }
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-    final bool isPrimary =
-        widget.user.isPrimarySuperAdmin;
-
+  Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.white,
-      insetPadding:
-          const EdgeInsets.symmetric(
+
+      insetPadding: const EdgeInsets.symmetric(
         horizontal: 20,
         vertical: 35,
       ),
+
       shape: RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(11),
       ),
+
       child: ConstrainedBox(
-        constraints:
-            const BoxConstraints(
+        constraints: const BoxConstraints(
           maxWidth: 505,
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _dialogHeader(
-                context: context,
-                title: 'Edit User',
+
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // HEADER
+            _dialogHeader(
+              context: context,
+              title: 'Edit User',
+            ),
+
+            // FORM
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                25,
+                25,
+                25,
+                28,
               ),
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  _fieldLabel('Email Address'),
 
-              Padding(
-                padding:
-                    const EdgeInsets.fromLTRB(
-                  25,
-                  25,
-                  25,
-                  28,
-                ),
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    if (isPrimary)
-                      Container(
-                        width: double.infinity,
-                        margin:
-                            const EdgeInsets.only(
-                          bottom: 18,
-                        ),
-                        padding:
-                            const EdgeInsets.all(12),
-                        decoration:
-                            BoxDecoration(
-                          color: const Color(
-                            0xFFECEEFF,
-                          ),
-                          borderRadius:
-                              BorderRadius.circular(
-                            6,
-                          ),
-                        ),
-                        child: const Text(
-                          'This is the Primary Super Admin. The account cannot be deactivated or deleted.',
-                          style: TextStyle(
-                            color:
-                                Color(0xFF5059B8),
-                            fontSize: 12,
-                            height: 1.4,
-                          ),
-                        ),
-                      ),
+                  const SizedBox(height: 9),
 
-                    if (_error != null) ...[
-                      _dialogError(_error!),
-                      const SizedBox(height: 18),
-                    ],
+                  _dialogTextField(
+                    controller: _emailController,
+                  ),
 
-                    _fieldLabel(
-                      'Email Address',
+                  const SizedBox(height: 20),
+
+                  _fieldLabel('Role'),
+
+                  const SizedBox(height: 9),
+
+                  _roleDropdown(
+                    value: _role,
+                    onChanged: (value) {
+                      if (value == null) return;
+
+                      setState(() {
+                        _role = value;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  _fieldLabel('Password'),
+
+                  const SizedBox(height: 9),
+
+                  _dialogTextField(
+                    controller:
+                        _passwordController,
+                    obscureText: true,
+                  ),
+
+                  const SizedBox(height: 7),
+
+                  const Text(
+                    'Leave blank to keep the current password when editing.',
+                    style: TextStyle(
+                      color: Color(0xFF777D81),
+                      fontSize: 11,
                     ),
-
-                    const SizedBox(height: 9),
-
-                    _dialogTextField(
-                      controller:
-                          _emailController,
-                      keyboardType:
-                          TextInputType.emailAddress,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    _fieldLabel(
-                      'Role',
-                    ),
-
-                    const SizedBox(height: 9),
-
-                    _roleDropdown(
-                      value: _role,
-                      onChanged: isPrimary
-                          ? null
-                          : (value) {
-                              if (value == null) {
-                                return;
-                              }
-
-                              setState(() {
-                                _role = value;
-                                _error = null;
-                              });
-                            },
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    _fieldLabel(
-                      'Password',
-                    ),
-
-                    const SizedBox(height: 9),
-
-                    _dialogTextField(
-                      controller:
-                          _passwordController,
-                      obscureText: true,
-                    ),
-
-                    const SizedBox(height: 7),
-
-                    const Text(
-                      'Leave blank to keep the current password.',
-                      style: TextStyle(
-                        color:
-                            Color(0xFF777D81),
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
 
-              _dialogFooter(
-                context: context,
-                onSave: _save,
-              ),
-            ],
-          ),
+            // FOOTER
+            _dialogFooter(
+              context: context,
+              onSave: () {
+                widget.user.email =
+                    _emailController.text;
+
+                widget.user.role = _role;
+
+                Navigator.pop(
+                  context,
+                  true,
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -1952,18 +1800,15 @@ class _AddUserDialog
   const _AddUserDialog();
 
   @override
-  State<_AddUserDialog> createState() =>
-      _AddUserDialogState();
+  State<_AddUserDialog> createState() => _AddUserDialogState();
 }
 
 class _AddUserDialogState
     extends State<_AddUserDialog> {
-  final TextEditingController
-      _emailController =
+  final TextEditingController _emailController =
       TextEditingController();
 
-  final TextEditingController
-      _passwordController =
+  final TextEditingController _passwordController =
       TextEditingController();
 
   String? _role;
@@ -2031,137 +1876,103 @@ class _AddUserDialogState
   }
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.white,
-      insetPadding:
-          const EdgeInsets.symmetric(
+
+      insetPadding: const EdgeInsets.symmetric(
         horizontal: 20,
         vertical: 35,
       ),
+
       shape: RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(11),
       ),
+
       child: ConstrainedBox(
-        constraints:
-            const BoxConstraints(
+        constraints: const BoxConstraints(
           maxWidth: 505,
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _dialogHeader(
-                context: context,
-                title: 'Add New User',
+
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _dialogHeader(
+              context: context,
+              title: 'Add New User',
+            ),
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                25,
+                25,
+                25,
+                30,
               ),
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  _fieldLabel('Email Address'),
 
-              Padding(
-                padding:
-                    const EdgeInsets.fromLTRB(
-                  25,
-                  25,
-                  25,
-                  30,
-                ),
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    if (_error != null) ...[
-                      _dialogError(_error!),
-                      const SizedBox(height: 18),
-                    ],
+                  const SizedBox(height: 9),
 
-                    _fieldLabel(
-                      'Email Address',
-                    ),
+                  _dialogTextField(
+                    controller: _emailController,
+                  ),
 
-                    const SizedBox(height: 9),
+                  const SizedBox(height: 20),
 
-                    _dialogTextField(
-                      controller:
-                          _emailController,
-                      keyboardType:
-                          TextInputType.emailAddress,
-                    ),
+                  _fieldLabel('Role'),
 
-                    const SizedBox(height: 20),
+                  const SizedBox(height: 9),
 
-                    // ---------------------------------------------------------
-                    // ROLE DROPDOWN
-                    // ---------------------------------------------------------
+                  _roleDropdown(
+                    value: _role,
+                    hint: 'Select a role...',
+                    onChanged: (value) {
+                      setState(() {
+                        _role = value;
+                      });
+                    },
+                  ),
 
-                    _fieldLabel(
-                      'Role',
-                    ),
+                  const SizedBox(height: 20),
 
-                    const SizedBox(height: 9),
+                  _fieldLabel('Password'),
 
-                    _roleDropdown(
-                      value: _role,
-                      hint: 'Select a role...',
-                      onChanged: (value) {
-                        setState(() {
-                          _role = value;
-                          _error = null;
-                        });
-                      },
-                    ),
+                  const SizedBox(height: 9),
 
-                    const SizedBox(height: 20),
-
-                    _fieldLabel(
-                      'Password',
-                    ),
-
-                    const SizedBox(height: 9),
-
-                    _dialogTextField(
-                      controller:
-                          _passwordController,
-                      obscureText: true,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    CheckboxListTile(
-                      contentPadding:
-                          EdgeInsets.zero,
-                      value:
-                          _canDeactivate,
-                      activeColor:
-                          const Color(
-                        0xFF20AE49,
-                      ),
-                      title: const Text(
-                        'Allow this user to be deactivated',
-                        style: TextStyle(
-                          color:
-                              Color(0xFF4F5558),
-                          fontSize: 13,
-                        ),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _canDeactivate =
-                              value ?? false;
-                        });
-                      },
-                    ),
-                  ],
-                ),
+                  _dialogTextField(
+                    controller:
+                        _passwordController,
+                    obscureText: true,
+                  ),
+                ],
               ),
+            ),
 
-              _dialogFooter(
-                context: context,
-                onSave: _save,
-              ),
-            ],
-          ),
+            _dialogFooter(
+              context: context,
+              onSave: () {
+                if (_emailController.text.trim().isEmpty ||
+                    _role == null) {
+                  return;
+                }
+
+                Navigator.pop(
+                  context,
+                  _UserData(
+                    email:
+                        _emailController.text.trim(),
+                    role: _role!,
+                    active: true,
+                    canDeactivate: true,
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -2251,8 +2062,8 @@ Widget _dialogFooter({
           onPressed: () {
             Navigator.pop(context);
           },
-          style:
-              ElevatedButton.styleFrom(
+
+          style: ElevatedButton.styleFrom(
             backgroundColor:
                 const Color(0xFFE6E7E8),
             foregroundColor:
@@ -2263,38 +2074,34 @@ Widget _dialogFooter({
               horizontal: 18,
               vertical: 13,
             ),
-            shape:
-                RoundedRectangleBorder(
+            shape: RoundedRectangleBorder(
               borderRadius:
                   BorderRadius.circular(6),
             ),
           ),
           child: const Text('Cancel'),
         ),
-
         const SizedBox(width: 10),
-
         ElevatedButton(
           onPressed: onSave,
-          style:
-              ElevatedButton.styleFrom(
+
+          style: ElevatedButton.styleFrom(
             backgroundColor:
                 const Color(0xFF20AE49),
-            foregroundColor:
-                Colors.white,
+            foregroundColor: Colors.white,
             elevation: 0,
             padding:
                 const EdgeInsets.symmetric(
               horizontal: 19,
               vertical: 13,
             ),
-            shape:
-                RoundedRectangleBorder(
+            shape: RoundedRectangleBorder(
               borderRadius:
                   BorderRadius.circular(6),
             ),
           ),
-          child: Text(saveLabel),
+
+          child: const Text('Save User'),
         ),
       ],
     ),
@@ -2331,7 +2138,7 @@ Widget _dialogTextField({
   return TextFormField(
     controller: controller,
     obscureText: obscureText,
-    keyboardType: keyboardType,
+
     style: const TextStyle(
       color: Color(0xFF333333),
       fontSize: 14,
@@ -2340,27 +2147,23 @@ Widget _dialogTextField({
       isDense: true,
       filled: true,
       fillColor: Colors.white,
-      suffixIcon: suffixIcon,
+
       contentPadding:
           const EdgeInsets.symmetric(
         horizontal: 13,
         vertical: 15,
       ),
-      enabledBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(6),
-        borderSide:
-            const BorderSide(
+
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(
           color: Color(0xFFD9DFE2),
         ),
       ),
-      focusedBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(6),
-        borderSide:
-            const BorderSide(
+
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(
           color: Color(0xFF8ABFE8),
         ),
       ),
@@ -2390,7 +2193,8 @@ Widget _roleDropdown({
   }
 
   return DropdownButtonFormField<String>(
-    initialValue: safeValue,
+    initialValue: value,
+
     hint: hint == null
         ? null
         : Text(
@@ -2402,8 +2206,9 @@ Widget _roleDropdown({
           ),
     isExpanded: true,
     dropdownColor: Colors.white,
-    borderRadius:
-        BorderRadius.circular(6),
+
+    borderRadius: BorderRadius.circular(6),
+
     icon: const Icon(
       Icons.keyboard_arrow_down_rounded,
       color: Color(0xFF222222),
@@ -2415,38 +2220,35 @@ Widget _roleDropdown({
     ),
     decoration: InputDecoration(
       isDense: true,
+
       contentPadding:
           const EdgeInsets.symmetric(
         horizontal: 13,
         vertical: 14,
       ),
-      enabledBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(6),
-        borderSide:
-            const BorderSide(
+
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(
           color: Color(0xFFD9DFE2),
         ),
       ),
-      focusedBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(6),
-        borderSide:
-            const BorderSide(
+
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(
           color: Color(0xFF8ABFE8),
         ),
       ),
     ),
-    items: roles.map(
-      (role) {
-        return DropdownMenuItem<String>(
-          value: role,
-          child: Text(role),
-        );
-      },
-    ).toList(),
+
+    items: roles.map((role) {
+      return DropdownMenuItem<String>(
+        value: role,
+        child: Text(role),
+      );
+    }).toList(),
+
     onChanged: onChanged,
   );
 }

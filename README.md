@@ -2,6 +2,26 @@
 
 A new Flutter project.
 
+## Sync SQL files to Hostinger
+
+The backend reads its MySQL connection settings from `backend/.env`. Keep that file private and use the Hostinger database credentials already configured there.
+
+To run every `.sql` file in `backend/database` once:
+
+```powershell
+cd backend
+npm run db:sync
+```
+
+To keep the database folder watched while creating or editing SQL files:
+
+```powershell
+cd backend
+npm run db:watch
+```
+
+Leave the watch command running. New or saved `.sql` files are executed against the database selected by `DB_NAME`. Use idempotent statements such as `CREATE TABLE IF NOT EXISTS` because saving a file executes it again. Deleting a SQL file does not delete its table.
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.

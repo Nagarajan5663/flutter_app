@@ -31,6 +31,8 @@ const pool = mysql.createPool({
 
   queueLimit: 0,
 
+  multipleStatements: true,
+
   enableKeepAlive: true,
 
   keepAliveInitialDelay: 0,
