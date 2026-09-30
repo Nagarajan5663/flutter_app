@@ -1,0 +1,35 @@
+# Query: TextDecoration.underline
+# ContextLines: 1
+
+7 results - 3 files
+
+frontend\lib\screens\organization\settings\customization\pdf_templates\template_editor.dart:
+  4328              decoration: selected
+  4329:                 ? TextDecoration.underline
+  4330                  : TextDecoration.none,
+
+  4417              decoration: selected
+  4418:                 ? TextDecoration.underline
+  4419                  : TextDecoration.none,
+
+  4511              decoration: selected
+  4512:                 ? TextDecoration.underline
+  4513                  : TextDecoration.none,
+
+  5146                fontSize: 14,
+  5147:               decoration: TextDecoration.underline,
+  5148              ),
+
+  5198              decoration: selected
+  5199:                 ? TextDecoration.underline
+  5200                  : TextDecoration.none,
+
+frontend\lib\screens\organization\settings\taxes\manage_taxes_page.dart:
+  583                decoration: _hovered
+  584:                   ? TextDecoration.underline
+  585                    : TextDecoration.none,
+
+frontend\lib\screens\sidebar\items_parts\widgets\glass_widgets.dart:
+  864                    decoration: hovering
+  865:                       ? TextDecoration.underline
+  866                        : TextDecoration.none,
