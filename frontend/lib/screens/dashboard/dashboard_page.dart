@@ -9,6 +9,7 @@ import '../home/home_page.dart';
 import 'widgets/dashboard_app_bar.dart';
 import 'widgets/dashboard_nav_bar.dart';
 import 'widgets/dashboard_body.dart';
+import 'widgets/read_only_preview_scope.dart';
 
 // ================================================================
 // SALES
@@ -81,8 +82,13 @@ import '../sidebar/my_account/my_account_page.dart';
 import '../sidebar/accountant/investment/investment_page.dart';
 
 class DashboardPage extends StatefulWidget {
+  final String? userEmail;
+  final List<String> permissions;
+
   const DashboardPage({
     super.key,
+    this.userEmail,
+    this.permissions = const [],
   });
 
   @override
@@ -90,6 +96,47 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  static const Map<String, String> _menuPermissions = {
+    'dashboard': 'Dashboard',
+    'items': 'Items',
+    'parts': 'Items',
+    'inventory': 'Inventory',
+    'current stock': 'Inventory',
+    'inventory adjustments': 'Inventory',
+    'returnable assets': 'Inventory',
+    'sales': 'Sales',
+    'customers': 'Sales',
+    'estimates': 'Sales',
+    'sales order': 'Sales',
+    'sales orders': 'Sales',
+    'invoices': 'Sales',
+    'delivery challans': 'Sales',
+    'payment received': 'Sales',
+    'payments received': 'Sales',
+    'credit notes': 'Sales',
+    'purchase': 'Purchase',
+    'vendors': 'Purchase',
+    'purchase orders': 'Purchase',
+    'bills': 'Purchase',
+    'payment made': 'Purchase',
+    'payments made': 'Purchase',
+    'vendor credit notes': 'Purchase',
+    'accountant': 'Accountant',
+    'expense': 'Accountant',
+    'expenses': 'Accountant',
+    'reimbursements': 'Accountant',
+    'travel allowance': 'Accountant',
+    'other claims': 'Accountant',
+    'investments': 'Accountant',
+    'investment': 'Accountant',
+    'loans': 'Accountant',
+    'reports': 'Reports',
+    'settings': 'Settings',
+    'all_settings': 'Settings',
+    'organization': 'Settings',
+    'my account': 'Settings',
+  };
+
   // ================================================================
   // SIDEBAR STATE
   // ================================================================
@@ -101,6 +148,36 @@ class _DashboardPageState extends State<DashboardPage> {
   // ================================================================
 
   String selectedMenu = 'dashboard';
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (!_canAccessMenu(selectedMenu)) {
+      selectedMenu = _menuPermissions.keys.firstWhere(
+        _canAccessMenu,
+        orElse: () => 'help',
+      );
+    }
+  }
+
+  String get _welcomeName {
+    final email = widget.userEmail?.trim() ?? '';
+    return email.isEmpty ? 'User' : email.split('@').first;
+  }
+
+  bool _canAccessMenu(String menu) {
+    final normalized = menu.toLowerCase().trim();
+    if (normalized == 'help') return true;
+
+    final requiredPermission = _menuPermissions[normalized];
+    if (requiredPermission == null) return false;
+
+    return widget.permissions.any(
+      (permission) =>
+          permission.trim().toLowerCase() == requiredPermission.toLowerCase(),
+    );
+  }
 
   // ================================================================
   // TOGGLE SIDEBAR
@@ -137,7 +214,10 @@ class _DashboardPageState extends State<DashboardPage> {
       MaterialPageRoute<void>(
         fullscreenDialog: true,
         builder: (_) {
-          return const OrganizationPage();
+          return _withReadOnlyAccess(
+            const OrganizationPage(),
+            'organization',
+          );
         },
       ),
     );
@@ -215,18 +295,21 @@ class _DashboardPageState extends State<DashboardPage> {
 
       case 'inventory':
       case 'current stock':
-        return const InventoryPage(
+        return InventoryPage(
           initialTab: 0,
+          readOnly: !_canAccessMenu('inventory'),
         );
 
       case 'inventory adjustments':
-        return const InventoryPage(
+        return InventoryPage(
           initialTab: 1,
+          readOnly: !_canAccessMenu('inventory'),
         );
 
       case 'returnable assets':
-        return const InventoryPage(
+        return InventoryPage(
           initialTab: 2,
+          readOnly: !_canAccessMenu('inventory'),
         );
 
       // ============================================================
@@ -339,6 +422,73 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  Widget _buildReadOnlySelectedPage() {
+    return _withReadOnlyAccess(
+      _buildSelectedPage(),
+      selectedMenu,
+    );
+  }
+
+  Widget _withReadOnlyAccess(
+    Widget page,
+    String menu,
+  ) {
+    if (_canAccessMenu(menu)) return page;
+
+    final permission = _menuPermissions[menu.toLowerCase().trim()] ?? 'access';
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ExcludeFocus(
+          excluding: true,
+          child: ReadOnlyPreviewScope(
+            readOnly: true,
+            child: page,
+          ),
+        ),
+        Positioned(
+          top: 12,
+          right: 12,
+          child: IgnorePointer(
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 9,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF4D6),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: const Color(0xFFE6C66A),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.lock_outline_rounded,
+                    color: Color(0xFF80621A),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 7),
+                  Text(
+                    'Read-only preview: $permission permission required',
+                    style: const TextStyle(
+                      color: Color(0xFF604B18),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   // ================================================================
   // COMING SOON PAGE
   // ================================================================
@@ -382,9 +532,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     color: const Color(0xFF245AA6),
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
                 Text(
                   title,
                   style: const TextStyle(
@@ -393,9 +541,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 const Text(
                   'Coming Soon',
                   style: TextStyle(
@@ -444,6 +590,8 @@ class _DashboardPageState extends State<DashboardPage> {
         appBar: DashboardAppBar(
           onMenuPressed: _toggleSidebar,
           onProfilePressed: _openOrganizationSettings,
+          welcomeName: _welcomeName,
+          canOpenProfile: true,
           onPowerPressed: _logout,
         ),
 
@@ -461,6 +609,7 @@ class _DashboardPageState extends State<DashboardPage> {
               isCollapsed: _isSidebarCollapsed,
               selectedMenu: selectedMenu,
               onMenuSelected: _selectMenu,
+              canAccessMenu: (_) => true,
             ),
 
             // ======================================================
@@ -470,7 +619,7 @@ class _DashboardPageState extends State<DashboardPage> {
             Expanded(
               child: Container(
                 color: Colors.transparent,
-                child: _buildSelectedPage(),
+                child: _buildReadOnlySelectedPage(),
               ),
             ),
           ],

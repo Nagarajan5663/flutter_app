@@ -4,12 +4,14 @@ class DashboardNavBar extends StatefulWidget {
   final bool isCollapsed;
   final String selectedMenu;
   final ValueChanged<String> onMenuSelected;
+  final bool Function(String) canAccessMenu;
 
   const DashboardNavBar({
     super.key,
     required this.isCollapsed,
     required this.selectedMenu,
     required this.onMenuSelected,
+    required this.canAccessMenu,
   });
 
   @override
@@ -59,8 +61,9 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
 
   String get selectedMenu => widget.selectedMenu;
 
-  ValueChanged<String> get onMenuSelected =>
-      widget.onMenuSelected;
+  ValueChanged<String> get onMenuSelected => widget.onMenuSelected;
+
+  bool _canAccessMenu(String menu) => widget.canAccessMenu(menu);
 
   // ================================================================
   // COLORS
@@ -74,14 +77,11 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
   static const Color _cyan = Color(0xFF38BDF8);
   static const Color _mint = Color(0xFF2DD4BF);
 
-  static const Color _textPrimary =
-      Color(0xFFF8FAFC);
+  static const Color _textPrimary = Color(0xFFF8FAFC);
 
-  static const Color _textSecondary =
-      Color(0xFFB8C7D9);
+  static const Color _textSecondary = Color(0xFFB8C7D9);
 
-  static const Color _textMuted =
-      Color(0xFF7F95AB);
+  static const Color _textMuted = Color(0xFF7F95AB);
 
   // ================================================================
   // LIFE CYCLE
@@ -103,8 +103,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
     // EXPANDED → COLLAPSED
     // --------------------------------------------------------------
 
-    if (!oldWidget.isCollapsed &&
-        widget.isCollapsed) {
+    if (!oldWidget.isCollapsed && widget.isCollapsed) {
       // Hide labels BEFORE the width starts shrinking.
       // This prevents a temporary right-side RenderFlex overflow.
       _renderCollapsed = true;
@@ -115,8 +114,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
     // COLLAPSED → EXPANDED
     // --------------------------------------------------------------
 
-    if (oldWidget.isCollapsed &&
-        !widget.isCollapsed) {
+    if (oldWidget.isCollapsed && !widget.isCollapsed) {
       _removeFlyout(rebuild: false);
 
       // IMPORTANT:
@@ -124,8 +122,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
       // The sidebar is still physically narrow while AnimatedContainer grows.
       // Expanded labels are enabled from AnimatedContainer.onEnd instead.
 
-      final section =
-          _findParentSection(widget.selectedMenu);
+      final section = _findParentSection(widget.selectedMenu);
 
       if (section != null) {
         _openSection = section;
@@ -151,14 +148,12 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
         'items',
         'parts',
       ],
-
       'Inventory': [
         'inventory',
         'current stock',
         'inventory adjustments',
         'returnable assets',
       ],
-
       'Sales': [
         'sales',
         'customers',
@@ -171,7 +166,6 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
         'payments received',
         'credit notes',
       ],
-
       'Purchase': [
         'purchase',
         'vendors',
@@ -181,7 +175,6 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
         'payments made',
         'vendor credit notes',
       ],
-
       'Accountant': [
         'accountant',
         'expense',
@@ -211,17 +204,14 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration:
-          const Duration(milliseconds: 220),
+      duration: const Duration(milliseconds: 220),
       curve: Curves.easeOutCubic,
 
       // Reveal expanded content only after the sidebar has reached full width.
       // This is the key fix for:
       // "A RenderFlex overflowed by ... pixels on the right."
       onEnd: () {
-        if (!widget.isCollapsed &&
-            _renderCollapsed &&
-            mounted) {
+        if (!widget.isCollapsed && _renderCollapsed && mounted) {
           setState(() {
             _renderCollapsed = false;
           });
@@ -248,18 +238,15 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
             colors: [
               _navy.withValues(alpha: 0.96),
               _navyDark.withValues(alpha: 0.97),
-              const Color(0xFF102F47)
-                  .withValues(alpha: 0.96),
+              const Color(0xFF102F47).withValues(alpha: 0.96),
             ],
           ),
           border: Border.all(
-            color: Colors.white
-                .withValues(alpha: 0.13),
+            color: Colors.white.withValues(alpha: 0.13),
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0B2340)
-                  .withValues(alpha: 0.24),
+              color: const Color(0xFF0B2340).withValues(alpha: 0.24),
               blurRadius: 28,
               offset: const Offset(8, 12),
             ),
@@ -332,22 +319,17 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                 children: [
                   if (!_renderCollapsed) ...[
                     const SizedBox(height: 16),
-
                     _buildSectionLabel(
                       'WORKSPACE',
                     ),
                   ] else
                     const SizedBox(height: 16),
-
                   Expanded(
                     child: ScrollConfiguration(
-                      behavior:
-                          const _SidebarScrollBehavior(),
+                      behavior: const _SidebarScrollBehavior(),
                       child: SingleChildScrollView(
-                        physics:
-                            const ClampingScrollPhysics(),
-                        padding:
-                            EdgeInsets.fromLTRB(
+                        physics: const ClampingScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(
                           _renderCollapsed ? 7 : 10,
                           0,
                           _renderCollapsed ? 7 : 10,
@@ -360,11 +342,10 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                             // ======================================
 
                             _menuItem(
-                              icon:
-                                  Icons.grid_view_rounded,
+                              icon: Icons.grid_view_rounded,
                               title: 'Dashboard',
-                              selected:
-                                  _isSelected(
+                              enabled: _canAccessMenu('dashboard'),
+                              selected: _isSelected(
                                 'dashboard',
                               ),
                               onTap: () {
@@ -381,8 +362,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                             // ======================================
 
                             _sectionMenu(
-                              icon:
-                                  Icons.inventory_2_outlined,
+                              icon: Icons.inventory_2_outlined,
                               title: 'Items',
                               children: const [
                                 'Items',
@@ -397,8 +377,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                             // ======================================
 
                             _sectionMenu(
-                              icon:
-                                  Icons.warehouse_outlined,
+                              icon: Icons.warehouse_outlined,
                               title: 'Inventory',
                               children: const [
                                 'Current Stock',
@@ -414,8 +393,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                             // ======================================
 
                             _sectionMenu(
-                              icon:
-                                  Icons.trending_up_rounded,
+                              icon: Icons.trending_up_rounded,
                               title: 'Sales',
                               children: const [
                                 'Customers',
@@ -435,8 +413,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                             // ======================================
 
                             _sectionMenu(
-                              icon:
-                                  Icons.shopping_bag_outlined,
+                              icon: Icons.shopping_bag_outlined,
                               title: 'Purchase',
                               children: const [
                                 'Vendors',
@@ -454,8 +431,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                             // ======================================
 
                             _sectionMenu(
-                              icon: Icons
-                                  .account_balance_wallet_outlined,
+                              icon: Icons.account_balance_wallet_outlined,
                               title: 'Accountant',
                               children: const [
                                 'Expense',
@@ -474,11 +450,10 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                             // ======================================
 
                             _menuItem(
-                              icon:
-                                  Icons.analytics_outlined,
+                              icon: Icons.analytics_outlined,
                               title: 'Reports',
-                              selected:
-                                  _isSelected(
+                              enabled: _canAccessMenu('reports'),
+                              selected: _isSelected(
                                 'reports',
                               ),
                               onTap: () {
@@ -496,7 +471,6 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                               const SizedBox(
                                 height: 16,
                               ),
-
                               _buildSectionLabel(
                                 'SYSTEM',
                               ),
@@ -510,11 +484,10 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                             // ======================================
 
                             _menuItem(
-                              icon:
-                                  Icons.hub_outlined,
+                              icon: Icons.hub_outlined,
                               title: 'Fluxa Hub',
-                              selected:
-                                  _isSelected(
+                              enabled: _canAccessMenu('fluxa hub'),
+                              selected: _isSelected(
                                 'fluxa hub',
                               ),
                               accent: _mint,
@@ -532,16 +505,15 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                             // ======================================
 
                             _menuItem(
-                              icon:
-                                  Icons.settings_outlined,
+                              icon: Icons.settings_outlined,
                               title: 'Settings',
-                              selected:
+                              enabled: _canAccessMenu('settings'),
+                              selected: _isSelected(
+                                    'settings',
+                                  ) ||
                                   _isSelected(
-                                        'settings',
-                                      ) ||
-                                      _isSelected(
-                                        'all_settings',
-                                      ),
+                                    'all_settings',
+                                  ),
                               onTap: () {
                                 _selectDirect(
                                   'settings',
@@ -556,11 +528,10 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                             // ======================================
 
                             _menuItem(
-                              icon: Icons
-                                  .person_outline_rounded,
+                              icon: Icons.person_outline_rounded,
                               title: 'My Account',
-                              selected:
-                                  _isSelected(
+                              enabled: _canAccessMenu('my account'),
+                              selected: _isSelected(
                                 'my account',
                               ),
                               onTap: () {
@@ -577,11 +548,9 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                             // ======================================
 
                             _menuItem(
-                              icon: Icons
-                                  .help_outline_rounded,
+                              icon: Icons.help_outline_rounded,
                               title: 'Help',
-                              selected:
-                                  _isSelected(
+                              selected: _isSelected(
                                 'help',
                               ),
                               onTap: () {
@@ -611,6 +580,8 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
   // ================================================================
 
   void _selectDirect(String menu) {
+    if (!_canAccessMenu(menu)) return;
+
     _removeFlyout();
 
     setState(() {
@@ -674,10 +645,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
   // ================================================================
 
   bool _isSelected(String menu) {
-    return selectedMenu
-            .toLowerCase()
-            .trim() ==
-        menu.toLowerCase().trim();
+    return selectedMenu.toLowerCase().trim() == menu.toLowerCase().trim();
   }
 
   bool _isSectionSelected(
@@ -695,31 +663,25 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
     }
 
     // Aliases used by DashboardPage.
-    final selected =
-        selectedMenu.toLowerCase().trim();
+    final selected = selectedMenu.toLowerCase().trim();
 
-    if (title == 'Sales' &&
-        selected == 'sales orders') {
+    if (title == 'Sales' && selected == 'sales orders') {
       return true;
     }
 
-    if (title == 'Sales' &&
-        selected == 'payments received') {
+    if (title == 'Sales' && selected == 'payments received') {
       return true;
     }
 
-    if (title == 'Purchase' &&
-        selected == 'payments made') {
+    if (title == 'Purchase' && selected == 'payments made') {
       return true;
     }
 
-    if (title == 'Accountant' &&
-        selected == 'expenses') {
+    if (title == 'Accountant' && selected == 'expenses') {
       return true;
     }
 
-    if (title == 'Accountant' &&
-        selected == 'investment') {
+    if (title == 'Accountant' && selected == 'investment') {
       return true;
     }
 
@@ -751,20 +713,16 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
     required String title,
     required List<String> children,
   }) {
-    final selected =
-        _isSectionSelected(
+    final selected = _isSectionSelected(
       title,
       children,
     );
 
-    final open =
-        _openSection == title;
+    final open = _openSection == title;
 
-    final flyoutOpen =
-        _flyoutSection == title;
+    final flyoutOpen = _flyoutSection == title;
 
-    final link =
-        _sectionLinks[title]!;
+    final link = _sectionLinks[title]!;
 
     // ==============================================================
     // COLLAPSED MODE
@@ -776,8 +734,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
         child: _menuItem(
           icon: icon,
           title: title,
-          selected:
-              selected || flyoutOpen,
+          selected: selected || flyoutOpen,
           onTap: () {
             _showFlyout(
               title: title,
@@ -794,61 +751,48 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
     // EXPANDED MODE
     // ==============================================================
 
-    final hoverKey =
-        'section-$title';
+    final hoverKey = 'section-$title';
 
-    final hovered =
-        _hoveredItem == hoverKey;
+    final hovered = _hoveredItem == hoverKey;
 
     return Column(
       children: [
         MouseRegion(
-          cursor:
-              SystemMouseCursors.click,
+          cursor: SystemMouseCursors.click,
           onEnter: (_) {
             setState(() {
-              _hoveredItem =
-                  hoverKey;
+              _hoveredItem = hoverKey;
             });
           },
           onExit: (_) {
             setState(() {
-              if (_hoveredItem ==
-                  hoverKey) {
+              if (_hoveredItem == hoverKey) {
                 _hoveredItem = null;
               }
             });
           },
           child: GestureDetector(
-            behavior:
-                HitTestBehavior.opaque,
+            behavior: HitTestBehavior.opaque,
             onTap: () {
               _toggleSection(title);
             },
             child: AnimatedContainer(
-              duration:
-                  const Duration(
+              duration: const Duration(
                 milliseconds: 170,
               ),
-              curve:
-                  Curves.easeOutCubic,
+              curve: Curves.easeOutCubic,
               height: 50,
-              padding:
-                  const EdgeInsets.symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: 10,
               ),
-              decoration:
-                  BoxDecoration(
-                borderRadius:
-                    BorderRadius.circular(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(
                   15,
                 ),
                 gradient: selected
                     ? LinearGradient(
-                        begin:
-                            Alignment.centerLeft,
-                        end:
-                            Alignment.centerRight,
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
                         colors: [
                           _blue.withValues(
                             alpha: 0.25,
@@ -861,12 +805,10 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                     : hovered
                         ? LinearGradient(
                             colors: [
-                              Colors.white
-                                  .withValues(
+                              Colors.white.withValues(
                                 alpha: 0.09,
                               ),
-                              Colors.white
-                                  .withValues(
+                              Colors.white.withValues(
                                 alpha: 0.035,
                               ),
                             ],
@@ -874,73 +816,48 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                         : null,
                 border: Border.all(
                   color: selected
-                      ? _blueLight
-                          .withValues(
+                      ? _blueLight.withValues(
                           alpha: 0.30,
                         )
                       : hovered
-                          ? Colors.white
-                              .withValues(
-                              alpha:
-                                  0.10,
+                          ? Colors.white.withValues(
+                              alpha: 0.10,
                             )
-                          : Colors
-                              .transparent,
+                          : Colors.transparent,
                 ),
               ),
               child: Row(
                 children: [
                   _menuIcon(
                     icon: icon,
-                    selected:
-                        selected,
-                    hovered:
-                        hovered,
+                    selected: selected,
+                    hovered: hovered,
                   ),
-
                   const SizedBox(
                     width: 12,
                   ),
-
                   Expanded(
                     child: Text(
                       title,
-                      overflow:
-                          TextOverflow
-                              .ellipsis,
-                      style:
-                          TextStyle(
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
                         color:
-                            selected ||
-                                    hovered
-                                ? _textPrimary
-                                : _textSecondary,
+                            selected || hovered ? _textPrimary : _textSecondary,
                         fontSize: 14,
                         fontWeight:
-                            selected
-                                ? FontWeight
-                                    .w700
-                                : FontWeight
-                                    .w500,
+                            selected ? FontWeight.w700 : FontWeight.w500,
                       ),
                     ),
                   ),
-
                   AnimatedRotation(
-                    turns:
-                        open ? 0.25 : 0,
-                    duration:
-                        const Duration(
+                    turns: open ? 0.25 : 0,
+                    duration: const Duration(
                       milliseconds: 220,
                     ),
-                    curve:
-                        Curves.easeOutCubic,
+                    curve: Curves.easeOutCubic,
                     child: Icon(
-                      Icons
-                          .chevron_right_rounded,
-                      color: selected
-                          ? _blueLight
-                          : _textMuted,
+                      Icons.chevron_right_rounded,
+                      color: selected ? _blueLight : _textMuted,
                       size: 20,
                     ),
                   ),
@@ -955,23 +872,18 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
         // ============================================================
 
         AnimatedSize(
-          duration:
-              const Duration(
+          duration: const Duration(
             milliseconds: 240,
           ),
-          curve:
-              Curves.easeOutCubic,
-          alignment:
-              Alignment.topCenter,
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topCenter,
           child: open
               ? Padding(
-                  padding:
-                      const EdgeInsets.only(
+                  padding: const EdgeInsets.only(
                     top: 6,
                     bottom: 4,
                   ),
-                  child:
-                      _buildSubMenuList(
+                  child: _buildSubMenuList(
                     children,
                   ),
                 )
@@ -998,8 +910,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
       decoration: BoxDecoration(
         border: Border(
           left: BorderSide(
-            color: Colors.white
-                .withValues(
+            color: Colors.white.withValues(
               alpha: 0.09,
             ),
           ),
@@ -1007,9 +918,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
       ),
       child: Column(
         children: [
-          for (final child
-              in children)
-            _subMenuItem(child),
+          for (final child in children) _subMenuItem(child),
         ],
       ),
     );
@@ -1022,143 +931,111 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
   Widget _subMenuItem(
     String title,
   ) {
-    final selected =
-        _isSelected(title);
+    final enabled = _canAccessMenu(title);
+    final selected = _isSelected(title);
 
-    final hoverKey =
-        'sub-$title';
+    final hoverKey = 'sub-$title';
 
-    final hovered =
-        _hoveredItem == hoverKey;
+    final hovered = _hoveredItem == hoverKey;
 
     return MouseRegion(
-      cursor:
-          SystemMouseCursors.click,
+      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) {
+        if (!enabled) return;
         setState(() {
           _hoveredItem = hoverKey;
         });
       },
       onExit: (_) {
+        if (!enabled) return;
         setState(() {
-          if (_hoveredItem ==
-              hoverKey) {
+          if (_hoveredItem == hoverKey) {
             _hoveredItem = null;
           }
         });
       },
       child: GestureDetector(
-        behavior:
-            HitTestBehavior.opaque,
-        onTap: () {
-          onMenuSelected(title);
-        },
+        behavior: HitTestBehavior.opaque,
+        onTap: enabled ? () => onMenuSelected(title) : null,
         child: AnimatedContainer(
-          duration:
-              const Duration(
+          duration: const Duration(
             milliseconds: 150,
           ),
-          curve:
-              Curves.easeOutCubic,
-          margin:
-              const EdgeInsets.only(
+          curve: Curves.easeOutCubic,
+          margin: const EdgeInsets.only(
             bottom: 3,
           ),
           height: 38,
-          padding:
-              const EdgeInsets.only(
+          padding: const EdgeInsets.only(
             left: 12,
             right: 10,
           ),
-          transform:
-              Matrix4.translationValues(
+          transform: Matrix4.translationValues(
             hovered ? 3 : 0,
             0,
             0,
           ),
-          decoration:
-              BoxDecoration(
+          decoration: BoxDecoration(
             color: selected
                 ? _blue.withValues(
                     alpha: 0.13,
                   )
                 : hovered
-                    ? Colors.white
-                        .withValues(
-                        alpha:
-                            0.055,
+                    ? Colors.white.withValues(
+                        alpha: 0.055,
                       )
-                    : Colors
-                        .transparent,
-            borderRadius:
-                BorderRadius.circular(
+                    : Colors.transparent,
+            borderRadius: BorderRadius.circular(
               11,
             ),
           ),
           child: Row(
             children: [
               AnimatedContainer(
-                duration:
-                    const Duration(
+                duration: const Duration(
                   milliseconds: 150,
                 ),
-                width:
-                    selected ? 7 : 5,
-                height:
-                    selected ? 7 : 5,
-                decoration:
-                    BoxDecoration(
-                  shape:
-                      BoxShape.circle,
-                  color: selected
-                      ? _blueLight
-                      : hovered
-                          ? Colors
-                              .white70
-                          : _textMuted,
-                  boxShadow:
-                      selected
-                          ? [
-                              BoxShadow(
-                                color:
-                                    _blueLight
-                                        .withValues(
-                                  alpha:
-                                      0.45,
-                                ),
-                                blurRadius:
-                                    8,
-                              ),
-                            ]
-                          : null,
+                width: selected ? 7 : 5,
+                height: selected ? 7 : 5,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: !enabled
+                      ? _textMuted.withValues(alpha: 0.5)
+                      : selected
+                          ? _blueLight
+                          : hovered
+                              ? Colors.white70
+                              : _textMuted,
+                  boxShadow: selected
+                      ? [
+                          BoxShadow(
+                            color: _blueLight.withValues(
+                              alpha: 0.45,
+                            ),
+                            blurRadius: 8,
+                          ),
+                        ]
+                      : null,
                 ),
               ),
-
               const SizedBox(
                 width: 12,
               ),
-
               Expanded(
                 child: Text(
                   title,
                   maxLines: 1,
-                  overflow:
-                      TextOverflow
-                          .ellipsis,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: selected
-                        ? _textPrimary
-                        : hovered
-                            ? Colors
-                                .white
-                            : _textSecondary,
+                    color: !enabled
+                        ? _textMuted
+                        : selected
+                            ? _textPrimary
+                            : hovered
+                                ? Colors.white
+                                : _textSecondary,
                     fontSize: 12.5,
-                    fontWeight:
-                        selected
-                            ? FontWeight
-                                .w600
-                            : FontWeight
-                                .w400,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),
               ),
@@ -1180,8 +1057,7 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
     required LayerLink link,
   }) {
     // Clicking same parent again closes the popup.
-    if (_flyoutSection == title &&
-        _flyoutEntry != null) {
+    if (_flyoutSection == title && _flyoutEntry != null) {
       _removeFlyout();
       return;
     }
@@ -1202,13 +1078,11 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
 
             Positioned.fill(
               child: GestureDetector(
-                behavior:
-                    HitTestBehavior.translucent,
+                behavior: HitTestBehavior.translucent,
                 onTap: () {
                   _removeFlyout();
                 },
-                child:
-                    const SizedBox.expand(),
+                child: const SizedBox.expand(),
               ),
             ),
 
@@ -1219,23 +1093,18 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
             CompositedTransformFollower(
               link: link,
               showWhenUnlinked: false,
-              targetAnchor:
-                  Alignment.topRight,
-              followerAnchor:
-                  Alignment.topLeft,
-              offset:
-                  const Offset(12, -4),
+              targetAnchor: Alignment.topRight,
+              followerAnchor: Alignment.topLeft,
+              offset: const Offset(12, -4),
               child: Material(
-                color:
-                    Colors.transparent,
+                color: Colors.transparent,
                 child: _SidebarFlyout(
                   title: title,
                   icon: icon,
                   items: children,
-                  selectedMenu:
-                      selectedMenu,
-                  onItemSelected:
-                      (value) {
+                  selectedMenu: selectedMenu,
+                  canAccessMenu: _canAccessMenu,
+                  onItemSelected: (value) {
                     _removeFlyout();
 
                     onMenuSelected(
@@ -1285,41 +1154,30 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
     required String title,
     required VoidCallback onTap,
     bool selected = false,
+    bool enabled = true,
     Color accent = _blue,
   }) {
-    final hoverKey =
-        'item-$title';
+    final hoverKey = 'item-$title';
 
-    final hovered =
-        _hoveredItem == hoverKey;
+    final hovered = _hoveredItem == hoverKey;
 
-    final menu =
-        AnimatedContainer(
-      duration:
-          const Duration(
+    final menu = AnimatedContainer(
+      duration: const Duration(
         milliseconds: 170,
       ),
-      curve:
-          Curves.easeOutCubic,
+      curve: Curves.easeOutCubic,
       width: double.infinity,
       height: 50,
-      transform:
-          Matrix4.translationValues(
-        hovered && !_renderCollapsed
-            ? 4
-            : 0,
+      transform: Matrix4.translationValues(
+        hovered && !_renderCollapsed ? 4 : 0,
         0,
         0,
       ),
-      padding:
-          EdgeInsets.symmetric(
-        horizontal:
-            _renderCollapsed ? 5 : 10,
+      padding: EdgeInsets.symmetric(
+        horizontal: _renderCollapsed ? 5 : 10,
       ),
-      decoration:
-          BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(
           15,
         ),
 
@@ -1329,10 +1187,8 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
 
         gradient: selected
             ? LinearGradient(
-                begin:
-                    Alignment.centerLeft,
-                end:
-                    Alignment.centerRight,
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
                 colors: [
                   accent.withValues(
                     alpha: 0.90,
@@ -1348,12 +1204,10 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
             : hovered
                 ? LinearGradient(
                     colors: [
-                      Colors.white
-                          .withValues(
+                      Colors.white.withValues(
                         alpha: 0.11,
                       ),
-                      Colors.white
-                          .withValues(
+                      Colors.white.withValues(
                         alpha: 0.045,
                       ),
                     ],
@@ -1362,30 +1216,24 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
 
         border: Border.all(
           color: selected
-              ? Colors.white
-                  .withValues(
+              ? Colors.white.withValues(
                   alpha: 0.18,
                 )
               : hovered
-                  ? Colors.white
-                      .withValues(
-                      alpha:
-                          0.10,
+                  ? Colors.white.withValues(
+                      alpha: 0.10,
                     )
-                  : Colors
-                      .transparent,
+                  : Colors.transparent,
         ),
 
         boxShadow: selected
             ? [
                 BoxShadow(
-                  color:
-                      accent.withValues(
+                  color: accent.withValues(
                     alpha: 0.24,
                   ),
                   blurRadius: 18,
-                  offset:
-                      const Offset(
+                  offset: const Offset(
                     0,
                     7,
                   ),
@@ -1394,16 +1242,11 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
             : hovered
                 ? [
                     BoxShadow(
-                      color:
-                          Colors.black
-                              .withValues(
-                        alpha:
-                            0.10,
+                      color: Colors.black.withValues(
+                        alpha: 0.10,
                       ),
-                      blurRadius:
-                          12,
-                      offset:
-                          const Offset(
+                      blurRadius: 12,
+                      offset: const Offset(
                         0,
                         4,
                       ),
@@ -1424,25 +1267,17 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
               bottom: 12,
               child: Container(
                 width: 3,
-                decoration:
-                    BoxDecoration(
-                  color:
-                      Colors.white,
-                  borderRadius:
-                      BorderRadius
-                          .circular(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(
                     20,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color:
-                          Colors.white
-                              .withValues(
-                        alpha:
-                            0.60,
+                      color: Colors.white.withValues(
+                        alpha: 0.60,
                       ),
-                      blurRadius:
-                          7,
+                      blurRadius: 7,
                     ),
                   ],
                 ),
@@ -1451,85 +1286,51 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
 
           Center(
             child: Row(
-              mainAxisAlignment:
-                  _renderCollapsed
-                      ? MainAxisAlignment
-                          .center
-                      : MainAxisAlignment
-                          .start,
+              mainAxisAlignment: _renderCollapsed
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
               children: [
                 _menuIcon(
                   icon: icon,
-                  selected:
-                      selected,
-                  hovered:
-                      hovered,
+                  selected: selected,
+                  hovered: hovered,
                 ),
-
                 if (!_renderCollapsed) ...[
                   const SizedBox(
                     width: 12,
                   ),
-
                   Expanded(
-                    child:
-                        AnimatedDefaultTextStyle(
-                      duration:
-                          const Duration(
-                        milliseconds:
-                            150,
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(
+                        milliseconds: 150,
                       ),
-                      style:
-                          TextStyle(
+                      style: TextStyle(
                         color:
-                            selected ||
-                                    hovered
-                                ? Colors
-                                    .white
-                                : _textSecondary,
-                        fontSize:
-                            14,
+                            selected || hovered ? Colors.white : _textSecondary,
+                        fontSize: 14,
                         fontWeight:
-                            selected
-                                ? FontWeight
-                                    .w700
-                                : FontWeight
-                                    .w500,
+                            selected ? FontWeight.w700 : FontWeight.w500,
                       ),
                       child: Text(
                         title,
-                        maxLines:
-                            1,
-                        overflow:
-                            TextOverflow
-                                .ellipsis,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
-
                   if (selected)
                     Container(
                       width: 6,
                       height: 6,
-                      decoration:
-                          BoxDecoration(
-                        shape:
-                            BoxShape
-                                .circle,
-                        color:
-                            Colors
-                                .white,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
                         boxShadow: [
                           BoxShadow(
-                            color:
-                                Colors
-                                    .white
-                                    .withValues(
-                              alpha:
-                                  0.65,
+                            color: Colors.white.withValues(
+                              alpha: 0.65,
                             ),
-                            blurRadius:
-                                8,
+                            blurRadius: 8,
                           ),
                         ],
                       ),
@@ -1543,34 +1344,37 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
     );
 
     return Tooltip(
-      message:
-          _renderCollapsed ? title : '',
-      waitDuration:
-          const Duration(
+      message: !enabled
+          ? '$title is not available for your role'
+          : _renderCollapsed
+              ? title
+              : '',
+      waitDuration: const Duration(
         milliseconds: 350,
       ),
       child: MouseRegion(
-        cursor:
-            SystemMouseCursors.click,
+        cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
         onEnter: (_) {
+          if (!enabled) return;
           setState(() {
-            _hoveredItem =
-                hoverKey;
+            _hoveredItem = hoverKey;
           });
         },
         onExit: (_) {
+          if (!enabled) return;
           setState(() {
-            if (_hoveredItem ==
-                hoverKey) {
+            if (_hoveredItem == hoverKey) {
               _hoveredItem = null;
             }
           });
         },
         child: GestureDetector(
-          behavior:
-              HitTestBehavior.opaque,
-          onTap: onTap,
-          child: menu,
+          behavior: HitTestBehavior.opaque,
+          onTap: enabled ? onTap : null,
+          child: Opacity(
+            opacity: enabled ? 1 : 0.45,
+            child: menu,
+          ),
         ),
       ),
     );
@@ -1586,67 +1390,46 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
     required bool hovered,
   }) {
     return AnimatedScale(
-      duration:
-          const Duration(
+      duration: const Duration(
         milliseconds: 160,
       ),
-      curve:
-          Curves.easeOutBack,
-      scale:
-          hovered ? 1.08 : 1,
-      child:
-          AnimatedContainer(
-        duration:
-            const Duration(
+      curve: Curves.easeOutBack,
+      scale: hovered ? 1.08 : 1,
+      child: AnimatedContainer(
+        duration: const Duration(
           milliseconds: 160,
         ),
-        width:
-            _renderCollapsed ? 38 : 36,
-        height:
-            _renderCollapsed ? 38 : 36,
-        decoration:
-            BoxDecoration(
-          borderRadius:
-              BorderRadius.circular(
+        width: _renderCollapsed ? 38 : 36,
+        height: _renderCollapsed ? 38 : 36,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(
             11,
           ),
           color: selected
-              ? Colors.white
-                  .withValues(
+              ? Colors.white.withValues(
                   alpha: 0.16,
                 )
               : hovered
-                  ? Colors.white
-                      .withValues(
-                      alpha:
-                          0.09,
+                  ? Colors.white.withValues(
+                      alpha: 0.09,
                     )
-                  : Colors.white
-                      .withValues(
-                      alpha:
-                          0.045,
+                  : Colors.white.withValues(
+                      alpha: 0.045,
                     ),
           border: Border.all(
             color: selected
-                ? Colors.white
-                    .withValues(
-                    alpha:
-                        0.20,
+                ? Colors.white.withValues(
+                    alpha: 0.20,
                   )
-                : Colors.white
-                    .withValues(
-                    alpha:
-                        0.06,
+                : Colors.white.withValues(
+                    alpha: 0.06,
                   ),
           ),
         ),
         child: Icon(
           icon,
           size: 19,
-          color:
-              selected || hovered
-                  ? Colors.white
-                  : _textSecondary,
+          color: selected || hovered ? Colors.white : _textSecondary,
         ),
       ),
     );
@@ -1657,14 +1440,13 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
 // COLLAPSED SIDEBAR FLYOUT MENU
 // ==================================================================
 
-class _SidebarFlyout
-    extends StatefulWidget {
+class _SidebarFlyout extends StatefulWidget {
   final String title;
   final IconData icon;
   final List<String> items;
   final String selectedMenu;
-  final ValueChanged<String>
-      onItemSelected;
+  final ValueChanged<String> onItemSelected;
+  final bool Function(String) canAccessMenu;
 
   const _SidebarFlyout({
     required this.title,
@@ -1672,40 +1454,30 @@ class _SidebarFlyout
     required this.items,
     required this.selectedMenu,
     required this.onItemSelected,
+    required this.canAccessMenu,
   });
 
   @override
-  State<_SidebarFlyout>
-      createState() =>
-          _SidebarFlyoutState();
+  State<_SidebarFlyout> createState() => _SidebarFlyoutState();
 }
 
-class _SidebarFlyoutState
-    extends State<_SidebarFlyout> {
+class _SidebarFlyoutState extends State<_SidebarFlyout> {
   String? _hoveredItem;
 
-  static const Color _blue =
-      Color(0xFF3B82F6);
+  static const Color _blue = Color(0xFF3B82F6);
 
-  static const Color _blueLight =
-      Color(0xFF60A5FA);
+  static const Color _blueLight = Color(0xFF60A5FA);
 
-  static const Color _navy =
-      Color(0xFF0C2942);
+  static const Color _navy = Color(0xFF0C2942);
 
-  static const Color _navyDark =
-      Color(0xFF061A2C);
+  static const Color _navyDark = Color(0xFF061A2C);
 
-  static const Color _text =
-      Color(0xFFF8FAFC);
+  static const Color _text = Color(0xFFF8FAFC);
 
-  static const Color _secondary =
-      Color(0xFFB8C7D9);
+  static const Color _secondary = Color(0xFFB8C7D9);
 
   bool _selected(String value) {
-    return widget.selectedMenu
-            .toLowerCase()
-            .trim() ==
+    return widget.selectedMenu.toLowerCase().trim() ==
         value.toLowerCase().trim();
   }
 
@@ -1718,12 +1490,10 @@ class _SidebarFlyoutState
         begin: 0,
         end: 1,
       ),
-      duration:
-          const Duration(
+      duration: const Duration(
         milliseconds: 180,
       ),
-      curve:
-          Curves.easeOutCubic,
+      curve: Curves.easeOutCubic,
       builder: (
         context,
         animation,
@@ -1736,14 +1506,9 @@ class _SidebarFlyoutState
               (1 - animation) * -8,
               0,
             ),
-            child:
-                Transform.scale(
-              alignment:
-                  Alignment.centerLeft,
-              scale:
-                  0.96 +
-                      animation *
-                          0.04,
+            child: Transform.scale(
+              alignment: Alignment.centerLeft,
+              scale: 0.96 + animation * 0.04,
               child: child,
             ),
           ),
@@ -1751,22 +1516,16 @@ class _SidebarFlyoutState
       },
       child: Container(
         width: 258,
-        constraints:
-            const BoxConstraints(
+        constraints: const BoxConstraints(
           maxHeight: 440,
         ),
-        decoration:
-            BoxDecoration(
-          borderRadius:
-              BorderRadius.circular(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(
             20,
           ),
-          gradient:
-              const LinearGradient(
-            begin:
-                Alignment.topLeft,
-            end:
-                Alignment.bottomRight,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
               _navy,
               _navyDark,
@@ -1774,38 +1533,32 @@ class _SidebarFlyoutState
             ],
           ),
           border: Border.all(
-            color: Colors.white
-                .withValues(
+            color: Colors.white.withValues(
               alpha: 0.14,
             ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black
-                  .withValues(
+              color: Colors.black.withValues(
                 alpha: 0.28,
               ),
               blurRadius: 28,
-              offset:
-                  const Offset(
+              offset: const Offset(
                 8,
                 12,
               ),
             ),
             BoxShadow(
-              color: _blue
-                  .withValues(
+              color: _blue.withValues(
                 alpha: 0.10,
               ),
               blurRadius: 28,
             ),
           ],
         ),
-        clipBehavior:
-            Clip.antiAlias,
+        clipBehavior: Clip.antiAlias,
         child: Column(
-          mainAxisSize:
-              MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min,
           children: [
             // ======================================================
             // HEADER
@@ -1813,31 +1566,23 @@ class _SidebarFlyoutState
 
             Container(
               height: 62,
-              padding:
-                  const EdgeInsets
-                      .symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: 16,
               ),
-              decoration:
-                  BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(
-                  bottom:
-                      BorderSide(
-                    color: Colors.white
-                        .withValues(
-                      alpha:
-                          0.09,
+                  bottom: BorderSide(
+                    color: Colors.white.withValues(
+                      alpha: 0.09,
                     ),
                   ),
                 ),
-                gradient:
-                    LinearGradient(
+                gradient: LinearGradient(
                   colors: [
                     _blue.withValues(
                       alpha: 0.15,
                     ),
-                    Colors
-                        .transparent,
+                    Colors.transparent,
                   ],
                 ),
               ),
@@ -1846,49 +1591,35 @@ class _SidebarFlyoutState
                   Container(
                     width: 36,
                     height: 36,
-                    decoration:
-                        BoxDecoration(
-                      borderRadius:
-                          BorderRadius
-                              .circular(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(
                         11,
                       ),
-                      color: _blue
-                          .withValues(
-                        alpha:
-                            0.18,
+                      color: _blue.withValues(
+                        alpha: 0.18,
                       ),
-                      border:
-                          Border.all(
-                        color: _blueLight
-                            .withValues(
-                          alpha:
-                              0.22,
+                      border: Border.all(
+                        color: _blueLight.withValues(
+                          alpha: 0.22,
                         ),
                       ),
                     ),
                     child: Icon(
                       widget.icon,
-                      color:
-                          _blueLight,
+                      color: _blueLight,
                       size: 19,
                     ),
                   ),
-
                   const SizedBox(
                     width: 12,
                   ),
-
                   Expanded(
                     child: Text(
                       widget.title,
-                      style:
-                          const TextStyle(
+                      style: const TextStyle(
                         color: _text,
                         fontSize: 14.5,
-                        fontWeight:
-                            FontWeight
-                                .w700,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
@@ -1901,22 +1632,15 @@ class _SidebarFlyoutState
             // ======================================================
 
             Flexible(
-              child:
-                  SingleChildScrollView(
-                physics:
-                    const ClampingScrollPhysics(),
-                padding:
-                    const EdgeInsets
-                        .all(
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                padding: const EdgeInsets.all(
                   9,
                 ),
                 child: Column(
-                  mainAxisSize:
-                      MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    for (final item
-                        in widget.items)
-                      _item(item),
+                    for (final item in widget.items) _item(item),
                   ],
                 ),
               ),
@@ -1930,76 +1654,59 @@ class _SidebarFlyoutState
   Widget _item(
     String title,
   ) {
-    final selected =
-        _selected(title);
+    final enabled = widget.canAccessMenu(title);
+    final selected = _selected(title);
 
-    final hovered =
-        _hoveredItem == title;
+    final hovered = _hoveredItem == title;
 
     return MouseRegion(
-      cursor:
-          SystemMouseCursors.click,
+      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) {
+        if (!enabled) return;
         setState(() {
           _hoveredItem = title;
         });
       },
       onExit: (_) {
+        if (!enabled) return;
         setState(() {
-          if (_hoveredItem ==
-              title) {
+          if (_hoveredItem == title) {
             _hoveredItem = null;
           }
         });
       },
       child: GestureDetector(
-        behavior:
-            HitTestBehavior.opaque,
-        onTap: () {
-          widget.onItemSelected(
-            title,
-          );
-        },
+        behavior: HitTestBehavior.opaque,
+        onTap: enabled ? () => widget.onItemSelected(title) : null,
         child: AnimatedContainer(
-          duration:
-              const Duration(
+          duration: const Duration(
             milliseconds: 150,
           ),
-          curve:
-              Curves.easeOutCubic,
+          curve: Curves.easeOutCubic,
           height: 43,
-          margin:
-              const EdgeInsets.only(
+          margin: const EdgeInsets.only(
             bottom: 4,
           ),
-          padding:
-              const EdgeInsets
-                  .symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: 12,
           ),
-          transform:
-              Matrix4.translationValues(
+          transform: Matrix4.translationValues(
             hovered ? 3 : 0,
             0,
             0,
           ),
-          decoration:
-              BoxDecoration(
-            borderRadius:
-                BorderRadius.circular(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
               12,
             ),
             gradient: selected
                 ? LinearGradient(
                     colors: [
                       _blue.withValues(
-                        alpha:
-                            0.30,
+                        alpha: 0.30,
                       ),
-                      _blueLight
-                          .withValues(
-                        alpha:
-                            0.12,
+                      _blueLight.withValues(
+                        alpha: 0.12,
                       ),
                     ],
                   )
@@ -2007,96 +1714,69 @@ class _SidebarFlyoutState
             color: selected
                 ? null
                 : hovered
-                    ? Colors.white
-                        .withValues(
-                        alpha:
-                            0.075,
+                    ? Colors.white.withValues(
+                        alpha: 0.075,
                       )
-                    : Colors
-                        .transparent,
+                    : Colors.transparent,
             border: Border.all(
               color: selected
-                  ? _blueLight
-                      .withValues(
-                      alpha:
-                          0.24,
+                  ? _blueLight.withValues(
+                      alpha: 0.24,
                     )
-                  : Colors
-                      .transparent,
+                  : Colors.transparent,
             ),
           ),
           child: Row(
             children: [
               AnimatedContainer(
-                duration:
-                    const Duration(
+                duration: const Duration(
                   milliseconds: 150,
                 ),
-                width:
-                    selected ? 7 : 5,
-                height:
-                    selected ? 7 : 5,
-                decoration:
-                    BoxDecoration(
-                  shape:
-                      BoxShape.circle,
-                  color: selected
-                      ? _blueLight
-                      : hovered
-                          ? Colors
-                              .white
-                          : _secondary,
-                  boxShadow:
-                      selected
-                          ? [
-                              BoxShadow(
-                                color:
-                                    _blueLight
-                                        .withValues(
-                                  alpha:
-                                      0.50,
-                                ),
-                                blurRadius:
-                                    8,
-                              ),
-                            ]
-                          : null,
+                width: selected ? 7 : 5,
+                height: selected ? 7 : 5,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: !enabled
+                      ? Colors.white38
+                      : selected
+                          ? _blueLight
+                          : hovered
+                              ? Colors.white
+                              : _secondary,
+                  boxShadow: selected
+                      ? [
+                          BoxShadow(
+                            color: _blueLight.withValues(
+                              alpha: 0.50,
+                            ),
+                            blurRadius: 8,
+                          ),
+                        ]
+                      : null,
                 ),
               ),
-
               const SizedBox(
                 width: 12,
               ),
-
               Expanded(
                 child: Text(
                   title,
-                  overflow:
-                      TextOverflow
-                          .ellipsis,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color:
-                        selected ||
-                                hovered
+                    color: !enabled
+                        ? Colors.white38
+                        : selected || hovered
                             ? _text
                             : _secondary,
                     fontSize: 13,
-                    fontWeight:
-                        selected
-                            ? FontWeight
-                                .w600
-                            : FontWeight
-                                .w500,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                   ),
                 ),
               ),
-
               if (selected)
                 const Icon(
-                  Icons
-                      .check_rounded,
-                  color:
-                      _blueLight,
+                  Icons.check_rounded,
+                  color: _blueLight,
                   size: 17,
                 ),
             ],
@@ -2111,8 +1791,7 @@ class _SidebarFlyoutState
 // SIDEBAR SCROLL BEHAVIOUR
 // ==================================================================
 
-class _SidebarScrollBehavior
-    extends ScrollBehavior {
+class _SidebarScrollBehavior extends ScrollBehavior {
   const _SidebarScrollBehavior();
 
   @override
@@ -2125,8 +1804,7 @@ class _SidebarScrollBehavior
   }
 
   @override
-  ScrollPhysics
-      getScrollPhysics(
+  ScrollPhysics getScrollPhysics(
     BuildContext context,
   ) {
     return const ClampingScrollPhysics();

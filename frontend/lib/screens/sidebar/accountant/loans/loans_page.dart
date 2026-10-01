@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../../dashboard/widgets/read_only_preview_scope.dart';
 import '../widgets/accountant_glass_widgets.dart';
 
 class LoansPage extends StatefulWidget {
@@ -50,53 +51,55 @@ class _LoansPageState extends State<LoansPage> {
           // PAGE HEADER
           // ==========================================================
 
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              28,
-              25,
-              28,
-              18,
-            ),
-            child: Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Loans Received',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF17395C),
-                    ),
-                  ),
-                ),
-
-                ElevatedButton.icon(
-                  onPressed: _openNewLoanDialog,
-                  icon: const Icon(
-                    Icons.add,
-                    size: 20,
-                  ),
-                  label: const Text(
-                    'New Loan',
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(
-                      0xFF1F8BCB,
-                    ),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 18,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        10,
+          ReadOnlyPreviewScope.blockActions(
+            context,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                28,
+                25,
+                28,
+                18,
+              ),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Loans Received',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF17395C),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  ElevatedButton.icon(
+                    onPressed: _openNewLoanDialog,
+                    icon: const Icon(
+                      Icons.add,
+                      size: 20,
+                    ),
+                    label: const Text(
+                      'New Loan',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(
+                        0xFF1F8BCB,
+                      ),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 18,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          10,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -125,7 +128,6 @@ class _LoansPageState extends State<LoansPage> {
               child: Column(
                 children: [
                   _buildTableHeader(),
-
                   Expanded(
                     child: loans.isEmpty
                         ? _buildEmptyRow()
@@ -135,8 +137,11 @@ class _LoansPageState extends State<LoansPage> {
                               context,
                               index,
                             ) {
-                              return _buildLoanRow(
-                                loans[index],
+                              return ReadOnlyPreviewScope.blockActions(
+                                context,
+                                _buildLoanRow(
+                                  loans[index],
+                                ),
                               );
                             },
                           ),
@@ -381,11 +386,9 @@ class _LoansPageState extends State<LoansPage> {
                     color: Color(0xFF17395C),
                   ),
                 ),
-
                 const SizedBox(
                   width: 4,
                 ),
-
                 IconButton(
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(
@@ -426,55 +429,41 @@ class _NewLoanDialog extends StatefulWidget {
   });
 
   @override
-  State<_NewLoanDialog> createState() =>
-      _NewLoanDialogState();
+  State<_NewLoanDialog> createState() => _NewLoanDialogState();
 }
 
-class _NewLoanDialogState
-    extends State<_NewLoanDialog> {
+class _NewLoanDialogState extends State<_NewLoanDialog> {
   // ==========================================================
   // CONTROLLERS
   // ==========================================================
 
-  final TextEditingController _dateController =
-      TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
 
-  final TextEditingController _lenderController =
-      TextEditingController();
+  final TextEditingController _lenderController = TextEditingController();
 
-  final TextEditingController _accountController =
-      TextEditingController();
+  final TextEditingController _accountController = TextEditingController();
 
-  final TextEditingController _loanNumberController =
-      TextEditingController(
+  final TextEditingController _loanNumberController = TextEditingController(
     text: 'LOAN-11',
   );
 
-  final TextEditingController _referenceController =
-      TextEditingController();
+  final TextEditingController _referenceController = TextEditingController();
 
-  final TextEditingController _principalController =
-      TextEditingController();
+  final TextEditingController _principalController = TextEditingController();
 
-  final TextEditingController _interestController =
-      TextEditingController();
+  final TextEditingController _interestController = TextEditingController();
 
-  final TextEditingController _termController =
-      TextEditingController();
+  final TextEditingController _termController = TextEditingController();
 
-  final TextEditingController _emiController =
-      TextEditingController(
+  final TextEditingController _emiController = TextEditingController(
     text: '0.00',
   );
 
-  final TextEditingController _remarksController =
-      TextEditingController();
+  final TextEditingController _remarksController = TextEditingController();
 
-  String _selectedLoanType =
-      'EMI (Monthly Repayment)';
+  String _selectedLoanType = 'EMI (Monthly Repayment)';
 
-  String _selectedFileName =
-      'No file chosen';
+  String _selectedFileName = 'No file chosen';
 
   // ==========================================================
   // INIT
@@ -486,8 +475,7 @@ class _NewLoanDialogState
 
     final now = DateTime.now();
 
-    _dateController.text =
-        '${now.day.toString().padLeft(2, '0')}-'
+    _dateController.text = '${now.day.toString().padLeft(2, '0')}-'
         '${now.month.toString().padLeft(2, '0')}-'
         '${now.year}';
 
@@ -529,20 +517,17 @@ class _NewLoanDialogState
   // ==========================================================
 
   void _calculateEmi() {
-    final principal =
-        double.tryParse(
+    final principal = double.tryParse(
           _principalController.text,
         ) ??
         0;
 
-    final annualInterest =
-        double.tryParse(
+    final annualInterest = double.tryParse(
           _interestController.text,
         ) ??
         0;
 
-    final months =
-        int.tryParse(
+    final months = int.tryParse(
           _termController.text,
         ) ??
         0;
@@ -552,8 +537,7 @@ class _NewLoanDialogState
       return;
     }
 
-    final monthlyRate =
-        annualInterest / 12 / 100;
+    final monthlyRate = annualInterest / 12 / 100;
 
     double emi;
 
@@ -565,15 +549,10 @@ class _NewLoanDialogState
         months,
       );
 
-      emi =
-          principal *
-          monthlyRate *
-          power /
-          (power - 1);
+      emi = principal * monthlyRate * power / (power - 1);
     }
 
-    _emiController.text =
-        emi.toStringAsFixed(
+    _emiController.text = emi.toStringAsFixed(
       2,
     );
   }
@@ -583,8 +562,7 @@ class _NewLoanDialogState
   // ==========================================================
 
   Future<void> _selectDate() async {
-    final selectedDate =
-        await showDatePicker(
+    final selectedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(
@@ -600,8 +578,7 @@ class _NewLoanDialogState
     }
 
     setState(() {
-      _dateController.text =
-          '${selectedDate.day.toString().padLeft(2, '0')}-'
+      _dateController.text = '${selectedDate.day.toString().padLeft(2, '0')}-'
           '${selectedDate.month.toString().padLeft(2, '0')}-'
           '${selectedDate.year}';
     });
@@ -629,20 +606,14 @@ class _NewLoanDialogState
       date: _dateController.text,
       lender: _lenderController.text.trim(),
       account: _accountController.text.trim(),
-      loanNumber:
-          _loanNumberController.text.trim(),
-      reference:
-          _referenceController.text.trim(),
+      loanNumber: _loanNumberController.text.trim(),
+      reference: _referenceController.text.trim(),
       loanType: _selectedLoanType,
-      principal:
-          _principalController.text.trim(),
-      interestRate:
-          _interestController.text.trim(),
-      loanTerm:
-          _termController.text.trim(),
+      principal: _principalController.text.trim(),
+      interestRate: _interestController.text.trim(),
+      loanTerm: _termController.text.trim(),
       emi: _emiController.text,
-      remarks:
-          _remarksController.text.trim(),
+      remarks: _remarksController.text.trim(),
     );
 
     widget.onSave(
@@ -660,13 +631,9 @@ class _NewLoanDialogState
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth =
-        MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.of(context).size.width;
 
-    final dialogWidth =
-        screenWidth > 1000
-        ? 720.0
-        : screenWidth * 0.92;
+    final dialogWidth = screenWidth > 1000 ? 720.0 : screenWidth * 0.92;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -718,8 +685,7 @@ class _NewLoanDialogState
                       18,
                     ),
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // ==================================================
                         // ROW 1
@@ -729,38 +695,27 @@ class _NewLoanDialogState
                           children: [
                             Expanded(
                               child: _buildDateField(
-                                label:
-                                    'Date of Loan *',
+                                label: 'Date of Loan *',
                               ),
                             ),
-
                             const SizedBox(
                               width: 10,
                             ),
-
                             Expanded(
                               child: _buildTextField(
-                                label:
-                                    'Lender (From) *',
-                                controller:
-                                    _lenderController,
-                                hint:
-                                    'Select or type to add...',
+                                label: 'Lender (From) *',
+                                controller: _lenderController,
+                                hint: 'Select or type to add...',
                               ),
                             ),
-
                             const SizedBox(
                               width: 10,
                             ),
-
                             Expanded(
                               child: _buildTextField(
-                                label:
-                                    'Deposited To Account *',
-                                controller:
-                                    _accountController,
-                                hint:
-                                    'Select or type to add...',
+                                label: 'Deposited To Account *',
+                                controller: _accountController,
+                                hint: 'Select or type to add...',
                               ),
                             ),
                           ],
@@ -779,32 +734,24 @@ class _NewLoanDialogState
                             Expanded(
                               child: _buildTextField(
                                 label: 'Loan # *',
-                                controller:
-                                    _loanNumberController,
+                                controller: _loanNumberController,
                                 readOnly: true,
                               ),
                             ),
-
                             const SizedBox(
                               width: 10,
                             ),
-
                             Expanded(
                               child: _buildTextField(
-                                label:
-                                    'Reference #',
-                                controller:
-                                    _referenceController,
+                                label: 'Reference #',
+                                controller: _referenceController,
                               ),
                             ),
-
                             const SizedBox(
                               width: 10,
                             ),
-
                             Expanded(
-                              child:
-                                  _buildLoanTypeDropdown(),
+                              child: _buildLoanTypeDropdown(),
                             ),
                           ],
                         ),
@@ -818,12 +765,9 @@ class _NewLoanDialogState
                         // ==================================================
 
                         _buildTextField(
-                          label:
-                              'Principal Amount *',
-                          controller:
-                              _principalController,
-                          keyboardType:
-                              TextInputType.number,
+                          label: 'Principal Amount *',
+                          controller: _principalController,
+                          keyboardType: TextInputType.number,
                           hint: '0',
                         ),
 
@@ -839,46 +783,33 @@ class _NewLoanDialogState
                           children: [
                             Expanded(
                               child: _buildTextField(
-                                label:
-                                    'Interest Rate (p.a.) *',
-                                controller:
-                                    _interestController,
+                                label: 'Interest Rate (p.a.) *',
+                                controller: _interestController,
                                 keyboardType:
-                                    const TextInputType
-                                        .numberWithOptions(
+                                    const TextInputType.numberWithOptions(
                                   decimal: true,
                                 ),
-                                hint:
-                                    'e.g. 12.5',
+                                hint: 'e.g. 12.5',
                               ),
                             ),
-
                             const SizedBox(
                               width: 10,
                             ),
-
                             Expanded(
                               child: _buildTextField(
-                                label:
-                                    'Loan Term (Months) *',
-                                controller:
-                                    _termController,
-                                keyboardType:
-                                    TextInputType.number,
+                                label: 'Loan Term (Months) *',
+                                controller: _termController,
+                                keyboardType: TextInputType.number,
                                 hint: '0',
                               ),
                             ),
-
                             const SizedBox(
                               width: 10,
                             ),
-
                             Expanded(
                               child: _buildTextField(
-                                label:
-                                    'Calculated EMI',
-                                controller:
-                                    _emiController,
+                                label: 'Calculated EMI',
+                                controller: _emiController,
                                 readOnly: true,
                                 hint: '0.00',
                               ),
@@ -953,7 +884,6 @@ class _NewLoanDialogState
               ),
             ),
           ),
-
           IconButton(
             onPressed: () {
               Navigator.pop(
@@ -981,8 +911,7 @@ class _NewLoanDialogState
     required String label,
   }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
@@ -992,11 +921,9 @@ class _NewLoanDialogState
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(
           height: 6,
         ),
-
         SizedBox(
           height: 39,
           child: TextField(
@@ -1007,8 +934,7 @@ class _NewLoanDialogState
               fontSize: 11,
             ),
             decoration: InputDecoration(
-              contentPadding:
-                  const EdgeInsets.symmetric(
+              contentPadding: const EdgeInsets.symmetric(
                 horizontal: 10,
               ),
               suffixIcon: IconButton(
@@ -1020,10 +946,8 @@ class _NewLoanDialogState
                 ),
               ),
               border: _inputBorder(),
-              enabledBorder:
-                  _inputBorder(),
-              focusedBorder:
-                  _focusedBorder(),
+              enabledBorder: _inputBorder(),
+              focusedBorder: _focusedBorder(),
             ),
           ),
         ),
@@ -1043,8 +967,7 @@ class _NewLoanDialogState
     TextInputType? keyboardType,
   }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
@@ -1054,11 +977,9 @@ class _NewLoanDialogState
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(
           height: 6,
         ),
-
         SizedBox(
           height: 39,
           child: TextField(
@@ -1081,16 +1002,13 @@ class _NewLoanDialogState
                   : Colors.white.withValues(
                       alpha: 0.45,
                     ),
-              contentPadding:
-                  const EdgeInsets.symmetric(
+              contentPadding: const EdgeInsets.symmetric(
                 horizontal: 10,
                 vertical: 8,
               ),
               border: _inputBorder(),
-              enabledBorder:
-                  _inputBorder(),
-              focusedBorder:
-                  _focusedBorder(),
+              enabledBorder: _inputBorder(),
+              focusedBorder: _focusedBorder(),
             ),
           ),
         ),
@@ -1111,8 +1029,7 @@ class _NewLoanDialogState
     ];
 
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Loan Type *',
@@ -1122,16 +1039,13 @@ class _NewLoanDialogState
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(
           height: 6,
         ),
-
         SizedBox(
           height: 39,
           child: DropdownButtonFormField<String>(
-            initialValue:
-                _selectedLoanType,
+            initialValue: _selectedLoanType,
             isExpanded: true,
             dropdownColor: Colors.white,
             style: const TextStyle(
@@ -1139,20 +1053,16 @@ class _NewLoanDialogState
               fontSize: 11,
             ),
             decoration: InputDecoration(
-              contentPadding:
-                  const EdgeInsets.symmetric(
+              contentPadding: const EdgeInsets.symmetric(
                 horizontal: 10,
               ),
               border: _inputBorder(),
-              enabledBorder:
-                  _inputBorder(),
-              focusedBorder:
-                  _focusedBorder(),
+              enabledBorder: _inputBorder(),
+              focusedBorder: _focusedBorder(),
             ),
             items: loanTypes
                 .map(
-                  (type) =>
-                      DropdownMenuItem<String>(
+                  (type) => DropdownMenuItem<String>(
                     value: type,
                     child: Text(
                       type,
@@ -1170,8 +1080,7 @@ class _NewLoanDialogState
               }
 
               setState(() {
-                _selectedLoanType =
-                    value;
+                _selectedLoanType = value;
               });
             },
           ),
@@ -1186,8 +1095,7 @@ class _NewLoanDialogState
 
   Widget _buildRemarksField() {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Remarks',
@@ -1197,14 +1105,11 @@ class _NewLoanDialogState
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(
           height: 6,
         ),
-
         TextField(
-          controller:
-              _remarksController,
+          controller: _remarksController,
           minLines: 4,
           maxLines: 4,
           style: const TextStyle(
@@ -1214,10 +1119,8 @@ class _NewLoanDialogState
           decoration: InputDecoration(
             hintText: '',
             border: _inputBorder(),
-            enabledBorder:
-                _inputBorder(),
-            focusedBorder:
-                _focusedBorder(),
+            enabledBorder: _inputBorder(),
+            focusedBorder: _focusedBorder(),
           ),
         ),
       ],
@@ -1230,8 +1133,7 @@ class _NewLoanDialogState
 
   Widget _buildAttachmentSection() {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Attach Loan Agreement / Docs',
@@ -1241,37 +1143,30 @@ class _NewLoanDialogState
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(
           height: 7,
         ),
-
         Row(
           children: [
             OutlinedButton(
               onPressed: () {
                 setState(() {
-                  _selectedFileName =
-                      'No file chosen';
+                  _selectedFileName = 'No file chosen';
                 });
               },
               style: OutlinedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: 10,
                   vertical: 8,
                 ),
-                foregroundColor:
-                    Colors.black,
+                foregroundColor: Colors.black,
                 side: const BorderSide(
                   color: Color(
                     0xFFBFC6CE,
                   ),
                 ),
-                shape:
-                    RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
                     3,
                   ),
                 ),
@@ -1284,16 +1179,13 @@ class _NewLoanDialogState
                 ),
               ),
             ),
-
             const SizedBox(
               width: 8,
             ),
-
             Expanded(
               child: Text(
                 _selectedFileName,
-                overflow:
-                    TextOverflow.ellipsis,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Colors.black,
                   fontSize: 10,
@@ -1316,8 +1208,7 @@ class _NewLoanDialogState
         12,
       ),
       child: Row(
-        mainAxisAlignment:
-            MainAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
           SizedBox(
             height: 42,
@@ -1328,19 +1219,15 @@ class _NewLoanDialogState
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    const Color(
+                backgroundColor: const Color(
                   0xFFE5E7EA,
                 ),
-                foregroundColor:
-                    const Color(
+                foregroundColor: const Color(
                   0xFF333333,
                 ),
                 elevation: 0,
-                shape:
-                    RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
                     4,
                   ),
                 ),
@@ -1356,27 +1243,21 @@ class _NewLoanDialogState
               ),
             ),
           ),
-
           const SizedBox(
             width: 10,
           ),
-
           SizedBox(
             height: 42,
             child: ElevatedButton(
               onPressed: _saveLoan,
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    const Color(
+                backgroundColor: const Color(
                   0xFF2C8AC4,
                 ),
-                foregroundColor:
-                    Colors.white,
+                foregroundColor: Colors.white,
                 elevation: 0,
-                shape:
-                    RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
                     4,
                   ),
                 ),
@@ -1385,8 +1266,7 @@ class _NewLoanDialogState
                 'Save Loan',
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight:
-                      FontWeight.w600,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -1402,8 +1282,7 @@ class _NewLoanDialogState
 
   OutlineInputBorder _inputBorder() {
     return OutlineInputBorder(
-      borderRadius:
-          BorderRadius.circular(
+      borderRadius: BorderRadius.circular(
         3,
       ),
       borderSide: const BorderSide(
@@ -1416,8 +1295,7 @@ class _NewLoanDialogState
 
   OutlineInputBorder _focusedBorder() {
     return OutlineInputBorder(
-      borderRadius:
-          BorderRadius.circular(
+      borderRadius: BorderRadius.circular(
         3,
       ),
       borderSide: const BorderSide(

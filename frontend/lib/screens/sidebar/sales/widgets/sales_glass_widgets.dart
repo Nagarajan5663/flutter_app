@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../../../dashboard/widgets/read_only_preview_scope.dart';
+
 /// Visual-only glass treatment for the existing Sales module.
 ///
 /// IMPORTANT:
@@ -216,7 +218,11 @@ class _SalesGlassPageFrameState extends State<SalesGlassPageFrame> {
                                   ),
                                   child: DefaultTextStyle.merge(
                                     style: const TextStyle(color: Colors.black),
-                                    child: widget.child,
+                                    child: ReadOnlyPreviewScope
+                                        .blockScrollableActions(
+                                      context,
+                                      widget.child,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -453,4 +459,3 @@ class _SalesGlassDialogState extends State<SalesGlassDialog> {
     );
   }
 }
-

@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../../../dashboard/widgets/read_only_preview_scope.dart';
+
 // ============================================================================
 // GLASS PAGE BACKGROUND (DARK VARIANT)
 //
@@ -54,7 +56,10 @@ class GlassPageBackground extends StatelessWidget {
               ),
             ),
           ),
-          child,
+          ReadOnlyPreviewScope.blockScrollableActions(
+            context,
+            child,
+          ),
         ],
       ),
     );

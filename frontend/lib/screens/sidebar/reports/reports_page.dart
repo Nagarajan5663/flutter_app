@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../../dashboard/widgets/read_only_preview_scope.dart';
+
 // ============================================================================
 // BUSINESS OVERVIEW
 // ============================================================================
@@ -149,7 +151,6 @@ class _ReportsPageState extends State<ReportsPage> {
         ),
       ],
     ),
-
     _ReportSectionData(
       title: 'Sales',
       reports: [
@@ -159,7 +160,6 @@ class _ReportsPageState extends State<ReportsPage> {
         _ReportItem(name: 'Sales Summary'),
       ],
     ),
-
     _ReportSectionData(
       title: 'Inventory',
       reports: [
@@ -168,7 +168,6 @@ class _ReportsPageState extends State<ReportsPage> {
         _ReportItem(name: 'Inventory Aging Summary'),
       ],
     ),
-
     _ReportSectionData(
       title: 'Receivables',
       reports: [
@@ -178,7 +177,6 @@ class _ReportsPageState extends State<ReportsPage> {
         _ReportItem(name: 'Customer Balance Summary'),
       ],
     ),
-
     _ReportSectionData(
       title: 'Payables',
       reports: [
@@ -188,7 +186,6 @@ class _ReportsPageState extends State<ReportsPage> {
         _ReportItem(name: 'Payments Made'),
       ],
     ),
-
     _ReportSectionData(
       title: 'Purchases and Expenses',
       reports: [
@@ -198,7 +195,6 @@ class _ReportsPageState extends State<ReportsPage> {
         _ReportItem(name: 'Expenses by Category'),
       ],
     ),
-
     _ReportSectionData(
       title: 'Accountant',
       reports: [
@@ -671,152 +667,141 @@ class _ReportsPageState extends State<ReportsPage> {
                       ),
                     );
                   },
-                  child: _MainGlassTiltPanel(
-                    enableTilt: enableTilt,
-                    borderRadius: isMobile ? 20 : 28,
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        isMobile ? 18 : 28,
-                        isMobile ? 22 : 30,
-                        isMobile ? 18 : 28,
-                        isMobile ? 22 : 30,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // ====================================================
-                          // HEADER
-                          // ====================================================
+                  child: ReadOnlyPreviewScope.blockActions(
+                    context,
+                    _MainGlassTiltPanel(
+                      enableTilt: enableTilt,
+                      borderRadius: isMobile ? 20 : 28,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          isMobile ? 18 : 28,
+                          isMobile ? 22 : 30,
+                          isMobile ? 18 : 28,
+                          isMobile ? 22 : 30,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // ====================================================
+                            // HEADER
+                            // ====================================================
 
-                          _buildHeader(
-                            isMobile: isMobile,
-                          ),
+                            _buildHeader(
+                              isMobile: isMobile,
+                            ),
 
-                          const SizedBox(height: 28),
+                            const SizedBox(height: 28),
 
-                          // ====================================================
-                          // MAIN CONTENT
-                          // ====================================================
+                            // ====================================================
+                            // MAIN CONTENT
+                            // ====================================================
 
-                          LayoutBuilder(
-                            builder: (
-                              context,
-                              constraints,
-                            ) {
-                              if (constraints.maxWidth >= 850) {
-                                return Row(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    SizedBox(
-                                      width: 250,
-                                      child: _GlassCategorySidebar(
-                                        selectedCategory:
-                                            _selectedCategory,
-                                        categories: const [
-                                          'All Reports',
-                                          'Business Overview',
-                                          'Sales',
-                                          'Inventory',
-                                          'Receivables',
-                                          'Payables',
-                                          'Purchases and Expenses',
-                                          'Accountant',
-                                        ],
-                                        onCategorySelected:
-                                            _handleCategorySelected,
-                                      ),
-                                    ),
-
-                                    const SizedBox(width: 25),
-
-                                    Expanded(
-                                      child: Column(
-                                        children: [
-                                          for (
-                                            int index = 0;
-                                            index < _sections.length;
-                                            index++
-                                          ) ...[
-                                            _GlassReportsSection(
-                                              section: _sections[index],
-                                              onReportSelected: (report) {
-                                                _openReport(
-                                                  _sections[index].title,
-                                                  report.name,
-                                                );
-                                              },
-                                            ),
-
-                                            if (index !=
-                                                _sections.length - 1)
-                                              const SizedBox(height: 22),
+                            LayoutBuilder(
+                              builder: (
+                                context,
+                                constraints,
+                              ) {
+                                if (constraints.maxWidth >= 850) {
+                                  return Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      SizedBox(
+                                        width: 250,
+                                        child: _GlassCategorySidebar(
+                                          selectedCategory: _selectedCategory,
+                                          categories: const [
+                                            'All Reports',
+                                            'Business Overview',
+                                            'Sales',
+                                            'Inventory',
+                                            'Receivables',
+                                            'Payables',
+                                            'Purchases and Expenses',
+                                            'Accountant',
                                           ],
-                                        ],
+                                          onCategorySelected:
+                                              _handleCategorySelected,
+                                        ),
                                       ),
+                                      const SizedBox(width: 25),
+                                      Expanded(
+                                        child: Column(
+                                          children: [
+                                            for (int index = 0;
+                                                index < _sections.length;
+                                                index++) ...[
+                                              _GlassReportsSection(
+                                                section: _sections[index],
+                                                onReportSelected: (report) {
+                                                  _openReport(
+                                                    _sections[index].title,
+                                                    report.name,
+                                                  );
+                                                },
+                                              ),
+                                              if (index != _sections.length - 1)
+                                                const SizedBox(height: 22),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }
+
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _GlassCategorySidebar(
+                                      selectedCategory: _selectedCategory,
+                                      categories: const [
+                                        'All Reports',
+                                        'Business Overview',
+                                        'Sales',
+                                        'Inventory',
+                                        'Receivables',
+                                        'Payables',
+                                        'Purchases and Expenses',
+                                        'Accountant',
+                                      ],
+                                      onCategorySelected:
+                                          _handleCategorySelected,
                                     ),
+                                    const SizedBox(height: 22),
+                                    for (int index = 0;
+                                        index < _sections.length;
+                                        index++) ...[
+                                      _GlassReportsSection(
+                                        section: _sections[index],
+                                        onReportSelected: (report) {
+                                          _openReport(
+                                            _sections[index].title,
+                                            report.name,
+                                          );
+                                        },
+                                      ),
+                                      if (index != _sections.length - 1)
+                                        const SizedBox(height: 20),
+                                    ],
                                   ],
                                 );
-                              }
+                              },
+                            ),
 
-                              return Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  _GlassCategorySidebar(
-                                    selectedCategory:
-                                        _selectedCategory,
-                                    categories: const [
-                                      'All Reports',
-                                      'Business Overview',
-                                      'Sales',
-                                      'Inventory',
-                                      'Receivables',
-                                      'Payables',
-                                      'Purchases and Expenses',
-                                      'Accountant',
-                                    ],
-                                    onCategorySelected:
-                                        _handleCategorySelected,
-                                  ),
+                            const SizedBox(height: 40),
 
-                                  const SizedBox(height: 22),
-
-                                  for (
-                                    int index = 0;
-                                    index < _sections.length;
-                                    index++
-                                  ) ...[
-                                    _GlassReportsSection(
-                                      section: _sections[index],
-                                      onReportSelected: (report) {
-                                        _openReport(
-                                          _sections[index].title,
-                                          report.name,
-                                        );
-                                      },
-                                    ),
-
-                                    if (index != _sections.length - 1)
-                                      const SizedBox(height: 20),
-                                  ],
-                                ],
-                              );
-                            },
-                          ),
-
-                          const SizedBox(height: 40),
-
-                          const Center(
-                            child: Text(
-                              '© 2026 test. All Rights Reserved.',
-                              style: TextStyle(
-                                color: Color(0xFF718391),
-                                fontSize: 11,
+                            const Center(
+                              child: Text(
+                                '© 2026 test. All Rights Reserved.',
+                                style: TextStyle(
+                                  color: Color(0xFF718391),
+                                  fontSize: 11,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -889,8 +874,7 @@ class _MainGlassTiltPanel extends StatefulWidget {
   });
 
   @override
-  State<_MainGlassTiltPanel> createState() =>
-      _MainGlassTiltPanelState();
+  State<_MainGlassTiltPanel> createState() => _MainGlassTiltPanelState();
 }
 
 class _MainGlassTiltPanelState extends State<_MainGlassTiltPanel> {
@@ -915,11 +899,9 @@ class _MainGlassTiltPanelState extends State<_MainGlassTiltPanel> {
       return;
     }
 
-    final double x =
-        (event.localPosition.dx / size.width) - 0.5;
+    final double x = (event.localPosition.dx / size.width) - 0.5;
 
-    final double y =
-        (event.localPosition.dy / size.height) - 0.5;
+    final double y = (event.localPosition.dy / size.height) - 0.5;
 
     const double tiltStrength = 0.025;
 
@@ -959,17 +941,14 @@ class _MainGlassTiltPanelState extends State<_MainGlassTiltPanel> {
         duration: Duration(
           milliseconds: hovering ? 90 : 340,
         ),
-        curve: hovering
-            ? Curves.linear
-            : Curves.easeOutCubic,
+        curve: hovering ? Curves.linear : Curves.easeOutCubic,
         transformAlignment: Alignment.center,
         transform: Matrix4.identity()
           ..setEntry(3, 2, 0.001)
           ..rotateX(rotateX)
           ..rotateY(rotateY),
         decoration: BoxDecoration(
-          borderRadius:
-              BorderRadius.circular(widget.borderRadius),
+          borderRadius: BorderRadius.circular(widget.borderRadius),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF173D59).withValues(
@@ -985,8 +964,7 @@ class _MainGlassTiltPanelState extends State<_MainGlassTiltPanel> {
           ],
         ),
         child: ClipRRect(
-          borderRadius:
-              BorderRadius.circular(widget.borderRadius),
+          borderRadius: BorderRadius.circular(widget.borderRadius),
           child: BackdropFilter(
             filter: ImageFilter.blur(
               sigmaX: 24,
@@ -1000,22 +978,19 @@ class _MainGlassTiltPanelState extends State<_MainGlassTiltPanel> {
                 color: Colors.white.withValues(
                   alpha: hovering ? 0.66 : 0.56,
                 ),
-                borderRadius:
-                    BorderRadius.circular(
+                borderRadius: BorderRadius.circular(
                   widget.borderRadius,
                 ),
                 border: Border.all(
                   width: 1.3,
                   color: Colors.white.withValues(
-                    alpha:
-                        hovering ? 0.95 : 0.78,
+                    alpha: hovering ? 0.95 : 0.78,
                   ),
                 ),
               ),
               child: Stack(
                 children: [
                   widget.child,
-
                   Positioned(
                     top: -120,
                     right: -70,
@@ -1031,8 +1006,7 @@ class _MainGlassTiltPanelState extends State<_MainGlassTiltPanel> {
                           gradient: RadialGradient(
                             colors: [
                               Colors.white.withValues(
-                                alpha:
-                                    hovering ? 0.25 : 0.14,
+                                alpha: hovering ? 0.25 : 0.14,
                               ),
                               Colors.transparent,
                             ],
@@ -1089,7 +1063,6 @@ class _GlassCategorySidebar extends StatelessWidget {
               ),
             ),
           ),
-
           for (final category in categories)
             _CategoryRow(
               label: category,
@@ -1098,7 +1071,6 @@ class _GlassCategorySidebar extends StatelessWidget {
                 onCategorySelected(category);
               },
             ),
-
           const SizedBox(height: 8),
         ],
       ),
@@ -1118,8 +1090,7 @@ class _CategoryRow extends StatefulWidget {
   });
 
   @override
-  State<_CategoryRow> createState() =>
-      _CategoryRowState();
+  State<_CategoryRow> createState() => _CategoryRowState();
 }
 
 class _CategoryRowState extends State<_CategoryRow> {
@@ -1144,8 +1115,7 @@ class _CategoryRowState extends State<_CategoryRow> {
         child: InkWell(
           onTap: widget.onTap,
           child: AnimatedContainer(
-            duration:
-                const Duration(milliseconds: 180),
+            duration: const Duration(milliseconds: 180),
             margin: const EdgeInsets.symmetric(
               horizontal: 9,
               vertical: 2,
@@ -1181,8 +1151,7 @@ class _CategoryRowState extends State<_CategoryRow> {
                           alpha: 0.07,
                         ),
                         blurRadius: 12,
-                        offset:
-                            const Offset(0, 4),
+                        offset: const Offset(0, 4),
                       ),
                     ]
                   : null,
@@ -1190,8 +1159,7 @@ class _CategoryRowState extends State<_CategoryRow> {
             child: Row(
               children: [
                 AnimatedContainer(
-                  duration:
-                      const Duration(milliseconds: 180),
+                  duration: const Duration(milliseconds: 180),
                   width: 4,
                   height: 20,
                   decoration: BoxDecoration(
@@ -1200,13 +1168,10 @@ class _CategoryRowState extends State<_CategoryRow> {
                             0xFF438CC0,
                           )
                         : Colors.transparent,
-                    borderRadius:
-                        BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
-
                 const SizedBox(width: 10),
-
                 Expanded(
                   child: Text(
                     widget.label,
@@ -1219,9 +1184,8 @@ class _CategoryRowState extends State<_CategoryRow> {
                               0xFF506778,
                             ),
                       fontSize: 13,
-                      fontWeight: widget.selected
-                          ? FontWeight.w700
-                          : FontWeight.w500,
+                      fontWeight:
+                          widget.selected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                 ),
@@ -1269,7 +1233,6 @@ class _GlassReportsSection extends StatelessWidget {
               ),
             ),
           ),
-
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: 18,
@@ -1305,7 +1268,6 @@ class _GlassReportsSection extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 Expanded(
                   flex: 3,
                   child: Text(
@@ -1317,7 +1279,6 @@ class _GlassReportsSection extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 Expanded(
                   flex: 3,
                   child: Text(
@@ -1332,14 +1293,10 @@ class _GlassReportsSection extends StatelessWidget {
               ],
             ),
           ),
-
-          for (int index = 0;
-              index < section.reports.length;
-              index++)
+          for (int index = 0; index < section.reports.length; index++)
             _GlassReportRow(
               report: section.reports[index],
-              showBottomBorder:
-                  index != section.reports.length - 1,
+              showBottomBorder: index != section.reports.length - 1,
               onTap: () {
                 onReportSelected(
                   section.reports[index],
@@ -1364,12 +1321,10 @@ class _GlassReportRow extends StatefulWidget {
   });
 
   @override
-  State<_GlassReportRow> createState() =>
-      _GlassReportRowState();
+  State<_GlassReportRow> createState() => _GlassReportRowState();
 }
 
-class _GlassReportRowState
-    extends State<_GlassReportRow> {
+class _GlassReportRowState extends State<_GlassReportRow> {
   bool hovering = false;
 
   @override
@@ -1391,8 +1346,7 @@ class _GlassReportRowState
         child: InkWell(
           onTap: widget.onTap,
           child: AnimatedContainer(
-            duration:
-                const Duration(milliseconds: 180),
+            duration: const Duration(milliseconds: 180),
             transform: Matrix4.translationValues(
               hovering ? 3 : 0,
               0,
@@ -1426,16 +1380,13 @@ class _GlassReportRowState
                     widget.report.name,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: hovering
-                          ? FontWeight.w700
-                          : FontWeight.w600,
+                      fontWeight: hovering ? FontWeight.w700 : FontWeight.w600,
                       color: const Color(
                         0xFF2384B7,
                       ),
                     ),
                   ),
                 ),
-
                 Expanded(
                   flex: 3,
                   child: Text(
@@ -1446,7 +1397,6 @@ class _GlassReportRowState
                     ),
                   ),
                 ),
-
                 const Expanded(
                   flex: 3,
                   child: Text(
@@ -1478,8 +1428,7 @@ class _GlassCard extends StatefulWidget {
   });
 
   @override
-  State<_GlassCard> createState() =>
-      _GlassCardState();
+  State<_GlassCard> createState() => _GlassCardState();
 }
 
 class _GlassCardState extends State<_GlassCard> {
@@ -1499,8 +1448,7 @@ class _GlassCardState extends State<_GlassCard> {
         });
       },
       child: AnimatedContainer(
-        duration:
-            const Duration(milliseconds: 220),
+        duration: const Duration(milliseconds: 220),
         width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white.withValues(
@@ -1514,8 +1462,7 @@ class _GlassCardState extends State<_GlassCard> {
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF163E5A)
-                  .withValues(
+              color: const Color(0xFF163E5A).withValues(
                 alpha: hovering ? 0.11 : 0.05,
               ),
               blurRadius: hovering ? 28 : 15,
@@ -1548,12 +1495,10 @@ class _HoverPrimaryButton extends StatefulWidget {
   });
 
   @override
-  State<_HoverPrimaryButton> createState() =>
-      _HoverPrimaryButtonState();
+  State<_HoverPrimaryButton> createState() => _HoverPrimaryButtonState();
 }
 
-class _HoverPrimaryButtonState
-    extends State<_HoverPrimaryButton> {
+class _HoverPrimaryButtonState extends State<_HoverPrimaryButton> {
   bool hovering = false;
 
   @override
@@ -1571,8 +1516,7 @@ class _HoverPrimaryButtonState
         });
       },
       child: AnimatedScale(
-        duration:
-            const Duration(milliseconds: 170),
+        duration: const Duration(milliseconds: 170),
         scale: hovering ? 1.025 : 1,
         curve: Curves.easeOutCubic,
         child: ElevatedButton.icon(
@@ -1583,8 +1527,7 @@ class _HoverPrimaryButtonState
           ),
           label: Text(widget.label),
           style: ElevatedButton.styleFrom(
-            backgroundColor:
-                const Color(0xFF2B76A8),
+            backgroundColor: const Color(0xFF2B76A8),
             foregroundColor: Colors.white,
             elevation: 0,
             padding: const EdgeInsets.symmetric(
@@ -1599,8 +1542,7 @@ class _HoverPrimaryButtonState
                 ),
               ),
             ),
-            shadowColor:
-                const Color(0xFF174D72),
+            shadowColor: const Color(0xFF174D72),
             textStyle: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,

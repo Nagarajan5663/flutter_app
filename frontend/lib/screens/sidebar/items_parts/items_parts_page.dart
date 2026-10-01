@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../dashboard/widgets/read_only_preview_scope.dart';
 import 'item_model.dart';
 import 'part_model.dart';
 import 'services/items_parts_api.dart';
@@ -22,12 +23,10 @@ class ItemsPartsPage extends StatefulWidget {
   });
 
   @override
-  State<ItemsPartsPage> createState() =>
-      _ItemsPartsPageState();
+  State<ItemsPartsPage> createState() => _ItemsPartsPageState();
 }
 
-class _ItemsPartsPageState
-    extends State<ItemsPartsPage> {
+class _ItemsPartsPageState extends State<ItemsPartsPage> {
   late int selectedTab;
 
   final List<ItemModel> _items = [];
@@ -55,8 +54,7 @@ class _ItemsPartsPageState
   ) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.initialTab !=
-        widget.initialTab) {
+    if (oldWidget.initialTab != widget.initialTab) {
       final newTab = _validateTab(
         widget.initialTab,
       );
@@ -91,11 +89,9 @@ class _ItemsPartsPageState
 
       if (!mounted) return;
 
-      final items =
-          results[0] as List<ItemModel>;
+      final items = results[0] as List<ItemModel>;
 
-      final parts =
-          results[1] as List<PartModel>;
+      final parts = results[1] as List<PartModel>;
 
       setState(() {
         _items
@@ -113,8 +109,7 @@ class _ItemsPartsPageState
 
       setState(() {
         _isLoading = false;
-        _errorMessage =
-            _cleanError(error);
+        _errorMessage = _cleanError(error);
       });
     }
   }
@@ -145,12 +140,9 @@ class _ItemsPartsPageState
     int? editIndex,
   }) async {
     final ItemModel? existingItem =
-        editIndex == null
-            ? null
-            : _items[editIndex];
+        editIndex == null ? null : _items[editIndex];
 
-    final ItemModel? result =
-        await showDialog<ItemModel>(
+    final ItemModel? result = await showDialog<ItemModel>(
       context: context,
       barrierDismissible: false,
       builder: (context) {
@@ -167,8 +159,7 @@ class _ItemsPartsPageState
     try {
       if (editIndex == null) {
         // CREATE
-        final createdItem =
-            await ItemsPartsApi.createItem(
+        final createdItem = await ItemsPartsApi.createItem(
           result,
         );
 
@@ -184,8 +175,7 @@ class _ItemsPartsPageState
         );
       } else {
         // UPDATE
-        final currentItem =
-            _items[editIndex];
+        final currentItem = _items[editIndex];
 
         if (currentItem.id == null) {
           throw Exception(
@@ -193,21 +183,18 @@ class _ItemsPartsPageState
           );
         }
 
-        final itemToUpdate =
-            result.copyWith(
+        final itemToUpdate = result.copyWith(
           id: currentItem.id,
         );
 
-        final updatedItem =
-            await ItemsPartsApi.updateItem(
+        final updatedItem = await ItemsPartsApi.updateItem(
           itemToUpdate,
         );
 
         if (!mounted) return;
 
         setState(() {
-          _items[editIndex] =
-              updatedItem;
+          _items[editIndex] = updatedItem;
         });
 
         _showSuccess(
@@ -231,12 +218,9 @@ class _ItemsPartsPageState
     int? editIndex,
   }) async {
     final PartModel? existingPart =
-        editIndex == null
-            ? null
-            : _parts[editIndex];
+        editIndex == null ? null : _parts[editIndex];
 
-    final PartModel? result =
-        await showDialog<PartModel>(
+    final PartModel? result = await showDialog<PartModel>(
       context: context,
       barrierDismissible: false,
       builder: (context) {
@@ -253,8 +237,7 @@ class _ItemsPartsPageState
     try {
       if (editIndex == null) {
         // CREATE
-        final createdPart =
-            await ItemsPartsApi.createPart(
+        final createdPart = await ItemsPartsApi.createPart(
           result,
         );
 
@@ -269,8 +252,7 @@ class _ItemsPartsPageState
         );
       } else {
         // UPDATE
-        final currentPart =
-            _parts[editIndex];
+        final currentPart = _parts[editIndex];
 
         if (currentPart.id == null) {
           throw Exception(
@@ -278,21 +260,18 @@ class _ItemsPartsPageState
           );
         }
 
-        final partToUpdate =
-            result.copyWith(
+        final partToUpdate = result.copyWith(
           id: currentPart.id,
         );
 
-        final updatedPart =
-            await ItemsPartsApi.updatePart(
+        final updatedPart = await ItemsPartsApi.updatePart(
           partToUpdate,
         );
 
         if (!mounted) return;
 
         setState(() {
-          _parts[editIndex] =
-              updatedPart;
+          _parts[editIndex] = updatedPart;
         });
 
         _showSuccess(
@@ -316,8 +295,7 @@ class _ItemsPartsPageState
     required String type,
     required String name,
   }) async {
-    final bool? result =
-        await showDialog<bool>(
+    final bool? result = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
@@ -330,8 +308,7 @@ class _ItemsPartsPageState
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context)
-                    .pop(false);
+                Navigator.of(context).pop(false);
               },
               child: const Text(
                 'Cancel',
@@ -339,13 +316,10 @@ class _ItemsPartsPageState
             ),
             FilledButton(
               onPressed: () {
-                Navigator.of(context)
-                    .pop(true);
+                Navigator.of(context).pop(true);
               },
-              style:
-                  FilledButton.styleFrom(
-                backgroundColor:
-                    const Color(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(
                   0xFFC65555,
                 ),
               ),
@@ -377,8 +351,7 @@ class _ItemsPartsPageState
       return;
     }
 
-    final confirmed =
-        await _confirmDelete(
+    final confirmed = await _confirmDelete(
       type: 'Item',
       name: item.name,
     );
@@ -426,8 +399,7 @@ class _ItemsPartsPageState
       return;
     }
 
-    final confirmed =
-        await _confirmDelete(
+    final confirmed = await _confirmDelete(
       type: 'Part',
       name: part.name,
     );
@@ -464,9 +436,7 @@ class _ItemsPartsPageState
   // ============================================================
 
   String _cleanError(Object error) {
-    return error
-        .toString()
-        .replaceFirst(
+    return error.toString().replaceFirst(
           'Exception: ',
           '',
         );
@@ -479,22 +449,17 @@ class _ItemsPartsPageState
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          behavior:
-              SnackBarBehavior.floating,
-          backgroundColor:
-              const Color(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(
             0xFF163F5E,
           ),
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
           content: Row(
             children: [
               const Icon(
-                Icons
-                    .check_circle_outline_rounded,
+                Icons.check_circle_outline_rounded,
                 color: Colors.white,
               ),
               const SizedBox(width: 10),
@@ -503,8 +468,7 @@ class _ItemsPartsPageState
                   message,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontWeight:
-                        FontWeight.w600,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -521,16 +485,12 @@ class _ItemsPartsPageState
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          behavior:
-              SnackBarBehavior.floating,
-          backgroundColor:
-              const Color(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(
             0xFFA94442,
           ),
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
           content: Row(
             children: [
@@ -544,8 +504,7 @@ class _ItemsPartsPageState
                   message,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontWeight:
-                        FontWeight.w600,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -566,18 +525,15 @@ class _ItemsPartsPageState
         context,
         constraints,
       ) {
-        final bool isMobile =
-            constraints.maxWidth < 700;
+        final bool isMobile = constraints.maxWidth < 700;
 
         return Container(
           width: double.infinity,
           height: double.infinity,
-          decoration:
-              const BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
-              end:
-                  Alignment.bottomRight,
+              end: Alignment.bottomRight,
               colors: [
                 Color(0xFFCADAE7),
                 Color(0xFFD2D6E3),
@@ -589,93 +545,74 @@ class _ItemsPartsPageState
             padding: EdgeInsets.all(
               isMobile ? 14 : 30,
             ),
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color:
-                    Colors.white.withValues(
-                  alpha: 0.48,
-                ),
-                borderRadius:
-                    BorderRadius.circular(
-                  isMobile ? 20 : 28,
-                ),
-                border: Border.all(
-                  color:
-                      Colors.white.withValues(
-                    alpha: 0.75,
+            child: ReadOnlyPreviewScope.blockActions(
+              context,
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(
+                    alpha: 0.48,
                   ),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color:
-                        const Color(
-                      0xFF173D59,
-                    ).withValues(
-                      alpha: 0.09,
-                    ),
-                    blurRadius: 35,
-                    offset:
-                        const Offset(
-                      0,
-                      14,
+                  borderRadius: BorderRadius.circular(
+                    isMobile ? 20 : 28,
+                  ),
+                  border: Border.all(
+                    color: Colors.white.withValues(
+                      alpha: 0.75,
                     ),
                   ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(
-                    isMobile,
-                  ),
-
-                  Padding(
-                    padding:
-                        EdgeInsets.symmetric(
-                      horizontal:
-                          isMobile
-                              ? 18
-                              : 38,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(
+                        0xFF173D59,
+                      ).withValues(
+                        alpha: 0.09,
+                      ),
+                      blurRadius: 35,
+                      offset: const Offset(
+                        0,
+                        14,
+                      ),
                     ),
-                    child: _buildTabs(
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(
                       isMobile,
                     ),
-                  ),
-
-                  const SizedBox(
-                    height: 25,
-                  ),
-
-                  Padding(
-                    padding:
-                        EdgeInsets.symmetric(
-                      horizontal:
-                          isMobile
-                              ? 18
-                              : 38,
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 18 : 38,
+                      ),
+                      child: _buildTabs(
+                        isMobile,
+                      ),
                     ),
-                    child:
-                        _buildInfoBox(),
-                  ),
-
-                  const SizedBox(
-                    height: 18,
-                  ),
-
-                  Padding(
-                    padding:
-                        EdgeInsets.fromLTRB(
-                      isMobile ? 18 : 38,
-                      0,
-                      isMobile ? 18 : 38,
-                      isMobile ? 20 : 38,
+                    const SizedBox(
+                      height: 25,
                     ),
-                    child:
-                        _buildContent(),
-                  ),
-                ],
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 18 : 38,
+                      ),
+                      child: _buildInfoBox(),
+                    ),
+                    const SizedBox(
+                      height: 18,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        isMobile ? 18 : 38,
+                        0,
+                        isMobile ? 18 : 38,
+                        isMobile ? 20 : 38,
+                      ),
+                      child: _buildContent(),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -693,8 +630,7 @@ class _ItemsPartsPageState
       return const SizedBox(
         height: 280,
         child: Center(
-          child:
-              CircularProgressIndicator(),
+          child: CircularProgressIndicator(),
         ),
       );
     }
@@ -702,58 +638,44 @@ class _ItemsPartsPageState
     if (_errorMessage != null) {
       return Container(
         width: double.infinity,
-        padding:
-            const EdgeInsets.all(35),
+        padding: const EdgeInsets.all(35),
         child: Column(
           children: [
             const Icon(
-              Icons
-                  .cloud_off_outlined,
+              Icons.cloud_off_outlined,
               size: 48,
-              color:
-                  Color(0xFFA65B5B),
+              color: Color(0xFFA65B5B),
             ),
-
             const SizedBox(
               height: 15,
             ),
-
             const Text(
               'Unable to load data',
               style: TextStyle(
                 fontSize: 18,
-                fontWeight:
-                    FontWeight.w700,
-                color:
-                    Color(0xFF25394B),
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF25394B),
               ),
             ),
-
             const SizedBox(
               height: 8,
             ),
-
             Text(
               _errorMessage!,
-              textAlign:
-                  TextAlign.center,
+              textAlign: TextAlign.center,
               style: const TextStyle(
-                color:
-                    Color(0xFF748693),
+                color: Color(0xFF748693),
               ),
             ),
-
             const SizedBox(
               height: 18,
             ),
-
             ElevatedButton.icon(
               onPressed: _loadData,
               icon: const Icon(
                 Icons.refresh_rounded,
               ),
-              label:
-                  const Text('Retry'),
+              label: const Text('Retry'),
             ),
           ],
         ),
@@ -766,8 +688,7 @@ class _ItemsPartsPageState
       ),
       child: isItemsTab
           ? ItemsTab(
-              key:
-                  const ValueKey(
+              key: const ValueKey(
                 'items',
               ),
               items: _items,
@@ -779,12 +700,10 @@ class _ItemsPartsPageState
                   editIndex: index,
                 );
               },
-              onDeleteItem:
-                  _deleteItem,
+              onDeleteItem: _deleteItem,
             )
           : PartsTab(
-              key:
-                  const ValueKey(
+              key: const ValueKey(
                 'parts',
               ),
               parts: _parts,
@@ -796,8 +715,7 @@ class _ItemsPartsPageState
                   editIndex: index,
                 );
               },
-              onDeletePart:
-                  _deletePart,
+              onDeletePart: _deletePart,
             ),
     );
   }
@@ -816,15 +734,13 @@ class _ItemsPartsPageState
             width: 58,
             height: 58,
             decoration: BoxDecoration(
-              gradient:
-                  const LinearGradient(
+              gradient: const LinearGradient(
                 colors: [
                   Color(0xFF123F61),
                   Color(0xFF3E83B6),
                 ],
               ),
-              borderRadius:
-                  BorderRadius.circular(
+              borderRadius: BorderRadius.circular(
                 17,
               ),
             ),
@@ -836,18 +752,15 @@ class _ItemsPartsPageState
           ),
           const SizedBox(width: 18),
         ],
-
         Expanded(
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Row(
                 children: [
                   CircleAvatar(
                     radius: 4,
-                    backgroundColor:
-                        Color(
+                    backgroundColor: Color(
                       0xFF438DC0,
                     ),
                   ),
@@ -856,10 +769,8 @@ class _ItemsPartsPageState
                     'INVENTORY MANAGEMENT',
                     style: TextStyle(
                       fontSize: 10,
-                      fontWeight:
-                          FontWeight.w700,
-                      letterSpacing:
-                          1.4,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.4,
                       color: Color(
                         0xFF60778A,
                       ),
@@ -867,40 +778,29 @@ class _ItemsPartsPageState
                   ),
                 ],
               ),
-
               const SizedBox(
                 height: 10,
               ),
-
               Text(
                 'Manage Items & Parts',
                 style: TextStyle(
-                  fontSize:
-                      isMobile
-                          ? 26
-                          : 35,
-                  fontWeight:
-                      FontWeight.w800,
-                  color:
-                      const Color(
+                  fontSize: isMobile ? 26 : 35,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(
                     0xFF123456,
                   ),
                 ),
               ),
-
               const SizedBox(
                 height: 9,
               ),
-
               Text(
                 isItemsTab
                     ? 'Create and manage your inventory items in one place.'
                     : 'Manage components and individual parts in your inventory.',
-                style:
-                    const TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
-                  color:
-                      Color(
+                  color: Color(
                     0xFF6F8292,
                   ),
                 ),
@@ -911,8 +811,7 @@ class _ItemsPartsPageState
       ],
     );
 
-    final addButton =
-        ElevatedButton.icon(
+    final addButton = ElevatedButton.icon(
       onPressed: _isLoading
           ? null
           : isItemsTab
@@ -926,27 +825,20 @@ class _ItemsPartsPageState
         Icons.add_rounded,
       ),
       label: Text(
-        isItemsTab
-            ? 'Add New Item'
-            : 'Add New Part',
+        isItemsTab ? 'Add New Item' : 'Add New Part',
       ),
-      style:
-          ElevatedButton.styleFrom(
+      style: ElevatedButton.styleFrom(
         foregroundColor: Colors.white,
-        backgroundColor:
-            const Color(
+        backgroundColor: const Color(
           0xFF194E75,
         ),
         elevation: 0,
-        padding:
-            const EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: 23,
           vertical: 18,
         ),
-        shape:
-            RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.circular(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
             13,
           ),
         ),
@@ -962,16 +854,14 @@ class _ItemsPartsPageState
       ),
       child: isMobile
           ? Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 titleContent,
                 const SizedBox(
                   height: 22,
                 ),
                 SizedBox(
-                  width:
-                      double.infinity,
+                  width: double.infinity,
                   child: addButton,
                 ),
               ],
@@ -979,8 +869,7 @@ class _ItemsPartsPageState
           : Row(
               children: [
                 Expanded(
-                  child:
-                      titleContent,
+                  child: titleContent,
                 ),
                 const SizedBox(
                   width: 24,
@@ -999,39 +888,30 @@ class _ItemsPartsPageState
     bool isMobile,
   ) {
     return Container(
-      padding:
-          const EdgeInsets.all(5),
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color:
-            Colors.white.withValues(
+        color: Colors.white.withValues(
           alpha: 0.34,
         ),
-        borderRadius:
-            BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(15),
         border: Border.all(
-          color:
-              Colors.white.withValues(
+          color: Colors.white.withValues(
             alpha: 0.68,
           ),
         ),
       ),
       child: Row(
-        mainAxisSize: isMobile
-            ? MainAxisSize.max
-            : MainAxisSize.min,
+        mainAxisSize: isMobile ? MainAxisSize.max : MainAxisSize.min,
         children: [
           _tabButton(
             title: 'Items',
-            icon:
-                Icons.inventory_2_outlined,
+            icon: Icons.inventory_2_outlined,
             index: 0,
             isMobile: isMobile,
           ),
-
           _tabButton(
             title: 'Parts',
-            icon:
-                Icons.settings_outlined,
+            icon: Icons.settings_outlined,
             index: 1,
             isMobile: isMobile,
           ),
@@ -1046,39 +926,33 @@ class _ItemsPartsPageState
     required int index,
     required bool isMobile,
   }) {
-    final bool selected =
-        selectedTab == index;
+    final bool selected = selectedTab == index;
 
     final button = InkWell(
       onTap: () {
         _changeTab(index);
       },
-      borderRadius:
-          BorderRadius.circular(11),
+      borderRadius: BorderRadius.circular(11),
       child: AnimatedContainer(
         duration: const Duration(
           milliseconds: 220,
         ),
-        padding:
-            const EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: 23,
           vertical: 12,
         ),
         decoration: BoxDecoration(
           color: selected
-              ? Colors.white
-                  .withValues(
+              ? Colors.white.withValues(
                   alpha: 0.86,
                 )
               : Colors.transparent,
-          borderRadius:
-              BorderRadius.circular(
+          borderRadius: BorderRadius.circular(
             11,
           ),
         ),
         child: Row(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
@@ -1091,17 +965,13 @@ class _ItemsPartsPageState
                       0xFF80909D,
                     ),
             ),
-
             const SizedBox(
               width: 8,
             ),
-
             Text(
               title,
               style: TextStyle(
-                fontWeight: selected
-                    ? FontWeight.w700
-                    : FontWeight.w500,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 color: selected
                     ? const Color(
                         0xFF153F5F,
@@ -1131,8 +1001,7 @@ class _ItemsPartsPageState
     String message;
 
     if (_isLoading) {
-      message =
-          'Loading inventory data...';
+      message = 'Loading inventory data...';
     } else if (isItemsTab) {
       message = _items.isEmpty
           ? 'Your inventory items will appear below.'
@@ -1145,21 +1014,17 @@ class _ItemsPartsPageState
 
     return Container(
       width: double.infinity,
-      padding:
-          const EdgeInsets.symmetric(
+      padding: const EdgeInsets.symmetric(
         horizontal: 17,
         vertical: 13,
       ),
       decoration: BoxDecoration(
-        color:
-            Colors.white.withValues(
+        color: Colors.white.withValues(
           alpha: 0.28,
         ),
-        borderRadius:
-            BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(13),
         border: Border.all(
-          color:
-              Colors.white.withValues(
+          color: Colors.white.withValues(
             alpha: 0.60,
           ),
         ),
@@ -1170,62 +1035,47 @@ class _ItemsPartsPageState
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color:
-                  const Color(
+              color: const Color(
                 0xFF3F82B4,
               ).withValues(
                 alpha: 0.10,
               ),
-              borderRadius:
-                  BorderRadius.circular(
+              borderRadius: BorderRadius.circular(
                 10,
               ),
             ),
             child: Icon(
               isItemsTab
-                  ? Icons
-                      .inventory_2_outlined
-                  : Icons
-                      .precision_manufacturing_outlined,
+                  ? Icons.inventory_2_outlined
+                  : Icons.precision_manufacturing_outlined,
               size: 19,
-              color:
-                  const Color(
+              color: const Color(
                 0xFF3979A7,
               ),
             ),
           ),
-
           const SizedBox(
             width: 12,
           ),
-
           Expanded(
             child: Text(
               message,
-              style:
-                  const TextStyle(
+              style: const TextStyle(
                 fontSize: 13,
-                color:
-                    Color(
+                color: Color(
                   0xFF667A8A,
                 ),
-                fontWeight:
-                    FontWeight.w500,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
-
           IconButton(
             tooltip: 'Refresh',
-            onPressed:
-                _isLoading
-                    ? null
-                    : _loadData,
+            onPressed: _isLoading ? null : _loadData,
             icon: const Icon(
               Icons.refresh_rounded,
               size: 20,
-              color:
-                  Color(
+              color: Color(
                 0xFF3979A7,
               ),
             ),

@@ -3,6 +3,38 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+const String _rolesApiUrl = 'http://localhost:3000/api/roles';
+
+Future<List<String>> _fetchRoleNames() async {
+  final response = await http.get(
+    Uri.parse(_rolesApiUrl),
+    headers: const {
+      'Accept': 'application/json',
+    },
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to load roles.');
+  }
+
+  final dynamic decoded = jsonDecode(response.body);
+  if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
+    throw Exception('Invalid roles response.');
+  }
+
+  final dynamic data = decoded['data'];
+  if (data is! List) {
+    throw Exception('Invalid roles data.');
+  }
+
+  return data
+      .whereType<Map>()
+      .map((role) => role['name']?.toString().trim() ?? '')
+      .where((name) => name.isNotEmpty)
+      .toSet()
+      .toList();
+}
+
 // ============================================================================
 // MANAGE USERS PAGE
 // ============================================================================
@@ -671,179 +703,186 @@ class _ManageUsersPageState extends State<ManageUsersPage> {
       width: double.infinity,
       height: double.infinity,
       color: const Color(0xFFF3F8FA),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          28,
-          27,
-          28,
-          40,
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(
+          decoration: TextDecoration.none,
+          decorationColor: Colors.transparent,
+          backgroundColor: Colors.transparent,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // =======================================================
-            // TITLE + BUTTONS
-            // =======================================================
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            28,
+            27,
+            28,
+            40,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // =======================================================
+              // TITLE + BUTTONS
+              // =======================================================
 
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Manage Users',
-                    style: TextStyle(
-                      color: Color(0xFF252A2E),
-                      fontSize: 29,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-
-                // BACK TO SETTINGS
-                _TopButton(
-                  icon: Icons.arrow_back_rounded,
-                  label: 'Back to Settings',
-                  background: const Color(0xFFECEEFF),
-                  foreground: const Color(0xFF5059B8),
-                  hoverBackground: const Color(0xFFE1E4FF),
-                  onTap: widget.onBack,
-                ),
-
-                const SizedBox(width: 15),
-
-                // ADD NEW USER
-                _TopButton(
-                  icon: Icons.add_rounded,
-                  label: 'Add New User',
-                  background: const Color(0xFF1FAE4B),
-                  foreground: Colors.white,
-                  hoverBackground: const Color(0xFF168F3B),
-                  onTap: _addUser,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 22),
-
-            // =======================================================
-            // SUCCESS BANNER
-            // =======================================================
-
-            if (_showMessage) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 15,
-                ),
-                decoration: BoxDecoration(
-                  color: _messageIsError
-                      ? const Color(0xFFFFE7E7)
-                      : const Color(0xFFDDF4E2),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Text(
-                  _message,
-                  style: TextStyle(
-                    color: _messageIsError
-                        ? const Color(0xFFB42318)
-                        : const Color(0xFF327B43),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-
-            // =======================================================
-            // EXISTING USERS CARD
-            // =======================================================
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(
-                25,
-                25,
-                25,
-                25,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFFE6EAEC),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
                 children: [
-                  const Text(
-                    'Existing Users',
-                    style: TextStyle(
-                      color: Color(0xFF252A2E),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
+                  const Expanded(
+                    child: Text(
+                      'Manage Users',
+                      style: TextStyle(
+                        color: Color(0xFF252A2E),
+                        fontSize: 29,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
 
-                  const SizedBox(height: 20),
-
-                  const Divider(
-                    height: 1,
-                    color: Color(0xFFE2E6E8),
+                  // BACK TO SETTINGS
+                  _TopButton(
+                    icon: Icons.arrow_back_rounded,
+                    label: 'Back to Settings',
+                    background: const Color(0xFFECEEFF),
+                    foreground: const Color(0xFF5059B8),
+                    hoverBackground: const Color(0xFFE1E4FF),
+                    onTap: widget.onBack,
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(width: 15),
 
-                  // =================================================
-                  // TABLE
-                  // =================================================
-
-                  if (_loading)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: CircularProgressIndicator(),
-                      ),
-                    )
-                  else if (_users.isEmpty)
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text('No users have been created yet.'),
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed:
-                                  _busy ? null : _createPrimarySuperAdmin,
-                              icon: const Icon(
-                                  Icons.admin_panel_settings_outlined),
-                              label: const Text('Create Primary Super Admin'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        return SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: SizedBox(
-                            width: constraints.maxWidth < 900
-                                ? 900
-                                : constraints.maxWidth,
-                            child: _buildUsersTable(),
-                          ),
-                        );
-                      },
-                    ),
+                  // ADD NEW USER
+                  _TopButton(
+                    icon: Icons.add_rounded,
+                    label: 'Add New User',
+                    background: const Color(0xFF1FAE4B),
+                    foreground: Colors.white,
+                    hoverBackground: const Color(0xFF168F3B),
+                    onTap: _addUser,
+                  ),
                 ],
               ),
-            ),
-          ],
+
+              const SizedBox(height: 22),
+
+              // =======================================================
+              // SUCCESS BANNER
+              // =======================================================
+
+              if (_showMessage) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 15,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _messageIsError
+                        ? const Color(0xFFFFE7E7)
+                        : const Color(0xFFDDF4E2),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Text(
+                    _message,
+                    style: TextStyle(
+                      color: _messageIsError
+                          ? const Color(0xFFB42318)
+                          : const Color(0xFF327B43),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // =======================================================
+              // EXISTING USERS CARD
+              // =======================================================
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(
+                  25,
+                  25,
+                  25,
+                  25,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFE6EAEC),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Existing Users',
+                      style: TextStyle(
+                        color: Color(0xFF252A2E),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    const Divider(
+                      height: 1,
+                      color: Color(0xFFE2E6E8),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // =================================================
+                    // TABLE
+                    // =================================================
+
+                    if (_loading)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    else if (_users.isEmpty)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('No users have been created yet.'),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed:
+                                    _busy ? null : _createPrimarySuperAdmin,
+                                icon: const Icon(
+                                    Icons.admin_panel_settings_outlined),
+                                label: const Text('Create Primary Super Admin'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: SizedBox(
+                              width: constraints.maxWidth < 900
+                                  ? 900
+                                  : constraints.maxWidth,
+                              child: _buildUsersTable(),
+                            ),
+                          );
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1448,6 +1487,7 @@ class _CreatePrimaryAdminDialogState extends State<_CreatePrimaryAdminDialog> {
 
                     _roleDropdown(
                       value: _role,
+                      roles: const ['Super Admin'],
                       onChanged: null,
                     ),
 
@@ -1544,6 +1584,10 @@ class _EditUserDialogState extends State<_EditUserDialog> {
 
   late String _role;
 
+  List<String> _roles = [];
+  bool _loadingRoles = true;
+  String? _roleLoadError;
+
   String? _error;
 
   @override
@@ -1555,6 +1599,27 @@ class _EditUserDialogState extends State<_EditUserDialog> {
     );
 
     _role = widget.user.role;
+    _loadRoles();
+  }
+
+  Future<void> _loadRoles() async {
+    try {
+      final roles = await _fetchRoleNames();
+      if (!mounted) return;
+
+      setState(() {
+        _roles = roles;
+        _loadingRoles = false;
+        _roleLoadError = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _loadingRoles = false;
+        _roleLoadError = error.toString().replaceFirst('Exception: ', '');
+      });
+    }
   }
 
   @override
@@ -1573,6 +1638,13 @@ class _EditUserDialogState extends State<_EditUserDialog> {
     if (!_isValidEmail(email)) {
       setState(() {
         _error = 'Enter a valid email address.';
+      });
+      return;
+    }
+
+    if (_loadingRoles || !_roles.contains(_role)) {
+      setState(() {
+        _error = _roleLoadError ?? 'Select a role from the available roles.';
       });
       return;
     }
@@ -1644,14 +1716,26 @@ class _EditUserDialogState extends State<_EditUserDialog> {
                   const SizedBox(height: 9),
                   _roleDropdown(
                     value: _role,
-                    onChanged: (value) {
-                      if (value == null) return;
+                    roles: _roles,
+                    hint: _loadingRoles ? 'Loading roles...' : null,
+                    onChanged: _loadingRoles || _roles.isEmpty
+                        ? null
+                        : (value) {
+                            if (value == null) return;
 
-                      setState(() {
-                        _role = value;
-                      });
-                    },
+                            setState(() {
+                              _role = value;
+                            });
+                          },
                   ),
+                  if (_roleLoadError != null) ...[
+                    const SizedBox(height: 6),
+                    _dialogError(_roleLoadError!),
+                  ] else if (!_loadingRoles && _roles.isEmpty) ...[
+                    const SizedBox(height: 6),
+                    _dialogError(
+                        'No roles are available. Create a role first.'),
+                  ],
                   const SizedBox(height: 20),
                   _fieldLabel('Password'),
                   const SizedBox(height: 9),
@@ -1700,10 +1784,39 @@ class _AddUserDialogState extends State<_AddUserDialog> {
   final TextEditingController _passwordController = TextEditingController();
 
   String? _role;
+  List<String> _roles = [];
+  bool _loadingRoles = true;
+  String? _roleLoadError;
 
   bool _canDeactivate = true;
 
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRoles();
+  }
+
+  Future<void> _loadRoles() async {
+    try {
+      final roles = await _fetchRoleNames();
+      if (!mounted) return;
+
+      setState(() {
+        _roles = roles;
+        _loadingRoles = false;
+        _roleLoadError = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _loadingRoles = false;
+        _roleLoadError = error.toString().replaceFirst('Exception: ', '');
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -1725,9 +1838,9 @@ class _AddUserDialogState extends State<_AddUserDialog> {
       return;
     }
 
-    if (_role == null) {
+    if (_role == null || !_roles.contains(_role)) {
       setState(() {
-        _error = 'Select a role.';
+        _error = _roleLoadError ?? 'Select a role.';
       });
       return;
     }
@@ -1803,13 +1916,42 @@ class _AddUserDialogState extends State<_AddUserDialog> {
                   const SizedBox(height: 9),
                   _roleDropdown(
                     value: _role,
+                    roles: _roles,
                     hint: 'Select a role...',
-                    onChanged: (value) {
-                      setState(() {
-                        _role = value;
-                      });
-                    },
+                    onChanged: _loadingRoles || _roles.isEmpty
+                        ? null
+                        : (value) {
+                            setState(() {
+                              _role = value;
+                            });
+                          },
                   ),
+                  if (_loadingRoles) ...[
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Loading roles...',
+                      style: TextStyle(
+                        color: Color(0xFF777D81),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ] else if (_roleLoadError != null) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Expanded(child: _dialogError(_roleLoadError!)),
+                        TextButton.icon(
+                          onPressed: _loadRoles,
+                          icon: const Icon(Icons.refresh_rounded, size: 16),
+                          label: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  ] else if (_roles.isEmpty) ...[
+                    const SizedBox(height: 6),
+                    _dialogError(
+                        'No roles are available. Create a role first.'),
+                  ],
                   const SizedBox(height: 20),
                   _fieldLabel('Password'),
                   const SizedBox(height: 9),
@@ -2011,14 +2153,10 @@ Widget _dialogTextField({
 
 Widget _roleDropdown({
   required String? value,
+  required List<String> roles,
   required ValueChanged<String?>? onChanged,
   String? hint,
 }) {
-  const List<String> roles = [
-    'Super Admin',
-    'Procurement',
-  ];
-
   String? safeValue = value;
 
   if (safeValue != null && !roles.contains(safeValue)) {
@@ -2026,7 +2164,7 @@ Widget _roleDropdown({
   }
 
   return DropdownButtonFormField<String>(
-    initialValue: value,
+    initialValue: safeValue,
     hint: hint == null
         ? null
         : Text(

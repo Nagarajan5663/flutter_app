@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../dashboard/widgets/read_only_preview_scope.dart';
 import 'settings/shared/glass_widgets.dart';
 import 'settings/purchases/expanse_settings_page.dart';
 import 'settings/general/item_preferences_page.dart';
@@ -12,7 +13,6 @@ import 'settings/users/manage_users_page.dart';
 import 'settings/taxes/manage_taxes_page.dart';
 import 'settings/customization/transaction_number_series_page.dart';
 import 'settings/customization/pdf_templates/pdf_templates_page.dart';
-
 
 // =====================================================================
 // ORGANIZATION PAGE (All Settings hub)
@@ -46,8 +46,7 @@ class OrganizationPage extends StatelessWidget {
   void _openItem(BuildContext context, String label) {
     final normalizedLabel = label.trim().toLowerCase();
 
-    if (normalizedLabel == 'items' ||
-        normalizedLabel == 'item preferences') {
+    if (normalizedLabel == 'items' || normalizedLabel == 'item preferences') {
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => const ItemPreferencesPage(),
@@ -57,16 +56,15 @@ class OrganizationPage extends StatelessWidget {
     }
 
     if (normalizedLabel == 'profile') {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => OrganizationProfilePage(
-        onBack: () =>
-            Navigator.of(context).pop(),
-      ),
-    ),
-  );
-  return;
-}
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => OrganizationProfilePage(
+            onBack: () => Navigator.of(context).pop(),
+          ),
+        ),
+      );
+      return;
+    }
 
     if (normalizedLabel == 'general') {
       Navigator.of(context).push(
@@ -91,62 +89,58 @@ class OrganizationPage extends StatelessWidget {
     }
 
     if (normalizedLabel == 'users') {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => ManageUsersPage(
-        onBack: () => Navigator.of(context).pop(),
-      ),
-    ),
-  );
-  return;
-}
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ManageUsersPage(
+            onBack: () => Navigator.of(context).pop(),
+          ),
+        ),
+      );
+      return;
+    }
 
     if (normalizedLabel == 'roles') {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => ManageRolesPage(
-        onBack: () => Navigator.of(context).pop(),
-      ),
-    ),
-  );
-  return;
-}
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ManageRolesPage(
+            onBack: () => Navigator.of(context).pop(),
+          ),
+        ),
+      );
+      return;
+    }
 
-if (normalizedLabel == 'taxes') {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => ManageTaxesPage(
-        onBack: () => Navigator.of(context).pop(),
-      ),
-    ),
-  );
-  return;
-}
+    if (normalizedLabel == 'taxes') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ManageTaxesPage(
+            onBack: () => Navigator.of(context).pop(),
+          ),
+        ),
+      );
+      return;
+    }
 
-if (normalizedLabel == 'transaction number series') {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) =>
-          TransactionNumberSeriesPage(
-        onBack: () =>
-            Navigator.of(context).pop(),
-      ),
-    ),
-  );
-  return;
-}
-if (normalizedLabel == 'pdf templates') {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => PdfTemplatesPage(
-        onBack: () => Navigator.of(context).pop(),
-      ),
-    ),
-  );
-  return;
-}
-
-
+    if (normalizedLabel == 'transaction number series') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => TransactionNumberSeriesPage(
+            onBack: () => Navigator.of(context).pop(),
+          ),
+        ),
+      );
+      return;
+    }
+    if (normalizedLabel == 'pdf templates') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => PdfTemplatesPage(
+            onBack: () => Navigator.of(context).pop(),
+          ),
+        ),
+      );
+      return;
+    }
 
     if (normalizedLabel == 'sales orders' ||
         normalizedLabel == 'sales order preferences') {
@@ -189,56 +183,50 @@ if (normalizedLabel == 'pdf templates') {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Column(
-        children: [
-          _buildTopBar(context),
-
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSection(
-                    context: context,
-                    title: 'Organization Settings',
-                    columns: _organizationSettingsColumns,
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  _buildSection(
-                    context: context,
-                    title: 'Module Settings',
-                    columns: _moduleSettingsColumns,
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  _buildSection(
-                    context: context,
-                    title: 'Extension and Developer Data',
-                    columns: _extensionSettingsColumns,
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  Center(
-                    child: Text(
-                      '© ${DateTime.now().year} $organizationName. All Rights Reserved.',
-                      style: const TextStyle(
-                        color: Color(0xFF9AA3AD),
-                        fontSize: 13,
+          children: [
+            ReadOnlyPreviewScope.allowNavigation(
+              _buildTopBar(context),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSection(
+                      context: context,
+                      title: 'Organization Settings',
+                      columns: _organizationSettingsColumns,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSection(
+                      context: context,
+                      title: 'Module Settings',
+                      columns: _moduleSettingsColumns,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSection(
+                      context: context,
+                      title: 'Extension and Developer Data',
+                      columns: _extensionSettingsColumns,
+                    ),
+                    const SizedBox(height: 30),
+                    Center(
+                      child: Text(
+                        '© ${DateTime.now().year} $organizationName. All Rights Reserved.',
+                        style: const TextStyle(
+                          color: Color(0xFF9AA3AD),
+                          fontSize: 13,
+                        ),
                       ),
                     ),
-                  ),
-
-                  const SizedBox(height: 10),
-                ],
+                    const SizedBox(height: 10),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -253,87 +241,85 @@ if (normalizedLabel == 'pdf templates') {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
         child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'All Settings',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'All Settings',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  organizationName,
-                  style: const TextStyle(
+                  const SizedBox(height: 4),
+                  Text(
+                    organizationName,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFFCBD5E1),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              width: 260,
+              height: 42,
+              child: TextField(
+                style: const TextStyle(fontSize: 14, color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Search settings (/)',
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF9AA7B8),
                     fontSize: 14,
-                    color: Color(0xFFCBD5E1),
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    size: 20,
+                    color: Color(0xFF9AA7B8),
+                  ),
+                  filled: true,
+                  fillColor: GlassSurface.fill(),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: GlassSurface.border()),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: GlassSurface.border()),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        BorderSide(color: GlassSurface.border(focused: true)),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-
-          SizedBox(
-            width: 260,
-            height: 42,
-            child: TextField(
-              style: const TextStyle(fontSize: 14, color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Search settings (/)',
-                hintStyle: const TextStyle(
-                  color: Color(0xFF9AA7B8),
-                  fontSize: 14,
+            const SizedBox(width: 14),
+            ElevatedButton.icon(
+              onPressed: () => _handleClose(context),
+              icon: const Icon(Icons.close, size: 18),
+              label: const Text('Close Settings'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GlassSurface.fill(emphasized: true),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
-                prefixIcon: const Icon(
-                  Icons.search,
-                  size: 20,
-                  color: Color(0xFF9AA7B8),
-                ),
-                filled: true,
-                fillColor: GlassSurface.fill(),
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: GlassSurface.border()),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: GlassSurface.border()),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: GlassSurface.border(focused: true)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(7),
                 ),
               ),
             ),
-          ),
-
-          const SizedBox(width: 14),
-
-          ElevatedButton.icon(
-            onPressed: () => _handleClose(context),
-            icon: const Icon(Icons.close, size: 18),
-            label: const Text('Close Settings'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: GlassSurface.fill(emphasized: true),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(7),
-              ),
-            ),
-          ),
-        ],
+          ],
         ),
       ),
     );
@@ -353,44 +339,40 @@ if (normalizedLabel == 'pdf templates') {
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
             ),
-          ),
-
-          const SizedBox(height: 12),
-
-          Divider(color: Colors.white.withValues(alpha: 0.16)),
-
-          const SizedBox(height: 16),
-
-          Wrap(
-            spacing: 36,
-            runSpacing: 24,
-            children: columns.map(
-              (column) {
-                return SizedBox(
-                  width: 210,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (int i = 0; i < column.length; i++) ...[
-                        if (i > 0) const SizedBox(height: 22),
-                        _buildGroup(context, column[i]),
+            const SizedBox(height: 12),
+            Divider(color: Colors.white.withValues(alpha: 0.16)),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 36,
+              runSpacing: 24,
+              children: columns.map(
+                (column) {
+                  return SizedBox(
+                    width: 210,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (int i = 0; i < column.length; i++) ...[
+                          if (i > 0) const SizedBox(height: 22),
+                          _buildGroup(context, column[i]),
+                        ],
                       ],
-                    ],
-                  ),
-                );
-              },
-            ).toList(),
-          ),
-        ],
+                    ),
+                  );
+                },
+              ).toList(),
+            ),
+          ],
         ),
       ),
     );
@@ -419,9 +401,7 @@ if (normalizedLabel == 'pdf templates') {
                 size: 16,
               ),
             ),
-
             const SizedBox(width: 10),
-
             Expanded(
               child: Text(
                 group.title,
@@ -435,9 +415,7 @@ if (normalizedLabel == 'pdf templates') {
             ),
           ],
         ),
-
         const SizedBox(height: 12),
-
         for (final item in group.items)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
@@ -452,7 +430,7 @@ if (normalizedLabel == 'pdf templates') {
               ),
             ),
           ),
-        ],
+      ],
     );
   }
 

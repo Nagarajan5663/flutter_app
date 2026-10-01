@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../dashboard/widgets/read_only_preview_scope.dart';
 import '../widgets/accountant_glass_widgets.dart';
+
 class TravelAllowancePage extends StatefulWidget {
   const TravelAllowancePage({super.key});
 
@@ -36,42 +38,44 @@ class _TravelAllowancePageState extends State<TravelAllowancePage> {
           // =========================================================
           // PAGE HEADER
           // =========================================================
-          Container(
-            padding: const EdgeInsets.fromLTRB(28, 24, 28, 18),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Travel Allowance',
-                  style: TextStyle(
-                    fontSize: 27,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF243B53),
-                  ),
-                ),
-
-                ElevatedButton.icon(
-                  onPressed: _openNewTravelAllowance,
-                  icon: const Icon(
-                    Icons.add,
-                    size: 18,
-                  ),
-                  label: const Text(
-                    'New Travel Allowance',
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E73BE),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 15,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
+          ReadOnlyPreviewScope.blockActions(
+            context,
+            Container(
+              padding: const EdgeInsets.fromLTRB(28, 24, 28, 18),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Travel Allowance',
+                    style: TextStyle(
+                      fontSize: 27,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF243B53),
                     ),
                   ),
-                ),
-              ],
+                  ElevatedButton.icon(
+                    onPressed: _openNewTravelAllowance,
+                    icon: const Icon(
+                      Icons.add,
+                      size: 18,
+                    ),
+                    label: const Text(
+                      'New Travel Allowance',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1E73BE),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 15,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -184,47 +188,50 @@ class _TravelAllowancePageState extends State<TravelAllowancePage> {
                               itemBuilder: (_, index) {
                                 final item = _allowances[index];
 
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 14,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(item.date),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(item.allowanceNumber),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(item.category),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(item.payee),
-                                      ),
-                                      const Expanded(
-                                        flex: 2,
-                                        child: Text('Draft'),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(
-                                          'INR ${item.total.toStringAsFixed(2)}',
+                                return ReadOnlyPreviewScope.blockActions(
+                                  context,
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 14,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(item.date),
                                         ),
-                                      ),
-                                      const Expanded(
-                                        flex: 1,
-                                        child: Icon(
-                                          Icons.more_vert,
-                                          size: 20,
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(item.allowanceNumber),
                                         ),
-                                      ),
-                                    ],
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(item.category),
+                                        ),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(item.payee),
+                                        ),
+                                        const Expanded(
+                                          flex: 2,
+                                          child: Text('Draft'),
+                                        ),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(
+                                            'INR ${item.total.toStringAsFixed(2)}',
+                                          ),
+                                        ),
+                                        const Expanded(
+                                          flex: 1,
+                                          child: Icon(
+                                            Icons.more_vert,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 );
                               },
@@ -251,44 +258,33 @@ class _TravelAllowanceDialog extends StatefulWidget {
   });
 
   @override
-  State<_TravelAllowanceDialog> createState() =>
-      _TravelAllowanceDialogState();
+  State<_TravelAllowanceDialog> createState() => _TravelAllowanceDialogState();
 }
 
-class _TravelAllowanceDialogState
-    extends State<_TravelAllowanceDialog> {
+class _TravelAllowanceDialogState extends State<_TravelAllowanceDialog> {
   // ===============================================================
   // CONTROLLERS
   // ===============================================================
 
-  final TextEditingController _dateController =
-      TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
 
-  final TextEditingController _allowanceController =
-      TextEditingController(
+  final TextEditingController _allowanceController = TextEditingController(
     text: 'TRAV-1',
   );
 
-  final TextEditingController _referenceController =
-      TextEditingController();
+  final TextEditingController _referenceController = TextEditingController();
 
-  final TextEditingController _fromController =
-      TextEditingController();
+  final TextEditingController _fromController = TextEditingController();
 
-  final TextEditingController _toController =
-      TextEditingController();
+  final TextEditingController _toController = TextEditingController();
 
-  final TextEditingController _kmController =
-      TextEditingController();
+  final TextEditingController _kmController = TextEditingController();
 
-  final TextEditingController _valueController =
-      TextEditingController();
+  final TextEditingController _valueController = TextEditingController();
 
-  final TextEditingController _amountController =
-      TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
 
-  final TextEditingController _remarksController =
-      TextEditingController();
+  final TextEditingController _remarksController = TextEditingController();
 
   final TextEditingController _overallRemarksController =
       TextEditingController();
@@ -320,8 +316,7 @@ class _TravelAllowanceDialogState
 
     final now = DateTime.now();
 
-    _dateController.text =
-        '${now.day.toString().padLeft(2, '0')}-'
+    _dateController.text = '${now.day.toString().padLeft(2, '0')}-'
         '${now.month.toString().padLeft(2, '0')}-'
         '${now.year}';
   }
@@ -341,8 +336,7 @@ class _TravelAllowanceDialogState
     if (selectedDate == null) return;
 
     setState(() {
-      controller.text =
-          '${selectedDate.day.toString().padLeft(2, '0')}-'
+      controller.text = '${selectedDate.day.toString().padLeft(2, '0')}-'
           '${selectedDate.month.toString().padLeft(2, '0')}-'
           '${selectedDate.year}';
     });
@@ -494,7 +488,7 @@ class _TravelAllowanceDialogState
             // =======================================================
 
             Expanded(
-                child: SingleChildScrollView(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(10),
                 child: Column(
                   children: [
@@ -503,8 +497,7 @@ class _TravelAllowanceDialogState
                     // =================================================
 
                     Row(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: _dateField(
@@ -512,9 +505,7 @@ class _TravelAllowanceDialogState
                             controller: _dateController,
                           ),
                         ),
-
                         const SizedBox(width: 10),
-
                         Expanded(
                           child: _dropdownField(
                             label: 'Expense Category *',
@@ -534,9 +525,7 @@ class _TravelAllowanceDialogState
                             },
                           ),
                         ),
-
                         const SizedBox(width: 10),
-
                         Expanded(
                           child: _dropdownField(
                             label: 'Payment Account *',
@@ -564,13 +553,10 @@ class _TravelAllowanceDialogState
                         Expanded(
                           child: _textField(
                             label: 'Allowance #',
-                            controller:
-                                _allowanceController,
+                            controller: _allowanceController,
                           ),
                         ),
-
                         const SizedBox(width: 14),
-
                         Expanded(
                           child: _dropdownField(
                             label: 'Payee *',
@@ -588,14 +574,11 @@ class _TravelAllowanceDialogState
                             },
                           ),
                         ),
-
                         const SizedBox(width: 14),
-
                         Expanded(
                           child: _textField(
                             label: 'Reference #',
-                            controller:
-                                _referenceController,
+                            controller: _referenceController,
                           ),
                         ),
                       ],
@@ -637,13 +620,11 @@ class _TravelAllowanceDialogState
                           'Add Row',
                         ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor:
-                              const Color(0xFF20A464),
+                          foregroundColor: const Color(0xFF20A464),
                           side: const BorderSide(
                             color: Color(0xFF20A464),
                           ),
-                          padding:
-                              const EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                             horizontal: 13,
                             vertical: 8,
                           ),
@@ -729,9 +710,7 @@ class _TravelAllowanceDialogState
                             },
                           ),
                         ),
-
                         const SizedBox(width: 16),
-
                         Expanded(
                           child: Row(
                             children: [
@@ -739,8 +718,7 @@ class _TravelAllowanceDialogState
                                 value: _taxInclusive,
                                 onChanged: (value) {
                                   setState(() {
-                                    _taxInclusive =
-                                        value ?? false;
+                                    _taxInclusive = value ?? false;
                                   });
                                 },
                               ),
@@ -769,13 +747,10 @@ class _TravelAllowanceDialogState
                         width: 330,
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color:
-                              const Color(0xFFF8F9FA),
-                          borderRadius:
-                              BorderRadius.circular(3),
+                          color: const Color(0xFFF8F9FA),
+                          borderRadius: BorderRadius.circular(3),
                           border: Border.all(
-                            color:
-                                const Color(0xFFE5E7EB),
+                            color: const Color(0xFFE5E7EB),
                           ),
                         ),
                         child: Column(
@@ -785,17 +760,13 @@ class _TravelAllowanceDialogState
                               'INR ${_total.toStringAsFixed(2)}',
                               false,
                             ),
-
                             const SizedBox(height: 8),
-
                             _totalRow(
                               'Tax',
                               'INR 0.00',
                               false,
                             ),
-
                             const Divider(),
-
                             _totalRow(
                               'Total',
                               'INR ${_total.toStringAsFixed(2)}',
@@ -834,8 +805,7 @@ class _TravelAllowanceDialogState
                           const SizedBox(width: 28),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
                                   'Customer',
@@ -855,10 +825,8 @@ class _TravelAllowanceDialogState
                                   onChanged: (value) {
                                     _customer = value;
                                   },
-                                  decoration:
-                                      _inputDecoration().copyWith(
-                                    hintText:
-                                        'Select or type to search...',
+                                  decoration: _inputDecoration().copyWith(
+                                    hintText: 'Select or type to search...',
                                     hintStyle: const TextStyle(
                                       color: Colors.black54,
                                       fontSize: 12,
@@ -880,8 +848,7 @@ class _TravelAllowanceDialogState
 
                     _textField(
                       label: 'Remarks (Overall)',
-                      controller:
-                          _overallRemarksController,
+                      controller: _overallRemarksController,
                       maxLines: 3,
                     ),
 
@@ -911,23 +878,20 @@ class _TravelAllowanceDialogState
                         border: Border.all(
                           color: const Color(0xFFD8DDE3),
                         ),
-                        borderRadius:
-                            BorderRadius.circular(3),
+                        borderRadius: BorderRadius.circular(3),
                       ),
                       child: Row(
                         children: [
                           Container(
                             height: double.infinity,
-                            padding:
-                                const EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 12,
                             ),
                             alignment: Alignment.center,
                             decoration: const BoxDecoration(
                               border: Border(
                                 right: BorderSide(
-                                  color:
-                                      Color(0xFFD8DDE3),
+                                  color: Color(0xFFD8DDE3),
                                 ),
                               ),
                             ),
@@ -969,18 +933,15 @@ class _TravelAllowanceDialogState
                 ),
               ),
               child: Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   OutlinedButton(
                     onPressed: () {
                       Navigator.pop(context);
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor:
-                          const Color(0xFF555555),
-                      padding:
-                          const EdgeInsets.symmetric(
+                      foregroundColor: const Color(0xFF555555),
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 13,
                       ),
@@ -989,17 +950,13 @@ class _TravelAllowanceDialogState
                       'Cancel',
                     ),
                   ),
-
                   const SizedBox(width: 10),
-
                   ElevatedButton(
                     onPressed: _save,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          const Color(0xFF1E73BE),
+                      backgroundColor: const Color(0xFF1E73BE),
                       foregroundColor: Colors.white,
-                      padding:
-                          const EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 13,
                       ),
@@ -1073,9 +1030,7 @@ class _TravelAllowanceDialogState
             ],
           ),
         ),
-
         _buildMainTravelRow(),
-
         ...List.generate(
           _travelRows.length,
           (index) {
@@ -1109,34 +1064,26 @@ class _TravelAllowanceDialogState
               _dateController,
             ),
           ),
-
           const SizedBox(width: 5),
-
           Expanded(
             flex: 12,
             child: _smallModeDropdown(),
           ),
-
           const SizedBox(width: 5),
-
           Expanded(
             flex: 12,
             child: _smallTextField(
               _fromController,
             ),
           ),
-
           const SizedBox(width: 5),
-
           Expanded(
             flex: 12,
             child: _smallTextField(
               _toController,
             ),
           ),
-
           const SizedBox(width: 5),
-
           Expanded(
             flex: 7,
             child: _smallTextField(
@@ -1144,9 +1091,7 @@ class _TravelAllowanceDialogState
               number: true,
             ),
           ),
-
           const SizedBox(width: 5),
-
           Expanded(
             flex: 7,
             child: _smallTextField(
@@ -1154,9 +1099,7 @@ class _TravelAllowanceDialogState
               number: true,
             ),
           ),
-
           const SizedBox(width: 5),
-
           Expanded(
             flex: 10,
             child: _smallTextField(
@@ -1164,18 +1107,14 @@ class _TravelAllowanceDialogState
               number: true,
             ),
           ),
-
           const SizedBox(width: 5),
-
           Expanded(
             flex: 13,
             child: _smallTextField(
               _remarksController,
             ),
           ),
-
           const SizedBox(width: 5),
-
           const SizedBox(
             width: 30,
             child: Icon(
@@ -1212,9 +1151,7 @@ class _TravelAllowanceDialogState
               row.dateController,
             ),
           ),
-
           const SizedBox(width: 5),
-
           Expanded(
             flex: 12,
             child: DropdownButtonFormField<String>(
@@ -1250,27 +1187,21 @@ class _TravelAllowanceDialogState
               },
             ),
           ),
-
           const SizedBox(width: 5),
-
           Expanded(
             flex: 12,
             child: _smallTextField(
               row.fromController,
             ),
           ),
-
           const SizedBox(width: 5),
-
           Expanded(
             flex: 12,
             child: _smallTextField(
               row.toController,
             ),
           ),
-
           const SizedBox(width: 5),
-
           Expanded(
             flex: 7,
             child: _smallTextField(
@@ -1278,9 +1209,7 @@ class _TravelAllowanceDialogState
               number: true,
             ),
           ),
-
           const SizedBox(width: 5),
-
           Expanded(
             flex: 7,
             child: _smallTextField(
@@ -1288,9 +1217,7 @@ class _TravelAllowanceDialogState
               number: true,
             ),
           ),
-
           const SizedBox(width: 5),
-
           Expanded(
             flex: 10,
             child: _smallTextField(
@@ -1301,18 +1228,14 @@ class _TravelAllowanceDialogState
               },
             ),
           ),
-
           const SizedBox(width: 5),
-
           Expanded(
             flex: 13,
             child: _smallTextField(
               row.remarksController,
             ),
           ),
-
           const SizedBox(width: 5),
-
           SizedBox(
             width: 30,
             child: IconButton(
@@ -1440,16 +1363,13 @@ class _TravelAllowanceDialogState
     required TextEditingController controller,
   }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: _labelStyle,
         ),
-
         const SizedBox(height: 6),
-
         TextFormField(
           controller: controller,
           readOnly: true,
@@ -1485,16 +1405,13 @@ class _TravelAllowanceDialogState
     int maxLines = 1,
   }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: _labelStyle,
         ),
-
         const SizedBox(height: 6),
-
         TextFormField(
           controller: controller,
           maxLines: maxLines,
@@ -1519,16 +1436,13 @@ class _TravelAllowanceDialogState
     required ValueChanged<String?> onChanged,
   }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: _labelStyle,
         ),
-
         const SizedBox(height: 6),
-
         DropdownButtonFormField<String>(
           initialValue: value,
           style: const TextStyle(
@@ -1577,15 +1491,11 @@ class _TravelAllowanceDialogState
             textAlign: TextAlign.right,
             style: TextStyle(
               fontSize: 11,
-              fontWeight: bold
-                  ? FontWeight.bold
-                  : FontWeight.normal,
+              fontWeight: bold ? FontWeight.bold : FontWeight.normal,
             ),
           ),
         ),
-
         const SizedBox(width: 25),
-
         SizedBox(
           width: 100,
           child: Text(
@@ -1593,9 +1503,7 @@ class _TravelAllowanceDialogState
             textAlign: TextAlign.right,
             style: TextStyle(
               fontSize: 11,
-              fontWeight: bold
-                  ? FontWeight.bold
-                  : FontWeight.normal,
+              fontWeight: bold ? FontWeight.bold : FontWeight.normal,
             ),
           ),
         ),
@@ -1613,28 +1521,24 @@ class _TravelAllowanceDialogState
         color: Colors.black54,
       ),
       isDense: true,
-      contentPadding:
-          const EdgeInsets.symmetric(
+      contentPadding: const EdgeInsets.symmetric(
         horizontal: 10,
         vertical: 12,
       ),
       border: OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(3),
         borderSide: const BorderSide(
           color: Color(0xFFD6DCE2),
         ),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(3),
         borderSide: const BorderSide(
           color: Color(0xFFD6DCE2),
         ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(3),
         borderSide: const BorderSide(
           color: Color(0xFF2C73B9),
         ),
@@ -1645,28 +1549,24 @@ class _TravelAllowanceDialogState
   InputDecoration _smallDecoration() {
     return InputDecoration(
       isDense: true,
-      contentPadding:
-          const EdgeInsets.symmetric(
+      contentPadding: const EdgeInsets.symmetric(
         horizontal: 5,
         vertical: 8,
       ),
       border: OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(2),
+        borderRadius: BorderRadius.circular(2),
         borderSide: const BorderSide(
           color: Color(0xFFD6DCE2),
         ),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(2),
+        borderRadius: BorderRadius.circular(2),
         borderSide: const BorderSide(
           color: Color(0xFFD6DCE2),
         ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(2),
+        borderRadius: BorderRadius.circular(2),
         borderSide: const BorderSide(
           color: Color(0xFF2C73B9),
         ),
@@ -1674,8 +1574,7 @@ class _TravelAllowanceDialogState
     );
   }
 
-  static const TextStyle _labelStyle =
-      TextStyle(
+  static const TextStyle _labelStyle = TextStyle(
     fontSize: 11,
     fontWeight: FontWeight.w500,
     color: Colors.black,
@@ -1687,26 +1586,19 @@ class _TravelAllowanceDialogState
 // ===================================================================
 
 class _TravelDetailRow {
-  final TextEditingController dateController =
-      TextEditingController();
+  final TextEditingController dateController = TextEditingController();
 
-  final TextEditingController fromController =
-      TextEditingController();
+  final TextEditingController fromController = TextEditingController();
 
-  final TextEditingController toController =
-      TextEditingController();
+  final TextEditingController toController = TextEditingController();
 
-  final TextEditingController kmController =
-      TextEditingController();
+  final TextEditingController kmController = TextEditingController();
 
-  final TextEditingController valueController =
-      TextEditingController();
+  final TextEditingController valueController = TextEditingController();
 
-  final TextEditingController amountController =
-      TextEditingController();
+  final TextEditingController amountController = TextEditingController();
 
-  final TextEditingController remarksController =
-      TextEditingController();
+  final TextEditingController remarksController = TextEditingController();
 
   String mode = 'Bike';
 
@@ -1743,8 +1635,7 @@ class _TravelAllowance {
 // ===================================================================
 
 class _TableHeaderStyle {
-  static const TextStyle style =
-      TextStyle(
+  static const TextStyle style = TextStyle(
     fontSize: 10,
     fontWeight: FontWeight.w600,
     color: Color(0xFF555555),
