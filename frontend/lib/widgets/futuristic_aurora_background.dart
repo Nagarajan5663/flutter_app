@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 
 class FuturisticAuroraBackground extends StatefulWidget {
   final Widget child;
+  final Color? backgroundColor;
 
   const FuturisticAuroraBackground({
     super.key,
     required this.child,
+    this.backgroundColor,
   });
 
   @override
@@ -41,18 +43,22 @@ class _FuturisticAuroraBackgroundState
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF020712),
-            Color(0xFF06101F),
-            Color(0xFF0A1730),
-            Color(0xFF040814),
-          ],
-        ),
-      ),
+      decoration: widget.backgroundColor == null
+          ? const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF020712),
+                  Color(0xFF06101F),
+                  Color(0xFF0A1730),
+                  Color(0xFF040814),
+                ],
+              ),
+            )
+          : BoxDecoration(
+              color: widget.backgroundColor,
+            ),
       child: Stack(
         children: [
           // ============================================================

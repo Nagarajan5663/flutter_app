@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../widgets/futuristic_aurora_background.dart';
+
 class HomeHeroSection extends StatelessWidget {
   const HomeHeroSection({
     super.key,
@@ -42,9 +44,18 @@ class HomeHeroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
+      constraints: BoxConstraints(
+        minHeight: MediaQuery.sizeOf(context).height,
+      ),
       decoration: BoxDecoration(color: backgroundColor),
       child: Stack(
         children: [
+          Positioned.fill(
+            child: FuturisticAuroraBackground(
+              backgroundColor: backgroundColor,
+              child: const SizedBox.expand(),
+            ),
+          ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 56),
@@ -418,7 +429,7 @@ class _CenterHub extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.72),
+        color: Colors.white.withValues(alpha: 0.92),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
