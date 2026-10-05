@@ -490,7 +490,7 @@ class ReportPageHeader extends StatelessWidget {
   }
 }
 
-class ReportDateFilterCard extends StatelessWidget {
+class ReportDateFilterCard extends StatefulWidget {
   final String dateRange;
   final String dateFrom;
   final String dateTo;
@@ -507,6 +507,187 @@ class ReportDateFilterCard extends StatelessWidget {
   });
 
   @override
+  State<ReportDateFilterCard> createState() => _ReportDateFilterCardState();
+}
+
+class _ReportDateFilterCardState extends State<ReportDateFilterCard> {
+  late String _selectedRange;
+  late final TextEditingController _dateFromController;
+  late final TextEditingController _dateToController;
+
+  static const List<String> _rangeOptions = [
+    'This Week',
+    'This Month',
+    'This Year',
+    'Last Week',
+    'Last Month',
+    'Last Year',
+    'Custom Selection',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedRange = _normalizeRange(widget.dateRange);
+    _dateFromController = TextEditingController(text: widget.dateFrom);
+    _dateToController = TextEditingController(text: widget.dateTo);
+  }
+
+  @override
+  void didUpdateWidget(covariant ReportDateFilterCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.dateFrom != widget.dateFrom) {
+      _dateFromController.text = widget.dateFrom;
+    }
+
+    if (oldWidget.dateTo != widget.dateTo) {
+      _dateToController.text = widget.dateTo;
+    }
+
+    if (oldWidget.dateRange != widget.dateRange) {
+      _selectedRange = _normalizeRange(widget.dateRange);
+    }
+  }
+
+  @override
+  void dispose() {
+    _dateFromController.dispose();
+    _dateToController.dispose();
+    super.dispose();
+  }
+
+  static String _normalizeRange(String value) {
+    if (value == 'Custom') {
+      return 'Custom Selection';
+    }
+    return value;
+  }
+
+  static String _formatDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString();
+    return '$day-$month-$year';
+  }
+
+  static DateTime _startOfWeek(DateTime date) {
+    final adjusted = date.subtract(Duration(days: date.weekday - 1));
+    return DateTime(adjusted.year, adjusted.month, adjusted.day);
+  }
+
+  static DateTime _endOfWeek(DateTime date) {
+    final start = _startOfWeek(date);
+    return start.add(const Duration(days: 6));
+  }
+
+  static DateTimeRange _rangeForPreset(String value, DateTime anchor) {
+    switch (value) {
+      case 'This Week':
+        return DateTimeRange(
+          start: _startOfWeek(anchor),
+          end: _endOfWeek(anchor),
+        );
+      case 'This Month':
+        return DateTimeRange(
+          start: DateTime(anchor.year, anchor.month, 1),
+          end: DateTime(anchor.year, anchor.month + 1, 0),
+        );
+      case 'This Year':
+        return DateTimeRange(
+          start: DateTime(anchor.year, 1, 1),
+          end: DateTime(anchor.year, 12, 31),
+        );
+      case 'Last Week':
+        final thisWeekStart = _startOfWeek(anchor);
+        final lastWeekStart = thisWeekStart.subtract(const Duration(days: 7));
+        return DateTimeRange(
+          start: lastWeekStart,
+          end: lastWeekStart.add(const Duration(days: 6)),
+        );
+      case 'Last Month':
+        final month = anchor.month == 1 ? 12 : anchor.month - 1;
+        final year = anchor.month == 1 ? anchor.year - 1 : anchor.year;
+        final lastMonthStart = DateTime(year, month, 1);
+        final lastMonthEnd = DateTime(year, month + 1, 0);
+        return DateTimeRange(start: lastMonthStart, end: lastMonthEnd);
+      case 'Last Year':
+        return DateTimeRange(
+          start: DateTime(anchor.year - 1, 1, 1),
+          end: DateTime(anchor.year - 1, 12, 31),
+        );
+      default:
+        return DateTimeRange(
+          start: anchor,
+          end: anchor,
+        );
+    }
+  }
+
+  Future<void> _handleRangeSelection(String? value) async {
+    if (value == null) {
+      return;
+    }
+
+    if (value == 'Custom Selection') {
+      final initialRange = DateTimeRange(
+        start: _parseDisplayDate(_dateFromController.text),
+        end: _parseDisplayDate(_dateToController.text),
+      );
+
+      final picked = await showDateRangePicker(
+        context: context,
+        firstDate: DateTime(2000),
+        lastDate: DateTime(2100),
+        initialDateRange: initialRange,
+        helpText: 'Select custom date range',
+        saveText: 'Apply',
+      );
+
+      if (picked != null && mounted) {
+        final start = picked.start;
+        final end = picked.end;
+
+        setState(() {
+          _selectedRange = 'Custom Selection';
+          _dateFromController.text = _formatDate(start);
+          _dateToController.text = _formatDate(end);
+        });
+
+        widget.onDateRangeChanged('Custom Selection');
+      }
+      return;
+    }
+
+    final selectedRange = _rangeForPreset(value, DateTime.now());
+
+    setState(() {
+      _selectedRange = value;
+      _dateFromController.text = _formatDate(selectedRange.start);
+      _dateToController.text = _formatDate(selectedRange.end);
+    });
+
+    widget.onDateRangeChanged(value);
+  }
+
+  static DateTime _parseDisplayDate(String value) {
+    final parts = value.split('-');
+    if (parts.length != 3) {
+      return DateTime.now();
+    }
+
+    final day = int.tryParse(parts[0]);
+    final month = int.tryParse(parts[1]);
+    final year = int.tryParse(parts[2]);
+
+    if (day == null || month == null || year == null) {
+      return DateTime.now();
+    }
+
+    return DateTime(year, month, day);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ReportGlassCard(
       padding: const EdgeInsets.all(18),
@@ -518,25 +699,26 @@ class ReportDateFilterCard extends StatelessWidget {
           _LabeledField(
             label: 'Date Range:',
             child: SizedBox(
-              width: 145,
+              width: 180,
               child: DropdownButtonFormField<String>(
-                initialValue: dateRange,
-                items: const [
-                  DropdownMenuItem(
-                    value: 'Custom',
-                    child: Text('Custom'),
-                  ),
-                ],
-                onChanged: onDateRangeChanged,
+                key: ValueKey(_selectedRange),
+                initialValue: _selectedRange,
+                items: _rangeOptions.map((option) {
+                  return DropdownMenuItem<String>(
+                    value: option,
+                    child: Text(option),
+                  );
+                }).toList(),
+                onChanged: _handleRangeSelection,
                 decoration: _fieldDecoration(),
                 dropdownColor: const Color(0xFF263E54),
                 style: const TextStyle(color: Color(0xFF263D4E), fontSize: 14),
-                selectedItemBuilder: (context) => const [
-                  Align(
+                selectedItemBuilder: (context) => _rangeOptions.map((option) {
+                  return Align(
                     alignment: Alignment.centerLeft,
-                    child: Text('Custom', style: TextStyle(color: Color(0xFF263D4E))),
-                  ),
-                ],
+                    child: Text(option, style: const TextStyle(color: Color(0xFF263D4E))),
+                  );
+                }).toList(),
               ),
             ),
           ),
@@ -545,7 +727,7 @@ class ReportDateFilterCard extends StatelessWidget {
             child: SizedBox(
               width: 160,
               child: TextFormField(
-                initialValue: dateFrom,
+                controller: _dateFromController,
                 readOnly: true,
                 decoration: _fieldDecoration(
                   suffixIcon: const Icon(Icons.calendar_today_outlined, size: 17),
@@ -558,7 +740,7 @@ class ReportDateFilterCard extends StatelessWidget {
             child: SizedBox(
               width: 160,
               child: TextFormField(
-                initialValue: dateTo,
+                controller: _dateToController,
                 readOnly: true,
                 decoration: _fieldDecoration(
                   suffixIcon: const Icon(Icons.calendar_today_outlined, size: 17),
@@ -570,7 +752,7 @@ class ReportDateFilterCard extends StatelessWidget {
             padding: const EdgeInsets.only(top: 22),
             child: ReportGlassButton(
               label: 'Run Report',
-              onPressed: onRunReport,
+              onPressed: widget.onRunReport,
             ),
           ),
         ],

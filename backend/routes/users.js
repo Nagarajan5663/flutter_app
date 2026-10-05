@@ -23,6 +23,135 @@ async function getRoleByName(roleName) {
   return rows.length ? rows[0] : null;
 }
 
+function parsePermissions(permissionValue) {
+  if (!permissionValue) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(permissionValue);
+    return Array.isArray(parsed)
+      ? parsed.filter((item) => typeof item === 'string')
+      : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| POST /api/users/login
+|
+| Login with email and password.
+|--------------------------------------------------------------------------
+*/
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    if (!email || !String(email).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required.',
+      });
+    }
+
+    if (!password || String(password).length < 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password is required.',
+      });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+
+    const [rows] = await db.query(
+      `
+      SELECT
+        u.id,
+        u.email,
+        u.password_hash AS passwordHash,
+        u.role_id AS roleId,
+        r.name AS role,
+        r.permissions AS rolePermissions,
+        u.is_active AS active,
+        u.can_deactivate AS canDeactivate,
+        u.is_primary_super_admin AS isPrimarySuperAdmin,
+        u.last_login_at AS lastLoginAt,
+        u.created_at AS createdAt,
+        u.updated_at AS updatedAt
+      FROM users u
+      LEFT JOIN roles r
+        ON r.id = u.role_id
+      WHERE LOWER(u.email) = LOWER(?)
+      LIMIT 1
+      `,
+      [cleanEmail]
+    );
+
+    if (!rows.length) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password.',
+      });
+    }
+
+    const user = rows[0];
+
+    if (!user.active) {
+      return res.status(403).json({
+        success: false,
+        message: 'This account is inactive.',
+      });
+    }
+
+    const passwordMatches = await bcrypt.compare(String(password), user.passwordHash);
+
+    if (!passwordMatches) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password.',
+      });
+    }
+
+    const permissions = parsePermissions(user.rolePermissions);
+
+    await db.query(
+      `
+      UPDATE users
+      SET last_login_at = NOW(),
+          updated_at = NOW()
+      WHERE id = ?
+      `,
+      [user.id]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Login successful.',
+      data: {
+        id: user.id,
+        email: user.email,
+        roleId: user.roleId,
+        role: user.role,
+        active: Boolean(user.active),
+        canDeactivate: Boolean(user.canDeactivate),
+        isPrimarySuperAdmin: Boolean(user.isPrimarySuperAdmin),
+        lastLoginAt: new Date().toISOString(),
+        permissions,
+      },
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to log in.',
+      error: error.message,
+    });
+  }
+});
+
 /*
 |--------------------------------------------------------------------------
 | GET /api/users/setup-status
