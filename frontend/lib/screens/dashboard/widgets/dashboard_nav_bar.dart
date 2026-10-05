@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 
+import '../../../widgets/codexia_logo.dart';
+
 class DashboardNavBar extends StatefulWidget {
   final bool isCollapsed;
   final String selectedMenu;
   final ValueChanged<String> onMenuSelected;
+  final VoidCallback onMenuPressed;
 
   const DashboardNavBar({
     super.key,
     required this.isCollapsed,
     required this.selectedMenu,
     required this.onMenuSelected,
+    required this.onMenuPressed,
   });
 
   @override
@@ -228,11 +232,11 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
         }
       },
 
-      width: isCollapsed ? 88 : 282,
+      width: isCollapsed ? 88 : 252,
       height: double.infinity,
       padding: EdgeInsets.fromLTRB(
         isCollapsed ? 8 : 12,
-        12,
+        0,
         isCollapsed ? 8 : 12,
         12,
       ),
@@ -330,6 +334,44 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
             Positioned.fill(
               child: Column(
                 children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: _renderCollapsed ? 0 : 12,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: _renderCollapsed
+                          ? MainAxisAlignment.center
+                          : MainAxisAlignment.start,
+                      children: [
+                        IconButton(
+                          onPressed: widget.onMenuPressed,
+                          tooltip: 'Collapse sidebar',
+                          color: _textSecondary,
+                          icon: const Icon(Icons.menu_rounded),
+                        ),
+                        if (!_renderCollapsed) ...[
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: CodexiaLogo(
+                              iconSize: 26,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  if (_renderCollapsed) ...[
+                    const SizedBox(height: 4),
+                    Image.asset(
+                      'lib/widgets/Codexia.png',
+                      width: 48,
+                      height: 48,
+                      fit: BoxFit.contain,
+                    ),
+                  ],
+
                   if (!_renderCollapsed) ...[
                     const SizedBox(height: 16),
 

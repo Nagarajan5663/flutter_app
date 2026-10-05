@@ -438,42 +438,43 @@ class _DashboardPageState extends State<DashboardPage> {
         backgroundColor: Colors.transparent,
 
         // ==========================================================
-        // DASHBOARD APP BAR
-        // ==========================================================
-
-        appBar: DashboardAppBar(
-          onMenuPressed: _toggleSidebar,
-          onProfilePressed: _openOrganizationSettings,
-          onPowerPressed: _logout,
-        ),
-
-        // ==========================================================
         // DASHBOARD BODY
         // ==========================================================
 
-        body: Row(
-          children: [
-            // ======================================================
-            // LEFT NAVBAR
-            // ======================================================
+        body: SafeArea(
+          child: Row(
+            children: [
+              // ====================================================
+              // LEFT NAVBAR
+              // ====================================================
 
-            DashboardNavBar(
-              isCollapsed: _isSidebarCollapsed,
-              selectedMenu: selectedMenu,
-              onMenuSelected: _selectMenu,
-            ),
-
-            // ======================================================
-            // PAGE CONTENT
-            // ======================================================
-
-            Expanded(
-              child: Container(
-                color: Colors.transparent,
-                child: _buildSelectedPage(),
+              DashboardNavBar(
+                isCollapsed: _isSidebarCollapsed,
+                selectedMenu: selectedMenu,
+                onMenuSelected: _selectMenu,
+                onMenuPressed: _toggleSidebar,
               ),
-            ),
-          ],
+
+              // ====================================================
+              // PAGE CONTENT
+              // ====================================================
+
+              Expanded(
+                child: Scaffold(
+                  backgroundColor: Colors.transparent,
+                  appBar: DashboardAppBar(
+                    onProfilePressed:
+                        _openOrganizationSettings,
+                    onPowerPressed: _logout,
+                  ),
+                  body: Container(
+                    color: Colors.transparent,
+                    child: _buildSelectedPage(),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
