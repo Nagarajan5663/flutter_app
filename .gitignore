@@ -69,3 +69,6 @@ frontend/android/app/release/
 
 # Widget Preview related
 .widget_preview/
+frontend/build/
+backend/node_modules/
+backend/.env

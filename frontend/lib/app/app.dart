@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../screens/dashboard/dashboard_page.dart';
+import '../screens/home/home_page.dart';
 import '../theme/app_theme.dart';
 
 class MyApp extends StatelessWidget {
@@ -10,10 +10,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Dashboard App',
-
       theme: AppTheme.lightTheme,
-
-      home: const DashboardPage(),
+      home: const HomePage(),
     );
   }
 }

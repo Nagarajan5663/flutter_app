@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'read_only_preview_scope.dart';
 import 'summary_card.dart';
 
 import 'profit_loss_section.dart';
@@ -15,234 +16,277 @@ class DashboardBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: Colors.transparent,
+
+      // ============================================================
+      // DASHBOARD BACKGROUND
+      // ============================================================
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color.fromARGB(0, 0, 0, 0),
+            Color.fromARGB(0, 0, 0, 0),
+          ],
+        ),
+      ),
 
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
+        child: ReadOnlyPreviewScope.blockActions(
+          context,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ======================================================
+              // DASHBOARD TITLE
+              // ======================================================
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Dashboard',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 150,
+                    height: 42,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFFE5E7EB),
+                      ),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: 'This Month',
+                        isExpanded: true,
+                        icon: const Icon(
+                          Icons.keyboard_arrow_down,
+                          color: Color(0xFF555555),
+                        ),
+                        style: const TextStyle(
+                          color: Color(0xFF444444),
+                          fontSize: 14,
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'This Month',
+                            child: Text('This Month'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Last Month',
+                            child: Text('Last Month'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'This Year',
+                            child: Text('This Year'),
+                          ),
+                        ],
+                        onChanged: (value) {},
+                      ),
+                    ),
+                  ),
+                ],
+              ),
 
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ======================================================
-            // DASHBOARD TITLE
-            // ======================================================
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Dashboard',
+              const SizedBox(height: 28),
+
+              // ======================================================
+              // CASH FLOW OVERVIEW HEADER
+              // ======================================================
+              const Row(
+                children: [
+                  Icon(
+                    Icons.account_balance_wallet_outlined,
+                    size: 22,
+                    color: Colors.white,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Cash Flow Overview',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
+                ],
+              ),
 
-                Container(
-                  width: 150,
-                  height: 42,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: const Color(0xFFE5E7EB),
-                    ),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: 'This Month',
-                      isExpanded: true,
-                      dropdownColor: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
+              const SizedBox(height: 10),
 
-                      icon: const Icon(
-                        Icons.keyboard_arrow_down,
-                        color: Color(0xFF555555),
-                      ),
+              const Divider(
+                thickness: 1,
+                height: 1,
+                color: Colors.white38,
+              ),
 
-                      style: const TextStyle(
-                        color: Color(0xFF444444),
-                        fontSize: 14,
-                      ),
+              const SizedBox(height: 20),
 
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'This Month',
-                          child: Text('This Month'),
+              // ======================================================
+              // CASH FLOW CARDS
+              //
+              // WEB     = 4 CARDS IN ONE ROW
+              // TABLET  = 2 CARDS PER ROW
+              // MOBILE  = 1 CARD PER ROW
+              // ======================================================
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  // --------------------------------------------------
+                  // LARGE WEB SCREEN
+                  // --------------------------------------------------
+                  if (constraints.maxWidth >= 900) {
+                    return const Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 110,
+                            child: SummaryCard(
+                              title: 'Total Revenue',
+                              amount: '₹0.00',
+                              icon: Icons.trending_up,
+                            ),
+                          ),
                         ),
-                        DropdownMenuItem(
-                          value: 'Last Month',
-                          child: Text('Last Month'),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: SizedBox(
+                            height: 110,
+                            child: SummaryCard(
+                              title: 'Total Expenses',
+                              amount: '₹0.00',
+                              icon: Icons.trending_down,
+                            ),
+                          ),
                         ),
-                        DropdownMenuItem(
-                          value: 'This Year',
-                          child: Text('This Year'),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: SizedBox(
+                            height: 110,
+                            child: SummaryCard(
+                              title: 'Cost of Goods',
+                              amount: '₹0.00',
+                              icon: Icons.shopping_cart_outlined,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: SizedBox(
+                            height: 110,
+                            child: SummaryCard(
+                              title: 'Net Cash Flow',
+                              amount: '₹0.00',
+                              icon: Icons.account_balance_wallet_outlined,
+                            ),
+                          ),
                         ),
                       ],
+                    );
+                  }
 
-                      onChanged: (value) {},
-                    ),
-                  ),
-                ),
-              ],
-            ),
+                  // --------------------------------------------------
+                  // TABLET
+                  // --------------------------------------------------
+                  if (constraints.maxWidth >= 500) {
+                    const double gap = 12;
 
-            const SizedBox(height: 28),
+                    final double cardWidth = (constraints.maxWidth - gap) / 2;
 
-            // ======================================================
-            // CASH FLOW OVERVIEW HEADER
-            // ======================================================
-            const Row(
-              children: [
-                Icon(
-                  Icons.account_balance_wallet_outlined,
-                  size: 22,
-                  color: Colors.white,
-                ),
-
-                SizedBox(width: 8),
-
-                Text(
-                  'Cash Flow Overview',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            const Divider(
-              thickness: 1,
-              height: 1,
-              color: Colors.white38,
-            ),
-
-            const SizedBox(height: 20),
-
-            // ======================================================
-            // CASH FLOW CARDS
-            //
-            // WEB     = 4 CARDS IN ONE ROW
-            // TABLET  = 2 CARDS PER ROW
-            // MOBILE  = 1 CARD PER ROW
-            // ======================================================
-            LayoutBuilder(
-              builder: (context, constraints) {
-                // --------------------------------------------------
-                // LARGE WEB SCREEN
-                // --------------------------------------------------
-                if (constraints.maxWidth >= 900) {
-                  return const Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
+                    return Wrap(
+                      spacing: gap,
+                      runSpacing: gap,
+                      children: [
+                        SizedBox(
+                          width: cardWidth,
                           height: 110,
-                          child: SummaryCard(
+                          child: const SummaryCard(
                             title: 'Total Revenue',
                             amount: '₹0.00',
                             icon: Icons.trending_up,
                           ),
                         ),
-                      ),
-
-                      SizedBox(width: 16),
-
-                      Expanded(
-                        child: SizedBox(
+                        SizedBox(
+                          width: cardWidth,
                           height: 110,
-                          child: SummaryCard(
+                          child: const SummaryCard(
                             title: 'Total Expenses',
                             amount: '₹0.00',
                             icon: Icons.trending_down,
                           ),
                         ),
-                      ),
-
-                      SizedBox(width: 16),
-
-                      Expanded(
-                        child: SizedBox(
+                        SizedBox(
+                          width: cardWidth,
                           height: 110,
-                          child: SummaryCard(
+                          child: const SummaryCard(
                             title: 'Cost of Goods',
                             amount: '₹0.00',
                             icon: Icons.shopping_cart_outlined,
                           ),
                         ),
-                      ),
-
-                      SizedBox(width: 16),
-
-                      Expanded(
-                        child: SizedBox(
+                        SizedBox(
+                          width: cardWidth,
                           height: 110,
-                          child: SummaryCard(
+                          child: const SummaryCard(
                             title: 'Net Cash Flow',
                             amount: '₹0.00',
                             icon: Icons.account_balance_wallet_outlined,
                           ),
                         ),
-                      ),
-                    ],
-                  );
-                }
+                      ],
+                    );
+                  }
 
-                // --------------------------------------------------
-                // TABLET
-                // --------------------------------------------------
-                if (constraints.maxWidth >= 500) {
-                  const double gap = 12;
-
-                  final double cardWidth =
-                      (constraints.maxWidth - gap) / 2;
-
-                  return Wrap(
-                    spacing: gap,
-                    runSpacing: gap,
+                  // --------------------------------------------------
+                  // MOBILE
+                  // --------------------------------------------------
+                  return const Column(
                     children: [
                       SizedBox(
-                        width: cardWidth,
+                        width: double.infinity,
                         height: 110,
-                        child: const SummaryCard(
+                        child: SummaryCard(
                           title: 'Total Revenue',
                           amount: '₹0.00',
                           icon: Icons.trending_up,
                         ),
                       ),
-
+                      SizedBox(height: 12),
                       SizedBox(
-                        width: cardWidth,
+                        width: double.infinity,
                         height: 110,
-                        child: const SummaryCard(
+                        child: SummaryCard(
                           title: 'Total Expenses',
                           amount: '₹0.00',
                           icon: Icons.trending_down,
                         ),
                       ),
-
+                      SizedBox(height: 12),
                       SizedBox(
-                        width: cardWidth,
+                        width: double.infinity,
                         height: 110,
-                        child: const SummaryCard(
+                        child: SummaryCard(
                           title: 'Cost of Goods',
                           amount: '₹0.00',
                           icon: Icons.shopping_cart_outlined,
                         ),
                       ),
-
+                      SizedBox(height: 12),
                       SizedBox(
-                        width: cardWidth,
+                        width: double.infinity,
                         height: 110,
-                        child: const SummaryCard(
+                        child: SummaryCard(
                           title: 'Net Cash Flow',
                           amount: '₹0.00',
                           icon: Icons.account_balance_wallet_outlined,
@@ -250,122 +294,69 @@ class DashboardBody extends StatelessWidget {
                       ),
                     ],
                   );
-                }
+                },
+              ),
 
-                // --------------------------------------------------
-                // MOBILE
-                // --------------------------------------------------
-                return const Column(
-                  children: [
-                    SizedBox(
-                      width: double.infinity,
-                      height: 110,
-                      child: SummaryCard(
-                        title: 'Total Revenue',
-                        amount: '₹0.00',
-                        icon: Icons.trending_up,
-                      ),
-                    ),
+              const SizedBox(height: 30),
 
-                    SizedBox(height: 12),
+              // ======================================================
+              // CASH FLOW SUMMARY
+              // ======================================================
+              const _CashFlowSummaryCard(),
 
-                    SizedBox(
-                      width: double.infinity,
-                      height: 110,
-                      child: SummaryCard(
-                        title: 'Total Expenses',
-                        amount: '₹0.00',
-                        icon: Icons.trending_down,
-                      ),
-                    ),
+              const SizedBox(height: 40),
 
-                    SizedBox(height: 12),
+              // ======================================================
+              // PROFIT & LOSS OVERVIEW
+              // ======================================================
+              const ProfitLossSection(),
 
-                    SizedBox(
-                      width: double.infinity,
-                      height: 110,
-                      child: SummaryCard(
-                        title: 'Cost of Goods',
-                        amount: '₹0.00',
-                        icon: Icons.shopping_cart_outlined,
-                      ),
-                    ),
+              const SizedBox(height: 40),
 
-                    SizedBox(height: 12),
+              // ======================================================
+              // SALES, PURCHASE & CUSTOMERS
+              // ======================================================
+              const SalesPurchaseSection(),
 
-                    SizedBox(
-                      width: double.infinity,
-                      height: 110,
-                      child: SummaryCard(
-                        title: 'Net Cash Flow',
-                        amount: '₹0.00',
-                        icon: Icons.account_balance_wallet_outlined,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
+              const SizedBox(height: 40),
 
-            const SizedBox(height: 30),
+              // ======================================================
+              // OVERDUE RECEIVABLES AGING
+              // ======================================================
+              const OverdueAgingSection(),
 
-            // ======================================================
-            // CASH FLOW SUMMARY
-            // ======================================================
-            const _CashFlowSummaryCard(),
+              const SizedBox(height: 40),
 
-            const SizedBox(height: 40),
+              // ======================================================
+              // INVENTORY OVERVIEW
+              // ======================================================
+              const InventoryOverviewSection(),
 
-            // ======================================================
-            // PROFIT & LOSS OVERVIEW
-            // ======================================================
-            const ProfitLossSection(),
+              const SizedBox(height: 40),
 
-            const SizedBox(height: 40),
+              // ======================================================
+              // RECENT ACTIVITY
+              // ======================================================
+              const RecentActivitySection(),
 
-            // ======================================================
-            // SALES, PURCHASE & CUSTOMERS
-            // ======================================================
-            const SalesPurchaseSection(),
+              const SizedBox(height: 35),
 
-            const SizedBox(height: 40),
-
-            // ======================================================
-            // OVERDUE RECEIVABLES AGING
-            // ======================================================
-            const OverdueAgingSection(),
-
-            const SizedBox(height: 40),
-
-            // ======================================================
-            // INVENTORY OVERVIEW
-            // ======================================================
-            const InventoryOverviewSection(),
-
-            const SizedBox(height: 40),
-
-            // ======================================================
-            // RECENT ACTIVITY
-            // ======================================================
-            const RecentActivitySection(),
-
-            const SizedBox(height: 35),
-
-            // ======================================================
-            // FOOTER
-            // ======================================================
-            const Center(
-              child: Text(
-                '© 2026 test. All Rights Reserved.',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 11,
+              // ======================================================
+              // FOOTER
+              // ======================================================
+              const Center(
+                child: Text(
+                  '© 2026 test. All Rights Reserved.',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                  ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -383,17 +374,13 @@ class _CashFlowSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-
       decoration: BoxDecoration(
         color: Colors.white,
-
         borderRadius: BorderRadius.circular(12),
-
         border: Border.all(
           color: const Color(0xFFE5E7EB),
           width: 1,
         ),
-
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(
@@ -404,7 +391,6 @@ class _CashFlowSummaryCard extends StatelessWidget {
           ),
         ],
       ),
-
       child: const Column(
         children: [
           SizedBox(height: 30),
@@ -460,19 +446,15 @@ class _CashFlowSummaryGridPainter extends CustomPainter {
 
     final double chartLeft = leftPadding;
 
-    final double chartRight =
-        size.width - rightPadding;
+    final double chartRight = size.width - rightPadding;
 
     final double chartTop = topPadding;
 
-    final double chartBottom =
-        size.height - bottomPadding;
+    final double chartBottom = size.height - bottomPadding;
 
-    final double chartWidth =
-        chartRight - chartLeft;
+    final double chartWidth = chartRight - chartLeft;
 
-    final double chartHeight =
-        chartBottom - chartTop;
+    final double chartHeight = chartBottom - chartTop;
 
     // ==============================================================
     // GRID PAINT
@@ -492,12 +474,10 @@ class _CashFlowSummaryGridPainter extends CustomPainter {
 
     const int rowCount = 10;
 
-    final double rowHeight =
-        chartHeight / rowCount;
+    final double rowHeight = chartHeight / rowCount;
 
     for (int i = 0; i <= rowCount; i++) {
-      final double y =
-          chartTop + (rowHeight * i);
+      final double y = chartTop + (rowHeight * i);
 
       canvas.drawLine(
         Offset(chartLeft, y),
@@ -510,8 +490,7 @@ class _CashFlowSummaryGridPainter extends CustomPainter {
     // THREE COLUMNS
     // ==============================================================
 
-    final double columnWidth =
-        chartWidth / 3;
+    final double columnWidth = chartWidth / 3;
 
     // LEFT VERTICAL LINE
     canvas.drawLine(
@@ -557,14 +536,11 @@ class _CashFlowSummaryGridPainter extends CustomPainter {
     // ==============================================================
 
     for (int i = 0; i <= rowCount; i++) {
-      final double y =
-          chartTop + (rowHeight * i);
+      final double y = chartTop + (rowHeight * i);
 
-      final String amount =
-          i <= 5 ? '₹1' : '₹0';
+      final String amount = i <= 5 ? '₹1' : '₹0';
 
-      final TextPainter textPainter =
-          TextPainter(
+      final TextPainter textPainter = TextPainter(
         text: TextSpan(
           text: amount,
           style: const TextStyle(
@@ -581,11 +557,8 @@ class _CashFlowSummaryGridPainter extends CustomPainter {
       textPainter.paint(
         canvas,
         Offset(
-          chartLeft -
-              textPainter.width -
-              9,
-          y -
-              (textPainter.height / 2),
+          chartLeft - textPainter.width - 9,
+          y - (textPainter.height / 2),
         ),
       );
 
@@ -614,13 +587,9 @@ class _CashFlowSummaryGridPainter extends CustomPainter {
     ];
 
     for (int i = 0; i < labels.length; i++) {
-      final double centerX =
-          chartLeft +
-          (columnWidth * i) +
-          (columnWidth / 2);
+      final double centerX = chartLeft + (columnWidth * i) + (columnWidth / 2);
 
-      final TextPainter textPainter =
-          TextPainter(
+      final TextPainter textPainter = TextPainter(
         text: TextSpan(
           text: labels[i],
           style: const TextStyle(
@@ -638,8 +607,7 @@ class _CashFlowSummaryGridPainter extends CustomPainter {
       textPainter.paint(
         canvas,
         Offset(
-          centerX -
-              (textPainter.width / 2),
+          centerX - (textPainter.width / 2),
           chartBottom + 12,
         ),
       );

@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 
-class DashboardAppBar extends StatelessWidget
-    implements PreferredSizeWidget {
+class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final VoidCallback onMenuPressed;
   final VoidCallback onProfilePressed;
   final VoidCallback? onPowerPressed;
+  final String welcomeName;
+  final bool canOpenProfile;
 
   const DashboardAppBar({
     super.key,
+    required this.onMenuPressed,
     required this.onProfilePressed,
+    required this.welcomeName,
+    required this.canOpenProfile,
     this.onPowerPressed,
   });
 
@@ -22,7 +27,7 @@ class DashboardAppBar extends StatelessWidget
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.white,
       toolbarHeight: 70,
-      titleSpacing: 24,
+      titleSpacing: 14,
 
       // ============================================================
       // LEFT SIDE
@@ -30,6 +35,33 @@ class DashboardAppBar extends StatelessWidget
 
       title: Row(
         children: [
+          // MENU ICON
+          IconButton(
+            onPressed: onMenuPressed,
+            tooltip: 'Menu',
+            icon: const Icon(
+              Icons.menu_rounded,
+              color: Color(0xFF333333),
+              size: 28,
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          // CODEXIA LOGO
+          Image.asset(
+            'lib/widgets/Codexia_OG1.8.png',
+            width: 132,
+            height: 42,
+            fit: BoxFit.contain,
+          ),
+
+          const SizedBox(width: 45),
+
+          // ========================================================
+          // SEARCH BAR
+          // ========================================================
+
           Container(
             width: 300,
             height: 40,
@@ -69,24 +101,15 @@ class DashboardAppBar extends StatelessWidget
 
       actions: [
         // WELCOME TEXT
-        const Center(
+        Center(
           child: Text(
-            'Welcome, ',
-            style: TextStyle(
-              color: Color(0xFF444444),
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ),
-
-        const Center(
-          child: Text(
-            'nagarajanpandurangan2004',
-            style: TextStyle(
+            'Welcome, $welcomeName',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
               color: Color(0xFF333333),
               fontSize: 16,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -101,8 +124,10 @@ class DashboardAppBar extends StatelessWidget
         // ==========================================================
 
         IconButton(
-          tooltip: 'Super Admin Profile',
-          onPressed: onProfilePressed,
+          tooltip: canOpenProfile
+              ? 'Organization Settings'
+              : 'Settings are not available for your role',
+          onPressed: canOpenProfile ? onProfilePressed : null,
           icon: const Icon(
             Icons.admin_panel_settings_outlined,
             color: Color(0xFF2F80B9),

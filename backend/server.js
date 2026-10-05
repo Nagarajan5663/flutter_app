@@ -38,11 +38,15 @@ const billsRoutes =
 const usersRoutes =
   require('./routes/users');
 
+const rolesRoutes =
+  require('./routes/roles');
+
 // ============================================================
 // APP
 // ============================================================
 
-const app = express();
+const app =
+  express();
 
 // ============================================================
 // MIDDLEWARE
@@ -50,21 +54,28 @@ const app = express();
 
 app.use(
   cors({
-    origin: true,
-    credentials: true,
+    origin:
+      true,
+
+    credentials:
+      true,
   })
 );
 
 app.use(
   express.json({
-    limit: '10mb',
+    limit:
+      '10mb',
   })
 );
 
 app.use(
   express.urlencoded({
-    extended: true,
-    limit: '10mb',
+    extended:
+      true,
+
+    limit:
+      '10mb',
   })
 );
 
@@ -257,21 +268,14 @@ app.use(
   billsRoutes
 );
 
-// ============================================================
-// USERS
-//
-// Manage Users API
-//
-// GET    /api/users
-// GET    /api/users/:id
-// POST   /api/users
-// PUT    /api/users/:id
-// PUT    /api/users/:id/status
-// ============================================================
-
 app.use(
   '/api/users',
   usersRoutes
+);
+
+app.use(
+  '/api/roles',
+  rolesRoutes
 );
 
 // ============================================================

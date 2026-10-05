@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../../../dashboard/widgets/read_only_preview_scope.dart';
+
 // ============================================================================
 // GLASS MODAL SHELL
 //
@@ -277,7 +279,6 @@ class GlassDialogHeader extends StatelessWidget {
                   color: const Color(0xFF123456),
                 ),
               ),
-
               if (subtitle != null) ...[
                 const SizedBox(height: 5),
                 Text(
@@ -394,9 +395,7 @@ class _GlassButtonState extends State<GlassButton> {
     final bool disabled = widget.onPressed == null;
 
     return MouseRegion(
-      cursor: disabled
-          ? SystemMouseCursors.basic
-          : SystemMouseCursors.click,
+      cursor: disabled ? SystemMouseCursors.basic : SystemMouseCursors.click,
       onEnter: (_) => setState(() => hovering = true),
       onExit: (_) => setState(() => hovering = false),
       child: AnimatedScale(
@@ -410,8 +409,7 @@ class _GlassButtonState extends State<GlassButton> {
             borderRadius: BorderRadius.circular(12),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 19, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 14),
               decoration: BoxDecoration(
                 gradient: widget.primary
                     ? LinearGradient(
@@ -458,9 +456,8 @@ class _GlassButtonState extends State<GlassButton> {
                   Icon(
                     widget.icon,
                     size: 18,
-                    color: widget.primary
-                        ? Colors.white
-                        : const Color(0xFF526979),
+                    color:
+                        widget.primary ? Colors.white : const Color(0xFF526979),
                   ),
                   const SizedBox(width: 7),
                   Text(
@@ -564,7 +561,10 @@ class GlassPageBackground extends StatelessWidget {
             ),
             child: DefaultTextStyle.merge(
               style: const TextStyle(color: Colors.black),
-              child: child,
+              child: ReadOnlyPreviewScope.blockScrollableActions(
+                context,
+                child,
+              ),
             ),
           ),
         ],
@@ -646,7 +646,6 @@ class GlassSurface {
       Colors.white.withValues(alpha: emphasized ? 0.55 : 0.40);
 
   /// Soft white border that matches the shell's own border treatment.
-  static Color border({bool focused = false}) => focused
-      ? const Color(0xFF5597C4)
-      : Colors.white.withValues(alpha: 0.75);
+  static Color border({bool focused = false}) =>
+      focused ? const Color(0xFF5597C4) : Colors.white.withValues(alpha: 0.75);
 }

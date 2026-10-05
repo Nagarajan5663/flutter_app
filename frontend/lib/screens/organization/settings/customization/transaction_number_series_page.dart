@@ -12,72 +12,48 @@ class TransactionNumberSeriesItem {
 
   final String module;
 
-  final TextEditingController
-      prefixController;
+  final TextEditingController prefixController;
 
-  final TextEditingController
-      startingNumberController;
+  final TextEditingController startingNumberController;
 
   TransactionNumberSeriesItem({
     this.id,
-
     required this.module,
-
     required String prefix,
-
     required int startingNumber,
-  })  : prefixController =
-            TextEditingController(
+  })  : prefixController = TextEditingController(
           text: prefix,
         ),
-        startingNumberController =
-            TextEditingController(
-          text:
-              startingNumber
-                  .toString(),
+        startingNumberController = TextEditingController(
+          text: startingNumber.toString(),
         );
 
-  String get prefix =>
-      prefixController.text;
+  String get prefix => prefixController.text;
 
   int get startingNumber =>
       int.tryParse(
-        startingNumberController
-            .text
-            .trim(),
+        startingNumberController.text.trim(),
       ) ??
       1;
 
   String get preview {
-    final int number =
-        startingNumber <= 0
-            ? 1
-            : startingNumber;
+    final int number = startingNumber <= 0 ? 1 : startingNumber;
 
     return '$prefix${number.toString().padLeft(4, '0')}';
   }
 
-  Map<String, dynamic>
-      toJson() {
+  Map<String, dynamic> toJson() {
     return {
-      'module':
-          module,
-
-      'prefix':
-          prefixController.text,
-
-      'startingNumber':
-          startingNumber <= 0
-              ? 1
-              : startingNumber,
+      'module': module,
+      'prefix': prefixController.text,
+      'startingNumber': startingNumber <= 0 ? 1 : startingNumber,
     };
   }
 
   void dispose() {
     prefixController.dispose();
 
-    startingNumberController
-        .dispose();
+    startingNumberController.dispose();
   }
 }
 
@@ -85,8 +61,7 @@ class TransactionNumberSeriesItem {
 // PAGE
 // ============================================================
 
-class TransactionNumberSeriesPage
-    extends StatefulWidget {
+class TransactionNumberSeriesPage extends StatefulWidget {
   final VoidCallback? onBack;
 
   const TransactionNumberSeriesPage({
@@ -95,19 +70,15 @@ class TransactionNumberSeriesPage
   });
 
   @override
-  State<TransactionNumberSeriesPage>
-      createState() =>
-          _TransactionNumberSeriesPageState();
+  State<TransactionNumberSeriesPage> createState() =>
+      _TransactionNumberSeriesPageState();
 }
 
 class _TransactionNumberSeriesPageState
-    extends State<
-        TransactionNumberSeriesPage> {
-  static const String _baseUrl =
-      'http://localhost:3000/api';
+    extends State<TransactionNumberSeriesPage> {
+  static const String _baseUrl = 'http://localhost:3000/api';
 
-  List<TransactionNumberSeriesItem>
-      _items = [];
+  List<TransactionNumberSeriesItem> _items = [];
 
   bool _isLoading = true;
 
@@ -138,10 +109,7 @@ class _TransactionNumberSeriesPageState
   }
 
   void _disposeItems() {
-    for (
-      final item
-      in _items
-    ) {
+    for (final item in _items) {
       item.dispose();
     }
   }
@@ -150,8 +118,7 @@ class _TransactionNumberSeriesPageState
   // LOAD FROM MYSQL THROUGH NODE API
   // ==========================================================
 
-  Future<void>
-      _loadSeries() async {
+  Future<void> _loadSeries() async {
     setState(() {
       _isLoading = true;
 
@@ -159,95 +126,60 @@ class _TransactionNumberSeriesPageState
     });
 
     try {
-      final http.Response response =
-          await http.get(
+      final http.Response response = await http.get(
         Uri.parse(
           '$_baseUrl/transaction-number-series',
         ),
         headers: const {
-          'Accept':
-              'application/json',
+          'Accept': 'application/json',
         },
       );
 
-      final dynamic body =
-          jsonDecode(
+      final dynamic body = jsonDecode(
         response.body,
       );
 
-      if (
-        body is! Map<String, dynamic>
-      ) {
+      if (body is! Map<String, dynamic>) {
         throw Exception(
           'Invalid response from server',
         );
       }
 
-      if (
-        response.statusCode != 200 ||
-        body['success'] != true
-      ) {
+      if (response.statusCode != 200 || body['success'] != true) {
         throw Exception(
-          body['message'] ??
-              'Unable to load transaction number series',
+          body['message'] ?? 'Unable to load transaction number series',
         );
       }
 
       final List<dynamic> data =
-          body['data'] is List
-              ? body['data']
-              : <dynamic>[];
+          body['data'] is List ? body['data'] : <dynamic>[];
 
-      final List<
-              TransactionNumberSeriesItem>
-          newItems = [];
+      final List<TransactionNumberSeriesItem> newItems = [];
 
-      for (
-        final dynamic raw
-        in data
-      ) {
-        final Map<String, dynamic>
-            item =
-            Map<String, dynamic>.from(
+      for (final dynamic raw in data) {
+        final Map<String, dynamic> item = Map<String, dynamic>.from(
           raw as Map,
         );
 
         newItems.add(
           TransactionNumberSeriesItem(
-            id:
-                item['id'] == null
-                    ? null
-                    : int.tryParse(
-                        item['id']
-                            .toString(),
-                      ),
-
-            module:
-                item['module']
-                        ?.toString() ??
-                    '',
-
-            prefix:
-                item['prefix']
-                        ?.toString() ??
-                    '',
-
-            startingNumber:
-                int.tryParse(
-                      item['startingNumber']
-                              ?.toString() ??
-                          '1',
-                    ) ??
-                    1,
+            id: item['id'] == null
+                ? null
+                : int.tryParse(
+                    item['id'].toString(),
+                  ),
+            module: item['module']?.toString() ?? '',
+            prefix: item['prefix']?.toString() ?? '',
+            startingNumber: int.tryParse(
+                  item['startingNumber']?.toString() ?? '1',
+                ) ??
+                1,
           ),
         );
       }
 
       if (!mounted) {
-        for (
-          final item
-          in newItems
-        ) {
+        for (final item in newItems) {
           item.dispose();
         }
 
@@ -269,8 +201,7 @@ class _TransactionNumberSeriesPageState
       setState(() {
         _isLoading = false;
 
-        _errorMessage =
-            error.toString();
+        _errorMessage = error.toString();
       });
     }
   }
@@ -279,27 +210,17 @@ class _TransactionNumberSeriesPageState
   // SAVE
   // ==========================================================
 
-  Future<void>
-      _saveChanges() async {
+  Future<void> _saveChanges() async {
     if (_isSaving) {
       return;
     }
 
-    for (
-      final item
-      in _items
-    ) {
-      final int? number =
-          int.tryParse(
-        item.startingNumberController
-            .text
-            .trim(),
+    for (final item in _items) {
+      final int? number = int.tryParse(
+        item.startingNumberController.text.trim(),
       );
 
-      if (
-        number == null ||
-        number <= 0
-      ) {
+      if (number == null || number <= 0) {
         _showMessage(
           '${item.module}: Starting Number must be greater than 0.',
           error: true,
@@ -316,51 +237,39 @@ class _TransactionNumberSeriesPageState
     });
 
     try {
-      final http.Response response =
-          await http.put(
+      final http.Response response = await http.put(
         Uri.parse(
           '$_baseUrl/transaction-number-series',
         ),
         headers: const {
-          'Content-Type':
-              'application/json',
-
-          'Accept':
-              'application/json',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: jsonEncode({
-          'series':
-              _items
-                  .map(
-                    (
-                      item,
-                    ) =>
-                        item.toJson(),
-                  )
-                  .toList(),
+          'series': _items
+              .map(
+                (
+                  item,
+                ) =>
+                    item.toJson(),
+              )
+              .toList(),
         }),
       );
 
-      final dynamic body =
-          jsonDecode(
+      final dynamic body = jsonDecode(
         response.body,
       );
 
-      if (
-        body is! Map<String, dynamic>
-      ) {
+      if (body is! Map<String, dynamic>) {
         throw Exception(
           'Invalid response from server',
         );
       }
 
-      if (
-        response.statusCode != 200 ||
-        body['success'] != true
-      ) {
+      if (response.statusCode != 200 || body['success'] != true) {
         throw Exception(
-          body['message'] ??
-              'Failed to save transaction number series',
+          body['message'] ?? 'Failed to save transaction number series',
         );
       }
 
@@ -385,8 +294,7 @@ class _TransactionNumberSeriesPageState
       setState(() {
         _isSaving = false;
 
-        _errorMessage =
-            error.toString();
+        _errorMessage = error.toString();
       });
 
       _showMessage(
@@ -401,20 +309,14 @@ class _TransactionNumberSeriesPageState
   // ==========================================================
 
   void _goBack() {
-    if (
-      widget.onBack != null
-    ) {
+    if (widget.onBack != null) {
       widget.onBack!();
 
       return;
     }
 
-    if (
-      Navigator.of(context)
-          .canPop()
-    ) {
-      Navigator.of(context)
-          .pop();
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
     }
   }
 
@@ -426,22 +328,18 @@ class _TransactionNumberSeriesPageState
     String message, {
     bool error = false,
   }) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content:
-            Text(
+        content: Text(
           message,
         ),
-
-        backgroundColor:
-            error
-                ? const Color(
-                    0xFFB3261E,
-                  )
-                : const Color(
-                    0xFF188038,
-                  ),
+        backgroundColor: error
+            ? const Color(
+                0xFFB3261E,
+              )
+            : const Color(
+                0xFF188038,
+              ),
       ),
     );
   }
@@ -455,101 +353,63 @@ class _TransactionNumberSeriesPageState
     BuildContext context,
   ) {
     return Scaffold(
-      backgroundColor:
-          const Color(
+      backgroundColor: const Color(
         0xFFF5F8FA,
       ),
-
-      body:
-          SafeArea(
-        child:
-            Column(
+      body: SafeArea(
+        child: Column(
           children: [
             // ==================================================
             // HEADER
             // ==================================================
 
             Container(
-              padding:
-                  const EdgeInsets
-                      .symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: 24,
                 vertical: 18,
               ),
-
-              decoration:
-                  const BoxDecoration(
-                color:
-                    Colors.white,
-
-                border:
-                    Border(
-                  bottom:
-                      BorderSide(
-                    color:
-                        Color(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(
+                    color: Color(
                       0xFFE2E7EC,
                     ),
                   ),
                 ),
               ),
-
-              child:
-                  Row(
+              child: Row(
                 children: [
                   IconButton(
-                    onPressed:
-                        _goBack,
-
-                    icon:
-                        const Icon(
-                      Icons
-                          .arrow_back,
+                    onPressed: _goBack,
+                    icon: const Icon(
+                      Icons.arrow_back,
                     ),
                   ),
-
                   const SizedBox(
                     width: 8,
                   ),
-
                   const Expanded(
-                    child:
-                        Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment
-                              .start,
-
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Transaction Number Series',
-
-                          style:
-                              TextStyle(
-                            fontSize:
-                                25,
-
-                            fontWeight:
-                                FontWeight
-                                    .w700,
-
-                            color:
-                                Color(
+                          style: TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.w700,
+                            color: Color(
                               0xFF263B4E,
                             ),
                           ),
                         ),
-
                         SizedBox(
                           height: 3,
                         ),
-
                         Text(
                           'Configure prefixes and starting numbers for transactions.',
-
-                          style:
-                              TextStyle(
-                            color:
-                                Color(
+                          style: TextStyle(
+                            color: Color(
                               0xFF73808C,
                             ),
                           ),
@@ -557,19 +417,10 @@ class _TransactionNumberSeriesPageState
                       ],
                     ),
                   ),
-
                   IconButton(
-                    tooltip:
-                        'Refresh',
-
-                    onPressed:
-                        _isLoading ||
-                                _isSaving
-                            ? null
-                            : _loadSeries,
-
-                    icon:
-                        const Icon(
+                    tooltip: 'Refresh',
+                    onPressed: _isLoading || _isSaving ? null : _loadSeries,
+                    icon: const Icon(
                       Icons.refresh,
                     ),
                   ),
@@ -582,8 +433,7 @@ class _TransactionNumberSeriesPageState
             // ==================================================
 
             Expanded(
-              child:
-                  _buildContent(),
+              child: _buildContent(),
             ),
 
             // ==================================================
@@ -591,98 +441,53 @@ class _TransactionNumberSeriesPageState
             // ==================================================
 
             Container(
-              padding:
-                  const EdgeInsets
-                      .fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 24,
                 14,
                 24,
                 14,
               ),
-
-              decoration:
-                  const BoxDecoration(
-                color:
-                    Colors.white,
-
-                border:
-                    Border(
-                  top:
-                      BorderSide(
-                    color:
-                        Color(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(
+                    color: Color(
                       0xFFE2E7EC,
                     ),
                   ),
                 ),
               ),
-
-              child:
-                  Row(
-                mainAxisAlignment:
-                    MainAxisAlignment
-                        .end,
-
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   ElevatedButton.icon(
-                    onPressed:
-                        _isSaving ||
-                                _isLoading
-                            ? null
-                            : _saveChanges,
-
-                    icon:
-                        _isSaving
-                            ? const SizedBox(
-                                width: 17,
-                                height: 17,
-
-                                child:
-                                    CircularProgressIndicator(
-                                  strokeWidth:
-                                      2,
-
-                                  color:
-                                      Colors.white,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.save,
-                              ),
-
-                    label:
-                        Text(
-                      _isSaving
-                          ? 'Saving...'
-                          : 'Save Changes',
+                    onPressed: _isSaving || _isLoading ? null : _saveChanges,
+                    icon: _isSaving
+                        ? const SizedBox(
+                            width: 17,
+                            height: 17,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.save,
+                          ),
+                    label: Text(
+                      _isSaving ? 'Saving...' : 'Save Changes',
                     ),
-
-                    style:
-                        ElevatedButton
-                            .styleFrom(
-                      backgroundColor:
-                          const Color(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(
                         0xFF20A840,
                       ),
-
-                      foregroundColor:
-                          Colors.white,
-
-                      padding:
-                          const EdgeInsets
-                              .symmetric(
-                        horizontal:
-                            22,
-
-                        vertical:
-                            15,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 22,
+                        vertical: 15,
                       ),
-
-                      shape:
-                          RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius
-                                .circular(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
                           6,
                         ),
                       ),
@@ -704,64 +509,37 @@ class _TransactionNumberSeriesPageState
   Widget _buildContent() {
     if (_isLoading) {
       return const Center(
-        child:
-            CircularProgressIndicator(),
+        child: CircularProgressIndicator(),
       );
     }
 
-    if (
-      _errorMessage != null
-    ) {
+    if (_errorMessage != null) {
       return Center(
-        child:
-            Padding(
-          padding:
-              const EdgeInsets
-                  .all(
+        child: Padding(
+          padding: const EdgeInsets.all(
             30,
           ),
-
-          child:
-              Column(
-            mainAxisSize:
-                MainAxisSize.min,
-
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
-                Icons
-                    .error_outline,
-
-                size:
-                    45,
-
-                color:
-                    Colors.red,
+                Icons.error_outline,
+                size: 45,
+                color: Colors.red,
               ),
-
               const SizedBox(
-                height:
-                    12,
+                height: 12,
               ),
-
               Text(
                 _errorMessage!,
-
-                textAlign:
-                    TextAlign
-                        .center,
+                textAlign: TextAlign.center,
               ),
-
               const SizedBox(
-                height:
-                    16,
+                height: 16,
               ),
-
               ElevatedButton(
-                onPressed:
-                    _loadSeries,
-
-                child:
-                    const Text(
+                onPressed: _loadSeries,
+                child: const Text(
                   'Retry',
                 ),
               ),
@@ -772,120 +550,73 @@ class _TransactionNumberSeriesPageState
     }
 
     return SingleChildScrollView(
-      padding:
-          const EdgeInsets
-              .all(
+      padding: const EdgeInsets.all(
         24,
       ),
-
-      child:
-          Container(
-        decoration:
-            BoxDecoration(
-          color:
-              Colors.white,
-
-          borderRadius:
-              BorderRadius
-                  .circular(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(
             8,
           ),
-
-          border:
-              Border.all(
-            color:
-                const Color(
+          border: Border.all(
+            color: const Color(
               0xFFE1E6EA,
             ),
           ),
         ),
-
-        child:
-            Column(
+        child: Column(
           children: [
             // ==================================================
             // TABLE HEADER
             // ==================================================
 
             Container(
-              padding:
-                  const EdgeInsets
-                      .symmetric(
-                horizontal:
-                    16,
-
-                vertical:
-                    17,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 17,
               ),
-
-              decoration:
-                  const BoxDecoration(
-                color:
-                    Color(
+              decoration: const BoxDecoration(
+                color: Color(
                   0xFFF8FAFB,
                 ),
-
-                border:
-                    Border(
-                  bottom:
-                      BorderSide(
-                    color:
-                        Color(
+                border: Border(
+                  bottom: BorderSide(
+                    color: Color(
                       0xFFE1E6EA,
                     ),
                   ),
                 ),
               ),
-
-              child:
-                  const Row(
+              child: const Row(
                 children: [
                   Expanded(
-                    flex:
-                        2,
-
-                    child:
-                        _HeaderText(
+                    flex: 2,
+                    child: _HeaderText(
                       'MODULE',
                     ),
                   ),
-
                   Expanded(
-                    flex:
-                        3,
-
-                    child:
-                        _HeaderText(
+                    flex: 3,
+                    child: _HeaderText(
                       'PREFIX',
                     ),
                   ),
-
                   SizedBox(
-                    width:
-                        28,
+                    width: 28,
                   ),
-
                   Expanded(
-                    flex:
-                        3,
-
-                    child:
-                        _HeaderText(
+                    flex: 3,
+                    child: _HeaderText(
                       'STARTING NUMBER',
                     ),
                   ),
-
                   SizedBox(
-                    width:
-                        28,
+                    width: 28,
                   ),
-
                   Expanded(
-                    flex:
-                        1,
-
-                    child:
-                        _HeaderText(
+                    flex: 1,
+                    child: _HeaderText(
                       'PREVIEW',
                     ),
                   ),
@@ -899,8 +630,7 @@ class _TransactionNumberSeriesPageState
 
             ..._items.map(
               (
-                TransactionNumberSeriesItem
-                    item,
+                TransactionNumberSeriesItem item,
               ) {
                 return _buildRow(
                   item,
@@ -921,121 +651,67 @@ class _TransactionNumberSeriesPageState
     TransactionNumberSeriesItem item,
   ) {
     return Container(
-      padding:
-          const EdgeInsets
-              .symmetric(
-        horizontal:
-            16,
-
-        vertical:
-            14,
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 14,
       ),
-
-      decoration:
-          const BoxDecoration(
-        border:
-            Border(
-          bottom:
-              BorderSide(
-            color:
-                Color(
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Color(
               0xFFE5E9ED,
             ),
           ),
         ),
       ),
-
-      child:
-          Row(
+      child: Row(
         children: [
           Expanded(
-            flex:
-                2,
-
-            child:
-                Text(
+            flex: 2,
+            child: Text(
               item.module,
-
-              style:
-                  const TextStyle(
-                fontSize:
-                    15,
-
-                color:
-                    Color(
+              style: const TextStyle(
+                fontSize: 15,
+                color: Color(
                   0xFF4B545C,
                 ),
               ),
             ),
           ),
-
           Expanded(
-            flex:
-                3,
-
-            child:
-                TextField(
-              controller:
-                  item.prefixController,
-
-              onChanged:
-                  (_) {
+            flex: 3,
+            child: TextField(
+              controller: item.prefixController,
+              onChanged: (_) {
                 setState(() {});
               },
-
-              decoration:
-                  _inputDecoration(),
+              decoration: _inputDecoration(),
             ),
           ),
-
           const SizedBox(
-            width:
-                28,
+            width: 28,
           ),
-
           Expanded(
-            flex:
-                3,
-
-            child:
-                TextField(
-              controller:
-                  item
-                      .startingNumberController,
-
-              keyboardType:
-                  TextInputType.number,
-
-              onChanged:
-                  (_) {
+            flex: 3,
+            child: TextField(
+              controller: item.startingNumberController,
+              keyboardType: TextInputType.number,
+              onChanged: (_) {
                 setState(() {});
               },
-
-              decoration:
-                  _inputDecoration(),
+              decoration: _inputDecoration(),
             ),
           ),
-
           const SizedBox(
-            width:
-                28,
+            width: 28,
           ),
-
           Expanded(
-            flex:
-                1,
-
-            child:
-                Text(
+            flex: 1,
+            child: Text(
               item.preview,
-
-              style:
-                  const TextStyle(
-                fontSize:
-                    15,
-
-                color:
-                    Color(
+              style: const TextStyle(
+                fontSize: 15,
+                color: Color(
                   0xFF5F6870,
                 ),
               ),
@@ -1046,76 +722,44 @@ class _TransactionNumberSeriesPageState
     );
   }
 
-  InputDecoration
-      _inputDecoration() {
+  InputDecoration _inputDecoration() {
     return InputDecoration(
-      isDense:
-          true,
-
-      filled:
-          true,
-
-      fillColor:
-          Colors.white,
-
-      contentPadding:
-          const EdgeInsets
-              .symmetric(
-        horizontal:
-            12,
-
-        vertical:
-            13,
+      isDense: true,
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 13,
       ),
-
-      border:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           5,
         ),
-
-        borderSide:
-            const BorderSide(
-          color:
-              Color(
+        borderSide: const BorderSide(
+          color: Color(
             0xFFD5DDE4,
           ),
         ),
       ),
-
-      enabledBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           5,
         ),
-
-        borderSide:
-            const BorderSide(
-          color:
-              Color(
+        borderSide: const BorderSide(
+          color: Color(
             0xFFD5DDE4,
           ),
         ),
       ),
-
-      focusedBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           5,
         ),
-
-        borderSide:
-            const BorderSide(
-          color:
-              Color(
+        borderSide: const BorderSide(
+          color: Color(
             0xFF2D7FF9,
           ),
-
-          width:
-              1.5,
+          width: 1.5,
         ),
       ),
     );
@@ -1126,8 +770,7 @@ class _TransactionNumberSeriesPageState
 // HEADER TEXT
 // ============================================================
 
-class _HeaderText
-    extends StatelessWidget {
+class _HeaderText extends StatelessWidget {
   final String text;
 
   const _HeaderText(
@@ -1140,17 +783,10 @@ class _HeaderText
   ) {
     return Text(
       text,
-
-      style:
-          const TextStyle(
-        fontSize:
-            12,
-
-        fontWeight:
-            FontWeight.w700,
-
-        color:
-            Color(
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: Color(
           0xFF59636D,
         ),
       ),

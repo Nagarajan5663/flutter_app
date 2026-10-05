@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../../../dashboard/widgets/read_only_preview_scope.dart';
+
 class AccountantGlassTheme {
   static const Color background1 = Color(0xFFCADAE7);
   static const Color background2 = Color(0xFFD2D6E3);
@@ -99,9 +101,16 @@ class AccountantGlassBackground extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.all(isCompact ? 14 : 30),
               child: AccountantGlassTiltPanel(
-                enableTilt: !isCompact && MediaQuery.of(context).size.width >= 850,
+                enableTilt:
+                    !isCompact && MediaQuery.of(context).size.width >= 850,
                 borderRadius: isCompact ? 20 : 28,
-                child: child,
+                child:
+                    ReadOnlyPreviewScope.isReadOnly(context) && child is Column
+                        ? child
+                        : ReadOnlyPreviewScope.blockScrollableActions(
+                            context,
+                            child,
+                          ),
               ),
             ),
           ),
@@ -124,7 +133,8 @@ class AccountantGlassTiltPanel extends StatefulWidget {
   });
 
   @override
-  State<AccountantGlassTiltPanel> createState() => _AccountantGlassTiltPanelState();
+  State<AccountantGlassTiltPanel> createState() =>
+      _AccountantGlassTiltPanelState();
 }
 
 class _AccountantGlassTiltPanelState extends State<AccountantGlassTiltPanel> {
@@ -289,7 +299,8 @@ class AccountantGlassHoverCard extends StatefulWidget {
   });
 
   @override
-  State<AccountantGlassHoverCard> createState() => _AccountantGlassHoverCardState();
+  State<AccountantGlassHoverCard> createState() =>
+      _AccountantGlassHoverCardState();
 }
 
 class _AccountantGlassHoverCardState extends State<AccountantGlassHoverCard> {
@@ -360,7 +371,8 @@ class AccountantGlassDialogCard extends StatefulWidget {
   });
 
   @override
-  State<AccountantGlassDialogCard> createState() => _AccountantGlassDialogCardState();
+  State<AccountantGlassDialogCard> createState() =>
+      _AccountantGlassDialogCardState();
 }
 
 class _AccountantGlassDialogCardState extends State<AccountantGlassDialogCard> {

@@ -12,22 +12,22 @@ class InventoryPage extends StatefulWidget {
   /// 1 = Inventory Adjustments
   /// 2 = Returnable Assets
   final int initialTab;
+  final bool readOnly;
 
   final ValueChanged<String>? onSectionChanged;
 
   const InventoryPage({
     super.key,
     this.initialTab = 0,
+    this.readOnly = false,
     this.onSectionChanged,
   });
 
   @override
-  State<InventoryPage> createState() =>
-      _InventoryPageState();
+  State<InventoryPage> createState() => _InventoryPageState();
 }
 
-class _InventoryPageState
-    extends State<InventoryPage> {
+class _InventoryPageState extends State<InventoryPage> {
   late int selectedTab;
 
   @override
@@ -45,10 +45,8 @@ class _InventoryPageState
   ) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.initialTab !=
-        widget.initialTab) {
-      final int newTab =
-          _validTab(widget.initialTab);
+    if (oldWidget.initialTab != widget.initialTab) {
+      final int newTab = _validTab(widget.initialTab);
 
       if (selectedTab != newTab) {
         setState(() {
@@ -99,8 +97,7 @@ class _InventoryPageState
   // ============================================================
 
   void _changeTab(int index) {
-    final int validIndex =
-        _validTab(index);
+    final int validIndex = _validTab(index);
 
     if (selectedTab != validIndex) {
       setState(() {
@@ -124,11 +121,9 @@ class _InventoryPageState
         context,
         constraints,
       ) {
-        final bool isMobile =
-            constraints.maxWidth < 700;
+        final bool isMobile = constraints.maxWidth < 700;
 
-        final bool enableTilt =
-            constraints.maxWidth >= 850;
+        final bool enableTilt = constraints.maxWidth >= 850;
 
         return Container(
           width: double.infinity,
@@ -243,8 +238,7 @@ class _InventoryPageState
                 padding: EdgeInsets.all(
                   isMobile ? 14 : 30,
                 ),
-                child:
-                    TweenAnimationBuilder<double>(
+                child: TweenAnimationBuilder<double>(
                   tween: Tween<double>(
                     begin: 0,
                     end: 1,
@@ -269,120 +263,100 @@ class _InventoryPageState
                       ),
                     );
                   },
-                  child:
-                      InventoryGlassTiltPanel(
-                    enableTilt: enableTilt,
-                    borderRadius:
-                        isMobile ? 20 : 28,
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        // ==========================================
-                        // HEADER
-                        // ==========================================
+                  child: AbsorbPointer(
+                    absorbing: widget.readOnly,
+                    child: InventoryGlassTiltPanel(
+                      enableTilt: enableTilt,
+                      borderRadius: isMobile ? 20 : 28,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // ==========================================
+                          // HEADER
+                          // ==========================================
 
-                        _buildHeader(
-                          isMobile: isMobile,
-                        ),
-
-                        // ==========================================
-                        // TABS
-                        // ==========================================
-
-                        Padding(
-                          padding:
-                              EdgeInsets.symmetric(
-                            horizontal:
-                                isMobile ? 18 : 38,
-                          ),
-                          child: _buildMainTabs(
+                          _buildHeader(
                             isMobile: isMobile,
                           ),
-                        ),
 
-                        const SizedBox(
-                          height: 25,
-                        ),
+                          // ==========================================
+                          // TABS
+                          // ==========================================
 
-                        // ==========================================
-                        // INFO STRIP
-                        // ==========================================
-
-                        Padding(
-                          padding:
-                              EdgeInsets.symmetric(
-                            horizontal:
-                                isMobile ? 18 : 38,
-                          ),
-                          child:
-                              _buildSectionInfo(),
-                        ),
-
-                        const SizedBox(
-                          height: 18,
-                        ),
-
-                        // ==========================================
-                        // CONTENT
-                        // ==========================================
-
-                        Padding(
-                          padding: EdgeInsets.only(
-                            left:
-                                isMobile ? 18 : 38,
-                            right:
-                                isMobile ? 18 : 38,
-                            bottom:
-                                isMobile ? 20 : 38,
-                          ),
-                          child:
-                              AnimatedSwitcher(
-                            duration:
-                                const Duration(
-                              milliseconds: 320,
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isMobile ? 18 : 38,
                             ),
-                            switchInCurve:
-                                Curves.easeOutCubic,
-                            switchOutCurve:
-                                Curves.easeInCubic,
-                            transitionBuilder: (
-                              child,
-                              animation,
-                            ) {
-                              return FadeTransition(
-                                opacity: animation,
-                                child:
-                                    SlideTransition(
-                                  position:
-                                      Tween<Offset>(
-                                    begin:
-                                        const Offset(
-                                      0.03,
-                                      0,
+                            child: _buildMainTabs(
+                              isMobile: isMobile,
+                            ),
+                          ),
+
+                          const SizedBox(
+                            height: 25,
+                          ),
+
+                          // ==========================================
+                          // INFO STRIP
+                          // ==========================================
+
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isMobile ? 18 : 38,
+                            ),
+                            child: _buildSectionInfo(),
+                          ),
+
+                          const SizedBox(
+                            height: 18,
+                          ),
+
+                          // ==========================================
+                          // CONTENT
+                          // ==========================================
+
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: isMobile ? 18 : 38,
+                              right: isMobile ? 18 : 38,
+                              bottom: isMobile ? 20 : 38,
+                            ),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(
+                                milliseconds: 320,
+                              ),
+                              switchInCurve: Curves.easeOutCubic,
+                              switchOutCurve: Curves.easeInCubic,
+                              transitionBuilder: (
+                                child,
+                                animation,
+                              ) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: SlideTransition(
+                                    position: Tween<Offset>(
+                                      begin: const Offset(
+                                        0.03,
+                                        0,
+                                      ),
+                                      end: Offset.zero,
+                                    ).animate(
+                                      CurvedAnimation(
+                                        parent: animation,
+                                        curve: Curves.easeOutCubic,
+                                      ),
                                     ),
-                                    end:
-                                        Offset.zero,
-                                  ).animate(
-                                    CurvedAnimation(
-                                      parent:
-                                          animation,
-                                      curve: Curves
-                                          .easeOutCubic,
-                                    ),
+                                    child: child,
                                   ),
-                                  child: child,
-                                ),
-                              );
-                            },
-                            child:
-                                _buildTabContent(
-                              isMobile:
-                                  isMobile,
+                                );
+                              },
+                              child: _buildTabContent(
+                                isMobile: isMobile,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -401,38 +375,30 @@ class _InventoryPageState
   Widget _buildHeader({
     required bool isMobile,
   }) {
-    final Widget heading =
-        Row(
-      crossAxisAlignment:
-          CrossAxisAlignment.center,
+    final Widget heading = Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (!isMobile) ...[
           Container(
             width: 58,
             height: 58,
             decoration: BoxDecoration(
-              gradient:
-                  const LinearGradient(
+              gradient: const LinearGradient(
                 begin: Alignment.topLeft,
-                end:
-                    Alignment.bottomRight,
+                end: Alignment.bottomRight,
                 colors: [
                   Color(0xFF123F61),
                   Color(0xFF3E83B6),
                 ],
               ),
-              borderRadius:
-                  BorderRadius.circular(17),
+              borderRadius: BorderRadius.circular(17),
               boxShadow: [
                 BoxShadow(
-                  color:
-                      const Color(0xFF174C72)
-                          .withValues(
+                  color: const Color(0xFF174C72).withValues(
                     alpha: 0.22,
                   ),
                   blurRadius: 18,
-                  offset:
-                      const Offset(0, 7),
+                  offset: const Offset(0, 7),
                 ),
               ],
             ),
@@ -444,21 +410,17 @@ class _InventoryPageState
           ),
           const SizedBox(width: 18),
         ],
-
         Expanded(
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Container(
                     width: 7,
                     height: 7,
-                    decoration:
-                        const BoxDecoration(
-                      color:
-                          Color(0xFF438DC0),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF438DC0),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -466,11 +428,9 @@ class _InventoryPageState
                   Text(
                     'INVENTORY',
                     style: TextStyle(
-                      fontSize:
-                          isMobile ? 9 : 10,
+                      fontSize: isMobile ? 9 : 10,
                       letterSpacing: 1.4,
-                      fontWeight:
-                          FontWeight.w700,
+                      fontWeight: FontWeight.w700,
                       color: const Color(
                         0xFF60778A,
                       ),
@@ -478,30 +438,23 @@ class _InventoryPageState
                   ),
                 ],
               ),
-
               const SizedBox(height: 10),
-
               Text(
                 'Inventory Management',
                 style: TextStyle(
-                  fontSize:
-                      isMobile ? 26 : 35,
+                  fontSize: isMobile ? 26 : 35,
                   height: 1.1,
-                  fontWeight:
-                      FontWeight.w800,
+                  fontWeight: FontWeight.w800,
                   color: const Color(
                     0xFF123456,
                   ),
                 ),
               ),
-
               const SizedBox(height: 9),
-
               Text(
                 _headerSubtitle(),
                 style: TextStyle(
-                  fontSize:
-                      isMobile ? 13 : 14,
+                  fontSize: isMobile ? 13 : 14,
                   height: 1.5,
                   color: const Color(
                     0xFF6F8292,
@@ -523,18 +476,14 @@ class _InventoryPageState
       ),
       child: isMobile
           ? Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 heading,
-
                 if (selectedTab != 0) ...[
                   const SizedBox(height: 22),
-
                   SizedBox(
                     width: double.infinity,
-                    child:
-                        _buildActionButton(),
+                    child: _buildActionButton(),
                   ),
                 ],
               ],
@@ -544,7 +493,6 @@ class _InventoryPageState
                 Expanded(
                   child: heading,
                 ),
-
                 if (selectedTab != 0) ...[
                   const SizedBox(width: 24),
                   _buildActionButton(),
@@ -579,8 +527,7 @@ class _InventoryPageState
       return InventoryGlassButton(
         label: 'Add Adjustment',
         icon: Icons.add_rounded,
-        onPressed:
-            _openAddAdjustmentDialog,
+        onPressed: _openAddAdjustmentDialog,
       );
     }
 
@@ -603,16 +550,14 @@ class _InventoryPageState
     required bool isMobile,
   }) {
     return ClipRRect(
-      borderRadius:
-          BorderRadius.circular(15),
+      borderRadius: BorderRadius.circular(15),
       child: Container(
         padding: const EdgeInsets.all(5),
         decoration: BoxDecoration(
           color: Colors.white.withValues(
             alpha: 0.35,
           ),
-          borderRadius:
-              BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(15),
           border: Border.all(
             color: Colors.white.withValues(
               alpha: 0.72,
@@ -620,40 +565,31 @@ class _InventoryPageState
           ),
           boxShadow: [
             BoxShadow(
-              color:
-                  const Color(0xFF143B57)
-                      .withValues(
+              color: const Color(0xFF143B57).withValues(
                 alpha: 0.05,
               ),
               blurRadius: 20,
-              offset:
-                  const Offset(0, 7),
+              offset: const Offset(0, 7),
             ),
           ],
         ),
         child: SingleChildScrollView(
-          scrollDirection:
-              Axis.horizontal,
+          scrollDirection: Axis.horizontal,
           child: Row(
             children: [
               _buildMainTab(
                 title: 'Current Stock',
-                icon:
-                    Icons.inventory_2_outlined,
+                icon: Icons.inventory_2_outlined,
                 index: 0,
               ),
               _buildMainTab(
-                title:
-                    'Inventory Adjustments',
-                icon:
-                    Icons.tune_rounded,
+                title: 'Inventory Adjustments',
+                icon: Icons.tune_rounded,
                 index: 1,
               ),
               _buildMainTab(
-                title:
-                    'Returnable Assets',
-                icon:
-                    Icons.assignment_return_outlined,
+                title: 'Returnable Assets',
+                icon: Icons.assignment_return_outlined,
                 index: 2,
               ),
             ],
@@ -668,22 +604,19 @@ class _InventoryPageState
     required IconData icon,
     required int index,
   }) {
-    final bool selected =
-        selectedTab == index;
+    final bool selected = selectedTab == index;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius:
-            BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(11),
         onTap: () => _changeTab(index),
         child: AnimatedContainer(
           duration: const Duration(
             milliseconds: 240,
           ),
           curve: Curves.easeOutCubic,
-          padding:
-              const EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: 20,
             vertical: 12,
           ),
@@ -693,12 +626,10 @@ class _InventoryPageState
                     alpha: 0.84,
                   )
                 : Colors.transparent,
-            borderRadius:
-                BorderRadius.circular(11),
+            borderRadius: BorderRadius.circular(11),
             border: selected
                 ? Border.all(
-                    color: Colors.white
-                        .withValues(
+                    color: Colors.white.withValues(
                       alpha: 0.90,
                     ),
                   )
@@ -712,8 +643,7 @@ class _InventoryPageState
                         alpha: 0.08,
                       ),
                       blurRadius: 14,
-                      offset:
-                          const Offset(0, 4),
+                      offset: const Offset(0, 4),
                     ),
                   ]
                 : null,
@@ -736,9 +666,7 @@ class _InventoryPageState
                 title,
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: selected
-                      ? FontWeight.w700
-                      : FontWeight.w500,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   color: selected
                       ? const Color(
                           0xFF153F5F,
@@ -766,22 +694,17 @@ class _InventoryPageState
     switch (selectedTab) {
       case 1:
         icon = Icons.tune_rounded;
-        text =
-            'Inventory adjustment history will appear below.';
+        text = 'Inventory adjustment history will appear below.';
         break;
 
       case 2:
-        icon =
-            Icons.assignment_return_outlined;
-        text =
-            'Available and in-field assets are managed below.';
+        icon = Icons.assignment_return_outlined;
+        text = 'Available and in-field assets are managed below.';
         break;
 
       default:
-        icon =
-            Icons.inventory_2_outlined;
-        text =
-            'Your current consumable stock will appear below.';
+        icon = Icons.inventory_2_outlined;
+        text = 'Your current consumable stock will appear below.';
     }
 
     return Container(
@@ -794,8 +717,7 @@ class _InventoryPageState
         color: Colors.white.withValues(
           alpha: 0.30,
         ),
-        borderRadius:
-            BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(13),
         border: Border.all(
           color: Colors.white.withValues(
             alpha: 0.65,
@@ -808,19 +730,15 @@ class _InventoryPageState
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color:
-                  const Color(0xFF3F82B4)
-                      .withValues(
+              color: const Color(0xFF3F82B4).withValues(
                 alpha: 0.11,
               ),
-              borderRadius:
-                  BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               icon,
               size: 19,
-              color:
-                  const Color(0xFF3979A7),
+              color: const Color(0xFF3979A7),
             ),
           ),
           const SizedBox(width: 12),
@@ -829,10 +747,8 @@ class _InventoryPageState
               text,
               style: const TextStyle(
                 fontSize: 13,
-                color:
-                    Color(0xFF667A8A),
-                fontWeight:
-                    FontWeight.w500,
+                color: Color(0xFF667A8A),
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -878,19 +794,16 @@ class _InventoryPageState
   // ADD ADJUSTMENT POPUP
   // ============================================================
 
-  Future<void>
-      _openAddAdjustmentDialog() async {
+  Future<void> _openAddAdjustmentDialog() async {
     await showDialog(
       context: context,
       barrierDismissible: false,
 
       // Same dark background as Items & Parts dialogs.
-      barrierColor:
-          const Color(0x9A12202C),
+      barrierColor: const Color(0x9A12202C),
 
       builder: (dialogContext) {
-        return const
-            AddInventoryAdjustmentDialog();
+        return const AddInventoryAdjustmentDialog();
       },
     );
   }
@@ -899,16 +812,13 @@ class _InventoryPageState
   // ADD ASSET POPUP
   // ============================================================
 
-  Future<void>
-      _openAddAssetDialog() async {
+  Future<void> _openAddAssetDialog() async {
     await showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor:
-          const Color(0x9A12202C),
+      barrierColor: const Color(0x9A12202C),
       builder: (dialogContext) {
-        return const
-            AddReturnableAssetDialog();
+        return const AddReturnableAssetDialog();
       },
     );
   }
