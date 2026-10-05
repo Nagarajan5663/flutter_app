@@ -9,6 +9,7 @@ import 'package:flutter/gestures.dart';
 import '../auth/login_page.dart';
 import '../auth/signup_page.dart';
 import '../../widgets/codexia_logo.dart';
+import 'home_hero_section.dart';
 
 /// ============================================================
 /// CODEXIA — dark navy / gold "executive glass" home page.
@@ -563,9 +564,10 @@ class _HomePageState extends State<HomePage> {
   // ============================================================
 
   Widget _buildHeroSection() {
-    return _FloatingCodexiaHero(
-      scrollController: _scrollController,
-      onStartTrial: _goToSignUp,
+    return HomeHeroSection(
+      showNavigation: false,
+      backgroundColor: background,
+      onStartFreeTrial: _goToSignUp,
       onExploreFeatures: () => _scrollTo(featuresKey),
     );
   }

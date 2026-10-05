@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final VoidCallback onMenuPressed;
   final VoidCallback onProfilePressed;
   final VoidCallback? onPowerPressed;
   final String welcomeName;
@@ -9,7 +8,6 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   const DashboardAppBar({
     super.key,
-    required this.onMenuPressed,
     required this.onProfilePressed,
     required this.welcomeName,
     required this.canOpenProfile,
@@ -27,7 +25,7 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.white,
       toolbarHeight: 70,
-      titleSpacing: 14,
+      titleSpacing: 24,
 
       // ============================================================
       // LEFT SIDE
@@ -35,29 +33,6 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
 
       title: Row(
         children: [
-          // MENU ICON
-          IconButton(
-            onPressed: onMenuPressed,
-            tooltip: 'Menu',
-            icon: const Icon(
-              Icons.menu_rounded,
-              color: Color(0xFF333333),
-              size: 28,
-            ),
-          ),
-
-          const SizedBox(width: 10),
-
-          // CODEXIA LOGO
-          Image.asset(
-            'lib/widgets/Codexia_OG1.8.png',
-            width: 132,
-            height: 42,
-            fit: BoxFit.contain,
-          ),
-
-          const SizedBox(width: 45),
-
           // ========================================================
           // SEARCH BAR
           // ========================================================
