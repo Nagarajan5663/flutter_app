@@ -200,23 +200,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  void _social(
-    String provider,
-  ) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(
-      SnackBar(
-        duration: const Duration(
-          milliseconds: 900,
-        ),
-        content: Text(
-          '$provider login selected',
-        ),
-      ),
-    );
-  }
-
   void _goHome() {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(
@@ -407,97 +390,6 @@ class _LoginPageState extends State<LoginPage> {
 
         const SizedBox(
           height: 24,
-        ),
-
-        // SOCIAL LOGIN
-
-        AuthReveal(
-          index: 3,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SocialLoginButton(
-                onTap: () => _social(
-                  'Google',
-                ),
-                icon: const Text(
-                  'G',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(
-                width: 12,
-              ),
-              SocialLoginButton(
-                onTap: () => _social(
-                  'Apple',
-                ),
-                icon: const Icon(
-                  Icons.phone_iphone_rounded,
-                  color: Colors.white,
-                  size: 21,
-                ),
-              ),
-              const SizedBox(
-                width: 12,
-              ),
-              SocialLoginButton(
-                onTap: () => _social(
-                  'Developer',
-                ),
-                icon: const Icon(
-                  Icons.code_rounded,
-                  color: Colors.white,
-                  size: 21,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(
-          height: 22,
-        ),
-
-        Row(
-          children: [
-            Expanded(
-              child: Divider(
-                color: Colors.white.withValues(
-                  alpha: 0.09,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-              ),
-              child: Text(
-                'or continue with email',
-                style: TextStyle(
-                  color: Colors.white.withValues(
-                    alpha: 0.38,
-                  ),
-                  fontSize: 11.5,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Divider(
-                color: Colors.white.withValues(
-                  alpha: 0.09,
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(
-          height: 22,
         ),
 
         AuthReveal(
