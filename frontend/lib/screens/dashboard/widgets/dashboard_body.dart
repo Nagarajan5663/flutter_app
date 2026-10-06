@@ -9,8 +9,81 @@ import 'overdue_aging_section.dart';
 import 'inventory_overview_section.dart';
 import 'recent_activity_section.dart';
 
-class DashboardBody extends StatelessWidget {
+class DashboardBody extends StatefulWidget {
   const DashboardBody({super.key});
+
+  @override
+  State<DashboardBody> createState() => _DashboardBodyState();
+}
+
+class _CustomDateSelection {
+  final DateTime start;
+  final DateTime end;
+
+  const _CustomDateSelection({required this.start, required this.end});
+}
+
+class _DashboardBodyState extends State<DashboardBody> {
+  String _selectedDateRange = 'This Month';
+  String? _customRangeLabel;
+  DateTime? _customStartDate;
+  DateTime? _customEndDate;
+
+  static const List<String> _dateRangeOptions = [
+    'This Week',
+    'This Month',
+    'This Year',
+    'Last Week',
+    'Last Month',
+    'Last Year',
+    'Custom Selection',
+  ];
+
+  static String _formatDisplayDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  Future<void> _openCustomDatePicker() async {
+    final initialStart = _customStartDate ?? DateTime.now().subtract(const Duration(days: 30));
+    final initialEnd = _customEndDate ?? DateTime.now();
+
+    final result = await showDialog<_CustomDateSelection>(
+      context: context,
+      builder: (context) {
+        return _CustomDateRangeDialog(
+          initialStart: initialStart,
+          initialEnd: initialEnd,
+        );
+      },
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    setState(() {
+      _customStartDate = result.start;
+      _customEndDate = result.end;
+      _customRangeLabel = 'From: ${_formatDisplayDate(result.start)}  To: ${_formatDisplayDate(result.end)}';
+      _selectedDateRange = 'Custom Selection';
+    });
+  }
+
+  Future<void> _handleDateRangeChange(String? value) async {
+    if (value == null) {
+      return;
+    }
+
+    if (value == 'Custom Selection') {
+      await _openCustomDatePicker();
+      return;
+    }
+
+    setState(() {
+      _selectedDateRange = value;
+      _customRangeLabel = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,31 +142,65 @@ class DashboardBody extends StatelessWidget {
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
-                        value: 'This Month',
+                        value: _selectedDateRange,
                         isExpanded: true,
                         icon: const Icon(
                           Icons.keyboard_arrow_down,
                           color: Color(0xFF555555),
                         ),
+                        dropdownColor: Colors.white,
+                        menuMaxHeight: 280,
                         style: const TextStyle(
-                          color: Color(0xFF444444),
+                          color: Color(0xFF1F2937),
                           fontSize: 14,
                         ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'This Month',
-                            child: Text('This Month'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Last Month',
-                            child: Text('Last Month'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'This Year',
-                            child: Text('This Year'),
-                          ),
-                        ],
-                        onChanged: (value) {},
+                        selectedItemBuilder: (context) {
+                          return _dateRangeOptions.map((option) {
+                            final isSelected = option == _selectedDateRange;
+                            final displayText = option == 'Custom Selection' && _customRangeLabel != null
+                                ? _customRangeLabel!
+                                : option;
+
+                            return Container(
+                              alignment: Alignment.centerLeft,
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              decoration: BoxDecoration(
+                                color: isSelected ? const Color(0xFFE5E7EB) : Colors.transparent,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                displayText,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Color(0xFF1F2937),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            );
+                          }).toList();
+                        },
+                        items: _dateRangeOptions.map((option) {
+                          final isSelected = option == _selectedDateRange;
+                          return DropdownMenuItem<String>(
+                            value: option,
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected ? const Color(0xFFE5E7EB) : Colors.white,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                option,
+                                style: const TextStyle(
+                                  color: Color(0xFF1F2937),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: _handleDateRangeChange,
                       ),
                     ),
                   ),
@@ -355,6 +462,203 @@ class DashboardBody extends StatelessWidget {
               ),
 
               const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomDateRangeDialog extends StatefulWidget {
+  final DateTime initialStart;
+  final DateTime initialEnd;
+
+  const _CustomDateRangeDialog({
+    required this.initialStart,
+    required this.initialEnd,
+  });
+
+  @override
+  State<_CustomDateRangeDialog> createState() => _CustomDateRangeDialogState();
+}
+
+class _CustomDateRangeDialogState extends State<_CustomDateRangeDialog> {
+  late DateTime _startDate;
+  late DateTime _endDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _startDate = widget.initialStart;
+    _endDate = widget.initialEnd;
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  Future<void> _pickDate(bool isStart) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: isStart ? _startDate : _endDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      helpText: isStart ? 'Select start date' : 'Select end date',
+    );
+
+    if (picked == null) {
+      return;
+    }
+
+    setState(() {
+      if (isStart) {
+        _startDate = picked;
+        if (_endDate.isBefore(_startDate)) {
+          _endDate = _startDate;
+        }
+      } else {
+        _endDate = picked;
+        if (_startDate.isAfter(_endDate)) {
+          _startDate = _endDate;
+        }
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Custom Date Range',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1F2937),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'From Date',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF374151),
+                ),
+              ),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () => _pickDate(true),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFD1D5DB)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today_outlined,
+                        size: 18,
+                        color: Color(0xFF4B5563),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _formatDate(_startDate),
+                          style: const TextStyle(
+                            color: Color(0xFF111827),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'To Date',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF374151),
+                ),
+              ),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () => _pickDate(false),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFD1D5DB)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today_outlined,
+                        size: 18,
+                        color: Color(0xFF4B5563),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _formatDate(_endDate),
+                          style: const TextStyle(
+                            color: Color(0xFF111827),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: Color(0xFF374151)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(
+                        _CustomDateSelection(start: _startDate, end: _endDate),
+                      );
+                    },
+                    child: const Text(
+                      'Apply',
+                      style: TextStyle(
+                        color: Color(0xFF1F6FEB),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

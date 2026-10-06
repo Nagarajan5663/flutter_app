@@ -23,6 +23,135 @@ async function getRoleByName(roleName) {
   return rows.length ? rows[0] : null;
 }
 
+function parsePermissions(permissionValue) {
+  if (!permissionValue) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(permissionValue);
+    return Array.isArray(parsed)
+      ? parsed.filter((item) => typeof item === 'string')
+      : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| POST /api/users/login
+|
+| Login with email and password.
+|--------------------------------------------------------------------------
+*/
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    if (!email || !String(email).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required.',
+      });
+    }
+
+    if (!password || String(password).length < 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password is required.',
+      });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+
+    const [rows] = await db.query(
+      `
+      SELECT
+        u.id,
+        u.email,
+        u.password_hash AS passwordHash,
+        u.role_id AS roleId,
+        r.name AS role,
+        r.permissions AS rolePermissions,
+        u.is_active AS active,
+        u.can_deactivate AS canDeactivate,
+        u.is_primary_super_admin AS isPrimarySuperAdmin,
+        u.last_login_at AS lastLoginAt,
+        u.created_at AS createdAt,
+        u.updated_at AS updatedAt
+      FROM users u
+      LEFT JOIN roles r
+        ON r.id = u.role_id
+      WHERE LOWER(u.email) = LOWER(?)
+      LIMIT 1
+      `,
+      [cleanEmail]
+    );
+
+    if (!rows.length) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password.',
+      });
+    }
+
+    const user = rows[0];
+
+    if (!user.active) {
+      return res.status(403).json({
+        success: false,
+        message: 'This account is inactive.',
+      });
+    }
+
+    const passwordMatches = await bcrypt.compare(String(password), user.passwordHash);
+
+    if (!passwordMatches) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password.',
+      });
+    }
+
+    const permissions = parsePermissions(user.rolePermissions);
+
+    await db.query(
+      `
+      UPDATE users
+      SET last_login_at = NOW(),
+          updated_at = NOW()
+      WHERE id = ?
+      `,
+      [user.id]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Login successful.',
+      data: {
+        id: user.id,
+        email: user.email,
+        roleId: user.roleId,
+        role: user.role,
+        active: Boolean(user.active),
+        canDeactivate: Boolean(user.canDeactivate),
+        isPrimarySuperAdmin: Boolean(user.isPrimarySuperAdmin),
+        lastLoginAt: new Date().toISOString(),
+        permissions,
+      },
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to log in.',
+      error: error.message,
+    });
+  }
+});
+
 /*
 |--------------------------------------------------------------------------
 | POST /api/users/login
@@ -152,6 +281,106 @@ router.get('/setup-status', async (req, res) => {
       success: false,
       message: 'Failed to check setup status',
       error: error.message,
+    });
+  }
+});
+
+/*
+|--------------------------------------------------------------------------
+| POST /api/users/login
+|
+| Authenticate a user and return their role permissions.
+|--------------------------------------------------------------------------
+*/
+router.post('/login', async (req, res) => {
+  const email = typeof req.body.email === 'string'
+    ? req.body.email.trim().toLowerCase()
+    : '';
+  const password = typeof req.body.password === 'string'
+    ? req.body.password
+    : '';
+
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email and password are required.',
+    });
+  }
+
+  try {
+    const [rows] = await db.query(
+      `
+      SELECT
+        u.id,
+        u.email,
+        u.password_hash AS passwordHash,
+        u.role_id AS roleId,
+        u.is_active AS active,
+        u.is_primary_super_admin AS isPrimarySuperAdmin,
+        r.name AS role,
+        r.permissions
+      FROM users u
+      LEFT JOIN roles r
+        ON r.id = u.role_id
+      WHERE LOWER(u.email) = ?
+      LIMIT 1
+      `,
+      [email]
+    );
+
+    if (!rows.length || !(await bcrypt.compare(password, rows[0].passwordHash))) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password.',
+      });
+    }
+
+    const user = rows[0];
+
+    if (!user.active) {
+      return res.status(403).json({
+        success: false,
+        message: 'This account is inactive.',
+      });
+    }
+
+    await db.query(
+      'UPDATE users SET last_login_at = NOW() WHERE id = ?',
+      [user.id]
+    );
+
+    let permissions = [];
+    try {
+      const rolePermissions = typeof user.permissions === 'string'
+        ? JSON.parse(user.permissions)
+        : user.permissions;
+      if (Array.isArray(rolePermissions)) {
+        permissions = rolePermissions.filter(
+          (permission) => typeof permission === 'string'
+        );
+      }
+    } catch (_) {
+      permissions = [];
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Login successful.',
+      data: {
+        id: user.id,
+        email: user.email,
+        roleId: user.roleId,
+        role: user.role,
+        active: true,
+        isPrimarySuperAdmin: Boolean(user.isPrimarySuperAdmin),
+        permissions,
+      },
+    });
+  } catch (error) {
+    console.error('User login error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to sign in right now.',
     });
   }
 });
