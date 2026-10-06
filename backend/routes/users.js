@@ -25,6 +25,105 @@ async function getRoleByName(roleName) {
 
 /*
 |--------------------------------------------------------------------------
+| POST /api/users/login
+|
+| Verify user credentials and record a successful login.
+|--------------------------------------------------------------------------
+*/
+router.post('/login', async (req, res) => {
+  const email = typeof req.body.email === 'string'
+    ? req.body.email.trim().toLowerCase()
+    : '';
+  const password = typeof req.body.password === 'string'
+    ? req.body.password
+    : '';
+
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email and password are required.',
+    });
+  }
+
+  try {
+    const [rows] = await db.query(
+      `
+      SELECT
+        u.id,
+        u.email,
+        u.password_hash AS passwordHash,
+        u.is_active AS active,
+        u.can_deactivate AS canDeactivate,
+        u.is_primary_super_admin AS isPrimarySuperAdmin,
+        r.name AS role,
+        r.permissions AS rolePermissions
+      FROM users u
+      LEFT JOIN roles r
+        ON r.id = u.role_id
+      WHERE LOWER(u.email) = ?
+      LIMIT 1
+      `,
+      [email]
+    );
+
+    if (!rows.length || !await bcrypt.compare(password, rows[0].passwordHash)) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password.',
+      });
+    }
+
+    const user = rows[0];
+
+    if (Number(user.active) !== 1) {
+      return res.status(403).json({
+        success: false,
+        message: 'This account is inactive.',
+      });
+    }
+
+    let permissions = [];
+    try {
+      const parsedPermissions = typeof user.rolePermissions === 'string'
+        ? JSON.parse(user.rolePermissions)
+        : user.rolePermissions;
+      if (Array.isArray(parsedPermissions)) {
+        permissions = parsedPermissions.filter(
+          (permission) => typeof permission === 'string'
+        );
+      }
+    } catch (_) {}
+
+    await db.query(
+      'UPDATE users SET last_login_at = NOW() WHERE id = ?',
+      [user.id]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Login successful.',
+      data: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        permissions,
+        active: Boolean(user.active),
+        canDeactivate: Number(user.canDeactivate) === 1,
+        isPrimarySuperAdmin: Number(user.isPrimarySuperAdmin) === 1,
+      },
+    });
+  } catch (error) {
+    console.error('User login error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to sign in.',
+    });
+  }
+});
+
+/*
+|--------------------------------------------------------------------------
 | GET /api/users/setup-status
 |
 | Checks whether the first Primary Super Admin still needs to be created.
