@@ -4,19 +4,20 @@ import '../shared/glass_modal_shell.dart';
 import 'vendor_filter.dart';
 import 'vendor_model.dart';
 import 'vendor_repository.dart';
+import 'vendor_details_page.dart';
 import 'widgets/add_vendor_dialog.dart';
 
 class VendorsPage extends StatefulWidget {
-  const VendorsPage({super.key});
+  const VendorsPage({super.key, this.userName = 'User'});
+
+  final String userName;
 
   @override
   State<VendorsPage> createState() => _VendorsPageState();
 }
 
 class _VendorsPageState extends State<VendorsPage> {
-  // Only line that changes when a real backend exists:
-  // final VendorRepository _repository = ApiVendorRepository('https://your-api.com');
-  final VendorRepository _repository = InMemoryVendorRepository();
+  final VendorRepository _repository = ApiVendorRepository();
 
   List<VendorModel> _vendors = [];
   bool _isLoading = true;
@@ -79,9 +80,91 @@ class _VendorsPageState extends State<VendorsPage> {
   }
 
   Future<void> _deleteVendor(VendorModel vendor) async {
-    if (vendor.id == null) return;
+    if (vendor.id == null) {
+      throw StateError('Cannot delete a vendor without an ID.');
+    }
+
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete vendor?'),
+        content:
+            Text('Are you sure you want to delete "${vendor.vendorName}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Color(0xFFAB2A2A)),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || shouldDelete != true) return;
+
     await _repository.deleteVendor(vendor.id!);
     await _loadVendors();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Vendor deleted successfully')),
+    );
+  }
+
+  Future<void> _editVendor(VendorModel vendor) async {
+    final updatedVendor = await showDialog<VendorModel>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AddVendorDialog(initialVendor: vendor),
+    );
+    if (!mounted || updatedVendor == null) return;
+
+    await _repository.updateVendor(updatedVendor);
+    await _loadVendors();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Vendor updated successfully')),
+    );
+  }
+
+  Future<void> _duplicateVendor(VendorModel vendor) async {
+    final vendorData = vendor.toJson()..remove('id');
+    await _repository.addVendor(VendorModel.fromJson(vendorData));
+    await _loadVendors();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Vendor duplicated successfully')),
+    );
+  }
+
+  Future<void> _showVendor(VendorModel vendor) {
+    return showDialog<void>(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (_) => VendorDetailsPage(
+        vendor: vendor,
+        repository: _repository,
+        authorName: widget.userName,
+      ),
+    );
+  }
+
+  Future<void> _runVendorAction(
+    String action,
+    Future<void> Function() run,
+  ) async {
+    try {
+      await run();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to $action vendor: $error')),
+      );
+    }
   }
 
   void _clearFilters() {
@@ -120,7 +203,6 @@ class _VendorsPageState extends State<VendorsPage> {
               ],
             ),
             const SizedBox(height: 20),
-
             GlassPanel(
               padding: const EdgeInsets.all(20),
               child: Wrap(
@@ -144,8 +226,10 @@ class _VendorsPageState extends State<VendorsPage> {
                           isExpanded: true,
                           items: const [
                             DropdownMenuItem(value: 'All', child: Text('All')),
-                            DropdownMenuItem(value: 'Active', child: Text('Active')),
-                            DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
+                            DropdownMenuItem(
+                                value: 'Active', child: Text('Active')),
+                            DropdownMenuItem(
+                                value: 'Inactive', child: Text('Inactive')),
                           ],
                           onChanged: (value) {
                             if (value == null) return;
@@ -157,15 +241,18 @@ class _VendorsPageState extends State<VendorsPage> {
                   ),
                   _filterField(
                     label: 'City',
-                    child: SizedBox(width: 160, child: _filterTextField(cityController)),
+                    child: SizedBox(
+                        width: 160, child: _filterTextField(cityController)),
                   ),
                   _filterField(
                     label: 'State',
-                    child: SizedBox(width: 160, child: _filterTextField(stateController)),
+                    child: SizedBox(
+                        width: 160, child: _filterTextField(stateController)),
                   ),
                   _filterField(
                     label: 'Country',
-                    child: SizedBox(width: 160, child: _filterTextField(countryController)),
+                    child: SizedBox(
+                        width: 160, child: _filterTextField(countryController)),
                   ),
                   GlassButton(
                     onPressed: _loadVendors,
@@ -182,7 +269,6 @@ class _VendorsPageState extends State<VendorsPage> {
               ),
             ),
             const SizedBox(height: 20),
-
             GlassPanel(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -193,24 +279,27 @@ class _VendorsPageState extends State<VendorsPage> {
                     children: [
                       Container(
                         width: 950,
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 18, vertical: 18),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.35),
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(14)),
                         ),
                         child: const Row(
                           children: [
-                            Expanded(flex: 2, child: _HeaderText('VENDOR NAME')),
-                            Expanded(flex: 2, child: _HeaderText('COMPANY NAME')),
+                            Expanded(
+                                flex: 2, child: _HeaderText('VENDOR NAME')),
+                            Expanded(
+                                flex: 2, child: _HeaderText('COMPANY NAME')),
                             Expanded(flex: 3, child: _HeaderText('EMAIL')),
                             Expanded(flex: 2, child: _HeaderText('PHONE')),
                             Expanded(flex: 2, child: _HeaderText('STATUS')),
-                            Expanded(flex: 1, child: _HeaderText('ACTIONS')),
+                            Expanded(flex: 2, child: _HeaderText('ACTIONS')),
                           ],
                         ),
                       ),
                       const Divider(height: 1, color: Color(0xFFD9DEE5)),
-
                       if (_isLoading)
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 30),
@@ -219,10 +308,12 @@ class _VendorsPageState extends State<VendorsPage> {
                       else if (_vendors.isEmpty)
                         Container(
                           width: 950,
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 18, vertical: 24),
                           child: const Text(
                             'No vendors found. Click "+ New Vendor" to add one!',
-                            style: TextStyle(fontSize: 16, color: Color(0xFF42474D)),
+                            style: TextStyle(
+                                fontSize: 16, color: Color(0xFF42474D)),
                           ),
                         )
                       else
@@ -231,13 +322,20 @@ class _VendorsPageState extends State<VendorsPage> {
                             children: [
                               Container(
                                 width: 950,
-                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 18, vertical: 16),
                                 child: Row(
                                   children: [
-                                    Expanded(flex: 2, child: Text(vendor.vendorName)),
-                                    Expanded(flex: 2, child: Text(vendor.companyName)),
-                                    Expanded(flex: 3, child: Text(vendor.email)),
-                                    Expanded(flex: 2, child: Text(vendor.phone)),
+                                    Expanded(
+                                        flex: 2,
+                                        child: Text(vendor.vendorName)),
+                                    Expanded(
+                                        flex: 2,
+                                        child: Text(vendor.companyName)),
+                                    Expanded(
+                                        flex: 3, child: Text(vendor.email)),
+                                    Expanded(
+                                        flex: 2, child: Text(vendor.phone)),
                                     Expanded(
                                       flex: 2,
                                       child: Align(
@@ -249,7 +347,8 @@ class _VendorsPageState extends State<VendorsPage> {
                                             color: vendor.status == 'Active'
                                                 ? const Color(0xFFE3F6E8)
                                                 : const Color(0xFFF4E3E3),
-                                            borderRadius: BorderRadius.circular(20),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
                                           ),
                                           child: Text(
                                             vendor.status,
@@ -265,18 +364,50 @@ class _VendorsPageState extends State<VendorsPage> {
                                       ),
                                     ),
                                     Expanded(
-                                      flex: 1,
-                                      child: IconButton(
-                                        onPressed: () => _deleteVendor(vendor),
-                                        icon: const Icon(Icons.delete_outline,
-                                            color: Color(0xFFAB2A2A), size: 20),
-                                        tooltip: 'Delete vendor',
+                                      flex: 2,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          _actionButton(
+                                            icon: Icons.visibility_outlined,
+                                            tooltip: 'View vendor',
+                                            onPressed: () => _runVendorAction(
+                                              'view',
+                                              () => _showVendor(vendor),
+                                            ),
+                                          ),
+                                          _actionButton(
+                                            icon: Icons.edit_outlined,
+                                            tooltip: 'Edit vendor',
+                                            onPressed: () => _runVendorAction(
+                                              'edit',
+                                              () => _editVendor(vendor),
+                                            ),
+                                          ),
+                                          _actionButton(
+                                            icon: Icons.content_copy,
+                                            tooltip: 'Duplicate vendor',
+                                            onPressed: () => _runVendorAction(
+                                              'duplicate',
+                                              () => _duplicateVendor(vendor),
+                                            ),
+                                          ),
+                                          _actionButton(
+                                            icon: Icons.delete_outline,
+                                            tooltip: 'Delete vendor',
+                                            onPressed: () => _runVendorAction(
+                                              'delete',
+                                              () => _deleteVendor(vendor),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              const Divider(height: 1, color: Color(0xFFEDEFF2)),
+                              const Divider(
+                                  height: 1, color: Color(0xFFEDEFF2)),
                             ],
                           );
                         }),
@@ -291,6 +422,21 @@ class _VendorsPageState extends State<VendorsPage> {
     );
   }
 
+  Widget _actionButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: Icon(icon, color: const Color(0xFF777777), size: 20),
+      tooltip: tooltip,
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+    );
+  }
+
   Widget _filterField({required String label, required Widget child}) {
     return SizedBox(
       width: 160,
@@ -299,7 +445,9 @@ class _VendorsPageState extends State<VendorsPage> {
         children: [
           Text(label,
               style: const TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF5B5B5B))),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF5B5B5B))),
           const SizedBox(height: 6),
           child,
         ],
@@ -313,7 +461,8 @@ class _VendorsPageState extends State<VendorsPage> {
       decoration: InputDecoration(
         filled: true,
         fillColor: const Color(0xFFF8F9FA),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(7)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(7),
@@ -336,7 +485,8 @@ class _HeaderText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF5B5B5B)),
+      style: const TextStyle(
+          fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF5B5B5B)),
     );
   }
 }

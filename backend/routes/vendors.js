@@ -948,4 +948,134 @@ router.delete(
   }
 );
 
+// ============================================================
+// VENDOR COMMENTS
+//
+// GET  /api/vendors/:id/comments
+// POST /api/vendors/:id/comments
+// ============================================================
+
+router.get(
+  '/:id/comments',
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const [vendorRows] = await db.query(
+        'SELECT id FROM vendors WHERE id = ? LIMIT 1',
+        [id]
+      );
+      if (vendorRows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Vendor not found',
+        });
+      }
+
+      const [rows] = await db.query(
+        `
+        SELECT id, vendor_id, author_name, comment_text, created_at
+        FROM vendor_comments
+        WHERE vendor_id = ?
+        ORDER BY created_at DESC, id DESC
+        `,
+        [id]
+      );
+      return res.status(200).json({
+        success: true,
+        data: rows.map((row) => ({
+          id: row.id.toString(),
+          vendorId: row.vendor_id.toString(),
+          authorName: row.author_name,
+          comment: row.comment_text,
+          createdAt: row.created_at,
+        })),
+      });
+    } catch (error) {
+      console.error('Get vendor comments error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch vendor comments',
+        error: error.message,
+      });
+    }
+  }
+);
+
+router.post(
+  '/:id/comments',
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const comment =
+        typeof req.body?.comment === 'string'
+          ? req.body.comment.trim()
+          : '';
+      const authorName =
+        typeof req.body?.authorName === 'string'
+          ? req.body.authorName.trim()
+          : '';
+
+      if (!comment) {
+        return res.status(400).json({
+          success: false,
+          message: 'Comment cannot be empty',
+        });
+      }
+      if (!authorName) {
+        return res.status(400).json({
+          success: false,
+          message: 'Comment author is required',
+        });
+      }
+
+      const [vendorRows] = await db.query(
+        'SELECT id FROM vendors WHERE id = ? LIMIT 1',
+        [id]
+      );
+      if (vendorRows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Vendor not found',
+        });
+      }
+
+      const [result] = await db.query(
+        `
+        INSERT INTO vendor_comments (vendor_id, author_name, comment_text)
+        VALUES (?, ?, ?)
+        `,
+        [id, authorName, comment]
+      );
+      const [rows] = await db.query(
+        `
+        SELECT id, vendor_id, author_name, comment_text, created_at
+        FROM vendor_comments
+        WHERE id = ?
+        LIMIT 1
+        `,
+        [result.insertId]
+      );
+      const row = rows[0];
+      return res.status(201).json({
+        success: true,
+        message: 'Vendor comment saved successfully',
+        data: {
+          id: row.id.toString(),
+          vendorId: row.vendor_id.toString(),
+          authorName: row.author_name,
+          comment: row.comment_text,
+          createdAt: row.created_at,
+        },
+      });
+    } catch (error) {
+      console.error('Save vendor comment error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to save vendor comment',
+        error: error.message,
+      });
+    }
+  }
+);
+
 module.exports = router;
