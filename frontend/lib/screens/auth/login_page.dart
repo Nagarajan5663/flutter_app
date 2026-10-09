@@ -6,11 +6,13 @@ import 'package:http/http.dart' as http;
 
 import '../dashboard/dashboard_page.dart';
 import '../home/home_page.dart';
+import '../sidebar/sales/workflow_session.dart';
 
 import '../../widgets/futuristic_auth_widgets.dart';
 import '../../widgets/futuristic_aurora_background.dart';
 
 import 'signup_page.dart';
+import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({
@@ -22,7 +24,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  static const String _loginApiUrl = 'http://localhost:3000/api/users/login';
+  static const String _loginApiUrl =
+      'http://localhost:3000/api/users/login';
 
   final _emailController = TextEditingController();
 
@@ -52,9 +55,11 @@ class _LoginPageState extends State<LoginPage> {
     PointerHoverEvent event,
     Size size,
   ) {
-    final dx = ((event.localPosition.dx / size.width) - 0.5) * 2;
+    final dx =
+        ((event.localPosition.dx / size.width) - 0.5) * 2;
 
-    final dy = ((event.localPosition.dy / size.height) - 0.5) * 2;
+    final dy =
+        ((event.localPosition.dy / size.height) - 0.5) * 2;
 
     setState(() {
       _mouseX = dx.clamp(
@@ -84,9 +89,12 @@ class _LoginPageState extends State<LoginPage> {
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Enter your email and password.'),
+          content: Text(
+            'Enter your email and password.',
+          ),
         ),
       );
+
       return;
     }
 
@@ -107,41 +115,72 @@ class _LoginPageState extends State<LoginPage> {
               'password': password,
             }),
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(
+            const Duration(
+              seconds: 15,
+            ),
+          );
 
-      final dynamic decoded = jsonDecode(response.body);
+      final dynamic decoded = jsonDecode(
+        response.body,
+      );
+
       if (response.statusCode != 200 ||
           decoded is! Map<String, dynamic> ||
           decoded['success'] != true) {
-        final message = decoded is Map ? decoded['message']?.toString() : null;
-        throw Exception(message ?? 'Unable to sign in.');
+        final message = decoded is Map
+            ? decoded['message']?.toString()
+            : null;
+
+        throw Exception(
+          message ?? 'Unable to sign in.',
+        );
       }
 
       final dynamic user = decoded['data'];
+
       if (user is! Map<String, dynamic>) {
-        throw Exception('Invalid sign-in response.');
+        throw Exception(
+          'Invalid sign-in response.',
+        );
       }
 
       final permissions = user['permissions'] is List
-          ? (user['permissions'] as List).whereType<String>().toList()
+          ? (user['permissions'] as List)
+              .whereType<String>()
+              .toList()
           : <String>[];
+      SalesWorkflowSession.token = user['workflowToken']?.toString();
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => DashboardPage(
-            userEmail: user['email']?.toString() ?? email,
+            userEmail:
+                user['email']?.toString() ?? email,
             permissions: permissions,
           ),
         ),
       );
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
-      final message = error.toString().replaceFirst('Exception: ', '');
+      final message = error
+          .toString()
+          .replaceFirst(
+            'Exception: ',
+            '',
+          );
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
+        SnackBar(
+          content: Text(message),
+        ),
       );
     } finally {
       if (mounted) {
@@ -200,6 +239,58 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  // ============================================================
+  // FORGOT PASSWORD
+  // ============================================================
+
+  void _goToForgotPassword() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        transitionDuration: const Duration(
+          milliseconds: 480,
+        ),
+        pageBuilder: (
+          context,
+          animation,
+          secondaryAnimation,
+        ) {
+          return const ForgotPasswordPage();
+        },
+        transitionsBuilder: (
+          context,
+          animation,
+          secondaryAnimation,
+          child,
+        ) {
+          final slide = Tween<Offset>(
+            begin: const Offset(
+              0.06,
+              0,
+            ),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            ),
+          );
+
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: slide,
+              child: child,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ============================================================
+  // HOME
+  // ============================================================
+
   void _goHome() {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(
@@ -209,30 +300,43 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  // ============================================================
+  // HOME BUTTON
+  // ============================================================
+
   Widget _buildHomeButton() {
     return Transform.translate(
-      offset: const Offset(14, -8),
+      offset: const Offset(
+        18,
+        -8,
+      ),
       child: Tooltip(
         message: 'Go to Home',
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: _goHome,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(
+              18,
+            ),
             child: Container(
-              width: 56,
-              height: 56,
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.10),
+                color: Colors.white.withValues(
+                  alpha: 0.10,
+                ),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.22),
+                  color: Colors.white.withValues(
+                    alpha: 0.22,
+                  ),
                 ),
               ),
               child: const Icon(
                 Icons.home_rounded,
                 color: Colors.white,
-                size: 22,
+                size: 19,
               ),
             ),
           ),
@@ -269,16 +373,15 @@ class _LoginPageState extends State<LoginPage> {
               onExit: (_) {
                 setState(() {
                   _mouseX = 0;
-
                   _mouseY = 0;
                 });
               },
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  // ====================================================
+                  // ==================================================
                   // LOGIN CARD
-                  // ====================================================
+                  // ==================================================
 
                   Center(
                     child: SingleChildScrollView(
@@ -313,7 +416,9 @@ class _LoginPageState extends State<LoginPage> {
                                 24 * (1 - opacity),
                               ),
                               child: Transform.scale(
-                                scale: 0.94 + opacity * 0.06,
+                                scale:
+                                    0.94 +
+                                    opacity * 0.06,
                                 child: child,
                               ),
                             ),
@@ -344,11 +449,29 @@ class _LoginPageState extends State<LoginPage> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Align(
-          alignment: Alignment.topRight,
-          child: AuthReveal(
-            index: 0,
-            child: _buildHomeButton(),
+        SizedBox(
+          height: 56,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              AuthReveal(
+                index: 0,
+                child: Image.asset(
+                  'lib/widgets/Codexia.png',
+                  width: 150,
+                  height: 56,
+                  fit: BoxFit.contain,
+                ),
+              ),
+
+              Align(
+                alignment: Alignment.topRight,
+                child: AuthReveal(
+                  index: 0,
+                  child: _buildHomeButton(),
+                ),
+              ),
+            ],
           ),
         ),
 
@@ -398,7 +521,8 @@ class _LoginPageState extends State<LoginPage> {
             controller: _emailController,
             hintText: 'Email Address',
             icon: Icons.mail_outline,
-            keyboardType: TextInputType.emailAddress,
+            keyboardType:
+                TextInputType.emailAddress,
           ),
         ),
 
@@ -415,7 +539,8 @@ class _LoginPageState extends State<LoginPage> {
             obscureText: _obscurePassword,
             onToggleObscure: () {
               setState(() {
-                _obscurePassword = !_obscurePassword;
+                _obscurePassword =
+                    !_obscurePassword;
               });
             },
           ),
@@ -425,12 +550,16 @@ class _LoginPageState extends State<LoginPage> {
           height: 8,
         ),
 
+        // ========================================================
+        // FORGOT PASSWORD
+        // ========================================================
+
         AuthReveal(
           index: 6,
           child: Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () {},
+              onPressed: _goToForgotPassword,
               child: const Text(
                 'Forgot Password?',
                 style: TextStyle(
@@ -456,7 +585,10 @@ class _LoginPageState extends State<LoginPage> {
             child: GradientLoginButton(
               label: 'Login',
               loading: _isSubmitting,
-              onPressed: _isSubmitting ? null : _handleSignIn,
+              onPressed:
+                  _isSubmitting
+                      ? null
+                      : _handleSignIn,
             ),
           ),
         ),
@@ -468,7 +600,8 @@ class _LoginPageState extends State<LoginPage> {
         AuthReveal(
           index: 8,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment:
+                MainAxisAlignment.center,
             children: [
               Text(
                 "Don't have an account? ",
@@ -479,6 +612,7 @@ class _LoginPageState extends State<LoginPage> {
                   fontSize: 13,
                 ),
               ),
+
               GestureDetector(
                 onTap: _goToSignUp,
                 child: const Text(

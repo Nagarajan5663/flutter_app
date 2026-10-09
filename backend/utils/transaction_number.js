@@ -52,7 +52,9 @@ async function getNextTransactionNumber({
   table,
   numberColumn,
   padding = 4,
+  connection = null,
 }) {
+  const queryable = connection || db;
   if (
     !module ||
     module.trim() === ''
@@ -85,7 +87,7 @@ async function getNextTransactionNumber({
   // ==========================================================
 
   const [seriesRows] =
-    await db.query(
+    await queryable.query(
       `
       SELECT
         prefix,
@@ -95,7 +97,7 @@ async function getNextTransactionNumber({
 
       WHERE module = ?
 
-      LIMIT 1
+      LIMIT 1 ${connection ? 'FOR UPDATE' : ''}
       `,
       [
         module.trim(),
@@ -171,7 +173,7 @@ async function getNextTransactionNumber({
   `;
 
   const [numberRows] =
-    await db.query(
+    await queryable.query(
       sql,
       [
         prefix,

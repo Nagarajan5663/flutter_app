@@ -13,14 +13,16 @@ import '../invoice_model.dart';
 import '../invoice_repository.dart';
 
 class AddInvoiceDialog extends StatefulWidget {
-  const AddInvoiceDialog({super.key});
+  const AddInvoiceDialog({super.key, this.invoice});
+
+  final InvoiceModel? invoice;
 
   @override
   State<AddInvoiceDialog> createState() => _AddInvoiceDialogState();
 }
 
 class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
-  final CustomerRepository _customerRepository = InMemoryCustomerRepository();
+  final CustomerRepository _customerRepository = ApiCustomerRepository();
   final SalesOrderRepository _orderRepository = InMemorySalesOrderRepository();
   final InvoiceRepository _invoiceRepository = InMemoryInvoiceRepository();
 
@@ -57,16 +59,43 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
   }
 
   Future<void> _init() async {
-    final customers = await _customerRepository.getCustomers();
-    final orders = await _orderRepository.getSalesOrders();
-    final invoiceNumber = await _invoiceRepository.nextInvoiceNumber();
-    if (!mounted) return;
-    setState(() {
-      _customers = customers;
-      _orders = orders;
-      invoiceNumberController.text = invoiceNumber;
-      _isLoading = false;
-    });
+    try {
+      final customers = await _customerRepository.getCustomers();
+      final orders = await _orderRepository.getSalesOrders();
+      final invoiceNumber = await _invoiceRepository.nextInvoiceNumber();
+      if (!mounted) return;
+      setState(() {
+        _customers = customers;
+        _orders = orders;
+        final existing = widget.invoice;
+        if (existing == null) {
+          invoiceNumberController.text = invoiceNumber;
+        } else {
+          invoiceNumberController.text = existing.invoiceNumber;
+          final matchingCustomers =
+              customers.where((customer) => customer.id == existing.customerId);
+          selectedCustomer =
+              matchingCustomers.isEmpty ? null : matchingCustomers.first;
+          date = existing.date;
+          dueDate = existing.dueDate;
+          creditTerms = existing.creditTerms;
+          taxController.text = existing.tax.toStringAsFixed(2);
+          for (final row in rows) {
+            row.dispose();
+          }
+          rows
+            ..clear()
+            ..addAll(existing.items.map((item) {
+              return SalesItemRowControllers()..fillFrom(item);
+            }));
+          if (rows.isEmpty) rows.add(SalesItemRowControllers());
+        }
+        _isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() { _isLoading = false; _errorText = error.toString().replaceFirst('Exception: ', ''); });
+    }
   }
 
   @override
@@ -80,8 +109,9 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
   }
 
   List<SalesOrderModel> get _ordersForSelectedCustomer {
-    if (selectedCustomer == null) return _orders;
-    return _orders.where((o) => o.customerId == selectedCustomer!.id).toList();
+    final eligible = _orders.where((o) => o.approvalStatus == 'Approved');
+    if (selectedCustomer == null) return eligible.toList();
+    return eligible.where((o) => o.customerId == selectedCustomer!.id).toList();
   }
 
   void _prefillFromOrder(SalesOrderModel order) {
@@ -101,9 +131,13 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
   double get _tax => double.tryParse(taxController.text) ?? 0;
   double get _total => _subTotal + _tax;
 
-  void _saveInvoice() {
+  Future<void> _saveInvoice() async {
     if (selectedCustomer == null) {
       setState(() => _errorText = 'Please select a customer');
+      return;
+    }
+    if (widget.invoice == null && selectedOrder == null) {
+      setState(() => _errorText = 'Select an approved Sales Order to create an Invoice.');
       return;
     }
     if (invoiceNumberController.text.trim().isEmpty) {
@@ -122,20 +156,45 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
       _errorText = null;
     });
 
-    final invoice = InvoiceModel(
-      invoiceNumber: invoiceNumberController.text.trim(),
-      soId: selectedOrder?.id,
-      soNumber: selectedOrder?.soNumber,
-      customerId: selectedCustomer!.id ?? '',
-      customerName: selectedCustomer!.customerName,
-      date: date,
-      dueDate: dueDate,
-      creditTerms: creditTerms,
-      items: validItems,
-      tax: _tax,
-    );
-
-    Navigator.pop(context, invoice);
+    try {
+      final InvoiceModel saved;
+      final existing = widget.invoice;
+      if (existing != null) {
+        saved = await _invoiceRepository.updateInvoice(
+          InvoiceModel(
+            id: existing.id,
+            invoiceNumber: existing.invoiceNumber,
+            soId: existing.soId,
+            soNumber: existing.soNumber,
+            customerId: existing.customerId,
+            customerName: existing.customerName,
+            customerEmail: existing.customerEmail,
+            date: date,
+            dueDate: dueDate,
+            creditTerms: creditTerms,
+            items: validItems,
+            tax: _tax,
+            amountPaid: existing.amountPaid,
+            approvalStatus: existing.approvalStatus,
+            documentStatus: existing.documentStatus,
+            estimateId: existing.estimateId,
+            estimateNumber: existing.estimateNumber,
+            notes: existing.notes,
+            termsAndConditions: existing.termsAndConditions,
+          ),
+        );
+      } else {
+        saved =
+            await _invoiceRepository.createFromSalesOrder(selectedOrder!.id!);
+      }
+      if (mounted) Navigator.pop(context, saved);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isSaving = false;
+        _errorText = error.toString().replaceFirst('Exception: ', '');
+      });
+    }
   }
 
   @override
@@ -158,8 +217,10 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
                   children: [
                     Row(
                       children: [
-                        const Expanded(
-                          child: Text('New Invoice',
+                        Expanded(
+                          child: Text(widget.invoice == null
+                              ? 'New Invoice'
+                              : 'Edit Invoice',
                               style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF123456))),
                         ),
                         IconButton(
@@ -366,7 +427,11 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
                         ElevatedButton.icon(
                           onPressed: _isSaving ? null : _saveInvoice,
                           icon: const Icon(Icons.save, size: 18),
-                          label: const Text('Save Invoice'),
+                          label: Text(
+                            widget.invoice == null
+                                ? 'Save Invoice'
+                                : 'Save Changes',
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF123456),
                             foregroundColor: Colors.white,

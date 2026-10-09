@@ -7,6 +7,7 @@ class SalesOrderModel {
   final String customerName;
   final DateTime orderDate;
   final List<SalesLineItemModel> items;
+  final String approvalStatus;
 
   SalesOrderModel({
     this.id,
@@ -15,15 +16,17 @@ class SalesOrderModel {
     required this.customerName,
     required this.orderDate,
     required this.items,
+    this.approvalStatus = 'Pending',
   });
 
   factory SalesOrderModel.fromJson(Map<String, dynamic> json) {
     return SalesOrderModel(
       id: json['id']?.toString(),
-      soNumber: json['soNumber']?.toString() ?? '',
+      soNumber: (json['soNumber'] ?? json['orderNumber'])?.toString() ?? '',
       customerId: json['customerId']?.toString() ?? '',
       customerName: json['customerName']?.toString() ?? '',
-      orderDate: DateTime.tryParse(json['orderDate']?.toString() ?? '') ?? DateTime.now(),
+      orderDate: DateTime.tryParse((json['orderDate'] ?? json['date'])?.toString() ?? '') ?? DateTime.now(),
+      approvalStatus: json['approvalStatus']?.toString() ?? 'Pending',
       items: (json['items'] as List? ?? [])
           .map((item) => SalesLineItemModel.fromJson(item as Map<String, dynamic>))
           .toList(),

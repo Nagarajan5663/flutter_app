@@ -12,16 +12,20 @@ import '../payment_received_model.dart';
 import '../payment_received_repository.dart';
 
 class AddPaymentReceivedDialog extends StatefulWidget {
-  const AddPaymentReceivedDialog({super.key});
+  const AddPaymentReceivedDialog({super.key, this.initialInvoice});
+
+  final InvoiceModel? initialInvoice;
 
   @override
-  State<AddPaymentReceivedDialog> createState() => _AddPaymentReceivedDialogState();
+  State<AddPaymentReceivedDialog> createState() =>
+      _AddPaymentReceivedDialogState();
 }
 
 class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
   final CustomerRepository _customerRepository = InMemoryCustomerRepository();
   final InvoiceRepository _invoiceRepository = InMemoryInvoiceRepository();
-  final PaymentReceivedRepository _paymentRepository = InMemoryPaymentReceivedRepository();
+  final PaymentReceivedRepository _paymentRepository =
+      InMemoryPaymentReceivedRepository();
 
   final paymentNumberController = TextEditingController();
   final amountController = TextEditingController();
@@ -35,7 +39,13 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
 
   DateTime paymentDate = DateTime.now();
 
-  final List<String> paymentModes = const ['Bank Transfer', 'Cash', 'Cheque', 'UPI', 'Card'];
+  final List<String> paymentModes = const [
+    'Bank Transfer',
+    'Cash',
+    'Cheque',
+    'UPI',
+    'Card'
+  ];
   String paymentMode = 'Bank Transfer';
 
   bool _isLoading = true;
@@ -57,6 +67,27 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
       _customers = customers;
       _invoices = invoices;
       paymentNumberController.text = paymentNumber;
+      final invoiceId = widget.initialInvoice?.id;
+      if (invoiceId != null) {
+        for (final customer in customers) {
+          if (customer.id == widget.initialInvoice!.customerId) {
+            selectedCustomer = customer;
+            break;
+          }
+        }
+        for (final invoice in invoices) {
+          if (invoice.id == invoiceId) {
+            selectedInvoice = invoice;
+            break;
+          }
+        }
+        selectedInvoice ??= widget.initialInvoice;
+        if (selectedInvoice != null) {
+          amountController.text = selectedInvoice!.amountDue
+              .clamp(0, double.infinity)
+              .toStringAsFixed(2);
+        }
+      }
       _isLoading = false;
     });
   }
@@ -72,7 +103,9 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
 
   List<InvoiceModel> get _invoicesForSelectedCustomer {
     if (selectedCustomer == null) return [];
-    return _invoices.where((i) => i.customerId == selectedCustomer!.id).toList();
+    return _invoices
+        .where((i) => i.customerId == selectedCustomer!.id)
+        .toList();
   }
 
   void _savePayment() {
@@ -133,27 +166,31 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
                       children: [
                         const Expanded(
                           child: Text('New Payment',
-                              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF123456))),
+                              style: TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF123456))),
                         ),
                         IconButton(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close, color: Color(0xFFAAAAAA), size: 25),
+                          icon: const Icon(Icons.close,
+                              color: Color(0xFFAAAAAA), size: 25),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
-
                     if (_errorText != null) ...[
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
-                        decoration:
-                            BoxDecoration(color: const Color(0xFFF4E3E3), borderRadius: BorderRadius.circular(7)),
-                        child: Text(_errorText!, style: const TextStyle(color: Color(0xFFAB2A2A))),
+                        decoration: BoxDecoration(
+                            color: const Color(0xFFF4E3E3),
+                            borderRadius: BorderRadius.circular(7)),
+                        child: Text(_errorText!,
+                            style: const TextStyle(color: Color(0xFFAB2A2A))),
                       ),
                       const SizedBox(height: 16),
                     ],
-
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -161,7 +198,8 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
                           child: salesLabeledField(
                             label: 'Customer Name *',
                             child: DropdownSearch<CustomerModel>(
-                              items: (filter, infiniteScrollProps) => _customers,
+                              items: (filter, infiniteScrollProps) =>
+                                  _customers,
                               itemAsString: (c) => c.customerName,
                               compareFn: (a, b) => a.id == b.id,
                               selectedItem: selectedCustomer,
@@ -171,9 +209,11 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
                                   selectedInvoice = null;
                                 });
                               },
-                              popupProps: const PopupProps.menu(showSearchBox: true),
+                              popupProps:
+                                  const PopupProps.menu(showSearchBox: true),
                               decoratorProps: DropDownDecoratorProps(
-                                decoration: salesFieldDecoration(hint: 'Select or type to search...'),
+                                decoration: salesFieldDecoration(
+                                    hint: 'Select or type to search...'),
                               ),
                             ),
                           ),
@@ -183,16 +223,27 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
                           child: salesLabeledField(
                             label: 'For Invoice *',
                             child: DropdownSearch<InvoiceModel>(
-                              items: (filter, infiniteScrollProps) => _invoicesForSelectedCustomer,
+                              items: (filter, infiniteScrollProps) =>
+                                  _invoicesForSelectedCustomer,
                               itemAsString: (i) => i.invoiceNumber,
                               compareFn: (a, b) => a.id == b.id,
                               selectedItem: selectedInvoice,
                               enabled: selectedCustomer != null,
-                              onChanged: (i) => setState(() => selectedInvoice = i),
-                              popupProps: const PopupProps.menu(showSearchBox: true),
+                              onChanged: (i) => setState(() {
+                                selectedInvoice = i;
+                                amountController.text = i == null
+                                    ? ''
+                                    : i.amountDue
+                                        .clamp(0, double.infinity)
+                                        .toStringAsFixed(2);
+                              }),
+                              popupProps:
+                                  const PopupProps.menu(showSearchBox: true),
                               decoratorProps: DropDownDecoratorProps(
                                 decoration: salesFieldDecoration(
-                                  hint: selectedCustomer == null ? 'Select Customer First' : 'Select an invoice...',
+                                  hint: selectedCustomer == null
+                                      ? 'Select Customer First'
+                                      : 'Select an invoice...',
                                 ),
                               ),
                             ),
@@ -201,14 +252,14 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
                       ],
                     ),
                     const SizedBox(height: 18),
-
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: salesLabeledField(
                             label: 'Payment # *',
-                            child: salesTextField(controller: paymentNumberController),
+                            child: salesTextField(
+                                controller: paymentNumberController),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -220,7 +271,8 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
                               onTap: () => pickSalesDate(
                                 context: context,
                                 initial: paymentDate,
-                                onPicked: (d) => setState(() => paymentDate = d),
+                                onPicked: (d) =>
+                                    setState(() => paymentDate = d),
                               ),
                             ),
                           ),
@@ -228,7 +280,6 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
                       ],
                     ),
                     const SizedBox(height: 18),
-
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -237,7 +288,9 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
                             label: 'Amount Received *',
                             child: salesTextField(
                               controller: amountController,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
                             ),
                           ),
                         ),
@@ -246,17 +299,22 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
                           child: salesLabeledField(
                             label: 'Payment Mode *',
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
                                 color: const Color(0x6EFFFFFF),
                                 borderRadius: BorderRadius.circular(11),
-                                border: Border.all(color: const Color(0xC7FFFFFF)),
+                                border:
+                                    Border.all(color: const Color(0xC7FFFFFF)),
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<String>(
                                   value: paymentMode,
                                   isExpanded: true,
-                                  items: paymentModes.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                                  items: paymentModes
+                                      .map((m) => DropdownMenuItem(
+                                          value: m, child: Text(m)))
+                                      .toList(),
                                   onChanged: (value) {
                                     if (value == null) return;
                                     setState(() => paymentMode = value);
@@ -269,19 +327,17 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
                       ],
                     ),
                     const SizedBox(height: 18),
-
                     salesLabeledField(
                       label: 'UTR Details / Reference #',
                       child: salesTextField(controller: utrController),
                     ),
                     const SizedBox(height: 18),
-
                     salesLabeledField(
                       label: 'Remarks',
-                      child: salesTextField(controller: remarksController, maxLines: 3),
+                      child: salesTextField(
+                          controller: remarksController, maxLines: 3),
                     ),
                     const SizedBox(height: 24),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -292,8 +348,10 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF6C757D),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(7)),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -304,8 +362,10 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF123456),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(7)),
                           ),
                         ),
                       ],

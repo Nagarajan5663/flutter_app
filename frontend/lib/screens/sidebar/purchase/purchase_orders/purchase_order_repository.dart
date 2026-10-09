@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import 'purchase_order_filter.dart';
 import 'purchase_order_model.dart';
+import '../../sales/workflow_session.dart';
 
 // ============================================================
 // REPOSITORY INTERFACE
@@ -25,6 +26,7 @@ abstract class PurchaseOrderRepository {
   );
 
   Future<String> nextPoNumber();
+  Future<Map<String, dynamic>> createFromSalesOrder(String salesOrderId, String vendorId);
 }
 
 // ============================================================
@@ -35,6 +37,20 @@ class ApiPurchaseOrderRepository
     implements PurchaseOrderRepository {
   static const String baseUrl =
       'http://localhost:3000/api';
+
+  @override
+  Future<Map<String, dynamic>> createFromSalesOrder(String salesOrderId, String vendorId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/purchase-orders/from-sales-order/$salesOrderId'),
+      headers: {'Accept': 'application/json', 'Content-Type': 'application/json', ...SalesWorkflowSession.headers},
+      body: jsonEncode({'vendorId': vendorId}),
+    );
+    final body = jsonDecode(response.body);
+    if ((response.statusCode != 200 && response.statusCode != 201) || body is! Map || body['success'] != true) {
+      throw Exception(body is Map ? body['message'] ?? 'Failed to create Purchase Order' : 'Failed to create Purchase Order');
+    }
+    return Map<String, dynamic>.from(body['data'] as Map);
+  }
 
   // ==========================================================
   // GET PURCHASE ORDERS

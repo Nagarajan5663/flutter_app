@@ -4,6 +4,7 @@ const db = require('../config/db');
 const {
   getNextTransactionNumber,
 } = require('../utils/transaction_number');
+const { requireSalesWorkflowUser } = require('../middleware/workflow_auth');
 
 const router = express.Router();
 
@@ -117,6 +118,9 @@ function mapPurchaseOrder(
 
     poNumber:
       row.po_number ?? '',
+
+    salesOrderId: row.sales_order_id == null ? null : String(row.sales_order_id),
+    salesOrderNumber: row.sales_order_number ?? null,
 
     vendorId:
       row.vendor_id
@@ -422,6 +426,8 @@ router.get(
         SELECT
           id,
           po_number,
+          sales_order_id,
+          sales_order_number,
 
           vendor_id,
           vendor_name,
@@ -699,6 +705,8 @@ router.get(
           SELECT
             id,
             po_number,
+            sales_order_id,
+            sales_order_number,
             vendor_id,
             vendor_name,
 
@@ -826,6 +834,116 @@ router.get(
 // ============================================================
 // CREATE PURCHASE ORDER
 // ============================================================
+
+router.post('/from-sales-order/:salesOrderId', requireSalesWorkflowUser, async (req, res) => {
+  const salesOrderId = Number(req.params.salesOrderId);
+  const vendorId = Number(req.body?.vendorId);
+  if (!Number.isInteger(salesOrderId) || salesOrderId <= 0) {
+    return res.status(400).json({ success: false, message: 'Invalid Sales Order ID.' });
+  }
+  if (!Number.isInteger(vendorId) || vendorId <= 0) {
+    return res.status(400).json({ success: false, message: 'Please select a valid vendor.' });
+  }
+
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [orders] = await connection.query(`
+      SELECT id,so_number,order_date,expected_shipment_date,sub_total,total,notes,status,approval_status
+      FROM sales_orders WHERE id=? FOR UPDATE
+    `, [salesOrderId]);
+    if (!orders.length) {
+      await connection.rollback();
+      return res.status(404).json({ success: false, message: 'Sales Order not found.' });
+    }
+    const order = orders[0];
+    if (order.approval_status !== 'Approved') {
+      await connection.rollback();
+      return res.status(409).json({ success: false, message: 'Sales Order must be approved before conversion.' });
+    }
+    if (order.status === 'Rejected') {
+      await connection.rollback();
+      return res.status(409).json({ success: false, message: 'A Rejected Sales Order cannot be converted.' });
+    }
+
+    const [vendors] = await connection.query('SELECT id,display_name FROM vendors WHERE id=? LIMIT 1', [vendorId]);
+    if (!vendors.length) {
+      await connection.rollback();
+      return res.status(404).json({ success: false, message: 'Selected vendor not found.' });
+    }
+    const [existing] = await connection.query('SELECT id FROM purchase_orders WHERE sales_order_id=? LIMIT 1', [salesOrderId]);
+    let purchaseOrderId;
+    const alreadyExists = existing.length > 0;
+    if (alreadyExists) {
+      purchaseOrderId = existing[0].id;
+    } else {
+      const [sourceItems] = await connection.query(`
+        SELECT source_type,item_id,part_id,item_name,description,qty,rate,amount
+        FROM sales_order_items WHERE sales_order_id=? ORDER BY id ASC
+      `, [salesOrderId]);
+      if (!sourceItems.length) {
+        await connection.rollback();
+        return res.status(409).json({ success: false, message: 'Sales Order has no items to convert.' });
+      }
+      const number = await getNextTransactionNumber({
+        module: 'Purchase Order', table: 'purchase_orders', numberColumn: 'po_number', padding: 4, connection,
+      });
+      const [created] = await connection.query(`
+        INSERT INTO purchase_orders (
+          po_number,vendor_id,vendor_name,order_date,delivery_expected_date,payment_terms,
+          due_date,reference_number,sub_total,total,status,sales_order_id,sales_order_number
+        ) VALUES (?,?,?,CURRENT_DATE(),?,'100% Advance',NULL,?,?,?,?,?,?)
+      `, [number.transactionNumber, vendorId, vendors[0].display_name,
+        order.expected_shipment_date || null, order.so_number, order.sub_total, order.total, 'Draft', salesOrderId, order.so_number]);
+      purchaseOrderId = created.insertId;
+      for (const line of sourceItems) {
+        await connection.query(`
+          INSERT INTO purchase_order_items
+            (purchase_order_id,source_type,item_id,part_id,item_name,description,qty,rate,amount)
+          VALUES (?,?,?,?,?,?,?,?,?)
+        `, [purchaseOrderId,line.source_type,line.item_id,line.part_id,line.item_name,line.description,line.qty,line.rate,line.amount]);
+      }
+    }
+
+    const [purchaseOrders] = await connection.query(`
+      SELECT id,po_number,vendor_id,vendor_name,order_date,delivery_expected_date,payment_terms,due_date,
+        reference_number,sub_total,total,status,sales_order_id,sales_order_number
+      FROM purchase_orders WHERE id=? LIMIT 1
+    `, [purchaseOrderId]);
+    const [items] = await connection.query(`
+      SELECT id,purchase_order_id,source_type,item_id,part_id,item_name,description,qty,rate,amount
+      FROM purchase_order_items WHERE purchase_order_id=? ORDER BY id ASC
+    `, [purchaseOrderId]);
+    await connection.commit();
+    return res.status(alreadyExists ? 200 : 201).json({
+      success: true,
+      message: alreadyExists ? 'Existing Purchase Order returned.' : 'Purchase Order created from Sales Order.',
+      data: mapPurchaseOrder(purchaseOrders[0], items.map(mapPurchaseOrderItem)),
+    });
+  } catch (error) {
+    try { await connection.rollback(); } catch (_) {}
+    if (error.code === 'ER_DUP_ENTRY') {
+      try {
+        const [rows] = await db.query(`
+          SELECT id,po_number,vendor_id,vendor_name,order_date,delivery_expected_date,payment_terms,due_date,
+            reference_number,sub_total,total,status,sales_order_id,sales_order_number
+          FROM purchase_orders WHERE sales_order_id=? LIMIT 1
+        `, [salesOrderId]);
+        if (rows.length) {
+          const [items] = await db.query(`
+            SELECT id,purchase_order_id,source_type,item_id,part_id,item_name,description,qty,rate,amount
+            FROM purchase_order_items WHERE purchase_order_id=? ORDER BY id ASC
+          `, [rows[0].id]);
+          return res.status(200).json({ success: true, message: 'Existing Purchase Order returned.', data: mapPurchaseOrder(rows[0], items.map(mapPurchaseOrderItem)) });
+        }
+      } catch (_) {}
+    }
+    console.error('Convert Sales Order to Purchase Order error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to create Purchase Order from Sales Order.' });
+  } finally {
+    connection.release();
+  }
+});
 
 router.post(
   '/',

@@ -6,6 +6,9 @@ import 'customer_filter.dart';
 import 'customer_model.dart';
 import 'customer_repository.dart';
 import 'widgets/add_customer_dialog.dart';
+import 'widgets/customer_preview_dialog.dart';
+import '../estimates/estimates_page.dart';
+import '../sales_orders/sales_orders_page.dart';
 
 class CustomersPage extends StatefulWidget {
   const CustomersPage({super.key});
@@ -158,6 +161,115 @@ class _CustomersPageState extends State<CustomersPage> {
           ),
           backgroundColor: const Color(0xFFAB2A2A),
         ),
+      );
+    }
+  }
+
+  Future<void> _openCustomerForm(
+    CustomerModel sourceCustomer, {
+    required bool editing,
+  }) async {
+    final customer = await showDialog<CustomerModel>(
+      context: context,
+      barrierColor: const Color(0x9A12202C),
+      barrierDismissible: false,
+      builder: (_) => AddCustomerDialog(
+        customer: sourceCustomer,
+        isEditing: editing,
+      ),
+    );
+
+    if (!mounted || customer == null) return;
+
+    try {
+      if (editing) {
+        await _repository.updateCustomer(customer);
+      } else {
+        await _repository.addCustomer(customer);
+      }
+
+      await _loadCustomers();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            editing
+                ? 'Customer updated successfully'
+                : 'Customer cloned successfully',
+          ),
+          backgroundColor: const Color(0xFF1E7B34),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Failed to ${editing ? 'update' : 'clone'} customer: $error',
+          ),
+          backgroundColor: const Color(0xFFAB2A2A),
+        ),
+      );
+    }
+  }
+
+  void _viewCustomer(CustomerModel customer) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => CustomerPreviewDialog(
+        customer: customer,
+        repository: _repository,
+        onNewEstimate: () => _createEstimateForCustomer(customer),
+        onNewSalesOrder: () => _createSalesOrderForCustomer(customer),
+      ),
+    );
+  }
+
+  Future<void> _createEstimateForCustomer(CustomerModel customer) async {
+    try {
+      final nextNumber = await EstimatesApi.getNextNumber();
+      if (!mounted) return;
+
+      await showDialog<bool>(
+        context: context,
+        barrierColor: const Color(0x9A12202C),
+        barrierDismissible: false,
+        builder: (_) => NewEstimateDialog(
+          nextNumber: nextNumber,
+          initialCustomerId: int.tryParse(customer.id ?? ''),
+          initialCustomerName: customer.vendorName,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to open estimate: $error')),
+      );
+    }
+  }
+
+  Future<void> _createSalesOrderForCustomer(CustomerModel customer) async {
+    try {
+      final nextNumber = await SalesOrdersApi.getNextNumber();
+      if (!mounted) return;
+
+      await showDialog<bool>(
+        context: context,
+        barrierColor: const Color(0x9A12202C),
+        barrierDismissible: false,
+        builder: (_) => NewSalesOrderDialog(
+          nextNumber: nextNumber,
+          initialCustomerId: int.tryParse(customer.id ?? ''),
+          initialCustomerName: customer.vendorName,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to open sales order: $error')),
       );
     }
   }
@@ -640,7 +752,7 @@ class _CustomersPageState extends State<CustomersPage> {
                             ),
                           ),
                           Expanded(
-                            flex: 1,
+                            flex: 3,
                             child: _HeaderText(
                               'ACTIONS',
                             ),
@@ -821,23 +933,85 @@ class _CustomersPageState extends State<CustomersPage> {
                                       ),
                                     ),
 
-                                    // Delete
+                                    // Customer actions
                                     Expanded(
-                                      flex: 1,
-                                      child: IconButton(
-                                        onPressed: () {
-                                          _deleteCustomer(
-                                            customer,
-                                          );
-                                        },
-                                        icon: const Icon(
-                                          Icons.delete_outline,
-                                          color: Color(
-                                            0xFFAB2A2A,
+                                      flex: 3,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            tooltip: 'Preview customer',
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(
+                                              minWidth: 32,
+                                              minHeight: 32,
+                                            ),
+                                            icon: const Icon(
+                                              Icons.visibility_outlined,
+                                              size: 18,
+                                              color: Color(0xFF777777),
+                                            ),
+                                            onPressed: () =>
+                                                _viewCustomer(customer),
                                           ),
-                                          size: 20,
-                                        ),
-                                        tooltip: 'Delete customer',
+                                          IconButton(
+                                            tooltip: 'Edit customer',
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(
+                                              minWidth: 32,
+                                              minHeight: 32,
+                                            ),
+                                            icon: const Icon(
+                                              Icons.edit_outlined,
+                                              size: 18,
+                                              color: Color(0xFF777777),
+                                            ),
+                                            onPressed: () => _openCustomerForm(
+                                              customer,
+                                              editing: true,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            tooltip: 'Clone customer',
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(
+                                              minWidth: 32,
+                                              minHeight: 32,
+                                            ),
+                                            icon: const Icon(
+                                              Icons.content_copy_outlined,
+                                              size: 18,
+                                              color: Color(0xFF777777),
+                                            ),
+                                            onPressed: () => _openCustomerForm(
+                                              customer,
+                                              editing: false,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            tooltip: 'Delete customer',
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(
+                                              minWidth: 32,
+                                              minHeight: 32,
+                                            ),
+                                            icon: const Icon(
+                                              Icons.delete_outline,
+                                              size: 18,
+                                              color: Color(0xFF777777),
+                                            ),
+                                            onPressed: () =>
+                                                _deleteCustomer(customer),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
@@ -974,3 +1148,4 @@ class _HeaderText extends StatelessWidget {
     );
   }
 }
+

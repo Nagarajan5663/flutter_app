@@ -3,6 +3,8 @@ import 'purchase_order_item_model.dart';
 class PurchaseOrderModel {
   final String? id;
   final String poNumber;
+  final String? salesOrderId;
+  final String? salesOrderNumber;
   final String vendorId;
   final String vendorName;
   final DateTime date;
@@ -16,6 +18,8 @@ class PurchaseOrderModel {
   PurchaseOrderModel({
     this.id,
     required this.poNumber,
+    this.salesOrderId,
+    this.salesOrderNumber,
     required this.vendorId,
     required this.vendorName,
     required this.date,
@@ -34,6 +38,8 @@ class PurchaseOrderModel {
     return PurchaseOrderModel(
       id: id ?? this.id,
       poNumber: poNumber,
+      salesOrderId: salesOrderId,
+      salesOrderNumber: salesOrderNumber,
       vendorId: vendorId,
       vendorName: vendorName,
       date: date,
@@ -50,6 +56,8 @@ class PurchaseOrderModel {
     return PurchaseOrderModel(
       id: json['id']?.toString(),
       poNumber: json['poNumber']?.toString() ?? '',
+      salesOrderId: json['salesOrderId']?.toString(),
+      salesOrderNumber: json['salesOrderNumber']?.toString(),
       vendorId: json['vendorId']?.toString() ?? '',
       vendorName: json['vendorName']?.toString() ?? '',
       date: DateTime.tryParse(json['date']?.toString() ?? '') ?? DateTime.now(),
@@ -71,6 +79,8 @@ class PurchaseOrderModel {
   Map<String, dynamic> toJson() => {
         if (id != null) 'id': id,
         'poNumber': poNumber,
+        'salesOrderId': salesOrderId,
+        'salesOrderNumber': salesOrderNumber,
         'vendorId': vendorId,
         'vendorName': vendorName,
         'date': date.toIso8601String(),

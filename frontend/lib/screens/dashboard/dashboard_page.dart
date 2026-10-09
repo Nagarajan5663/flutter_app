@@ -321,14 +321,21 @@ class _DashboardPageState extends State<DashboardPage> {
         return const CustomersPage();
 
       case 'estimates':
-        return const EstimatesPage();
+        return EstimatesPage(
+            onOpenSalesOrders: () => _selectMenu('sales orders'));
 
       case 'sales order':
       case 'sales orders':
-        return const SalesOrderPage();
+        return SalesOrderPage(
+          onOpenInvoices: () => _selectMenu('invoices'),
+          onOpenPurchaseOrders: () => _selectMenu('purchase orders'),
+        );
 
       case 'invoices':
-        return const InvoicesPage();
+        return InvoicesPage(
+          onOpenDeliveryChallans: () => _selectMenu('delivery challans'),
+          onOpenPaymentsReceived: () => _selectMenu('payments received'),
+        );
 
       case 'delivery challans':
         return const DeliveryChallansPage();
@@ -423,10 +430,38 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildReadOnlySelectedPage() {
-    return _withReadOnlyAccess(
+    final menu = selectedMenu.toLowerCase().trim();
+    final page = _withReadOnlyAccess(
       _buildSelectedPage(),
       selectedMenu,
     );
+
+    const salesMenus = {
+      'sales',
+      'customers',
+      'estimates',
+      'sales order',
+      'sales orders',
+      'invoices',
+      'delivery challans',
+      'payment received',
+      'payments received',
+      'credit notes',
+    };
+
+    if (salesMenus.contains(menu)) {
+      return Theme(
+        data: Theme.of(context).copyWith(
+          canvasColor: Colors.white,
+          popupMenuTheme: const PopupMenuThemeData(
+            color: Colors.white,
+          ),
+        ),
+        child: page,
+      );
+    }
+
+    return page;
   }
 
   Widget _withReadOnlyAccess(

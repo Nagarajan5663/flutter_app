@@ -20,4 +20,13 @@ class DeliveryChallanFilter {
         !challan.challanDate.isAfter(DateTime(dateTo!.year, dateTo!.month, dateTo!.day, 23, 59, 59));
     return matchesCustomer && matchesFrom && matchesTo;
   }
+
+  Map<String, String> toQueryParams() => {
+        if (customerName.trim().isNotEmpty) 'customer': customerName.trim(),
+        if (dateFrom != null) 'dateFrom': _date(dateFrom!),
+        if (dateTo != null) 'dateTo': _date(dateTo!),
+      };
+
+  String _date(DateTime value) =>
+      '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
 }
