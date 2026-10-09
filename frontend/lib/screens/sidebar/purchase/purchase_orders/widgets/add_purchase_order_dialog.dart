@@ -95,27 +95,22 @@ class _ItemRow {
 class AddPurchaseOrderDialog extends StatefulWidget {
   const AddPurchaseOrderDialog({
     super.key,
-<<<<<<< HEAD
+    this.initialVendor,
+    this.initialOrder,
+    this.isDuplicate = false,
     this.initialSalesOrderId,
     this.initialSalesOrderNumber,
     this.initialSalesOrderDate,
     this.initialItems,
   });
 
+  final VendorModel? initialVendor;
+  final PurchaseOrderModel? initialOrder;
+  final bool isDuplicate;
   final int? initialSalesOrderId;
   final String? initialSalesOrderNumber;
   final DateTime? initialSalesOrderDate;
   final List<Map<String, dynamic>>? initialItems;
-=======
-    this.initialVendor,
-    this.initialOrder,
-    this.isDuplicate = false,
-  });
-
-  final VendorModel? initialVendor;
-  final PurchaseOrderModel? initialOrder;
-  final bool isDuplicate;
->>>>>>> origin/member1-home
 
   @override
   State<AddPurchaseOrderDialog> createState() => _AddPurchaseOrderDialogState();
@@ -190,24 +185,16 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
 
       final Future<List<_CatalogOption>> catalogFuture = _loadCatalog();
 
-<<<<<<< HEAD
-      final Future<String> poNumberFuture = _orderRepository.nextPoNumber();
-=======
       final Future<String>? poNumberFuture =
           widget.initialOrder == null || widget.isDuplicate
               ? _orderRepository.nextPoNumber()
               : null;
->>>>>>> origin/member1-home
 
       final List<VendorModel> vendors = await vendorsFuture;
 
       final List<_CatalogOption> catalog = await catalogFuture;
 
-<<<<<<< HEAD
-      final String poNumber = await poNumberFuture;
-=======
       final String? nextPoNumber = await poNumberFuture;
->>>>>>> origin/member1-home
 
       if (!mounted) {
         return;
@@ -215,16 +202,50 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
 
       setState(() {
         _vendors = vendors;
-<<<<<<< HEAD
         _catalog = catalog;
-        poNumberController.text = poNumber;
+
+        final initialOrder = widget.initialOrder;
+        final vendorId = initialOrder?.vendorId ?? widget.initialVendor?.id;
+        selectedVendor = vendorId == null
+            ? null
+            : vendors.any((vendor) => vendor.id == vendorId)
+                ? vendors.firstWhere((vendor) => vendor.id == vendorId)
+                : null;
+
         if (widget.initialSalesOrderDate != null) {
           date = widget.initialSalesOrderDate!;
         }
         if (widget.initialSalesOrderNumber != null) {
           referenceNumberController.text = widget.initialSalesOrderNumber!;
         }
-        if (widget.initialItems != null && widget.initialItems!.isNotEmpty) {
+
+        poNumberController.text = initialOrder != null && !widget.isDuplicate
+            ? initialOrder.poNumber
+            : nextPoNumber ?? '';
+
+        if (initialOrder != null) {
+          referenceNumberController.text = initialOrder.referenceNumber;
+          date = initialOrder.date;
+          deliveryExpectedDate = initialOrder.deliveryExpectedDate;
+          dueDate = initialOrder.dueDate;
+          paymentTerms = initialOrder.paymentTerms;
+          for (final row in rows) {
+            row.dispose();
+          }
+          rows.clear();
+          for (final item in initialOrder.items) {
+            final row = _ItemRow();
+            row.selectedProduct = _findCatalogOption(
+              item.itemName,
+              item.rate,
+            );
+            row.descriptionController.text = item.description;
+            row.qtyController.text = item.qty.toString();
+            row.rateController.text = item.rate.toStringAsFixed(2);
+            rows.add(row);
+          }
+        } else if (widget.initialItems != null &&
+            widget.initialItems!.isNotEmpty) {
           rows.clear();
           for (final item in widget.initialItems!) {
             final itemName = item['itemName']?.toString() ?? '';
@@ -256,45 +277,11 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
             rows.add(row);
           }
         }
-=======
-        final initialOrder = widget.initialOrder;
-        final vendorId = initialOrder?.vendorId ?? widget.initialVendor?.id;
-        selectedVendor = vendorId == null
-            ? null
-            : vendors.any((vendor) => vendor.id == vendorId)
-                ? vendors.firstWhere((vendor) => vendor.id == vendorId)
-                : null;
 
-        _catalog = catalog;
-
-        poNumberController.text = initialOrder != null && !widget.isDuplicate
-            ? initialOrder.poNumber
-            : nextPoNumber ?? '';
-        if (initialOrder != null) {
-          referenceNumberController.text = initialOrder.referenceNumber;
-          date = initialOrder.date;
-          deliveryExpectedDate = initialOrder.deliveryExpectedDate;
-          dueDate = initialOrder.dueDate;
-          paymentTerms = initialOrder.paymentTerms;
-          for (final row in rows) {
-            row.dispose();
-          }
-          rows.clear();
-          for (final item in initialOrder.items) {
-            final row = _ItemRow();
-            row.selectedProduct = _findCatalogOption(
-              item.itemName,
-              item.rate,
-            );
-            row.descriptionController.text = item.description;
-            row.qtyController.text = item.qty.toString();
-            row.rateController.text = item.rate.toStringAsFixed(2);
-            rows.add(row);
-          }
-          if (rows.isEmpty) rows.add(_ItemRow());
+        if (rows.isEmpty) {
+          rows.add(_ItemRow());
         }
 
->>>>>>> origin/member1-home
         _isLoading = false;
       });
     } catch (error) {
@@ -310,7 +297,6 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
     }
   }
 
-<<<<<<< HEAD
   _CatalogOption? _matchCatalogOption({
     required String itemName,
     String? sourceType,
@@ -332,11 +318,15 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
         return option;
       }
       if (option.name.trim().toLowerCase() == itemName.trim().toLowerCase()) {
-=======
+        return option;
+      }
+    }
+    return null;
+  }
+
   _CatalogOption? _findCatalogOption(String name, double rate) {
     for (final option in _catalog) {
       if (option.name == name && (option.purchasePrice - rate).abs() < 0.005) {
->>>>>>> origin/member1-home
         return option;
       }
     }
@@ -673,14 +663,10 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
     });
 
     final PurchaseOrderModel order = PurchaseOrderModel(
-<<<<<<< HEAD
+      id: widget.isDuplicate ? null : widget.initialOrder?.id,
       poNumber: poNumberController.text.trim(),
       salesOrderId: widget.initialSalesOrderId?.toString(),
       salesOrderNumber: widget.initialSalesOrderNumber,
-=======
-      id: widget.isDuplicate ? null : widget.initialOrder?.id,
-      poNumber: poNumberController.text.trim(),
->>>>>>> origin/member1-home
       vendorId: selectedVendor!.id!,
       vendorName: selectedVendor!.vendorName,
       date: date,
@@ -689,11 +675,8 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
       dueDate: dueDate,
       referenceNumber: referenceNumberController.text.trim(),
       items: items,
-<<<<<<< HEAD
-=======
       status:
           widget.isDuplicate ? 'Draft' : widget.initialOrder?.status ?? 'Draft',
->>>>>>> origin/member1-home
     );
 
     Navigator.pop(
@@ -737,13 +720,9 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
                   // ============================================
 
                   GlassDialogHeader(
-<<<<<<< HEAD
-                    title: 'New Purchase Order',
-=======
                     title: widget.initialOrder == null || widget.isDuplicate
                         ? 'New Purchase Order'
                         : 'Edit Purchase Order',
->>>>>>> origin/member1-home
                     icon: Icons.shopping_cart_outlined,
                     onClose: () {
                       Navigator.pop(
@@ -1408,14 +1387,10 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
                       GlassButton(
                         onPressed: _isSaving ? null : _saveOrder,
                         icon: Icons.save,
-<<<<<<< HEAD
-                        label: 'Save Purchase Order',
-=======
                         label:
                             widget.initialOrder != null && !widget.isDuplicate
                                 ? 'Update Purchase Order'
                                 : 'Save Purchase Order',
->>>>>>> origin/member1-home
                       ),
                     ],
                   ),
