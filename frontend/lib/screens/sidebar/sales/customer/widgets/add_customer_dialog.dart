@@ -5,12 +5,18 @@ import '../../widgets/sales_glass_widgets.dart';
 import '../customer_model.dart';
 
 class AddCustomerDialog extends StatefulWidget {
-  const AddCustomerDialog({super.key});
+  const AddCustomerDialog({
+    super.key,
+    this.customer,
+    this.isEditing = false,
+  });
+
+  final CustomerModel? customer;
+  final bool isEditing;
 
   @override
   State<AddCustomerDialog> createState() => _AddCustomerDialogState();
 }
-
 class _AddCustomerDialogState extends State<AddCustomerDialog> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
@@ -42,6 +48,37 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
   bool _isSaving = false;
 
   @override
+  void initState() {
+    super.initState();
+
+    final customer = widget.customer;
+    if (customer == null) return;
+
+    companyNameController.text = customer.companyName;
+    firstNameController.text = customer.firstName;
+    lastNameController.text = customer.lastName;
+    displayNameController.text = customer.vendorName;
+    emailController.text = customer.email;
+    phoneController.text = customer.phone;
+    websiteController.text = customer.website;
+    billingStreetController.text = customer.billingStreet;
+    billingCityController.text = customer.city;
+    billingStateController.text = customer.state;
+    billingZipController.text = customer.billingZip;
+    billingCountryController.text = customer.country;
+    shippingStreetController.text = customer.shippingStreet;
+    shippingCityController.text = customer.shippingCity;
+    shippingStateController.text = customer.shippingState;
+    shippingZipController.text = customer.shippingZip;
+    shippingCountryController.text = customer.shippingCountry;
+    customerType = customer.vendorType;
+    salutation = customer.salutation;
+    gstApplicable = customer.gstApplicable;
+    shippingSameAsBilling = customer.shippingSameAsBilling;
+    status = customer.status;
+  }
+
+  @override
   void dispose() {
     companyNameController.dispose();
     firstNameController.dispose();
@@ -71,6 +108,7 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
     setState(() => _isSaving = true);
 
     final customer = CustomerModel(
+      id: widget.isEditing ? widget.customer?.id : null,
       vendorType: customerType,
       salutation: salutation,
       firstName: firstNameController.text.trim(),
@@ -125,10 +163,14 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
               children: [
                 Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Add New Customer',
-                        style: TextStyle(
+                        widget.isEditing
+                            ? 'Edit Customer'
+                            : widget.customer == null
+                                ? 'Add New Customer'
+                                : 'Clone Customer',
+                        style: const TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF123456),
@@ -288,7 +330,8 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
                   ),
                   right: _fieldBlock(
                     label: 'Country',
-                    child: _buildTextField(controller: billingCountryController),
+                    child:
+                        _buildTextField(controller: billingCountryController),
                   ),
                 ),
                 const SizedBox(height: 26),
@@ -322,17 +365,20 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
                   const SizedBox(height: 8),
                   _fieldBlock(
                     label: 'Street',
-                    child: _buildTextField(controller: shippingStreetController),
+                    child:
+                        _buildTextField(controller: shippingStreetController),
                   ),
                   const SizedBox(height: 18),
                   _twoColumnRow(
                     left: _fieldBlock(
                       label: 'City',
-                      child: _buildTextField(controller: shippingCityController),
+                      child:
+                          _buildTextField(controller: shippingCityController),
                     ),
                     right: _fieldBlock(
                       label: 'State',
-                      child: _buildTextField(controller: shippingStateController),
+                      child:
+                          _buildTextField(controller: shippingStateController),
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -343,7 +389,8 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
                     ),
                     right: _fieldBlock(
                       label: 'Country',
-                      child: _buildTextField(controller: shippingCountryController),
+                      child: _buildTextField(
+                          controller: shippingCountryController),
                     ),
                   ),
                 ],
@@ -369,20 +416,26 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6C757D),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 18, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(7)),
                       ),
                     ),
                     const SizedBox(width: 16),
                     ElevatedButton.icon(
                       onPressed: _isSaving ? null : _saveCustomer,
                       icon: const Icon(Icons.save, size: 18),
-                      label: const Text('Save Customer'),
+                      label: Text(widget.isEditing
+                          ? 'Update Customer'
+                          : 'Save Customer'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF123456),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(7)),
                       ),
                     ),
                   ],
@@ -446,7 +499,8 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
         hintStyle: const TextStyle(color: Colors.black),
         filled: true,
         fillColor: const Color(0x6EFFFFFF),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(7)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(11),

@@ -1,50 +1,118 @@
-import '../invoices/invoice_repository.dart';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import '../workflow_session.dart';
 import 'payment_received_filter.dart';
 import 'payment_received_model.dart';
 
 abstract class PaymentReceivedRepository {
-  Future<List<PaymentReceivedModel>> getPayments({PaymentReceivedFilter? filter});
+  Future<List<PaymentReceivedModel>> getPayments({
+    PaymentReceivedFilter? filter,
+  });
   Future<PaymentReceivedModel> addPayment(PaymentReceivedModel payment);
+  Future<void> updatePayment(String id, PaymentReceivedModel payment);
   Future<void> deletePayment(String id);
   Future<String> nextPaymentNumber();
 }
 
-/// Recording a payment also updates the linked invoice's amountPaid,
-/// via InvoiceRepository's existing recordPayment method — same pattern
-/// as PurchaseOrder/Bill on the Purchase side.
 class InMemoryPaymentReceivedRepository implements PaymentReceivedRepository {
   InMemoryPaymentReceivedRepository._internal();
+
   static final InMemoryPaymentReceivedRepository instance =
       InMemoryPaymentReceivedRepository._internal();
+
   factory InMemoryPaymentReceivedRepository() => instance;
 
-  final InvoiceRepository _invoiceRepository = InMemoryInvoiceRepository();
-  final List<PaymentReceivedModel> _payments = [];
-  int _nextId = 1;
+  static const String _baseUrl = 'http://localhost:3000/api';
 
-  @override
-  Future<List<PaymentReceivedModel>> getPayments({PaymentReceivedFilter? filter}) async {
-    await Future.delayed(const Duration(milliseconds: 150));
-    final all = List<PaymentReceivedModel>.from(_payments);
-    if (filter == null) return all;
-    return all.where(filter.matches).toList();
+  Map<String, String> get _headers => {
+        'Accept': 'application/json',
+        ...SalesWorkflowSession.headers,
+      };
+
+  Future<Map<String, dynamic>> _request(
+    http.Response response,
+    Set<int> validStatusCodes,
+  ) async {
+    final body = jsonDecode(response.body);
+    if (body is! Map<String, dynamic> ||
+        !validStatusCodes.contains(response.statusCode) ||
+        body['success'] != true) {
+      throw Exception(
+        body is Map
+            ? body['message'] ?? 'Payment request failed'
+            : 'Payment request failed',
+      );
+    }
+    return body;
   }
 
   @override
-  Future<PaymentReceivedModel> addPayment(PaymentReceivedModel payment) async {
-    await Future.delayed(const Duration(milliseconds: 150));
-    final withId = payment.copyWith(id: (_nextId++).toString());
-    _payments.add(withId);
-    await _invoiceRepository.recordPayment(payment.invoiceId, payment.amountReceived);
-    return withId;
+  Future<List<PaymentReceivedModel>> getPayments({
+    PaymentReceivedFilter? filter,
+  }) async {
+    final query = filter?.toQueryParams() ?? <String, String>{};
+    final response = await http.get(
+      Uri.parse('$_baseUrl/payments-received').replace(
+        queryParameters: query.isEmpty ? null : query,
+      ),
+      headers: _headers,
+    );
+    final body = await _request(response, {200});
+    return (body['data'] as List? ?? [])
+        .map(
+          (item) => PaymentReceivedModel.fromJson(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
+  }
+
+  @override
+  Future<PaymentReceivedModel> addPayment(
+    PaymentReceivedModel payment,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/payments-received'),
+      headers: {..._headers, 'Content-Type': 'application/json'},
+      body: jsonEncode(payment.toJson()),
+    );
+    final body = await _request(response, {201});
+    return PaymentReceivedModel.fromJson(
+      Map<String, dynamic>.from(body['data'] as Map),
+    );
   }
 
   @override
   Future<void> deletePayment(String id) async {
-    await Future.delayed(const Duration(milliseconds: 150));
-    _payments.removeWhere((p) => p.id == id);
+    final response = await http.delete(
+      Uri.parse('$_baseUrl/payments-received/$id'),
+      headers: _headers,
+    );
+    await _request(response, {200});
   }
 
   @override
-  Future<String> nextPaymentNumber() async => 'PAY-${_payments.length + 1}';
+  Future<void> updatePayment(
+    String id,
+    PaymentReceivedModel payment,
+  ) async {
+    final response = await http.put(
+      Uri.parse('$_baseUrl/payments-received/$id'),
+      headers: {..._headers, 'Content-Type': 'application/json'},
+      body: jsonEncode(payment.toJson()),
+    );
+    await _request(response, {200});
+  }
+
+  @override
+  Future<String> nextPaymentNumber() async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/payments-received/next-number'),
+      headers: _headers,
+    );
+    final body = await _request(response, {200});
+    return body['data']?['paymentNumber']?.toString() ?? 'PAY-0001';
+  }
 }

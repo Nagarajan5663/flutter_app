@@ -4,14 +4,15 @@ const db = require('../config/db');
 const {
   getNextTransactionNumber,
 } = require('../utils/transaction_number');
+const { requireSalesWorkflowUser } = require('../middleware/workflow_auth');
 
 const router = express.Router();
 
 const ALLOWED_STATUSES = [
   'Draft',
-  'Confirmed',
-  'Fulfilled',
-  'Cancelled',
+  'Approved',
+  'Sent',
+  'Rejected',
 ];
 
 const ALLOWED_PURCHASE_STATUSES = [
@@ -104,6 +105,9 @@ function mapSalesOrder(
     customerName:
       row.customer_name ?? '',
 
+    customerEmail: row.customer_email ?? '',
+    customerPhone: row.customer_phone ?? '',
+
     estimateId:
       row.estimate_id == null
         ? null
@@ -143,6 +147,10 @@ function mapSalesOrder(
 
     status:
       row.status ?? 'Draft',
+
+    approvalStatus: row.approval_status ?? 'Pending',
+    approvedAt: row.approved_at ?? null,
+    approvedBy: row.approved_by == null ? null : Number(row.approved_by),
 
     purchaseStatus:
       row.purchase_status ??
@@ -248,6 +256,8 @@ router.get(
           so_number,
           customer_id,
           customer_name,
+          (SELECT email FROM customers WHERE customers.id = sales_orders.customer_id LIMIT 1) AS customer_email,
+          (SELECT phone FROM customers WHERE customers.id = sales_orders.customer_id LIMIT 1) AS customer_phone,
           estimate_id,
           estimate_number,
           sales_person,
@@ -273,6 +283,11 @@ router.get(
           notes,
           terms_and_conditions,
           status,
+          approval_status,
+          approved_at,
+          approved_by,
+          (SELECT id FROM invoices WHERE sales_order_id = sales_orders.id LIMIT 1) AS invoice_id,
+          (SELECT invoice_number FROM invoices WHERE sales_order_id = sales_orders.id LIMIT 1) AS invoice_number,
           purchase_status,
           created_at,
           updated_at
@@ -398,6 +413,8 @@ router.get(
             so_number,
             customer_id,
             customer_name,
+            (SELECT email FROM customers WHERE customers.id = sales_orders.customer_id LIMIT 1) AS customer_email,
+            (SELECT phone FROM customers WHERE customers.id = sales_orders.customer_id LIMIT 1) AS customer_phone,
             estimate_id,
             estimate_number,
             sales_person,
@@ -423,6 +440,11 @@ router.get(
             notes,
             terms_and_conditions,
             status,
+            approval_status,
+            approved_at,
+            approved_by,
+            (SELECT id FROM invoices WHERE sales_order_id = sales_orders.id LIMIT 1) AS invoice_id,
+            (SELECT invoice_number FROM invoices WHERE sales_order_id = sales_orders.id LIMIT 1) AS invoice_number,
             purchase_status,
             created_at,
             updated_at
@@ -512,6 +534,99 @@ router.get(
   }
 );
 
+// Convert one approved Estimate into one Sales Order. The source row lock and
+// unique estimate_id index make repeated and concurrent requests idempotent.
+router.post(
+  '/from-estimate/:estimateId',
+  requireSalesWorkflowUser,
+  async (req, res) => {
+    const estimateId = Number(req.params.estimateId);
+    if (!Number.isInteger(estimateId) || estimateId <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid Estimate ID.' });
+    }
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+      const [estimateRows] = await connection.query(`
+        SELECT id,estimate_number,customer_id,customer_name,sales_person,estimate_date,
+          sub_total,total,status,approval_status
+        FROM estimates WHERE id = ? FOR UPDATE
+      `, [estimateId]);
+      if (!estimateRows.length) {
+        await connection.rollback();
+        return res.status(404).json({ success: false, message: 'Estimate not found.' });
+      }
+      const estimate = estimateRows[0];
+      if (estimate.approval_status !== 'Approved') {
+        await connection.rollback();
+        return res.status(409).json({ success: false, message: 'Estimate must be approved before creating a Sales Order.' });
+      }
+      const [existing] = await connection.query('SELECT id FROM sales_orders WHERE estimate_id = ? LIMIT 1', [estimateId]);
+      let salesOrderId;
+      let alreadyExists = existing.length > 0;
+      if (alreadyExists) {
+        salesOrderId = existing[0].id;
+      } else {
+        if (['Declined', 'Expired'].includes(estimate.status)) {
+          await connection.rollback();
+          return res.status(409).json({ success: false, message: `A ${estimate.status} Estimate cannot be converted.` });
+        }
+        const number = await getNextTransactionNumber({
+          module: 'Sales Order', table: 'sales_orders', numberColumn: 'so_number', padding: 4, connection,
+        });
+        const [created] = await connection.query(`
+          INSERT INTO sales_orders (
+            so_number,customer_id,customer_name,estimate_id,estimate_number,sales_person,
+            order_date,expected_shipment_date,sub_total,total,notes,terms_and_conditions,status,purchase_status
+          ) VALUES (?,?,?,?,?,?,CURRENT_DATE(),NULL,?,?,NULL,NULL,'Draft','Not Started')
+        `, [number.transactionNumber, estimate.customer_id, estimate.customer_name,
+          estimate.id, estimate.estimate_number, estimate.sales_person, estimate.sub_total, estimate.total]);
+        salesOrderId = created.insertId;
+
+        const [estimateItems] = await connection.query(`
+          SELECT source_type,item_id,part_id,item_name,description,qty,rate,amount
+          FROM estimate_items WHERE estimate_id = ? ORDER BY id ASC
+        `, [estimateId]);
+        for (const line of estimateItems) {
+          await connection.query(`
+            INSERT INTO sales_order_items (sales_order_id,source_type,item_id,part_id,item_name,description,qty,rate,amount)
+            VALUES (?,?,?,?,?,?,?,?,?)
+          `, [salesOrderId,line.source_type,line.item_id,line.part_id,line.item_name,line.description,line.qty,line.rate,line.amount]);
+        }
+      }
+      await connection.commit();
+
+      const [orderRows] = await db.query(`
+        SELECT id,so_number,customer_id,customer_name,estimate_id,estimate_number,sales_person,
+          DATE_FORMAT(order_date,'%Y-%m-%d') AS order_date,
+          DATE_FORMAT(expected_shipment_date,'%Y-%m-%d') AS expected_shipment_date,
+          sub_total,total,notes,terms_and_conditions,status,approval_status,approved_at,approved_by,
+          purchase_status,created_at,updated_at
+        FROM sales_orders WHERE id = ? LIMIT 1
+      `, [salesOrderId]);
+      const [orderItems] = await db.query(`
+        SELECT id,sales_order_id,source_type,item_id,part_id,item_name,description,qty,rate,amount
+        FROM sales_order_items WHERE sales_order_id = ? ORDER BY id ASC
+      `, [salesOrderId]);
+      return res.status(alreadyExists ? 200 : 201).json({
+        success: true,
+        message: alreadyExists ? 'Existing Sales Order returned.' : 'Sales Order created from Estimate.',
+        data: mapSalesOrder(orderRows[0], orderItems.map(mapSalesOrderItem)),
+      });
+    } catch (error) {
+      try { await connection.rollback(); } catch (_) {}
+      if (error.code === 'ER_DUP_ENTRY') {
+        const [rows] = await db.query('SELECT id FROM sales_orders WHERE estimate_id = ? LIMIT 1', [estimateId]);
+        if (rows.length) return res.status(200).json({ success: true, message: 'Existing Sales Order returned.', data: { id: Number(rows[0].id) } });
+      }
+      console.error('Convert Estimate to Sales Order error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to create Sales Order from Estimate.' });
+    } finally {
+      connection.release();
+    }
+  },
+);
+
 // ============================================================
 // CREATE SALES ORDER
 // ============================================================
@@ -539,6 +654,13 @@ router.post(
         notes,
         termsAndConditions,
       } = req.body;
+
+      if (estimateId != null && Number(estimateId) > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Create a Sales Order from the approved Estimate using its workflow action.',
+        });
+      }
 
       if (
         !orderNumber ||
@@ -1177,6 +1299,11 @@ router.post(
             notes,
             terms_and_conditions,
             status,
+            approval_status,
+            approved_at,
+            approved_by,
+            (SELECT id FROM invoices WHERE sales_order_id = sales_orders.id LIMIT 1) AS invoice_id,
+            (SELECT invoice_number FROM invoices WHERE sales_order_id = sales_orders.id LIMIT 1) AS invoice_number,
             purchase_status,
             created_at,
             updated_at
@@ -1281,9 +1408,181 @@ router.post(
   }
 );
 
+router.put('/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  const {
+    customerId,
+    salesPerson = '',
+    date,
+    expectedShipmentDate,
+    items,
+    notes = '',
+    termsAndConditions = '',
+  } = req.body;
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ success: false, message: 'Invalid Sales Order ID.' });
+  }
+  if (!date || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ success: false, message: 'A date and at least one item are required.' });
+  }
+
+  const parsedCustomerId = Number(customerId);
+  if (!Number.isInteger(parsedCustomerId) || parsedCustomerId <= 0) {
+    return res.status(400).json({ success: false, message: 'Please select a valid customer.' });
+  }
+
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [orders] = await connection.query(
+      'SELECT id FROM sales_orders WHERE id = ? FOR UPDATE',
+      [id],
+    );
+    if (!orders.length) {
+      await connection.rollback();
+      return res.status(404).json({ success: false, message: 'Sales Order not found.' });
+    }
+
+    const [customers] = await connection.query(
+      'SELECT id, display_name FROM customers WHERE id = ? LIMIT 1',
+      [parsedCustomerId],
+    );
+    if (!customers.length) {
+      await connection.rollback();
+      return res.status(404).json({ success: false, message: 'Selected customer not found.' });
+    }
+
+    const preparedItems = [];
+    let total = 0;
+    for (const line of items) {
+      const sourceType = line.sourceType;
+      if (sourceType !== 'Item' && sourceType !== 'Part') {
+        await connection.rollback();
+        return res.status(400).json({ success: false, message: 'Invalid item source type.' });
+      }
+
+      const sourceId = Number(sourceType === 'Item' ? line.itemId : line.partId);
+      if (!Number.isInteger(sourceId) || sourceId <= 0) {
+        await connection.rollback();
+        return res.status(400).json({ success: false, message: `Invalid ${sourceType.toLowerCase()} selected.` });
+      }
+      const qty = toNumber(line.qty, -1);
+      const rate = toNumber(line.rate, -1);
+      if (qty <= 0 || rate < 0) {
+        await connection.rollback();
+        return res.status(400).json({ success: false, message: 'Item quantity must be greater than zero and rate cannot be negative.' });
+      }
+
+      const table = sourceType === 'Item' ? 'items' : 'parts';
+      const [catalogRows] = await connection.query(
+        `SELECT id, name, description FROM ${table} WHERE id = ? LIMIT 1`,
+        [sourceId],
+      );
+      if (!catalogRows.length) {
+        await connection.rollback();
+        return res.status(404).json({ success: false, message: `Selected ${sourceType.toLowerCase()} not found.` });
+      }
+
+      const amount = Number((qty * rate).toFixed(2));
+      total += amount;
+      preparedItems.push({
+        sourceType,
+        itemId: sourceType === 'Item' ? sourceId : null,
+        partId: sourceType === 'Part' ? sourceId : null,
+        itemName: catalogRows[0].name ?? '',
+        description: line.description ?? catalogRows[0].description ?? '',
+        qty,
+        rate,
+        amount,
+      });
+    }
+
+    total = Number(total.toFixed(2));
+    await connection.query('DELETE FROM sales_order_items WHERE sales_order_id = ?', [id]);
+    for (const line of preparedItems) {
+      await connection.query(`
+        INSERT INTO sales_order_items
+          (sales_order_id,source_type,item_id,part_id,item_name,description,qty,rate,amount)
+        VALUES (?,?,?,?,?,?,?,?,?)
+      `, [id,line.sourceType,line.itemId,line.partId,line.itemName,line.description,line.qty,line.rate,line.amount]);
+    }
+    await connection.query(`
+      UPDATE sales_orders
+      SET customer_id=?,customer_name=?,sales_person=?,order_date=?,expected_shipment_date=?,
+          sub_total=?,total=?,notes=?,terms_and_conditions=?
+      WHERE id=?
+    `, [
+      parsedCustomerId,
+      customers[0].display_name,
+      salesPerson,
+      date,
+      expectedShipmentDate || null,
+      total,
+      notes || null,
+      termsAndConditions || null,
+      id,
+    ]);
+
+    await connection.commit();
+    return res.status(200).json({ success: true, message: 'Sales Order updated successfully.' });
+  } catch (error) {
+    try { await connection.rollback(); } catch (_) {}
+    console.error('Update Sales Order error:', error);
+    return res.status(400).json({ success: false, message: error.message || 'Failed to update Sales Order.' });
+  } finally {
+    connection.release();
+  }
+});
+
 // ============================================================
 // UPDATE SALES ORDER STATUS
 // ============================================================
+
+router.post(
+  '/:id/approve',
+  requireSalesWorkflowUser,
+  async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid Sales Order ID.' });
+    }
+    try {
+      const [rows] = await db.query(
+        'SELECT id,status,approval_status FROM sales_orders WHERE id = ? LIMIT 1', [id],
+      );
+      if (!rows.length) return res.status(404).json({ success: false, message: 'Sales Order not found.' });
+      if (rows[0].status === 'Rejected') {
+        return res.status(409).json({ success: false, message: 'A Rejected Sales Order cannot be approved.' });
+      }
+      await db.query(
+        `UPDATE sales_orders
+         SET status = 'Approved',
+             approval_status = 'Approved',
+             approved_at = COALESCE(approved_at, NOW()),
+             approved_by = COALESCE(approved_by, ?)
+         WHERE id = ?`,
+        [req.workflowUser.id, id],
+      );
+      const [updated] = await db.query(`
+        SELECT id,so_number,customer_id,customer_name,estimate_id,estimate_number,sales_person,
+          DATE_FORMAT(order_date,'%Y-%m-%d') AS order_date,
+          DATE_FORMAT(expected_shipment_date,'%Y-%m-%d') AS expected_shipment_date,
+          sub_total,total,notes,terms_and_conditions,status,approval_status,approved_at,approved_by,
+          purchase_status,created_at,updated_at
+        FROM sales_orders WHERE id = ? LIMIT 1
+      `, [id]);
+      const [items] = await db.query(`
+        SELECT id,sales_order_id,source_type,item_id,part_id,item_name,description,qty,rate,amount
+        FROM sales_order_items WHERE sales_order_id = ? ORDER BY id ASC
+      `, [id]);
+      return res.status(200).json({ success: true, data: mapSalesOrder(updated[0], items.map(mapSalesOrderItem)) });
+    } catch (error) {
+      console.error('Approve Sales Order error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to approve Sales Order.' });
+    }
+  },
+);
 
 router.put(
   '/:id/status',
@@ -1468,6 +1767,13 @@ router.delete(
       const {
         id,
       } = req.params;
+
+      const [linkedInvoices] = await db.query(
+        'SELECT id FROM invoices WHERE sales_order_id = ? LIMIT 1', [id],
+      );
+      if (linkedInvoices.length) {
+        return res.status(409).json({ success: false, message: 'Sales Order has an Invoice and cannot be deleted.' });
+      }
 
       const [result] =
         await db.query(

@@ -27,6 +27,7 @@ const MODULES = [
   'Estimate',
   'Sales Order',
   'Invoice',
+  'Delivery Challan',
 
   'Purchase Order',
   'Bill',

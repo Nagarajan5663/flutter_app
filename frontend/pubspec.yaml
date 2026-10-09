@@ -25,6 +25,9 @@ dependencies:
   flutter_animate: ^4.5.2
   flutter_quill: ^2.0.7
   http: ^1.6.0
+  pdf: ^3.13.1
+  printing: ^5.15.1
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:
@@ -34,6 +37,11 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  fonts:
+    - family: NotoSans
+      fonts:
+        - asset: assets/fonts/NotoSans.ttf
 
   assets:
     - lib/widgets/Codexia_OG1.8.png

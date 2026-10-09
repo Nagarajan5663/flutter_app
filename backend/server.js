@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
+const { syncDatabase } = require('./database/sync');
 
 // ============================================================
 // ROUTES
@@ -26,6 +27,15 @@ const estimatesRoutes =
 const salesOrdersRoutes =
   require('./routes/sales_orders');
 
+const invoicesRoutes =
+  require('./routes/invoices');
+
+const paymentsReceivedRoutes =
+  require('./routes/payments_received');
+
+const deliveryChallansRoutes =
+  require('./routes/delivery_challans');
+
 const vendorsRoutes =
   require('./routes/vendors');
 
@@ -41,12 +51,14 @@ const usersRoutes =
 const rolesRoutes =
   require('./routes/roles');
 
+const emailTestRoutes =
+  require('./routes/email_test');
+
 // ============================================================
 // APP
 // ============================================================
 
-const app =
-  express();
+const app = express();
 
 // ============================================================
 // MIDDLEWARE
@@ -54,28 +66,21 @@ const app =
 
 app.use(
   cors({
-    origin:
-      true,
-
-    credentials:
-      true,
+    origin: true,
+    credentials: true,
   })
 );
 
 app.use(
   express.json({
-    limit:
-      '10mb',
+    limit: '10mb',
   })
 );
 
 app.use(
   express.urlencoded({
-    extended:
-      true,
-
-    limit:
-      '10mb',
+    extended: true,
+    limit: '10mb',
   })
 );
 
@@ -112,8 +117,7 @@ app.get(
 
       return res.status(200).json({
         success: true,
-        message:
-          'Hostinger MySQL connected successfully',
+        message: 'Hostinger MySQL connected successfully',
         data: rows[0],
       });
     } catch (error) {
@@ -124,8 +128,7 @@ app.get(
 
       return res.status(500).json({
         success: false,
-        message:
-          'Database connection failed',
+        message: 'Database connection failed',
         error: error.message,
       });
     }
@@ -149,8 +152,7 @@ app.get(
 
       return res.status(200).json({
         success: true,
-        message:
-          'MySQL database connected successfully',
+        message: 'MySQL database connected successfully',
         data: rows,
       });
     } catch (error) {
@@ -161,8 +163,7 @@ app.get(
 
       return res.status(500).json({
         success: false,
-        message:
-          'MySQL connection failed',
+        message: 'MySQL connection failed',
         error: error.message,
       });
     }
@@ -235,6 +236,10 @@ app.use(
   salesOrdersRoutes
 );
 
+app.use('/api/invoices', invoicesRoutes);
+app.use('/api/payments-received', paymentsReceivedRoutes);
+app.use('/api/delivery-challans', deliveryChallansRoutes);
+
 // ============================================================
 // VENDORS
 //
@@ -268,14 +273,40 @@ app.use(
   billsRoutes
 );
 
+// ============================================================
+// USERS
+//
+// /api/users
+// ============================================================
+
 app.use(
   '/api/users',
   usersRoutes
 );
 
+// ============================================================
+// ROLES
+//
+// /api/roles
+// ============================================================
+
 app.use(
   '/api/roles',
   rolesRoutes
+);
+
+// ============================================================
+// EMAIL TEST
+//
+// /api/email-test
+//
+// GET  /api/email-test/verify
+// POST /api/email-test/send
+// ============================================================
+
+app.use(
+  '/api/email-test',
+  emailTestRoutes
 );
 
 // ============================================================
@@ -314,6 +345,12 @@ app.get(
         salesOrders:
           '/api/sales-orders',
 
+        invoices:
+          '/api/invoices',
+
+        deliveryChallans:
+          '/api/delivery-challans',
+
         vendors:
           '/api/vendors',
 
@@ -325,6 +362,12 @@ app.get(
 
         users:
           '/api/users',
+
+        roles:
+          '/api/roles',
+
+        emailTest:
+          '/api/email-test',
       },
     });
   }
@@ -385,83 +428,101 @@ const PORT =
   Number(process.env.PORT) ||
   3000;
 
-app.listen(
-  PORT,
-  () => {
-    console.log(
-      '======================================================'
-    );
+(async () => {
+  try {
+    await syncDatabase();
 
-    console.log(
-      `Codexia backend running on http://localhost:${PORT}`
-    );
+    app.listen(
+      PORT,
+      () => {
+        console.log(
+          '======================================================'
+        );
 
-    console.log(
-      '------------------------------------------------------'
-    );
+        console.log(
+          `Codexia backend running on http://localhost:${PORT}`
+        );
 
-    console.log(
-      `DB Test              : http://localhost:${PORT}/api/test-db`
-    );
+        console.log(
+          '------------------------------------------------------'
+        );
 
-    console.log(
-      `MySQL Test           : http://localhost:${PORT}/api/mysql-test`
-    );
+        console.log(
+          `DB Test              : http://localhost:${PORT}/api/test-db`
+        );
 
-    console.log(
-      `Transaction Series   : http://localhost:${PORT}/api/transaction-number-series`
-    );
+        console.log(
+          `MySQL Test           : http://localhost:${PORT}/api/mysql-test`
+        );
 
-    console.log(
-      `Items                : http://localhost:${PORT}/api/items`
-    );
+        console.log(
+          `Transaction Series   : http://localhost:${PORT}/api/transaction-number-series`
+        );
 
-    console.log(
-      `Parts                : http://localhost:${PORT}/api/parts`
-    );
+        console.log(
+          `Items                : http://localhost:${PORT}/api/items`
+        );
 
-    console.log(
-      `Customers            : http://localhost:${PORT}/api/customers`
-    );
+        console.log(
+          `Parts                : http://localhost:${PORT}/api/parts`
+        );
 
-    console.log(
-      `Estimates            : http://localhost:${PORT}/api/estimates`
-    );
+        console.log(
+          `Customers            : http://localhost:${PORT}/api/customers`
+        );
 
-    console.log(
-      `Sales Orders         : http://localhost:${PORT}/api/sales-orders`
-    );
+        console.log(
+          `Estimates            : http://localhost:${PORT}/api/estimates`
+        );
 
-    console.log(
-      `Next Sales Order     : http://localhost:${PORT}/api/sales-orders/next-number`
-    );
+        console.log(
+          `Sales Orders         : http://localhost:${PORT}/api/sales-orders`
+        );
 
-    console.log(
-      `Vendors              : http://localhost:${PORT}/api/vendors`
-    );
+        console.log(
+          `Next Sales Order     : http://localhost:${PORT}/api/sales-orders/next-number`
+        );
 
-    console.log(
-      `Purchase Orders      : http://localhost:${PORT}/api/purchase-orders`
-    );
+        console.log(
+          `Vendors              : http://localhost:${PORT}/api/vendors`
+        );
 
-    console.log(
-      `Next Purchase Order  : http://localhost:${PORT}/api/purchase-orders/next-number`
-    );
+        console.log(
+          `Purchase Orders      : http://localhost:${PORT}/api/purchase-orders`
+        );
 
-    console.log(
-      `Bills                : http://localhost:${PORT}/api/bills`
-    );
+        console.log(
+          `Next Purchase Order  : http://localhost:${PORT}/api/purchase-orders/next-number`
+        );
 
-    console.log(
-      `Users                : http://localhost:${PORT}/api/users`
-    );
+        console.log(
+          `Bills                : http://localhost:${PORT}/api/bills`
+        );
 
-    console.log(
-      `Health               : http://localhost:${PORT}/api/health`
-    );
+        console.log(
+          `Users                : http://localhost:${PORT}/api/users`
+        );
 
-    console.log(
-      '======================================================'
+        console.log(
+          `Roles                : http://localhost:${PORT}/api/roles`
+        );
+
+        console.log(
+          `Email Test           : http://localhost:${PORT}/api/email-test/verify`
+        );
+
+        console.log(
+          `Health               : http://localhost:${PORT}/api/health`
+        );
+
+        console.log(
+          '======================================================'
+        );
+      }
     );
+  } catch (error) {
+    console.error('Database sync failed before startup:', error.message);
+    process.exitCode = 1;
+    await db.end();
   }
-);
+})();

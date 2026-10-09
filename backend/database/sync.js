@@ -90,17 +90,26 @@ async function watchDatabase() {
   process.once('SIGTERM', stopWatching);
 }
 
-const task = process.argv.includes('--watch')
-  ? watchDatabase()
-  : syncDatabase();
+if (require.main === module) {
+  const task = process.argv.includes('--watch')
+    ? watchDatabase()
+    : syncDatabase();
 
-task
-  .catch((error) => {
-    console.error('Database sync failed:', error.message);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    if (!process.argv.includes('--watch')) {
-      await db.end();
-    }
-  });
+  task
+    .catch((error) => {
+      console.error('Database sync failed:', error.message);
+      process.exitCode = 1;
+    })
+    .finally(async () => {
+      if (!process.argv.includes('--watch')) {
+        await db.end();
+      }
+    });
+}
+
+module.exports = {
+  getSqlFiles,
+  runSqlFile,
+  syncDatabase,
+  watchDatabase,
+};

@@ -4,6 +4,7 @@ const db = require('../config/db');
 const {
   getNextTransactionNumber,
 } = require('../utils/transaction_number');
+const { requireSalesWorkflowUser } = require('../middleware/workflow_auth');
 
 const router = express.Router();
 
@@ -121,6 +122,9 @@ function mapEstimate(
       row.customer_name ??
       '',
 
+    customerEmail: row.customer_email ?? '',
+    customerPhone: row.customer_phone ?? '',
+
     salesPerson:
       row.sales_person ??
       '',
@@ -146,6 +150,11 @@ function mapEstimate(
     status:
       row.status ??
       'Draft',
+
+    approvalStatus:
+      row.approval_status ?? 'Pending',
+    approvedAt: row.approved_at ?? null,
+    approvedBy: row.approved_by == null ? null : Number(row.approved_by),
 
     items,
 
@@ -254,6 +263,8 @@ router.get(
 
           customer_id,
           customer_name,
+          (SELECT email FROM customers WHERE customers.id = estimates.customer_id LIMIT 1) AS customer_email,
+          (SELECT phone FROM customers WHERE customers.id = estimates.customer_id LIMIT 1) AS customer_phone,
 
           sales_person,
 
@@ -276,6 +287,11 @@ router.get(
           sub_total,
           total,
           status,
+          approval_status,
+          approved_at,
+          approved_by,
+          (SELECT id FROM sales_orders WHERE estimate_id = estimates.id LIMIT 1) AS sales_order_id,
+          (SELECT so_number FROM sales_orders WHERE estimate_id = estimates.id LIMIT 1) AS sales_order_number,
 
           created_at,
           updated_at
@@ -427,6 +443,8 @@ router.get(
 
             customer_id,
             customer_name,
+            (SELECT email FROM customers WHERE customers.id = estimates.customer_id LIMIT 1) AS customer_email,
+            (SELECT phone FROM customers WHERE customers.id = estimates.customer_id LIMIT 1) AS customer_phone,
 
             sales_person,
 
@@ -449,6 +467,11 @@ router.get(
             sub_total,
             total,
             status,
+            approval_status,
+            approved_at,
+            approved_by,
+            (SELECT id FROM sales_orders WHERE estimate_id = estimates.id LIMIT 1) AS sales_order_id,
+            (SELECT so_number FROM sales_orders WHERE estimate_id = estimates.id LIMIT 1) AS sales_order_number,
 
             created_at,
             updated_at
@@ -1118,6 +1141,11 @@ router.post(
             sub_total,
             total,
             status,
+            approval_status,
+            approved_at,
+            approved_by,
+            (SELECT id FROM sales_orders WHERE estimate_id = estimates.id LIMIT 1) AS sales_order_id,
+            (SELECT so_number FROM sales_orders WHERE estimate_id = estimates.id LIMIT 1) AS sales_order_number,
 
             created_at,
             updated_at
@@ -1232,6 +1260,116 @@ router.post(
 // PUT /api/estimates/:id/status
 // ============================================================
 
+router.post(
+  '/:id/approve',
+  requireSalesWorkflowUser,
+  async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid estimate ID.' });
+    }
+    try {
+      const [rows] = await db.query(
+        'SELECT id, status, approval_status, approved_at, approved_by FROM estimates WHERE id = ? LIMIT 1',
+        [id],
+      );
+      if (!rows.length) return res.status(404).json({ success: false, message: 'Estimate not found.' });
+      if (['Declined', 'Expired'].includes(rows[0].status)) {
+        return res.status(409).json({ success: false, message: `A ${rows[0].status} Estimate cannot be approved.` });
+      }
+      if (rows[0].approval_status !== 'Approved') {
+        await db.query(
+          'UPDATE estimates SET approval_status = ?, approved_at = NOW(), approved_by = ? WHERE id = ?',
+          ['Approved', req.workflowUser.id, id],
+        );
+      }
+      const [updated] = await db.query(`
+        SELECT id, estimate_number, customer_id, customer_name, sales_person,
+          DATE_FORMAT(estimate_date,'%Y-%m-%d') AS estimate_date,
+          DATE_FORMAT(expiry_date,'%Y-%m-%d') AS expiry_date,
+          sub_total,total,status,approval_status,approved_at,approved_by,created_at,updated_at
+        FROM estimates WHERE id = ? LIMIT 1
+      `, [id]);
+      const [items] = await db.query(`
+        SELECT id,estimate_id,source_type,item_id,part_id,item_name,description,qty,rate,amount
+        FROM estimate_items WHERE estimate_id = ? ORDER BY id ASC
+      `, [id]);
+      return res.status(200).json({ success: true, data: mapEstimate(updated[0], items.map(mapEstimateItem)) });
+    } catch (error) {
+      console.error('Approve estimate error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to approve Estimate.' });
+    }
+  },
+);
+
+router.put(
+  '/:id',
+  async (req, res) => {
+    const id = Number(req.params.id);
+    const { customerId, salesPerson, date, expiryDate, items } = req.body || {};
+    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(Number(customerId)) || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, message: 'Estimate details and at least one item are required.' });
+    }
+    let connection;
+    try {
+      connection = await db.getConnection();
+      await connection.beginTransaction();
+      const [rows] = await connection.query(
+        'SELECT id, customer_id, approval_status FROM estimates WHERE id = ? FOR UPDATE', [id],
+      );
+      if (!rows.length) {
+        await connection.rollback();
+        return res.status(404).json({ success: false, message: 'Estimate not found.' });
+      }
+      if (rows[0].approval_status === 'Approved') {
+        await connection.rollback();
+        return res.status(409).json({ success: false, message: 'Approved Estimates cannot be edited.' });
+      }
+      const [linked] = await connection.query('SELECT id FROM sales_orders WHERE estimate_id = ? LIMIT 1', [id]);
+      if (linked.length) {
+        await connection.rollback();
+        return res.status(409).json({ success: false, message: 'An Estimate converted to a Sales Order cannot be edited.' });
+      }
+      const [customers] = await connection.query('SELECT display_name FROM customers WHERE id = ? LIMIT 1', [Number(customerId)]);
+      if (!customers.length) {
+        await connection.rollback();
+        return res.status(400).json({ success: false, message: 'Selected customer was not found.' });
+      }
+      let subtotal = 0;
+      const lines = items.map((item) => {
+        const qty = Number(item.qty);
+        const rate = Number(item.rate);
+        if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(rate) || rate < 0) throw new Error('Each line needs a valid quantity and rate.');
+        const amount = Number((qty * rate).toFixed(2));
+        subtotal += amount;
+        const sourceType = item.sourceType === 'Part' ? 'Part' : 'Item';
+        return [id, sourceType, sourceType === 'Item' ? Number(item.itemId) || null : null,
+          sourceType === 'Part' ? Number(item.partId) || null : null, String(item.itemName || ''),
+          item.description || null, qty, rate, amount];
+      });
+      subtotal = Number(subtotal.toFixed(2));
+      await connection.query(
+        `UPDATE estimates SET customer_id=?,customer_name=?,sales_person=?,estimate_date=?,expiry_date=?,sub_total=?,total=? WHERE id=?`,
+        [Number(customerId), customers[0].display_name, salesPerson || null, normalizeDate(date), normalizeDate(expiryDate), subtotal, subtotal, id],
+      );
+      await connection.query('DELETE FROM estimate_items WHERE estimate_id = ?', [id]);
+      for (const line of lines) {
+        await connection.query(
+          `INSERT INTO estimate_items (estimate_id,source_type,item_id,part_id,item_name,description,qty,rate,amount) VALUES (?,?,?,?,?,?,?,?,?)`, line,
+        );
+      }
+      await connection.commit();
+      return res.status(200).json({ success: true, message: 'Estimate updated successfully.' });
+    } catch (error) {
+      if (connection) await connection.rollback();
+      console.error('Update estimate error:', error);
+      return res.status(500).json({ success: false, message: error.message || 'Failed to update Estimate.' });
+    } finally {
+      if (connection) connection.release();
+    }
+  },
+);
+
 router.put(
   '/:id/status',
   async (req, res) => {
@@ -1331,6 +1469,13 @@ router.delete(
       const {
         id,
       } = req.params;
+
+      const [linkedOrders] = await db.query(
+        'SELECT id FROM sales_orders WHERE estimate_id = ? LIMIT 1', [id],
+      );
+      if (linkedOrders.length) {
+        return res.status(409).json({ success: false, message: 'Estimate has a Sales Order and cannot be deleted.' });
+      }
 
       const [result] =
         await db.query(

@@ -45,34 +45,24 @@ class _CatalogOption {
 class _ItemRow {
   _CatalogOption? selectedProduct;
 
-  final TextEditingController
-      descriptionController =
-      TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
 
-  final TextEditingController
-      qtyController =
-      TextEditingController(
+  final TextEditingController qtyController = TextEditingController(
     text: '1',
   );
 
-  final TextEditingController
-      rateController =
-      TextEditingController(
+  final TextEditingController rateController = TextEditingController(
     text: '0.00',
   );
 
   double get amount {
-    final double qty =
-        double.tryParse(
-          qtyController.text
-              .trim(),
+    final double qty = double.tryParse(
+          qtyController.text.trim(),
         ) ??
         0;
 
-    final double rate =
-        double.tryParse(
-          rateController.text
-              .trim(),
+    final double rate = double.tryParse(
+          rateController.text.trim(),
         ) ??
         0;
 
@@ -82,18 +72,15 @@ class _ItemRow {
   void clear() {
     selectedProduct = null;
 
-    descriptionController
-        .clear();
+    descriptionController.clear();
 
     qtyController.text = '1';
 
-    rateController.text =
-        '0.00';
+    rateController.text = '0.00';
   }
 
   void dispose() {
-    descriptionController
-        .dispose();
+    descriptionController.dispose();
 
     qtyController.dispose();
 
@@ -105,58 +92,50 @@ class _ItemRow {
 // DIALOG
 // ============================================================
 
-class AddPurchaseOrderDialog
-    extends StatefulWidget {
+class AddPurchaseOrderDialog extends StatefulWidget {
   const AddPurchaseOrderDialog({
     super.key,
+    this.initialSalesOrderId,
+    this.initialSalesOrderNumber,
+    this.initialSalesOrderDate,
+    this.initialItems,
   });
 
+  final int? initialSalesOrderId;
+  final String? initialSalesOrderNumber;
+  final DateTime? initialSalesOrderDate;
+  final List<Map<String, dynamic>>? initialItems;
+
   @override
-  State<AddPurchaseOrderDialog>
-      createState() =>
-          _AddPurchaseOrderDialogState();
+  State<AddPurchaseOrderDialog> createState() => _AddPurchaseOrderDialogState();
 }
 
-class _AddPurchaseOrderDialogState
-    extends State<
-        AddPurchaseOrderDialog> {
-  static const String _baseUrl =
-      'http://localhost:3000/api';
+class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
+  static const String _baseUrl = 'http://localhost:3000/api';
 
-  final VendorRepository
-      _vendorRepository =
-      InMemoryVendorRepository();
+  final VendorRepository _vendorRepository = InMemoryVendorRepository();
 
-  final PurchaseOrderRepository
-      _orderRepository =
+  final PurchaseOrderRepository _orderRepository =
       InMemoryPurchaseOrderRepository();
 
-  final TextEditingController
-      poNumberController =
-      TextEditingController();
+  final TextEditingController poNumberController = TextEditingController();
 
-  final TextEditingController
-      referenceNumberController =
+  final TextEditingController referenceNumberController =
       TextEditingController();
 
   List<VendorModel> _vendors = [];
 
-  List<_CatalogOption>
-      _catalog = [];
+  List<_CatalogOption> _catalog = [];
 
   VendorModel? selectedVendor;
 
-  DateTime date =
-      DateTime.now();
+  DateTime date = DateTime.now();
 
-  DateTime?
-      deliveryExpectedDate;
+  DateTime? deliveryExpectedDate;
 
   DateTime? dueDate;
 
-  final List<String>
-      paymentTermsOptions =
-      const [
+  final List<String> paymentTermsOptions = const [
     '100% Advance',
     '50% Advance, 50% on Delivery',
     'Due on Receipt',
@@ -165,8 +144,7 @@ class _AddPurchaseOrderDialogState
     'Net 45',
   ];
 
-  String paymentTerms =
-      '100% Advance';
+  String paymentTerms = '100% Advance';
 
   final List<_ItemRow> rows = [
     _ItemRow(),
@@ -196,30 +174,18 @@ class _AddPurchaseOrderDialogState
     });
 
     try {
-      final Future<List<VendorModel>>
-          vendorsFuture =
-          _vendorRepository
-              .getVendors();
+      final Future<List<VendorModel>> vendorsFuture =
+          _vendorRepository.getVendors();
 
-      final Future<List<_CatalogOption>>
-          catalogFuture =
-          _loadCatalog();
+      final Future<List<_CatalogOption>> catalogFuture = _loadCatalog();
 
-      final Future<String>
-          poNumberFuture =
-          _orderRepository
-              .nextPoNumber();
+      final Future<String> poNumberFuture = _orderRepository.nextPoNumber();
 
-      final List<VendorModel>
-          vendors =
-          await vendorsFuture;
+      final List<VendorModel> vendors = await vendorsFuture;
 
-      final List<_CatalogOption>
-          catalog =
-          await catalogFuture;
+      final List<_CatalogOption> catalog = await catalogFuture;
 
-      final String poNumber =
-          await poNumberFuture;
+      final String poNumber = await poNumberFuture;
 
       if (!mounted) {
         return;
@@ -227,12 +193,46 @@ class _AddPurchaseOrderDialogState
 
       setState(() {
         _vendors = vendors;
-
         _catalog = catalog;
-
-        poNumberController.text =
-            poNumber;
-
+        poNumberController.text = poNumber;
+        if (widget.initialSalesOrderDate != null) {
+          date = widget.initialSalesOrderDate!;
+        }
+        if (widget.initialSalesOrderNumber != null) {
+          referenceNumberController.text = widget.initialSalesOrderNumber!;
+        }
+        if (widget.initialItems != null && widget.initialItems!.isNotEmpty) {
+          rows.clear();
+          for (final item in widget.initialItems!) {
+            final itemName = item['itemName']?.toString() ?? '';
+            final sourceType = item['sourceType']?.toString();
+            final itemId = item['itemId'] == null
+                ? null
+                : int.tryParse(item['itemId'].toString());
+            final partId = item['partId'] == null
+                ? null
+                : int.tryParse(item['partId'].toString());
+            final row = _ItemRow();
+            final match = _matchCatalogOption(
+              itemName: itemName,
+              sourceType: sourceType,
+              itemId: itemId,
+              partId: partId,
+            );
+            if (match != null) {
+              row.selectedProduct = match;
+              row.descriptionController.text =
+                  item['description']?.toString() ?? match.description;
+              final parsedQty = double.tryParse(item['qty']?.toString() ?? '');
+              row.qtyController.text = (parsedQty ?? 1).toString();
+              final parsedRate =
+                  double.tryParse(item['rate']?.toString() ?? '');
+              final rateValue = parsedRate ?? match.purchasePrice;
+              row.rateController.text = rateValue.toStringAsFixed(2);
+            }
+            rows.add(row);
+          }
+        }
         _isLoading = false;
       });
     } catch (error) {
@@ -243,90 +243,94 @@ class _AddPurchaseOrderDialogState
       setState(() {
         _isLoading = false;
 
-        _errorText =
-            'Unable to load purchase order data: $error';
+        _errorText = 'Unable to load purchase order data: $error';
       });
     }
+  }
+
+  _CatalogOption? _matchCatalogOption({
+    required String itemName,
+    String? sourceType,
+    int? itemId,
+    int? partId,
+  }) {
+    for (final option in _catalog) {
+      if (sourceType != null && option.sourceType != sourceType) {
+        continue;
+      }
+      if (itemId != null &&
+          option.id == itemId &&
+          option.sourceType == 'Item') {
+        return option;
+      }
+      if (partId != null &&
+          option.id == partId &&
+          option.sourceType == 'Part') {
+        return option;
+      }
+      if (option.name.trim().toLowerCase() == itemName.trim().toLowerCase()) {
+        return option;
+      }
+    }
+    return null;
   }
 
   // ==========================================================
   // LOAD ITEMS + PARTS
   // ==========================================================
 
-  Future<List<_CatalogOption>>
-      _loadCatalog() async {
-    final Future<http.Response>
-        itemFuture =
-        http.get(
+  Future<List<_CatalogOption>> _loadCatalog() async {
+    final Future<http.Response> itemFuture = http.get(
       Uri.parse(
         '$_baseUrl/items',
       ),
       headers: const {
-        'Accept':
-            'application/json',
+        'Accept': 'application/json',
       },
     );
 
-    final Future<http.Response>
-        partFuture =
-        http.get(
+    final Future<http.Response> partFuture = http.get(
       Uri.parse(
         '$_baseUrl/parts',
       ),
       headers: const {
-        'Accept':
-            'application/json',
+        'Accept': 'application/json',
       },
     );
 
-    final http.Response
-        itemResponse =
-        await itemFuture;
+    final http.Response itemResponse = await itemFuture;
 
-    final http.Response
-        partResponse =
-        await partFuture;
+    final http.Response partResponse = await partFuture;
 
-    final dynamic itemBody =
-        jsonDecode(
+    final dynamic itemBody = jsonDecode(
       itemResponse.body,
     );
 
-    final dynamic partBody =
-        jsonDecode(
+    final dynamic partBody = jsonDecode(
       partResponse.body,
     );
 
-    if (
-      itemBody
-          is! Map<String, dynamic> ||
-      itemResponse.statusCode != 200 ||
-      itemBody['success'] != true
-    ) {
+    if (itemBody is! Map<String, dynamic> ||
+        itemResponse.statusCode != 200 ||
+        itemBody['success'] != true) {
       throw Exception(
         itemBody is Map
-            ? itemBody['message'] ??
-                'Failed to load items'
+            ? itemBody['message'] ?? 'Failed to load items'
             : 'Failed to load items',
       );
     }
 
-    if (
-      partBody
-          is! Map<String, dynamic> ||
-      partResponse.statusCode != 200 ||
-      partBody['success'] != true
-    ) {
+    if (partBody is! Map<String, dynamic> ||
+        partResponse.statusCode != 200 ||
+        partBody['success'] != true) {
       throw Exception(
         partBody is Map
-            ? partBody['message'] ??
-                'Failed to load parts'
+            ? partBody['message'] ?? 'Failed to load parts'
             : 'Failed to load parts',
       );
     }
 
-    final List<_CatalogOption>
-        result = [];
+    final List<_CatalogOption> result = [];
 
     // ----------------------------------------------------------
     // ITEMS
@@ -334,68 +338,33 @@ class _AddPurchaseOrderDialogState
     // ----------------------------------------------------------
 
     final List<dynamic> itemData =
-        itemBody['data']
-            is List
-        ? itemBody['data']
-        : <dynamic>[];
+        itemBody['data'] is List ? itemBody['data'] : <dynamic>[];
 
-    for (
-      final dynamic raw
-      in itemData
-    ) {
-      final Map<String, dynamic>
-          item =
-          Map<String, dynamic>.from(
+    for (final dynamic raw in itemData) {
+      final Map<String, dynamic> item = Map<String, dynamic>.from(
         raw as Map,
       );
 
-      final int id =
-          int.tryParse(
-            item['id']
-                    ?.toString() ??
-                '',
+      final int id = int.tryParse(
+            item['id']?.toString() ?? '',
           ) ??
           0;
 
-      final String name =
-          item['name']
-                  ?.toString() ??
-              '';
+      final String name = item['name']?.toString() ?? '';
 
-      if (
-        id <= 0 ||
-        name.trim().isEmpty
-      ) {
+      if (id <= 0 || name.trim().isEmpty) {
         continue;
       }
 
       result.add(
         _CatalogOption(
-          sourceType:
-              'Item',
-
-          id:
-              id,
-
-          name:
-              name,
-
-          sku:
-              item['sku']
-                      ?.toString() ??
-                  '',
-
-          description:
-              item['description']
-                      ?.toString() ??
-                  '',
-
-          purchasePrice:
-              double.tryParse(
-                item[
-                        'purchase_price']
-                    ?.toString() ??
-                    '0',
+          sourceType: 'Item',
+          id: id,
+          name: name,
+          sku: item['sku']?.toString() ?? '',
+          description: item['description']?.toString() ?? '',
+          purchasePrice: double.tryParse(
+                item['purchase_price']?.toString() ?? '0',
               ) ??
               0,
         ),
@@ -407,68 +376,33 @@ class _AddPurchaseOrderDialogState
     // ----------------------------------------------------------
 
     final List<dynamic> partData =
-        partBody['data']
-            is List
-        ? partBody['data']
-        : <dynamic>[];
+        partBody['data'] is List ? partBody['data'] : <dynamic>[];
 
-    for (
-      final dynamic raw
-      in partData
-    ) {
-      final Map<String, dynamic>
-          part =
-          Map<String, dynamic>.from(
+    for (final dynamic raw in partData) {
+      final Map<String, dynamic> part = Map<String, dynamic>.from(
         raw as Map,
       );
 
-      final int id =
-          int.tryParse(
-            part['id']
-                    ?.toString() ??
-                '',
+      final int id = int.tryParse(
+            part['id']?.toString() ?? '',
           ) ??
           0;
 
-      final String name =
-          part['name']
-                  ?.toString() ??
-              '';
+      final String name = part['name']?.toString() ?? '';
 
-      if (
-        id <= 0 ||
-        name.trim().isEmpty
-      ) {
+      if (id <= 0 || name.trim().isEmpty) {
         continue;
       }
 
       result.add(
         _CatalogOption(
-          sourceType:
-              'Part',
-
-          id:
-              id,
-
-          name:
-              name,
-
-          sku:
-              part['sku']
-                      ?.toString() ??
-                  '',
-
-          description:
-              part['description']
-                      ?.toString() ??
-                  '',
-
-          purchasePrice:
-              double.tryParse(
-                part[
-                        'purchase_price']
-                    ?.toString() ??
-                    '0',
+          sourceType: 'Part',
+          id: id,
+          name: name,
+          sku: part['sku']?.toString() ?? '',
+          description: part['description']?.toString() ?? '',
+          purchasePrice: double.tryParse(
+                part['purchase_price']?.toString() ?? '0',
               ) ??
               0,
         ),
@@ -484,16 +418,11 @@ class _AddPurchaseOrderDialogState
 
   @override
   void dispose() {
-    poNumberController
-        .dispose();
+    poNumberController.dispose();
 
-    referenceNumberController
-        .dispose();
+    referenceNumberController.dispose();
 
-    for (
-      final _ItemRow row
-      in rows
-    ) {
+    for (final _ItemRow row in rows) {
       row.dispose();
     }
 
@@ -515,9 +444,7 @@ class _AddPurchaseOrderDialogState
   void _removeRow(
     int index,
   ) {
-    if (
-      rows.length == 1
-    ) {
+    if (rows.length == 1) {
       setState(() {
         rows[0].clear();
       });
@@ -526,8 +453,7 @@ class _AddPurchaseOrderDialogState
     }
 
     setState(() {
-      rows[index]
-          .dispose();
+      rows[index].dispose();
 
       rows.removeAt(
         index,
@@ -542,13 +468,11 @@ class _AddPurchaseOrderDialogState
   double get _subTotal {
     return rows.fold(
       0.0,
-
       (
         double sum,
         _ItemRow row,
       ) {
-        return sum +
-            row.amount;
+        return sum + row.amount;
       },
     );
   }
@@ -559,24 +483,13 @@ class _AddPurchaseOrderDialogState
 
   Future<void> _pickDate({
     required DateTime? initial,
-
-    required ValueChanged<DateTime>
-        onPicked,
+    required ValueChanged<DateTime> onPicked,
   }) async {
-    final DateTime? picked =
-        await showDatePicker(
-      context:
-          context,
-
-      initialDate:
-          initial ??
-              DateTime.now(),
-
-      firstDate:
-          DateTime(2020),
-
-      lastDate:
-          DateTime(2100),
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initial ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
     );
 
     if (picked != null) {
@@ -595,81 +508,50 @@ class _AddPurchaseOrderDialogState
       return;
     }
 
-    if (
-      selectedVendor == null
-    ) {
+    if (selectedVendor == null) {
       setState(() {
-        _errorText =
-            'Please select a vendor';
+        _errorText = 'Please select a vendor';
       });
 
       return;
     }
 
-    if (
-      selectedVendor!.id ==
-              null ||
-          selectedVendor!.id!
-              .trim()
-              .isEmpty
-    ) {
+    if (selectedVendor!.id == null || selectedVendor!.id!.trim().isEmpty) {
       setState(() {
-        _errorText =
-            'Selected vendor ID is missing';
+        _errorText = 'Selected vendor ID is missing';
       });
 
       return;
     }
 
-    if (
-      poNumberController
-          .text
-          .trim()
-          .isEmpty
-    ) {
+    if (poNumberController.text.trim().isEmpty) {
       setState(() {
-        _errorText =
-            'Please enter a purchase order number';
+        _errorText = 'Please enter a purchase order number';
       });
 
       return;
     }
 
-    final List<
-            PurchaseOrderItemModel>
-        items = [];
+    final List<PurchaseOrderItemModel> items = [];
 
-    for (
-      final _ItemRow row
-      in rows
-    ) {
-      if (
-        row.selectedProduct ==
-        null
-      ) {
+    for (final _ItemRow row in rows) {
+      if (row.selectedProduct == null) {
         continue;
       }
 
-      final double qty =
-          double.tryParse(
-            row.qtyController
-                .text
-                .trim(),
+      final double qty = double.tryParse(
+            row.qtyController.text.trim(),
           ) ??
           0;
 
-      final double rate =
-          double.tryParse(
-            row.rateController
-                .text
-                .trim(),
+      final double rate = double.tryParse(
+            row.rateController.text.trim(),
           ) ??
           0;
 
       if (qty <= 0) {
         setState(() {
-          _errorText =
-              'Quantity must be greater than zero';
+          _errorText = 'Quantity must be greater than zero';
         });
 
         return;
@@ -677,8 +559,7 @@ class _AddPurchaseOrderDialogState
 
       if (rate < 0) {
         setState(() {
-          _errorText =
-              'Rate cannot be negative';
+          _errorText = 'Rate cannot be negative';
         });
 
         return;
@@ -686,48 +567,32 @@ class _AddPurchaseOrderDialogState
 
       items.add(
         PurchaseOrderItemModel(
-          itemName:
-              row.selectedProduct!
-                  .name,
-
-          description:
-              row.descriptionController
-                  .text
-                  .trim(),
-
-          qty:
-              qty,
-
-          rate:
-              rate,
+          itemName: row.selectedProduct!.name,
+          description: row.descriptionController.text.trim(),
+          qty: qty,
+          rate: rate,
         ),
       );
     }
 
     if (items.isEmpty) {
       setState(() {
-        _errorText =
-            'Please add at least one Item or Part';
+        _errorText = 'Please add at least one Item or Part';
       });
 
       return;
     }
 
-    if (
-      deliveryExpectedDate !=
-              null &&
-          deliveryExpectedDate!
-              .isBefore(
-            DateTime(
-              date.year,
-              date.month,
-              date.day,
-            ),
-          )
-    ) {
+    if (deliveryExpectedDate != null &&
+        deliveryExpectedDate!.isBefore(
+          DateTime(
+            date.year,
+            date.month,
+            date.day,
+          ),
+        )) {
       setState(() {
-        _errorText =
-            'Delivery expected date cannot be before PO date';
+        _errorText = 'Delivery expected date cannot be before PO date';
       });
 
       return;
@@ -739,39 +604,18 @@ class _AddPurchaseOrderDialogState
       _errorText = null;
     });
 
-    final PurchaseOrderModel order =
-        PurchaseOrderModel(
-      poNumber:
-          poNumberController
-              .text
-              .trim(),
-
-      vendorId:
-          selectedVendor!.id!,
-
-      vendorName:
-          selectedVendor!
-              .vendorName,
-
-      date:
-          date,
-
-      deliveryExpectedDate:
-          deliveryExpectedDate,
-
-      paymentTerms:
-          paymentTerms,
-
-      dueDate:
-          dueDate,
-
-      referenceNumber:
-          referenceNumberController
-              .text
-              .trim(),
-
-      items:
-          items,
+    final PurchaseOrderModel order = PurchaseOrderModel(
+      poNumber: poNumberController.text.trim(),
+      salesOrderId: widget.initialSalesOrderId?.toString(),
+      salesOrderNumber: widget.initialSalesOrderNumber,
+      vendorId: selectedVendor!.id!,
+      vendorName: selectedVendor!.vendorName,
+      date: date,
+      deliveryExpectedDate: deliveryExpectedDate,
+      paymentTerms: paymentTerms,
+      dueDate: dueDate,
+      referenceNumber: referenceNumberController.text.trim(),
+      items: items,
     );
 
     Navigator.pop(
@@ -789,53 +633,34 @@ class _AddPurchaseOrderDialogState
     BuildContext context,
   ) {
     return GlassModalShell(
-      maxWidth:
-          900,
-
-      maxHeight:
-          850,
-
+      maxWidth: 900,
+      maxHeight: 850,
       child: _isLoading
           ? const Padding(
-              padding:
-                  EdgeInsets.all(
+              padding: EdgeInsets.all(
                 60,
               ),
-
-              child:
-                  Center(
-                child:
-                    CircularProgressIndicator(),
+              child: Center(
+                child: CircularProgressIndicator(),
               ),
             )
           : SingleChildScrollView(
-              padding:
-                  const EdgeInsets
-                      .fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 34,
                 30,
                 34,
                 28,
               ),
-
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
-
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ============================================
                   // HEADER
                   // ============================================
 
                   GlassDialogHeader(
-                    title:
-                        'New Purchase Order',
-
-                    icon:
-                        Icons
-                            .shopping_cart_outlined,
-
+                    title: 'New Purchase Order',
+                    icon: Icons.shopping_cart_outlined,
                     onClose: () {
                       Navigator.pop(
                         context,
@@ -851,69 +676,42 @@ class _AddPurchaseOrderDialogState
                   // ERROR
                   // ============================================
 
-                  if (
-                    _errorText !=
-                    null
-                  ) ...[
+                  if (_errorText != null) ...[
                     Container(
-                      width:
-                          double.infinity,
-
-                      padding:
-                          const EdgeInsets
-                              .all(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(
                         12,
                       ),
-
-                      decoration:
-                          BoxDecoration(
-                        color:
-                            const Color(
+                      decoration: BoxDecoration(
+                        color: const Color(
                           0xFFF4E3E3,
                         ),
-
-                        borderRadius:
-                            BorderRadius
-                                .circular(
+                        borderRadius: BorderRadius.circular(
                           7,
                         ),
                       ),
-
                       child: Row(
                         children: [
                           Expanded(
                             child: Text(
                               _errorText!,
-
-                              style:
-                                  const TextStyle(
-                                color:
-                                    Color(
+                              style: const TextStyle(
+                                color: Color(
                                   0xFFAB2A2A,
                                 ),
                               ),
                             ),
                           ),
-
-                          if (
-                            _catalog
-                                    .isEmpty ||
-                                _vendors
-                                    .isEmpty
-                          )
+                          if (_catalog.isEmpty || _vendors.isEmpty)
                             TextButton(
-                              onPressed:
-                                  _init,
-
-                              child:
-                                  const Text(
+                              onPressed: _init,
+                              child: const Text(
                                 'Retry',
                               ),
                             ),
                         ],
                       ),
                     ),
-
                     const SizedBox(
                       height: 16,
                     ),
@@ -924,143 +722,83 @@ class _AddPurchaseOrderDialogState
                   // ============================================
 
                   Row(
-                    crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
-
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child:
-                            _labeledField(
-                          label:
-                              'Vendor Name *',
-
-                          child:
-                              DropdownSearch<
-                                  VendorModel>(
+                        child: _labeledField(
+                          label: 'Vendor Name *',
+                          child: DropdownSearch<VendorModel>(
                             items: (
                               filter,
                               infiniteScrollProps,
                             ) {
-                              final String
-                                  query =
-                                  filter
-                                      .trim()
-                                      .toLowerCase();
+                              final String query = filter.trim().toLowerCase();
 
-                              if (
-                                query
-                                    .isEmpty
-                              ) {
+                              if (query.isEmpty) {
                                 return _vendors;
                               }
 
-                              return _vendors
-                                  .where(
-                                    (
-                                      VendorModel
-                                          vendor,
-                                    ) {
-                                      return vendor
-                                              .vendorName
-                                              .toLowerCase()
-                                              .contains(
-                                                query,
-                                              ) ||
-                                          vendor
-                                              .companyName
-                                              .toLowerCase()
-                                              .contains(
-                                                query,
-                                              ) ||
-                                          vendor
-                                              .email
-                                              .toLowerCase()
-                                              .contains(
-                                                query,
-                                              );
-                                    },
-                                  )
-                                  .toList();
-                            },
-
-                            itemAsString:
+                              return _vendors.where(
                                 (
-                              VendorModel
-                                  vendor,
+                                  VendorModel vendor,
+                                ) {
+                                  return vendor.vendorName
+                                          .toLowerCase()
+                                          .contains(
+                                            query,
+                                          ) ||
+                                      vendor.companyName.toLowerCase().contains(
+                                            query,
+                                          ) ||
+                                      vendor.email.toLowerCase().contains(
+                                            query,
+                                          );
+                                },
+                              ).toList();
+                            },
+                            itemAsString: (
+                              VendorModel vendor,
                             ) {
-                              if (
-                                vendor
-                                    .companyName
-                                    .trim()
-                                    .isEmpty
-                              ) {
-                                return vendor
-                                    .vendorName;
+                              if (vendor.companyName.trim().isEmpty) {
+                                return vendor.vendorName;
                               }
 
                               return '${vendor.vendorName} - ${vendor.companyName}';
                             },
-
-                            compareFn:
-                                (
+                            compareFn: (
                               VendorModel a,
                               VendorModel b,
                             ) {
-                              return a.id ==
-                                  b.id;
+                              return a.id == b.id;
                             },
-
-                            selectedItem:
-                                selectedVendor,
-
-                            onChanged:
-                                (
-                              VendorModel?
-                                  vendor,
+                            selectedItem: selectedVendor,
+                            onChanged: (
+                              VendorModel? vendor,
                             ) {
                               setState(() {
-                                selectedVendor =
-                                    vendor;
+                                selectedVendor = vendor;
                               });
                             },
-
-                            popupProps:
-                                const PopupProps
-                                    .menu(
-                              showSearchBox:
-                                  true,
+                            popupProps: const PopupProps.menu(
+                              showSearchBox: true,
                             ),
-
-                            decoratorProps:
-                                DropDownDecoratorProps(
-                              decoration:
-                                  _fieldDecoration(
-                                hint:
-                                    'Select or type to search...',
+                            decoratorProps: DropDownDecoratorProps(
+                              decoration: _fieldDecoration(
+                                hint: 'Select or type to search...',
                               ),
                             ),
                           ),
                         ),
                       ),
-
                       const SizedBox(
                         width: 16,
                       ),
-
                       Expanded(
-                        child:
-                            _labeledField(
-                          label:
-                              'Purchase Order # *',
-
-                          child:
-                              _textField(
-                            controller:
-                                poNumberController,
-
-                            readOnly:
-                                true,
+                        child: _labeledField(
+                          label: 'Purchase Order # *',
+                          child: _textField(
+                            controller: poNumberController,
+                            readOnly: true,
                           ),
                         ),
                       ),
@@ -1076,36 +814,21 @@ class _AddPurchaseOrderDialogState
                   // ============================================
 
                   Row(
-                    crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
-
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child:
-                            _labeledField(
-                          label:
-                              'Date *',
-
-                          child:
-                              _dateField(
-                            value:
-                                date,
-
-                            onTap:
-                                () {
+                        child: _labeledField(
+                          label: 'Date *',
+                          child: _dateField(
+                            value: date,
+                            onTap: () {
                               _pickDate(
-                                initial:
-                                    date,
-
-                                onPicked:
-                                    (
-                                  DateTime
-                                      value,
+                                initial: date,
+                                onPicked: (
+                                  DateTime value,
                                 ) {
                                   setState(() {
-                                    date =
-                                        value;
+                                    date = value;
                                   });
                                 },
                               );
@@ -1113,37 +836,22 @@ class _AddPurchaseOrderDialogState
                           ),
                         ),
                       ),
-
                       const SizedBox(
                         width: 16,
                       ),
-
                       Expanded(
-                        child:
-                            _labeledField(
-                          label:
-                              'Delivery Expected Date',
-
-                          child:
-                              _dateField(
-                            value:
-                                deliveryExpectedDate,
-
-                            onTap:
-                                () {
+                        child: _labeledField(
+                          label: 'Delivery Expected Date',
+                          child: _dateField(
+                            value: deliveryExpectedDate,
+                            onTap: () {
                               _pickDate(
-                                initial:
-                                    deliveryExpectedDate ??
-                                        date,
-
-                                onPicked:
-                                    (
-                                  DateTime
-                                      value,
+                                initial: deliveryExpectedDate ?? date,
+                                onPicked: (
+                                  DateTime value,
                                 ) {
                                   setState(() {
-                                    deliveryExpectedDate =
-                                        value;
+                                    deliveryExpectedDate = value;
                                   });
                                 },
                               );
@@ -1163,94 +871,53 @@ class _AddPurchaseOrderDialogState
                   // ============================================
 
                   Row(
-                    crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
-
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child:
-                            _labeledField(
-                          label:
-                              'Payment Terms',
-
-                          child:
-                              Container(
-                            padding:
-                                const EdgeInsets
-                                    .symmetric(
-                              horizontal:
-                                  12,
+                        child: _labeledField(
+                          label: 'Payment Terms',
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
                             ),
-
-                            decoration:
-                                BoxDecoration(
-                              color:
-                                  const Color(
+                            decoration: BoxDecoration(
+                              color: const Color(
                                 0xFFF8F9FA,
                               ),
-
-                              borderRadius:
-                                  BorderRadius
-                                      .circular(
+                              borderRadius: BorderRadius.circular(
                                 7,
                               ),
-
-                              border:
-                                  Border.all(
-                                color:
-                                    const Color(
+                              border: Border.all(
+                                color: const Color(
                                   0xFFD9DEE5,
                                 ),
                               ),
                             ),
-
-                            child:
-                                DropdownButtonHideUnderline(
-                              child:
-                                  DropdownButton<
-                                      String>(
-                                value:
-                                    paymentTerms,
-
-                                isExpanded:
-                                    true,
-
-                                items:
-                                    paymentTermsOptions
-                                        .map(
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: paymentTerms,
+                                isExpanded: true,
+                                items: paymentTermsOptions.map(
                                   (
-                                    String
-                                        value,
+                                    String value,
                                   ) {
-                                    return DropdownMenuItem<
-                                        String>(
-                                      value:
-                                          value,
-
-                                      child:
-                                          Text(
+                                    return DropdownMenuItem<String>(
+                                      value: value,
+                                      child: Text(
                                         value,
                                       ),
                                     );
                                   },
                                 ).toList(),
-
-                                onChanged:
-                                    (
-                                  String?
-                                      value,
+                                onChanged: (
+                                  String? value,
                                 ) {
-                                  if (
-                                    value ==
-                                    null
-                                  ) {
+                                  if (value == null) {
                                     return;
                                   }
 
                                   setState(() {
-                                    paymentTerms =
-                                        value;
+                                    paymentTerms = value;
                                   });
                                 },
                               ),
@@ -1258,37 +925,22 @@ class _AddPurchaseOrderDialogState
                           ),
                         ),
                       ),
-
                       const SizedBox(
                         width: 16,
                       ),
-
                       Expanded(
-                        child:
-                            _labeledField(
-                          label:
-                              'Due Date',
-
-                          child:
-                              _dateField(
-                            value:
-                                dueDate,
-
-                            onTap:
-                                () {
+                        child: _labeledField(
+                          label: 'Due Date',
+                          child: _dateField(
+                            value: dueDate,
+                            onTap: () {
                               _pickDate(
-                                initial:
-                                    dueDate ??
-                                        date,
-
-                                onPicked:
-                                    (
-                                  DateTime
-                                      value,
+                                initial: dueDate ?? date,
+                                onPicked: (
+                                  DateTime value,
                                 ) {
                                   setState(() {
-                                    dueDate =
-                                        value;
+                                    dueDate = value;
                                   });
                                 },
                               );
@@ -1308,13 +960,9 @@ class _AddPurchaseOrderDialogState
                   // ============================================
 
                   _labeledField(
-                    label:
-                        'Reference # (optional)',
-
-                    child:
-                        _textField(
-                      controller:
-                          referenceNumberController,
+                    label: 'Reference # (optional)',
+                    child: _textField(
+                      controller: referenceNumberController,
                     ),
                   ),
 
@@ -1328,18 +976,10 @@ class _AddPurchaseOrderDialogState
 
                   const Text(
                     'Item Details',
-
-                    style:
-                        TextStyle(
-                      fontSize:
-                          17,
-
-                      fontWeight:
-                          FontWeight
-                              .w700,
-
-                      color:
-                          Color(
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Color(
                         0xFF3D4147,
                       ),
                     ),
@@ -1353,40 +993,28 @@ class _AddPurchaseOrderDialogState
                     children: [
                       Expanded(
                         flex: 4,
-
-                        child:
-                            _SmallHeader(
+                        child: _SmallHeader(
                           'ITEM / DESCRIPTION',
                         ),
                       ),
-
                       Expanded(
                         flex: 2,
-
-                        child:
-                            _SmallHeader(
+                        child: _SmallHeader(
                           'QTY',
                         ),
                       ),
-
                       Expanded(
                         flex: 2,
-
-                        child:
-                            _SmallHeader(
+                        child: _SmallHeader(
                           'RATE',
                         ),
                       ),
-
                       Expanded(
                         flex: 2,
-
-                        child:
-                            _SmallHeader(
+                        child: _SmallHeader(
                           'AMOUNT',
                         ),
                       ),
-
                       SizedBox(
                         width: 36,
                       ),
@@ -1397,178 +1025,110 @@ class _AddPurchaseOrderDialogState
                     height: 8,
                   ),
 
-                  ...rows
-                      .asMap()
-                      .entries
-                      .map(
+                  ...rows.asMap().entries.map(
                     (
-                      MapEntry<
-                              int,
-                              _ItemRow>
-                          entry,
+                      MapEntry<int, _ItemRow> entry,
                     ) {
-                      final int index =
-                          entry.key;
+                      final int index = entry.key;
 
-                      final _ItemRow row =
-                          entry.value;
+                      final _ItemRow row = entry.value;
 
                       return Padding(
-                        padding:
-                            const EdgeInsets
-                                .only(
+                        padding: const EdgeInsets.only(
                           bottom: 14,
                         ),
-
                         child: Row(
-                          crossAxisAlignment:
-                              CrossAxisAlignment
-                                  .start,
-
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
                               flex: 4,
-
-                              child:
-                                  Column(
+                              child: Column(
                                 children: [
                                   // ============================
                                   // ITEM / PART SEARCH
                                   // ============================
 
-                                  DropdownSearch<
-                                      _CatalogOption>(
+                                  DropdownSearch<_CatalogOption>(
                                     items: (
                                       filter,
                                       infiniteScrollProps,
                                     ) {
-                                      final String
-                                          query =
-                                          filter
-                                              .trim()
-                                              .toLowerCase();
+                                      final String query =
+                                          filter.trim().toLowerCase();
 
-                                      if (
-                                        query
-                                            .isEmpty
-                                      ) {
+                                      if (query.isEmpty) {
                                         return _catalog;
                                       }
 
-                                      return _catalog
-                                          .where(
-                                            (
-                                              _CatalogOption
-                                                  product,
-                                            ) {
-                                              return product
-                                                      .name
-                                                      .toLowerCase()
-                                                      .contains(
-                                                        query,
-                                                      ) ||
-                                                  product
-                                                      .sku
-                                                      .toLowerCase()
-                                                      .contains(
-                                                        query,
-                                                      ) ||
-                                                  product
-                                                      .sourceType
-                                                      .toLowerCase()
-                                                      .contains(
-                                                        query,
-                                                      );
-                                            },
-                                          )
-                                          .toList();
-                                    },
-
-                                    itemAsString:
+                                      return _catalog.where(
                                         (
-                                      _CatalogOption
-                                          product,
+                                          _CatalogOption product,
+                                        ) {
+                                          return product.name
+                                                  .toLowerCase()
+                                                  .contains(
+                                                    query,
+                                                  ) ||
+                                              product.sku
+                                                  .toLowerCase()
+                                                  .contains(
+                                                    query,
+                                                  ) ||
+                                              product.sourceType
+                                                  .toLowerCase()
+                                                  .contains(
+                                                    query,
+                                                  );
+                                        },
+                                      ).toList();
+                                    },
+                                    itemAsString: (
+                                      _CatalogOption product,
                                     ) {
-                                      final String
-                                          sku =
-                                          product
-                                                  .sku
-                                                  .isEmpty
-                                              ? ''
-                                              : ' • ${product.sku}';
+                                      final String sku = product.sku.isEmpty
+                                          ? ''
+                                          : ' • ${product.sku}';
 
                                       return '${product.name} [${product.sourceType}]$sku';
                                     },
-
-                                    compareFn:
-                                        (
-                                      _CatalogOption
-                                          a,
-                                      _CatalogOption
-                                          b,
+                                    compareFn: (
+                                      _CatalogOption a,
+                                      _CatalogOption b,
                                     ) {
-                                      return a
-                                                  .sourceType ==
-                                              b
-                                                  .sourceType &&
-                                          a.id ==
-                                              b.id;
+                                      return a.sourceType == b.sourceType &&
+                                          a.id == b.id;
                                     },
-
-                                    selectedItem:
-                                        row.selectedProduct,
-
-                                    onChanged:
-                                        (
-                                      _CatalogOption?
-                                          product,
+                                    selectedItem: row.selectedProduct,
+                                    onChanged: (
+                                      _CatalogOption? product,
                                     ) {
                                       setState(() {
-                                        row.selectedProduct =
-                                            product;
+                                        row.selectedProduct = product;
 
-                                        if (
-                                          product ==
-                                          null
-                                        ) {
-                                          row
-                                              .descriptionController
-                                              .clear();
+                                        if (product == null) {
+                                          row.descriptionController.clear();
 
-                                          row.rateController.text =
-                                              '0.00';
+                                          row.rateController.text = '0.00';
 
                                           return;
                                         }
 
-                                        row
-                                                .descriptionController
-                                                .text =
-                                            product
-                                                .description;
+                                        row.descriptionController.text =
+                                            product.description;
 
-                                        row.rateController.text =
-                                            product
-                                                .purchasePrice
-                                                .toStringAsFixed(
-                                              2,
-                                            );
+                                        row.rateController.text = product
+                                            .purchasePrice
+                                            .toStringAsFixed(
+                                          2,
+                                        );
                                       });
                                     },
-
-                                    popupProps:
-                                        const PopupProps
-                                            .menu(
-                                      showSearchBox:
-                                          true,
+                                    popupProps: const PopupProps.menu(
+                                      showSearchBox: true,
                                     ),
-
-                                    decoratorProps:
-                                        DropDownDecoratorProps(
-                                      decoration:
-                                          _fieldDecoration(
-                                        hint:
-                                            'Select Item or Part...',
+                                    decoratorProps: DropDownDecoratorProps(
+                                      decoration: _fieldDecoration(
+                                        hint: 'Select Item or Part...',
                                       ),
                                     ),
                                   ),
@@ -1578,140 +1138,83 @@ class _AddPurchaseOrderDialogState
                                   ),
 
                                   _textField(
-                                    controller:
-                                        row.descriptionController,
-
-                                    hint:
-                                        'Description',
-
-                                    maxLines:
-                                        2,
+                                    controller: row.descriptionController,
+                                    hint: 'Description',
+                                    maxLines: 2,
                                   ),
                                 ],
                               ),
                             ),
-
                             const SizedBox(
                               width: 8,
                             ),
-
                             Expanded(
                               flex: 2,
-
-                              child:
-                                  _textField(
-                                controller:
-                                    row.qtyController,
-
+                              child: _textField(
+                                controller: row.qtyController,
                                 keyboardType:
-                                    const TextInputType
-                                        .numberWithOptions(
-                                  decimal:
-                                      true,
+                                    const TextInputType.numberWithOptions(
+                                  decimal: true,
                                 ),
-
-                                onChanged:
-                                    (_) {
+                                onChanged: (_) {
                                   setState(() {});
                                 },
                               ),
                             ),
-
                             const SizedBox(
                               width: 8,
                             ),
-
                             Expanded(
                               flex: 2,
-
-                              child:
-                                  _textField(
-                                controller:
-                                    row.rateController,
-
+                              child: _textField(
+                                controller: row.rateController,
                                 keyboardType:
-                                    const TextInputType
-                                        .numberWithOptions(
-                                  decimal:
-                                      true,
+                                    const TextInputType.numberWithOptions(
+                                  decimal: true,
                                 ),
-
-                                onChanged:
-                                    (_) {
+                                onChanged: (_) {
                                   setState(() {});
                                 },
                               ),
                             ),
-
                             const SizedBox(
                               width: 8,
                             ),
-
                             Expanded(
                               flex: 2,
-
-                              child:
-                                  Container(
-                                height:
-                                    50,
-
-                                alignment:
-                                    Alignment
-                                        .centerLeft,
-
-                                padding:
-                                    const EdgeInsets
-                                        .symmetric(
-                                  horizontal:
-                                      12,
+                              child: Container(
+                                height: 50,
+                                alignment: Alignment.centerLeft,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
                                 ),
-
-                                decoration:
-                                    BoxDecoration(
-                                  color:
-                                      GlassSurface
-                                          .fill(
-                                    emphasized:
-                                        true,
+                                decoration: BoxDecoration(
+                                  color: GlassSurface.fill(
+                                    emphasized: true,
                                   ),
-
-                                  borderRadius:
-                                      BorderRadius
-                                          .circular(
+                                  borderRadius: BorderRadius.circular(
                                     7,
                                   ),
                                 ),
-
-                                child:
-                                    Text(
+                                child: Text(
                                   'INR ${row.amount.toStringAsFixed(2)}',
                                 ),
                               ),
                             ),
-
                             SizedBox(
                               width: 36,
-
-                              child:
-                                  IconButton(
-                                onPressed:
-                                    () {
+                              child: IconButton(
+                                onPressed: () {
                                   _removeRow(
                                     index,
                                   );
                                 },
-
-                                icon:
-                                    const Icon(
+                                icon: const Icon(
                                   Icons.close,
-
-                                  color:
-                                      Color(
+                                  color: Color(
                                     0xFFAB2A2A,
                                   ),
-
-                                  size:
-                                      18,
+                                  size: 18,
                                 ),
                               ),
                             ),
@@ -1722,26 +1225,16 @@ class _AddPurchaseOrderDialogState
                   ),
 
                   TextButton.icon(
-                    onPressed:
-                        _addRow,
-
-                    icon:
-                        const Icon(
+                    onPressed: _addRow,
+                    icon: const Icon(
                       Icons.add,
-
                       size: 18,
                     ),
-
-                    label:
-                        const Text(
+                    label: const Text(
                       'Add Row',
                     ),
-
-                    style:
-                        TextButton
-                            .styleFrom(
-                      foregroundColor:
-                          const Color(
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(
                         0xFF2E7DD1,
                       ),
                     ),
@@ -1756,69 +1249,41 @@ class _AddPurchaseOrderDialogState
                   // ============================================
 
                   Align(
-                    alignment:
-                        Alignment
-                            .centerRight,
-
+                    alignment: Alignment.centerRight,
                     child: SizedBox(
                       width: 300,
-
                       child: Column(
                         children: [
                           Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment
-                                    .spaceBetween,
-
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
                                 'Sub Total',
                               ),
-
                               Text(
                                 'INR ${_subTotal.toStringAsFixed(2)}',
                               ),
                             ],
                           ),
-
                           const SizedBox(
                             height: 8,
                           ),
-
                           Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment
-                                    .spaceBetween,
-
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
                                 'Total',
-
-                                style:
-                                    TextStyle(
-                                  fontSize:
-                                      17,
-
-                                  fontWeight:
-                                      FontWeight
-                                          .bold,
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-
                               Text(
                                 'INR ${_subTotal.toStringAsFixed(2)}',
-
-                                style:
-                                    const TextStyle(
-                                  fontSize:
-                                      17,
-
-                                  fontWeight:
-                                      FontWeight
-                                          .bold,
-
-                                  color:
-                                      Color(
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(
                                     0xFF123456,
                                   ),
                                 ),
@@ -1839,46 +1304,27 @@ class _AddPurchaseOrderDialogState
                   // ============================================
 
                   Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment
-                            .end,
-
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       GlassButton(
-                        onPressed:
-                            _isSaving
-                                ? null
-                                : () {
-                                    Navigator.pop(
-                                      context,
-                                    );
-                                  },
-
-                        icon:
-                            Icons.close,
-
-                        label:
-                            'Cancel',
-
-                        primary:
-                            false,
+                        onPressed: _isSaving
+                            ? null
+                            : () {
+                                Navigator.pop(
+                                  context,
+                                );
+                              },
+                        icon: Icons.close,
+                        label: 'Cancel',
+                        primary: false,
                       ),
-
                       const SizedBox(
                         width: 16,
                       ),
-
                       GlassButton(
-                        onPressed:
-                            _isSaving
-                                ? null
-                                : _saveOrder,
-
-                        icon:
-                            Icons.save,
-
-                        label:
-                            'Save Purchase Order',
+                        onPressed: _isSaving ? null : _saveOrder,
+                        icon: Icons.save,
+                        label: 'Save Purchase Order',
                       ),
                     ],
                   ),
@@ -1894,36 +1340,24 @@ class _AddPurchaseOrderDialogState
 
   Widget _labeledField({
     required String label,
-
     required Widget child,
   }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-
-          style:
-              const TextStyle(
-            fontSize:
-                14,
-
-            fontWeight:
-                FontWeight.w500,
-
-            color:
-                Color(
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Color(
               0xFF3D4147,
             ),
           ),
         ),
-
         const SizedBox(
           height: 6,
         ),
-
         child,
       ],
     );
@@ -1933,72 +1367,39 @@ class _AddPurchaseOrderDialogState
   // DECORATION
   // ==========================================================
 
-  InputDecoration
-      _fieldDecoration({
+  InputDecoration _fieldDecoration({
     String? hint,
   }) {
     return InputDecoration(
-      hintText:
-          hint,
-
-      filled:
-          true,
-
-      fillColor:
-          GlassSurface.fill(),
-
-      contentPadding:
-          const EdgeInsets
-              .symmetric(
+      hintText: hint,
+      filled: true,
+      fillColor: GlassSurface.fill(),
+      contentPadding: const EdgeInsets.symmetric(
         horizontal: 16,
-
         vertical: 15,
       ),
-
-      border:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius
-                .circular(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           7,
         ),
       ),
-
-      enabledBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius
-                .circular(
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           7,
         ),
-
-        borderSide:
-            BorderSide(
-          color:
-              GlassSurface
-                  .border(),
+        borderSide: BorderSide(
+          color: GlassSurface.border(),
         ),
       ),
-
-      focusedBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius
-                .circular(
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           7,
         ),
-
-        borderSide:
-            BorderSide(
-          color:
-              GlassSurface
-                  .border(
-            focused:
-                true,
+        borderSide: BorderSide(
+          color: GlassSurface.border(
+            focused: true,
           ),
-
-          width:
-              2,
+          width: 2,
         ),
       ),
     );
@@ -2009,41 +1410,21 @@ class _AddPurchaseOrderDialogState
   // ==========================================================
 
   Widget _textField({
-    required TextEditingController
-        controller,
-
+    required TextEditingController controller,
     String? hint,
-
-    TextInputType?
-        keyboardType,
-
+    TextInputType? keyboardType,
     int maxLines = 1,
-
-    ValueChanged<String>?
-        onChanged,
-
+    ValueChanged<String>? onChanged,
     bool readOnly = false,
   }) {
     return TextField(
-      controller:
-          controller,
-
-      keyboardType:
-          keyboardType,
-
-      maxLines:
-          maxLines,
-
-      readOnly:
-          readOnly,
-
-      onChanged:
-          onChanged,
-
-      decoration:
-          _fieldDecoration(
-        hint:
-            hint,
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      readOnly: readOnly,
+      onChanged: onChanged,
+      decoration: _fieldDecoration(
+        hint: hint,
       ),
     );
   }
@@ -2054,44 +1435,24 @@ class _AddPurchaseOrderDialogState
 
   Widget _dateField({
     required DateTime? value,
-
-    required VoidCallback
-        onTap,
+    required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap:
-          onTap,
-
+      onTap: onTap,
       child: Container(
-        height:
-            50,
-
-        padding:
-            const EdgeInsets
-                .symmetric(
+        height: 50,
+        padding: const EdgeInsets.symmetric(
           horizontal: 16,
         ),
-
-        decoration:
-            BoxDecoration(
-          color:
-              GlassSurface
-                  .fill(),
-
-          borderRadius:
-              BorderRadius
-                  .circular(
+        decoration: BoxDecoration(
+          color: GlassSurface.fill(),
+          borderRadius: BorderRadius.circular(
             7,
           ),
-
-          border:
-              Border.all(
-            color:
-                GlassSurface
-                    .border(),
+          border: Border.all(
+            color: GlassSurface.border(),
           ),
         ),
-
         child: Row(
           children: [
             Expanded(
@@ -2099,29 +1460,15 @@ class _AddPurchaseOrderDialogState
                 value == null
                     ? 'dd-mm-yyyy'
                     : '${value.day.toString().padLeft(2, '0')}-${value.month.toString().padLeft(2, '0')}-${value.year}',
-
-                style:
-                    TextStyle(
-                  color:
-                      value ==
-                              null
-                          ? Colors
-                              .grey
-                          : Colors
-                              .black,
+                style: TextStyle(
+                  color: value == null ? Colors.grey : Colors.black,
                 ),
               ),
             ),
-
             const Icon(
-              Icons
-                  .calendar_today_outlined,
-
-              size:
-                  18,
-
-              color:
-                  Color(
+              Icons.calendar_today_outlined,
+              size: 18,
+              color: Color(
                 0xFF888888,
               ),
             ),
@@ -2136,8 +1483,7 @@ class _AddPurchaseOrderDialogState
 // SMALL HEADER
 // ============================================================
 
-class _SmallHeader
-    extends StatelessWidget {
+class _SmallHeader extends StatelessWidget {
   final String text;
 
   const _SmallHeader(
@@ -2150,17 +1496,10 @@ class _SmallHeader
   ) {
     return Text(
       text,
-
-      style:
-          const TextStyle(
-        fontSize:
-            12,
-
-        fontWeight:
-            FontWeight.bold,
-
-        color:
-            Color(
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+        color: Color(
           0xFF5B5B5B,
         ),
       ),

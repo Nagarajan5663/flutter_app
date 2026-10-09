@@ -7,11 +7,16 @@ class DeliveryChallanModel {
   final String customerName;
   final String? invoiceId;
   final String? invoiceNumber;
+  final String? salesOrderId;
+  final String? salesOrderNumber;
+  final String? estimateId;
+  final String? estimateNumber;
   final DateTime challanDate;
   final DateTime? deliveryDate;
   final String transportationDetails;
+  final String notes;
   final List<SalesLineItemModel> items;
-  final String status; // Pending, Delivered, Cancelled
+  final String status; // Draft, Shipped, Delivered, Void
 
   DeliveryChallanModel({
     this.id,
@@ -20,11 +25,16 @@ class DeliveryChallanModel {
     required this.customerName,
     this.invoiceId,
     this.invoiceNumber,
+    this.salesOrderId,
+    this.salesOrderNumber,
+    this.estimateId,
+    this.estimateNumber,
     required this.challanDate,
     this.deliveryDate,
     this.transportationDetails = '',
+    this.notes = '',
     required this.items,
-    this.status = 'Pending',
+    this.status = 'Draft',
   });
 
   double get subTotal => items.fold(0.0, (sum, item) => sum + item.amount);
@@ -38,9 +48,14 @@ class DeliveryChallanModel {
       customerName: customerName,
       invoiceId: invoiceId,
       invoiceNumber: invoiceNumber,
+      salesOrderId: salesOrderId,
+      salesOrderNumber: salesOrderNumber,
+      estimateId: estimateId,
+      estimateNumber: estimateNumber,
       challanDate: challanDate,
       deliveryDate: deliveryDate,
       transportationDetails: transportationDetails,
+      notes: notes,
       items: items,
       status: status ?? this.status,
     );
@@ -54,12 +69,21 @@ class DeliveryChallanModel {
       customerName: json['customerName']?.toString() ?? '',
       invoiceId: json['invoiceId']?.toString(),
       invoiceNumber: json['invoiceNumber']?.toString(),
-      challanDate: DateTime.tryParse(json['challanDate']?.toString() ?? '') ?? DateTime.now(),
-      deliveryDate:
-          json['deliveryDate'] != null ? DateTime.tryParse(json['deliveryDate'].toString()) : null,
+      salesOrderId: json['salesOrderId']?.toString(),
+      salesOrderNumber: json['salesOrderNumber']?.toString(),
+      estimateId: json['estimateId']?.toString(),
+      estimateNumber: json['estimateNumber']?.toString(),
+      challanDate: DateTime.tryParse(json['challanDate']?.toString() ?? '') ??
+          DateTime.now(),
+      deliveryDate: json['deliveryDate'] != null
+          ? DateTime.tryParse(json['deliveryDate'].toString())
+          : null,
       transportationDetails: json['transportationDetails']?.toString() ?? '',
-      items: (json['items'] as List? ?? []).map((e) => SalesLineItemModel.fromJson(e)).toList(),
-      status: json['status']?.toString() ?? 'Pending',
+      notes: json['notes']?.toString() ?? '',
+      items: (json['items'] as List? ?? [])
+          .map((e) => SalesLineItemModel.fromJson(e))
+          .toList(),
+      status: json['status']?.toString() ?? 'Draft',
     );
   }
 
@@ -70,9 +94,14 @@ class DeliveryChallanModel {
         'customerName': customerName,
         'invoiceId': invoiceId,
         'invoiceNumber': invoiceNumber,
+        'salesOrderId': salesOrderId,
+        'salesOrderNumber': salesOrderNumber,
+        'estimateId': estimateId,
+        'estimateNumber': estimateNumber,
         'challanDate': challanDate.toIso8601String(),
         'deliveryDate': deliveryDate?.toIso8601String(),
         'transportationDetails': transportationDetails,
+        'notes': notes,
         'items': items.map((e) => e.toJson()).toList(),
         'status': status,
       };
