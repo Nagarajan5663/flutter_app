@@ -7,8 +7,10 @@ import 'package:http/http.dart' as http;
 
 import '../../shared/glass_modal_shell.dart';
 import '../../purchase_orders/purchase_order_item_model.dart';
+import '../../purchase_orders/purchase_order_model.dart';
 import '../../vendors/vendor_model.dart';
 import '../../vendors/vendor_repository.dart';
+import '../bill_model.dart';
 import '../bill_repository.dart';
 
 // ============================================================
@@ -45,31 +47,23 @@ class _CatalogOption {
 class _ItemRow {
   _CatalogOption? selectedProduct;
 
-  final TextEditingController
-      descriptionController =
-      TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
 
-  final TextEditingController
-      qtyController =
-      TextEditingController(
+  final TextEditingController qtyController = TextEditingController(
     text: '1',
   );
 
-  final TextEditingController
-      rateController =
-      TextEditingController(
+  final TextEditingController rateController = TextEditingController(
     text: '0.00',
   );
 
   double get amount {
-    final double qty =
-        double.tryParse(
+    final double qty = double.tryParse(
           qtyController.text.trim(),
         ) ??
         0;
 
-    final double rate =
-        double.tryParse(
+    final double rate = double.tryParse(
           rateController.text.trim(),
         ) ??
         0;
@@ -80,19 +74,15 @@ class _ItemRow {
   void clear() {
     selectedProduct = null;
 
-    descriptionController
-        .clear();
+    descriptionController.clear();
 
-    qtyController.text =
-        '1';
+    qtyController.text = '1';
 
-    rateController.text =
-        '0.00';
+    rateController.text = '0.00';
   }
 
   void dispose() {
-    descriptionController
-        .dispose();
+    descriptionController.dispose();
 
     qtyController.dispose();
 
@@ -104,55 +94,44 @@ class _ItemRow {
 // ADD BILL DIALOG
 // ============================================================
 
-class AddBillDialog
-    extends StatefulWidget {
+class AddBillDialog extends StatefulWidget {
   const AddBillDialog({
     super.key,
+    this.initialVendor,
+    this.initialPurchaseOrder,
+    this.initialBill,
   });
 
+  final VendorModel? initialVendor;
+  final PurchaseOrderModel? initialPurchaseOrder;
+  final BillModel? initialBill;
+
   @override
-  State<AddBillDialog>
-      createState() =>
-          _AddBillDialogState();
+  State<AddBillDialog> createState() => _AddBillDialogState();
 }
 
-class _AddBillDialogState
-    extends State<AddBillDialog> {
-  static const String _baseUrl =
-      'http://localhost:3000/api';
+class _AddBillDialogState extends State<AddBillDialog> {
+  static const String _baseUrl = 'http://localhost:3000/api';
 
-  final VendorRepository
-      _vendorRepository =
-      InMemoryVendorRepository();
+  final VendorRepository _vendorRepository = InMemoryVendorRepository();
 
-  final BillRepository
-      _billRepository =
-      InMemoryBillRepository();
+  final BillRepository _billRepository = InMemoryBillRepository();
 
-  final TextEditingController
-      billNumberController =
-      TextEditingController();
+  final TextEditingController billNumberController = TextEditingController();
 
-  final TextEditingController
-      vendorInvoiceController =
-      TextEditingController();
+  final TextEditingController vendorInvoiceController = TextEditingController();
 
-  final TextEditingController
-      taxController =
-      TextEditingController(
+  final TextEditingController taxController = TextEditingController(
     text: '0.00',
   );
 
-  List<VendorModel> _vendors =
-      [];
+  List<VendorModel> _vendors = [];
 
-  List<_CatalogOption> _catalog =
-      [];
+  List<_CatalogOption> _catalog = [];
 
   VendorModel? selectedVendor;
 
-  DateTime billDate =
-      DateTime.now();
+  DateTime billDate = DateTime.now();
 
   DateTime? dueDate;
 
@@ -187,47 +166,106 @@ class _AddBillDialogState
     });
 
     try {
-      final Future<List<VendorModel>>
-          vendorFuture =
-          _vendorRepository
-              .getVendors();
+      final Future<List<VendorModel>> vendorFuture =
+          _vendorRepository.getVendors();
 
-      final Future<String>
-          billNumberFuture =
-          _billRepository
-              .nextBillNumber();
+      final Future<List<_CatalogOption>> catalogFuture = _loadCatalog();
 
-      final Future<List<_CatalogOption>>
-          catalogFuture =
-          _loadCatalog();
+      final List<VendorModel> vendors = await vendorFuture;
 
-      final List<VendorModel>
-          vendors =
-          await vendorFuture;
+      final String billNumber = widget.initialBill?.billNumber ??
+          await _billRepository.nextBillNumber();
 
-      final String billNumber =
-          await billNumberFuture;
-
-      final List<_CatalogOption>
-          catalog =
-          await catalogFuture;
+      final List<_CatalogOption> catalog = await catalogFuture;
 
       if (!mounted) {
         return;
       }
 
       setState(() {
-        _vendors =
-            vendors;
+        _vendors = vendors;
+        final purchaseOrder = widget.initialPurchaseOrder;
+        final vendorId = purchaseOrder?.vendorId ?? widget.initialVendor?.id;
+        selectedVendor = vendorId == null
+            ? null
+            : vendors.any((vendor) => vendor.id == vendorId)
+                ? vendors.firstWhere((vendor) => vendor.id == vendorId)
+                : null;
 
-        _catalog =
-            catalog;
+        _catalog = catalog;
 
-        billNumberController.text =
-            billNumber;
+        billNumberController.text = billNumber;
+        final initialBill = widget.initialBill;
+        if (initialBill != null) {
+          for (final vendor in vendors) {
+            if (vendor.id == initialBill.vendorId) {
+              selectedVendor = vendor;
+              break;
+            }
+          }
+          vendorInvoiceController.text = initialBill.vendorInvoiceNumber;
+          billDate = initialBill.billDate;
+          dueDate = initialBill.dueDate;
+          taxController.text = initialBill.taxAmount.toStringAsFixed(2);
+          _attachedFileName = initialBill.invoiceAttachmentPath;
+          for (final row in rows) {
+            row.dispose();
+          }
+          rows
+            ..clear()
+            ..addAll(
+              initialBill.items.map((item) {
+                final row = _ItemRow();
+                for (final product in catalog) {
+                  if (product.name.trim().toLowerCase() ==
+                      item.itemName.trim().toLowerCase()) {
+                    row.selectedProduct = product;
+                    break;
+                  }
+                }
+                row.descriptionController.text = item.description;
+                row.qtyController.text = item.qty.toStringAsFixed(2);
+                row.rateController.text = item.rate.toStringAsFixed(2);
+                return row;
+              }),
+            );
+          if (rows.any((row) => row.selectedProduct == null)) {
+            _errorText =
+                'One or more bill items are no longer available in the catalog';
+          }
+        }
 
-        _isLoading =
-            false;
+        if (purchaseOrder != null) {
+          billDate = purchaseOrder.date;
+          dueDate = purchaseOrder.dueDate;
+          for (final row in rows) {
+            row.dispose();
+          }
+          rows
+            ..clear()
+            ..addAll(
+              purchaseOrder.items.map((item) {
+                final row = _ItemRow();
+                for (final product in catalog) {
+                  if (product.name.trim().toLowerCase() ==
+                      item.itemName.trim().toLowerCase()) {
+                    row.selectedProduct = product;
+                    break;
+                  }
+                }
+                row.descriptionController.text = item.description;
+                row.qtyController.text = item.qty.toStringAsFixed(2);
+                row.rateController.text = item.rate.toStringAsFixed(2);
+                return row;
+              }),
+            );
+          if (rows.any((row) => row.selectedProduct == null)) {
+            _errorText =
+                'One or more purchase order items are unavailable in the bill catalog';
+          }
+        }
+
+        _isLoading = false;
       });
     } catch (error) {
       if (!mounted) {
@@ -235,11 +273,9 @@ class _AddBillDialogState
       }
 
       setState(() {
-        _isLoading =
-            false;
+        _isLoading = false;
 
-        _errorText =
-            'Unable to load Bill data: $error';
+        _errorText = 'Unable to load Bill data: $error';
       });
     }
   }
@@ -250,143 +286,91 @@ class _AddBillDialogState
   // Bills use PURCHASE PRICE because it is vendor-side.
   // ==========================================================
 
-  Future<List<_CatalogOption>>
-      _loadCatalog() async {
-    final Future<http.Response>
-        itemFuture =
-        http.get(
+  Future<List<_CatalogOption>> _loadCatalog() async {
+    final Future<http.Response> itemFuture = http.get(
       Uri.parse(
         '$_baseUrl/items',
       ),
       headers: const {
-        'Accept':
-            'application/json',
+        'Accept': 'application/json',
       },
     );
 
-    final Future<http.Response>
-        partFuture =
-        http.get(
+    final Future<http.Response> partFuture = http.get(
       Uri.parse(
         '$_baseUrl/parts',
       ),
       headers: const {
-        'Accept':
-            'application/json',
+        'Accept': 'application/json',
       },
     );
 
-    final http.Response itemResponse =
-        await itemFuture;
+    final http.Response itemResponse = await itemFuture;
 
-    final http.Response partResponse =
-        await partFuture;
+    final http.Response partResponse = await partFuture;
 
-    final dynamic itemBody =
-        jsonDecode(
+    final dynamic itemBody = jsonDecode(
       itemResponse.body,
     );
 
-    final dynamic partBody =
-        jsonDecode(
+    final dynamic partBody = jsonDecode(
       partResponse.body,
     );
 
-    if (
-      itemBody is! Map<String, dynamic> ||
-      itemResponse.statusCode != 200 ||
-      itemBody['success'] != true
-    ) {
+    if (itemBody is! Map<String, dynamic> ||
+        itemResponse.statusCode != 200 ||
+        itemBody['success'] != true) {
       throw Exception(
         itemBody is Map
-            ? itemBody['message'] ??
-                'Failed to load items'
+            ? itemBody['message'] ?? 'Failed to load items'
             : 'Failed to load items',
       );
     }
 
-    if (
-      partBody is! Map<String, dynamic> ||
-      partResponse.statusCode != 200 ||
-      partBody['success'] != true
-    ) {
+    if (partBody is! Map<String, dynamic> ||
+        partResponse.statusCode != 200 ||
+        partBody['success'] != true) {
       throw Exception(
         partBody is Map
-            ? partBody['message'] ??
-                'Failed to load parts'
+            ? partBody['message'] ?? 'Failed to load parts'
             : 'Failed to load parts',
       );
     }
 
-    final List<_CatalogOption>
-        catalog = [];
+    final List<_CatalogOption> catalog = [];
 
     // ==========================================================
     // ITEMS
     // ==========================================================
 
     final List<dynamic> items =
-        itemBody['data'] is List
-            ? itemBody['data']
-            : <dynamic>[];
+        itemBody['data'] is List ? itemBody['data'] : <dynamic>[];
 
-    for (
-      final dynamic raw
-      in items
-    ) {
-      final Map<String, dynamic>
-          item =
-          Map<String, dynamic>.from(
+    for (final dynamic raw in items) {
+      final Map<String, dynamic> item = Map<String, dynamic>.from(
         raw as Map,
       );
 
-      final int id =
-          int.tryParse(
-            item['id']
-                    ?.toString() ??
-                '',
+      final int id = int.tryParse(
+            item['id']?.toString() ?? '',
           ) ??
           0;
 
-      final String name =
-          item['name']
-                  ?.toString() ??
-              '';
+      final String name = item['name']?.toString() ?? '';
 
-      if (
-        id <= 0 ||
-        name.trim().isEmpty
-      ) {
+      if (id <= 0 || name.trim().isEmpty) {
         continue;
       }
 
       catalog.add(
         _CatalogOption(
-          sourceType:
-              'Item',
-
-          id:
-              id,
-
-          name:
-              name,
-
-          sku:
-              item['sku']
-                      ?.toString() ??
-                  '',
-
-          description:
-              item['description']
-                      ?.toString() ??
-                  '',
-
-          purchasePrice:
-              double.tryParse(
-                item[
-                        'purchase_price']
-                    ?.toString() ??
-                    '0',
+          sourceType: 'Item',
+          id: id,
+          name: name,
+          sku: item['sku']?.toString() ?? '',
+          description: item['description']?.toString() ?? '',
+          purchasePrice: double.tryParse(
+                item['purchase_price']?.toString() ?? '0',
               ) ??
               0,
         ),
@@ -398,67 +382,33 @@ class _AddBillDialogState
     // ==========================================================
 
     final List<dynamic> parts =
-        partBody['data'] is List
-            ? partBody['data']
-            : <dynamic>[];
+        partBody['data'] is List ? partBody['data'] : <dynamic>[];
 
-    for (
-      final dynamic raw
-      in parts
-    ) {
-      final Map<String, dynamic>
-          part =
-          Map<String, dynamic>.from(
+    for (final dynamic raw in parts) {
+      final Map<String, dynamic> part = Map<String, dynamic>.from(
         raw as Map,
       );
 
-      final int id =
-          int.tryParse(
-            part['id']
-                    ?.toString() ??
-                '',
+      final int id = int.tryParse(
+            part['id']?.toString() ?? '',
           ) ??
           0;
 
-      final String name =
-          part['name']
-                  ?.toString() ??
-              '';
+      final String name = part['name']?.toString() ?? '';
 
-      if (
-        id <= 0 ||
-        name.trim().isEmpty
-      ) {
+      if (id <= 0 || name.trim().isEmpty) {
         continue;
       }
 
       catalog.add(
         _CatalogOption(
-          sourceType:
-              'Part',
-
-          id:
-              id,
-
-          name:
-              name,
-
-          sku:
-              part['sku']
-                      ?.toString() ??
-                  '',
-
-          description:
-              part['description']
-                      ?.toString() ??
-                  '',
-
-          purchasePrice:
-              double.tryParse(
-                part[
-                        'purchase_price']
-                    ?.toString() ??
-                    '0',
+          sourceType: 'Part',
+          id: id,
+          name: name,
+          sku: part['sku']?.toString() ?? '',
+          description: part['description']?.toString() ?? '',
+          purchasePrice: double.tryParse(
+                part['purchase_price']?.toString() ?? '0',
               ) ??
               0,
         ),
@@ -474,19 +424,13 @@ class _AddBillDialogState
 
   @override
   void dispose() {
-    billNumberController
-        .dispose();
+    billNumberController.dispose();
 
-    vendorInvoiceController
-        .dispose();
+    vendorInvoiceController.dispose();
 
-    taxController
-        .dispose();
+    taxController.dispose();
 
-    for (
-      final _ItemRow row
-      in rows
-    ) {
+    for (final _ItemRow row in rows) {
       row.dispose();
     }
 
@@ -508,9 +452,7 @@ class _AddBillDialogState
   void _removeRow(
     int index,
   ) {
-    if (
-      rows.length == 1
-    ) {
+    if (rows.length == 1) {
       setState(() {
         rows.first.clear();
       });
@@ -519,8 +461,7 @@ class _AddBillDialogState
     }
 
     setState(() {
-      rows[index]
-          .dispose();
+      rows[index].dispose();
 
       rows.removeAt(
         index,
@@ -539,23 +480,20 @@ class _AddBillDialogState
         double total,
         _ItemRow row,
       ) {
-        return total +
-            row.amount;
+        return total + row.amount;
       },
     );
   }
 
   double get _tax {
     return double.tryParse(
-          taxController.text
-              .trim(),
+          taxController.text.trim(),
         ) ??
         0;
   }
 
   double get _total {
-    return _subTotal +
-        _tax;
+    return _subTotal + _tax;
   }
 
   // ==========================================================
@@ -564,29 +502,16 @@ class _AddBillDialogState
 
   Future<void> _pickDate({
     required DateTime? initial,
-
-    required ValueChanged<DateTime>
-        onPicked,
+    required ValueChanged<DateTime> onPicked,
   }) async {
-    final DateTime? picked =
-        await showDatePicker(
-      context:
-          context,
-
-      initialDate:
-          initial ??
-              DateTime.now(),
-
-      firstDate:
-          DateTime(2020),
-
-      lastDate:
-          DateTime(2100),
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initial ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
     );
 
-    if (
-      picked != null
-    ) {
+    if (picked != null) {
       onPicked(
         picked,
       );
@@ -600,16 +525,10 @@ class _AddBillDialogState
   // Actual file upload can be added separately.
   // ==========================================================
 
-  Future<void>
-      _pickInvoiceFile() async {
-    final FilePickerResult? result =
-        await FilePicker.platform
-            .pickFiles(
-      type:
-          FileType.custom,
-
-      allowedExtensions:
-          const [
+  Future<void> _pickInvoiceFile() async {
+    final FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const [
         'pdf',
         'png',
         'jpg',
@@ -617,16 +536,12 @@ class _AddBillDialogState
       ],
     );
 
-    if (
-      result == null ||
-      result.files.isEmpty
-    ) {
+    if (result == null || result.files.isEmpty) {
       return;
     }
 
     setState(() {
-      _attachedFileName =
-          result.files.single.name;
+      _attachedFileName = result.files.single.name;
     });
   }
 
@@ -643,27 +558,17 @@ class _AddBillDialogState
     // Vendor validation
     // ----------------------------------------------------------
 
-    if (
-      selectedVendor == null
-    ) {
+    if (selectedVendor == null) {
       setState(() {
-        _errorText =
-            'Please select a vendor';
+        _errorText = 'Please select a vendor';
       });
 
       return;
     }
 
-    if (
-      selectedVendor!.id ==
-              null ||
-          selectedVendor!.id!
-              .trim()
-              .isEmpty
-    ) {
+    if (selectedVendor!.id == null || selectedVendor!.id!.trim().isEmpty) {
       setState(() {
-        _errorText =
-            'Selected vendor ID is missing';
+        _errorText = 'Selected vendor ID is missing';
       });
 
       return;
@@ -673,15 +578,9 @@ class _AddBillDialogState
     // Bill Number
     // ----------------------------------------------------------
 
-    if (
-      billNumberController
-          .text
-          .trim()
-          .isEmpty
-    ) {
+    if (billNumberController.text.trim().isEmpty) {
       setState(() {
-        _errorText =
-            'Bill number is required';
+        _errorText = 'Bill number is required';
       });
 
       return;
@@ -691,19 +590,16 @@ class _AddBillDialogState
     // Due Date
     // ----------------------------------------------------------
 
-    if (
-      dueDate != null &&
-      dueDate!.isBefore(
-        DateTime(
-          billDate.year,
-          billDate.month,
-          billDate.day,
-        ),
-      )
-    ) {
+    if (dueDate != null &&
+        dueDate!.isBefore(
+          DateTime(
+            billDate.year,
+            billDate.month,
+            billDate.day,
+          ),
+        )) {
       setState(() {
-        _errorText =
-            'Due date cannot be before bill date';
+        _errorText = 'Due date cannot be before bill date';
       });
 
       return;
@@ -715,8 +611,7 @@ class _AddBillDialogState
 
     if (_tax < 0) {
       setState(() {
-        _errorText =
-            'Tax cannot be negative';
+        _errorText = 'Tax cannot be negative';
       });
 
       return;
@@ -726,54 +621,34 @@ class _AddBillDialogState
     // Items
     // ----------------------------------------------------------
 
-    final List<
-            PurchaseOrderItemModel>
-        items = [];
+    final List<PurchaseOrderItemModel> items = [];
 
-    for (
-      final _ItemRow row
-      in rows
-    ) {
-      if (
-        row.selectedProduct ==
-        null
-      ) {
+    for (final _ItemRow row in rows) {
+      if (row.selectedProduct == null) {
         continue;
       }
 
-      final double qty =
-          double.tryParse(
-            row.qtyController
-                .text
-                .trim(),
+      final double qty = double.tryParse(
+            row.qtyController.text.trim(),
           ) ??
           0;
 
-      final double rate =
-          double.tryParse(
-            row.rateController
-                .text
-                .trim(),
+      final double rate = double.tryParse(
+            row.rateController.text.trim(),
           ) ??
           0;
 
-      if (
-        qty <= 0
-      ) {
+      if (qty <= 0) {
         setState(() {
-          _errorText =
-              'Quantity must be greater than zero';
+          _errorText = 'Quantity must be greater than zero';
         });
 
         return;
       }
 
-      if (
-        rate < 0
-      ) {
+      if (rate < 0) {
         setState(() {
-          _errorText =
-              'Rate cannot be negative';
+          _errorText = 'Rate cannot be negative';
         });
 
         return;
@@ -781,76 +656,42 @@ class _AddBillDialogState
 
       items.add(
         PurchaseOrderItemModel(
-          itemName:
-              row.selectedProduct!
-                  .name,
-
-          description:
-              row.descriptionController
-                  .text
-                  .trim(),
-
-          qty:
-              qty,
-
-          rate:
-              rate,
+          itemName: row.selectedProduct!.name,
+          description: row.descriptionController.text.trim(),
+          qty: qty,
+          rate: rate,
         ),
       );
     }
 
-    if (
-      items.isEmpty
-    ) {
+    if (items.isEmpty) {
       setState(() {
-        _errorText =
-            'Please select at least one Item or Part';
+        _errorText = 'Please select at least one Item or Part';
       });
 
       return;
     }
 
     setState(() {
-      _isSaving =
-          true;
+      _isSaving = true;
 
-      _errorText =
-          null;
+      _errorText = null;
     });
 
-    final BillModelDraft draft =
-        BillModelDraft(
-      billNumber:
-          billNumberController
-              .text
-              .trim(),
-
-      vendorInvoiceNumber:
-          vendorInvoiceController
-              .text
-              .trim(),
-
-      invoiceAttachmentPath:
-          _attachedFileName,
-
-      vendorId:
-          selectedVendor!.id!,
-
-      vendorName:
-          selectedVendor!
-              .vendorName,
-
-      billDate:
-          billDate,
-
-      dueDate:
-          dueDate,
-
-      items:
-          items,
-
-      taxAmount:
-          _tax,
+    final BillModelDraft draft = BillModelDraft(
+      billNumber: billNumberController.text.trim(),
+      vendorInvoiceNumber: vendorInvoiceController.text.trim(),
+      invoiceAttachmentPath: _attachedFileName,
+      vendorId: selectedVendor!.id!,
+      vendorName: selectedVendor!.vendorName,
+      purchaseOrderId: widget.initialPurchaseOrder?.id ??
+          widget.initialBill?.purchaseOrderId,
+      purchaseOrderNumber: widget.initialPurchaseOrder?.poNumber ??
+          widget.initialBill?.purchaseOrderNumber,
+      billDate: billDate,
+      dueDate: dueDate,
+      items: items,
+      taxAmount: _tax,
     );
 
     Navigator.pop(
@@ -868,55 +709,39 @@ class _AddBillDialogState
     BuildContext context,
   ) {
     return GlassModalShell(
-      maxWidth:
-          1000,
-
-      maxHeight:
-          850,
-
+      maxWidth: 1000,
+      maxHeight: 850,
       child: _isLoading
           ? const Padding(
-              padding:
-                  EdgeInsets.all(
+              padding: EdgeInsets.all(
                 60,
               ),
-
-              child:
-                  Center(
-                child:
-                    CircularProgressIndicator(),
+              child: Center(
+                child: CircularProgressIndicator(),
               ),
             )
           : SingleChildScrollView(
-              padding:
-                  const EdgeInsets
-                      .fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 34,
                 30,
                 34,
                 28,
               ),
-
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
-
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ============================================
                   // HEADER
                   // ============================================
 
                   GlassDialogHeader(
-                    title:
-                        'New Bill',
-
-                    icon:
-                        Icons
-                            .receipt_long_outlined,
-
-                    onClose:
-                        () {
+                    title: widget.initialBill != null
+                        ? 'Edit Bill'
+                        : widget.initialPurchaseOrder == null
+                            ? 'New Bill'
+                            : 'New Bill from Purchase Order',
+                    icon: Icons.receipt_long_outlined,
+                    onClose: () {
                       Navigator.pop(
                         context,
                       );
@@ -924,81 +749,51 @@ class _AddBillDialogState
                   ),
 
                   const SizedBox(
-                    height:
-                        20,
+                    height: 20,
                   ),
 
                   // ============================================
                   // ERROR
                   // ============================================
 
-                  if (
-                    _errorText !=
-                    null
-                  ) ...[
+                  if (_errorText != null) ...[
                     Container(
-                      width:
-                          double.infinity,
-
-                      padding:
-                          const EdgeInsets
-                              .all(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(
                         12,
                       ),
-
-                      decoration:
-                          BoxDecoration(
-                        color:
-                            const Color(
+                      decoration: BoxDecoration(
+                        color: const Color(
                           0xFFF4E3E3,
                         ),
-
-                        borderRadius:
-                            BorderRadius
-                                .circular(
+                        borderRadius: BorderRadius.circular(
                           7,
                         ),
                       ),
-
                       child: Row(
                         children: [
                           Expanded(
-                            child:
-                                Text(
+                            child: Text(
                               _errorText!,
-
-                              style:
-                                  const TextStyle(
-                                color:
-                                    Color(
+                              style: const TextStyle(
+                                color: Color(
                                   0xFFAB2A2A,
                                 ),
                               ),
                             ),
                           ),
-
-                          if (
-                            _vendors
-                                    .isEmpty ||
-                                _catalog
-                                    .isEmpty
-                          )
+                          if (_vendors.isEmpty || _catalog.isEmpty)
                             TextButton(
-                              onPressed:
-                                  _init,
-
-                              child:
-                                  const Text(
+                              onPressed: _init,
+                              child: const Text(
                                 'Retry',
                               ),
                             ),
                         ],
                       ),
                     ),
-
                     const SizedBox(
-                      height:
-                          16,
+                      height: 16,
                     ),
                   ],
 
@@ -1007,198 +802,127 @@ class _AddBillDialogState
                   // Vendor / Bill / Vendor Invoice / Date
                   // ============================================
 
-                  Row(
-                    crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
+                  if (widget.initialPurchaseOrder != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Text(
+                        'Converted from Purchase Order: '
+                        '${widget.initialPurchaseOrder!.poNumber}',
+                        style: const TextStyle(
+                          color: Color(0xFF666666),
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
 
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child:
-                            _labeledField(
-                          label:
-                              'Vendor Name *',
-
-                          child:
-                              DropdownSearch<
-                                  VendorModel>(
+                        child: _labeledField(
+                          label: 'Vendor Name *',
+                          child: DropdownSearch<VendorModel>(
                             items: (
                               filter,
                               infiniteScrollProps,
                             ) {
-                              final String
-                                  query =
-                                  filter
-                                      .trim()
-                                      .toLowerCase();
+                              final String query = filter.trim().toLowerCase();
 
-                              if (
-                                query
-                                    .isEmpty
-                              ) {
+                              if (query.isEmpty) {
                                 return _vendors;
                               }
 
-                              return _vendors
-                                  .where(
-                                    (
-                                      VendorModel
-                                          vendor,
-                                    ) {
-                                      return vendor
-                                              .vendorName
-                                              .toLowerCase()
-                                              .contains(
-                                                query,
-                                              ) ||
-                                          vendor
-                                              .companyName
-                                              .toLowerCase()
-                                              .contains(
-                                                query,
-                                              ) ||
-                                          vendor
-                                              .email
-                                              .toLowerCase()
-                                              .contains(
-                                                query,
-                                              );
-                                    },
-                                  )
-                                  .toList();
-                            },
-
-                            itemAsString:
+                              return _vendors.where(
                                 (
-                              VendorModel
-                                  vendor,
+                                  VendorModel vendor,
+                                ) {
+                                  return vendor.vendorName
+                                          .toLowerCase()
+                                          .contains(
+                                            query,
+                                          ) ||
+                                      vendor.companyName.toLowerCase().contains(
+                                            query,
+                                          ) ||
+                                      vendor.email.toLowerCase().contains(
+                                            query,
+                                          );
+                                },
+                              ).toList();
+                            },
+                            itemAsString: (
+                              VendorModel vendor,
                             ) {
-                              if (
-                                vendor
-                                    .companyName
-                                    .trim()
-                                    .isEmpty
-                              ) {
-                                return vendor
-                                    .vendorName;
+                              if (vendor.companyName.trim().isEmpty) {
+                                return vendor.vendorName;
                               }
 
                               return '${vendor.vendorName} - ${vendor.companyName}';
                             },
-
-                            compareFn:
-                                (
+                            compareFn: (
                               VendorModel a,
                               VendorModel b,
                             ) {
-                              return a.id ==
-                                  b.id;
+                              return a.id == b.id;
                             },
-
-                            selectedItem:
-                                selectedVendor,
-
-                            onChanged:
-                                (
-                              VendorModel?
-                                  vendor,
+                            selectedItem: selectedVendor,
+                            onChanged: (
+                              VendorModel? vendor,
                             ) {
                               setState(() {
-                                selectedVendor =
-                                    vendor;
+                                selectedVendor = vendor;
                               });
                             },
-
-                            popupProps:
-                                const PopupProps
-                                    .menu(
-                              showSearchBox:
-                                  true,
+                            popupProps: const PopupProps.menu(
+                              showSearchBox: true,
                             ),
-
-                            decoratorProps:
-                                DropDownDecoratorProps(
-                              decoration:
-                                  _fieldDecoration(
-                                hint:
-                                    'Select or type to search...',
+                            decoratorProps: DropDownDecoratorProps(
+                              decoration: _fieldDecoration(
+                                hint: 'Select or type to search...',
                               ),
                             ),
                           ),
                         ),
                       ),
-
                       const SizedBox(
-                        width:
-                            12,
+                        width: 12,
                       ),
-
                       Expanded(
-                        child:
-                            _labeledField(
-                          label:
-                              'Bill # *',
-
-                          child:
-                              _textField(
-                            controller:
-                                billNumberController,
-
-                            enabled:
-                                false,
+                        child: _labeledField(
+                          label: 'Bill # *',
+                          child: _textField(
+                            controller: billNumberController,
+                            enabled: false,
                           ),
                         ),
                       ),
-
                       const SizedBox(
-                        width:
-                            12,
+                        width: 12,
                       ),
-
                       Expanded(
-                        child:
-                            _labeledField(
-                          label:
-                              'Vendor Invoice #',
-
-                          child:
-                              _textField(
-                            controller:
-                                vendorInvoiceController,
+                        child: _labeledField(
+                          label: 'Vendor Invoice #',
+                          child: _textField(
+                            controller: vendorInvoiceController,
                           ),
                         ),
                       ),
-
                       const SizedBox(
-                        width:
-                            12,
+                        width: 12,
                       ),
-
                       Expanded(
-                        child:
-                            _labeledField(
-                          label:
-                              'Date *',
-
-                          child:
-                              _dateField(
-                            value:
-                                billDate,
-
-                            onTap:
-                                () {
+                        child: _labeledField(
+                          label: 'Date *',
+                          child: _dateField(
+                            value: billDate,
+                            onTap: () {
                               _pickDate(
-                                initial:
-                                    billDate,
-
-                                onPicked:
-                                    (
-                                  DateTime
-                                      value,
+                                initial: billDate,
+                                onPicked: (
+                                  DateTime value,
                                 ) {
                                   setState(() {
-                                    billDate =
-                                        value;
+                                    billDate = value;
                                   });
                                 },
                               );
@@ -1210,8 +934,7 @@ class _AddBillDialogState
                   ),
 
                   const SizedBox(
-                    height:
-                        18,
+                    height: 18,
                   ),
 
                   // ============================================
@@ -1219,37 +942,21 @@ class _AddBillDialogState
                   // ============================================
 
                   Row(
-                    crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
-
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child:
-                            _labeledField(
-                          label:
-                              'Due Date',
-
-                          child:
-                              _dateField(
-                            value:
-                                dueDate,
-
-                            onTap:
-                                () {
+                        child: _labeledField(
+                          label: 'Due Date',
+                          child: _dateField(
+                            value: dueDate,
+                            onTap: () {
                               _pickDate(
-                                initial:
-                                    dueDate ??
-                                        billDate,
-
-                                onPicked:
-                                    (
-                                  DateTime
-                                      value,
+                                initial: dueDate ?? billDate,
+                                onPicked: (
+                                  DateTime value,
                                 ) {
                                   setState(() {
-                                    dueDate =
-                                        value;
+                                    dueDate = value;
                                   });
                                 },
                               );
@@ -1257,81 +964,45 @@ class _AddBillDialogState
                           ),
                         ),
                       ),
-
                       const SizedBox(
-                        width:
-                            12,
+                        width: 12,
                       ),
-
                       Expanded(
-                        child:
-                            _labeledField(
-                          label:
-                              'Attach Invoice',
-
-                          child:
-                              Row(
+                        child: _labeledField(
+                          label: 'Attach Invoice',
+                          child: Row(
                             children: [
                               OutlinedButton(
-                                onPressed:
-                                    _pickInvoiceFile,
-
-                                style:
-                                    OutlinedButton
-                                        .styleFrom(
-                                  padding:
-                                      const EdgeInsets
-                                          .symmetric(
-                                    horizontal:
-                                        14,
-
-                                    vertical:
-                                        14,
+                                onPressed: _pickInvoiceFile,
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 14,
                                   ),
-
-                                  side:
-                                      const BorderSide(
-                                    color:
-                                        Color(
+                                  side: const BorderSide(
+                                    color: Color(
                                       0xFFD9DEE5,
                                     ),
                                   ),
-
-                                  shape:
-                                      RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius
-                                            .circular(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
                                       7,
                                     ),
                                   ),
                                 ),
-
-                                child:
-                                    const Text(
+                                child: const Text(
                                   'Choose File',
                                 ),
                               ),
-
                               const SizedBox(
-                                width:
-                                    10,
+                                width: 10,
                               ),
-
                               Expanded(
-                                child:
-                                    Text(
-                                  _attachedFileName ??
-                                      'No file chosen',
-
-                                  overflow:
-                                      TextOverflow
-                                          .ellipsis,
-
-                                  style:
-                                      const TextStyle(
-                                    color:
-                                        Color(
+                                child: Text(
+                                  _attachedFileName ?? 'No file chosen',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(
                                       0xFF5B5B5B,
                                     ),
                                   ),
@@ -1345,8 +1016,7 @@ class _AddBillDialogState
                   ),
 
                   const SizedBox(
-                    height:
-                        26,
+                    height: 26,
                   ),
 
                   // ============================================
@@ -1355,280 +1025,176 @@ class _AddBillDialogState
 
                   const Text(
                     'Item Details',
-
-                    style:
-                        TextStyle(
-                      fontSize:
-                          17,
-
-                      fontWeight:
-                          FontWeight
-                              .w700,
-
-                      color:
-                          Color(
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Color(
                         0xFF3D4147,
                       ),
                     ),
                   ),
 
                   const SizedBox(
-                    height:
-                        12,
+                    height: 12,
                   ),
 
                   const Row(
                     children: [
                       Expanded(
-                        flex:
-                            4,
-
-                        child:
-                            _SmallHeader(
+                        flex: 4,
+                        child: _SmallHeader(
                           'ITEM / DESCRIPTION',
                         ),
                       ),
-
                       Expanded(
-                        flex:
-                            2,
-
-                        child:
-                            _SmallHeader(
+                        flex: 2,
+                        child: _SmallHeader(
                           'QTY',
                         ),
                       ),
-
                       Expanded(
-                        flex:
-                            2,
-
-                        child:
-                            _SmallHeader(
+                        flex: 2,
+                        child: _SmallHeader(
                           'RATE',
                         ),
                       ),
-
                       Expanded(
-                        flex:
-                            2,
-
-                        child:
-                            _SmallHeader(
+                        flex: 2,
+                        child: _SmallHeader(
                           'AMOUNT',
                         ),
                       ),
-
                       SizedBox(
-                        width:
-                            36,
+                        width: 36,
                       ),
                     ],
                   ),
 
                   const SizedBox(
-                    height:
-                        8,
+                    height: 8,
                   ),
 
-                  ...rows
-                      .asMap()
-                      .entries
-                      .map(
+                  ...rows.asMap().entries.map(
                     (
-                      MapEntry<
-                              int,
-                              _ItemRow>
-                          entry,
+                      MapEntry<int, _ItemRow> entry,
                     ) {
-                      final int index =
-                          entry.key;
+                      final int index = entry.key;
 
-                      final _ItemRow row =
-                          entry.value;
+                      final _ItemRow row = entry.value;
 
                       return Padding(
-                        padding:
-                            const EdgeInsets
-                                .only(
-                          bottom:
-                              14,
+                        padding: const EdgeInsets.only(
+                          bottom: 14,
                         ),
-
                         child: Row(
-                          crossAxisAlignment:
-                              CrossAxisAlignment
-                                  .start,
-
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // ==================================
                             // ITEM / PART
                             // ==================================
 
                             Expanded(
-                              flex:
-                                  4,
-
-                              child:
-                                  Column(
+                              flex: 4,
+                              child: Column(
                                 children: [
-                                  DropdownSearch<
-                                      _CatalogOption>(
+                                  DropdownSearch<_CatalogOption>(
                                     items: (
                                       filter,
                                       infiniteScrollProps,
                                     ) {
-                                      final String
-                                          query =
-                                          filter
-                                              .trim()
-                                              .toLowerCase();
+                                      final String query =
+                                          filter.trim().toLowerCase();
 
-                                      if (
-                                        query
-                                            .isEmpty
-                                      ) {
+                                      if (query.isEmpty) {
                                         return _catalog;
                                       }
 
-                                      return _catalog
-                                          .where(
-                                            (
-                                              _CatalogOption
-                                                  product,
-                                            ) {
-                                              return product
-                                                      .name
-                                                      .toLowerCase()
-                                                      .contains(
-                                                        query,
-                                                      ) ||
-                                                  product
-                                                      .sku
-                                                      .toLowerCase()
-                                                      .contains(
-                                                        query,
-                                                      ) ||
-                                                  product
-                                                      .sourceType
-                                                      .toLowerCase()
-                                                      .contains(
-                                                        query,
-                                                      );
-                                            },
-                                          )
-                                          .toList();
-                                    },
-
-                                    itemAsString:
+                                      return _catalog.where(
                                         (
-                                      _CatalogOption
-                                          product,
+                                          _CatalogOption product,
+                                        ) {
+                                          return product.name
+                                                  .toLowerCase()
+                                                  .contains(
+                                                    query,
+                                                  ) ||
+                                              product.sku
+                                                  .toLowerCase()
+                                                  .contains(
+                                                    query,
+                                                  ) ||
+                                              product.sourceType
+                                                  .toLowerCase()
+                                                  .contains(
+                                                    query,
+                                                  );
+                                        },
+                                      ).toList();
+                                    },
+                                    itemAsString: (
+                                      _CatalogOption product,
                                     ) {
-                                      final String
-                                          skuText =
-                                          product
-                                                  .sku
-                                                  .isEmpty
-                                              ? ''
-                                              : ' • ${product.sku}';
+                                      final String skuText = product.sku.isEmpty
+                                          ? ''
+                                          : ' • ${product.sku}';
 
                                       return '${product.name} [${product.sourceType}]$skuText';
                                     },
-
-                                    compareFn:
-                                        (
-                                      _CatalogOption
-                                          a,
-                                      _CatalogOption
-                                          b,
+                                    compareFn: (
+                                      _CatalogOption a,
+                                      _CatalogOption b,
                                     ) {
-                                      return a.id ==
-                                              b.id &&
-                                          a.sourceType ==
-                                              b.sourceType;
+                                      return a.id == b.id &&
+                                          a.sourceType == b.sourceType;
                                     },
-
-                                    selectedItem:
-                                        row.selectedProduct,
-
-                                    onChanged:
-                                        (
-                                      _CatalogOption?
-                                          product,
+                                    selectedItem: row.selectedProduct,
+                                    onChanged: (
+                                      _CatalogOption? product,
                                     ) {
                                       setState(() {
-                                        row.selectedProduct =
-                                            product;
+                                        row.selectedProduct = product;
 
-                                        if (
-                                          product ==
-                                          null
-                                        ) {
-                                          row
-                                              .descriptionController
-                                              .clear();
+                                        if (product == null) {
+                                          row.descriptionController.clear();
 
-                                          row.rateController.text =
-                                              '0.00';
+                                          row.rateController.text = '0.00';
 
                                           return;
                                         }
 
-                                        row
-                                                .descriptionController
-                                                .text =
-                                            product
-                                                .description;
+                                        row.descriptionController.text =
+                                            product.description;
 
-                                        row.rateController.text =
-                                            product
-                                                .purchasePrice
-                                                .toStringAsFixed(
-                                              2,
-                                            );
+                                        row.rateController.text = product
+                                            .purchasePrice
+                                            .toStringAsFixed(
+                                          2,
+                                        );
                                       });
                                     },
-
-                                    popupProps:
-                                        const PopupProps
-                                            .menu(
-                                      showSearchBox:
-                                          true,
+                                    popupProps: const PopupProps.menu(
+                                      showSearchBox: true,
                                     ),
-
-                                    decoratorProps:
-                                        DropDownDecoratorProps(
-                                      decoration:
-                                          _fieldDecoration(
-                                        hint:
-                                            'Select or type to search...',
+                                    decoratorProps: DropDownDecoratorProps(
+                                      decoration: _fieldDecoration(
+                                        hint: 'Select or type to search...',
                                       ),
                                     ),
                                   ),
-
                                   const SizedBox(
-                                    height:
-                                        6,
+                                    height: 6,
                                   ),
-
                                   _textField(
-                                    controller:
-                                        row.descriptionController,
-
-                                    hint:
-                                        'Description',
-
-                                    maxLines:
-                                        2,
+                                    controller: row.descriptionController,
+                                    hint: 'Description',
+                                    maxLines: 2,
                                   ),
                                 ],
                               ),
                             ),
 
                             const SizedBox(
-                              width:
-                                  8,
+                              width: 8,
                             ),
 
                             // ==================================
@@ -1636,31 +1202,21 @@ class _AddBillDialogState
                             // ==================================
 
                             Expanded(
-                              flex:
-                                  2,
-
-                              child:
-                                  _textField(
-                                controller:
-                                    row.qtyController,
-
+                              flex: 2,
+                              child: _textField(
+                                controller: row.qtyController,
                                 keyboardType:
-                                    const TextInputType
-                                        .numberWithOptions(
-                                  decimal:
-                                      true,
+                                    const TextInputType.numberWithOptions(
+                                  decimal: true,
                                 ),
-
-                                onChanged:
-                                    (_) {
+                                onChanged: (_) {
                                   setState(() {});
                                 },
                               ),
                             ),
 
                             const SizedBox(
-                              width:
-                                  8,
+                              width: 8,
                             ),
 
                             // ==================================
@@ -1668,31 +1224,21 @@ class _AddBillDialogState
                             // ==================================
 
                             Expanded(
-                              flex:
-                                  2,
-
-                              child:
-                                  _textField(
-                                controller:
-                                    row.rateController,
-
+                              flex: 2,
+                              child: _textField(
+                                controller: row.rateController,
                                 keyboardType:
-                                    const TextInputType
-                                        .numberWithOptions(
-                                  decimal:
-                                      true,
+                                    const TextInputType.numberWithOptions(
+                                  decimal: true,
                                 ),
-
-                                onChanged:
-                                    (_) {
+                                onChanged: (_) {
                                   setState(() {});
                                 },
                               ),
                             ),
 
                             const SizedBox(
-                              width:
-                                  8,
+                              width: 8,
                             ),
 
                             // ==================================
@@ -1700,43 +1246,22 @@ class _AddBillDialogState
                             // ==================================
 
                             Expanded(
-                              flex:
-                                  2,
-
-                              child:
-                                  Container(
-                                height:
-                                    50,
-
-                                alignment:
-                                    Alignment
-                                        .centerLeft,
-
-                                padding:
-                                    const EdgeInsets
-                                        .symmetric(
-                                  horizontal:
-                                      12,
+                              flex: 2,
+                              child: Container(
+                                height: 50,
+                                alignment: Alignment.centerLeft,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
                                 ),
-
-                                decoration:
-                                    BoxDecoration(
-                                  color:
-                                      GlassSurface
-                                          .fill(
-                                    emphasized:
-                                        true,
+                                decoration: BoxDecoration(
+                                  color: GlassSurface.fill(
+                                    emphasized: true,
                                   ),
-
-                                  borderRadius:
-                                      BorderRadius
-                                          .circular(
+                                  borderRadius: BorderRadius.circular(
                                     7,
                                   ),
                                 ),
-
-                                child:
-                                    Text(
+                                child: Text(
                                   'INR ${row.amount.toStringAsFixed(2)}',
                                 ),
                               ),
@@ -1747,29 +1272,19 @@ class _AddBillDialogState
                             // ==================================
 
                             SizedBox(
-                              width:
-                                  36,
-
-                              child:
-                                  IconButton(
-                                onPressed:
-                                    () {
+                              width: 36,
+                              child: IconButton(
+                                onPressed: () {
                                   _removeRow(
                                     index,
                                   );
                                 },
-
-                                icon:
-                                    const Icon(
+                                icon: const Icon(
                                   Icons.close,
-
-                                  color:
-                                      Color(
+                                  color: Color(
                                     0xFFAB2A2A,
                                   ),
-
-                                  size:
-                                      18,
+                                  size: 18,
                                 ),
                               ),
                             ),
@@ -1780,35 +1295,23 @@ class _AddBillDialogState
                   ),
 
                   TextButton.icon(
-                    onPressed:
-                        _addRow,
-
-                    icon:
-                        const Icon(
+                    onPressed: _addRow,
+                    icon: const Icon(
                       Icons.add,
-
-                      size:
-                          18,
+                      size: 18,
                     ),
-
-                    label:
-                        const Text(
+                    label: const Text(
                       'Add Row',
                     ),
-
-                    style:
-                        TextButton
-                            .styleFrom(
-                      foregroundColor:
-                          const Color(
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(
                         0xFF2E7DD1,
                       ),
                     ),
                   ),
 
                   const SizedBox(
-                    height:
-                        15,
+                    height: 15,
                   ),
 
                   // ============================================
@@ -1816,120 +1319,63 @@ class _AddBillDialogState
                   // ============================================
 
                   Align(
-                    alignment:
-                        Alignment
-                            .centerRight,
-
+                    alignment: Alignment.centerRight,
                     child: SizedBox(
-                      width:
-                          300,
-
-                      child:
-                          Column(
+                      width: 300,
+                      child: Column(
                         children: [
                           Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment
-                                    .spaceBetween,
-
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
                                 'Sub Total',
                               ),
-
                               Text(
                                 'INR ${_subTotal.toStringAsFixed(2)}',
                               ),
                             ],
                           ),
-
                           const SizedBox(
-                            height:
-                                12,
+                            height: 12,
                           ),
-
                           Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment
-                                    .spaceBetween,
-
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
                                 'Tax',
                               ),
-
                               SizedBox(
-                                width:
-                                    130,
-
-                                child:
-                                    TextField(
-                                  controller:
-                                      taxController,
-
-                                  textAlign:
-                                      TextAlign
-                                          .right,
-
+                                width: 130,
+                                child: TextField(
+                                  controller: taxController,
+                                  textAlign: TextAlign.right,
                                   keyboardType:
-                                      const TextInputType
-                                          .numberWithOptions(
-                                    decimal:
-                                        true,
+                                      const TextInputType.numberWithOptions(
+                                    decimal: true,
                                   ),
-
-                                  onChanged:
-                                      (_) {
+                                  onChanged: (_) {
                                     setState(() {});
                                   },
-
-                                  decoration:
-                                      InputDecoration(
-                                    prefixText:
-                                        'INR ',
-
-                                    isDense:
-                                        true,
-
-                                    filled:
-                                        true,
-
-                                    fillColor:
-                                        GlassSurface
-                                            .fill(),
-
-                                    contentPadding:
-                                        const EdgeInsets
-                                            .symmetric(
-                                      horizontal:
-                                          10,
-
-                                      vertical:
-                                          10,
+                                  decoration: InputDecoration(
+                                    prefixText: 'INR ',
+                                    isDense: true,
+                                    filled: true,
+                                    fillColor: GlassSurface.fill(),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 10,
                                     ),
-
-                                    border:
-                                        OutlineInputBorder(
-                                      borderRadius:
-                                          BorderRadius
-                                              .circular(
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
                                         7,
                                       ),
                                     ),
-
-                                    enabledBorder:
-                                        OutlineInputBorder(
-                                      borderRadius:
-                                          BorderRadius
-                                              .circular(
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
                                         7,
                                       ),
-
-                                      borderSide:
-                                          BorderSide(
-                                        color:
-                                            GlassSurface
-                                                .border(),
+                                      borderSide: BorderSide(
+                                        color: GlassSurface.border(),
                                       ),
                                     ),
                                   ),
@@ -1937,51 +1383,28 @@ class _AddBillDialogState
                               ),
                             ],
                           ),
-
                           const Divider(
-                            height:
-                                24,
-
-                            color:
-                                Color(
+                            height: 24,
+                            color: Color(
                               0xFFD9DEE5,
                             ),
                           ),
-
                           Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment
-                                    .spaceBetween,
-
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
                                 'Total',
-
-                                style:
-                                    TextStyle(
-                                  fontWeight:
-                                      FontWeight
-                                          .bold,
-
-                                  fontSize:
-                                      17,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 17,
                                 ),
                               ),
-
                               Text(
                                 'INR ${_total.toStringAsFixed(2)}',
-
-                                style:
-                                    const TextStyle(
-                                  fontWeight:
-                                      FontWeight
-                                          .bold,
-
-                                  fontSize:
-                                      17,
-
-                                  color:
-                                      Color(
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 17,
+                                  color: Color(
                                     0xFF123456,
                                   ),
                                 ),
@@ -1994,8 +1417,7 @@ class _AddBillDialogState
                   ),
 
                   const SizedBox(
-                    height:
-                        28,
+                    height: 28,
                   ),
 
                   // ============================================
@@ -2003,47 +1425,27 @@ class _AddBillDialogState
                   // ============================================
 
                   Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment
-                            .end,
-
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       GlassButton(
-                        onPressed:
-                            _isSaving
-                                ? null
-                                : () {
-                                    Navigator.pop(
-                                      context,
-                                    );
-                                  },
-
-                        icon:
-                            Icons.close,
-
-                        label:
-                            'Cancel',
-
-                        primary:
-                            false,
+                        onPressed: _isSaving
+                            ? null
+                            : () {
+                                Navigator.pop(
+                                  context,
+                                );
+                              },
+                        icon: Icons.close,
+                        label: 'Cancel',
+                        primary: false,
                       ),
-
                       const SizedBox(
-                        width:
-                            16,
+                        width: 16,
                       ),
-
                       GlassButton(
-                        onPressed:
-                            _isSaving
-                                ? null
-                                : _saveBill,
-
-                        icon:
-                            Icons.save,
-
-                        label:
-                            'Save Bill',
+                        onPressed: _isSaving ? null : _saveBill,
+                        icon: Icons.save,
+                        label: 'Save Bill',
                       ),
                     ],
                   ),
@@ -2059,37 +1461,24 @@ class _AddBillDialogState
 
   Widget _labeledField({
     required String label,
-
     required Widget child,
   }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-
-          style:
-              const TextStyle(
-            fontSize:
-                14,
-
-            fontWeight:
-                FontWeight.w500,
-
-            color:
-                Color(
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Color(
               0xFF3D4147,
             ),
           ),
         ),
-
         const SizedBox(
-          height:
-              6,
+          height: 6,
         ),
-
         child,
       ],
     );
@@ -2099,71 +1488,39 @@ class _AddBillDialogState
   // INPUT DECORATION
   // ==========================================================
 
-  InputDecoration
-      _fieldDecoration({
+  InputDecoration _fieldDecoration({
     String? hint,
   }) {
     return InputDecoration(
-      hintText:
-          hint,
-
-      filled:
-          true,
-
-      fillColor:
-          GlassSurface.fill(),
-
-      contentPadding:
-          const EdgeInsets
-              .symmetric(
-        horizontal:
-            16,
-
-        vertical:
-            15,
+      hintText: hint,
+      filled: true,
+      fillColor: GlassSurface.fill(),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 15,
       ),
-
-      border:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           7,
         ),
       ),
-
-      enabledBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           7,
         ),
-
-        borderSide:
-            BorderSide(
-          color:
-              GlassSurface
-                  .border(),
+        borderSide: BorderSide(
+          color: GlassSurface.border(),
         ),
       ),
-
-      focusedBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           7,
         ),
-
-        borderSide:
-            BorderSide(
-          color:
-              GlassSurface
-                  .border(
-            focused:
-                true,
+        borderSide: BorderSide(
+          color: GlassSurface.border(
+            focused: true,
           ),
-
-          width:
-              2,
+          width: 2,
         ),
       ),
     );
@@ -2174,40 +1531,21 @@ class _AddBillDialogState
   // ==========================================================
 
   Widget _textField({
-    required TextEditingController
-        controller,
-
+    required TextEditingController controller,
     String? hint,
-
     TextInputType? keyboardType,
-
     int maxLines = 1,
-
     bool enabled = true,
-
-    ValueChanged<String>?
-        onChanged,
+    ValueChanged<String>? onChanged,
   }) {
     return TextField(
-      controller:
-          controller,
-
-      keyboardType:
-          keyboardType,
-
-      maxLines:
-          maxLines,
-
-      enabled:
-          enabled,
-
-      onChanged:
-          onChanged,
-
-      decoration:
-          _fieldDecoration(
-        hint:
-            hint,
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      enabled: enabled,
+      onChanged: onChanged,
+      decoration: _fieldDecoration(
+        hint: hint,
       ),
     );
   }
@@ -2218,73 +1556,40 @@ class _AddBillDialogState
 
   Widget _dateField({
     required DateTime? value,
-
     required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap:
-          onTap,
-
+      onTap: onTap,
       child: Container(
-        height:
-            50,
-
-        padding:
-            const EdgeInsets
-                .symmetric(
-          horizontal:
-              16,
+        height: 50,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
         ),
-
-        decoration:
-            BoxDecoration(
-          color:
-              GlassSurface.fill(),
-
-          borderRadius:
-              BorderRadius.circular(
+        decoration: BoxDecoration(
+          color: GlassSurface.fill(),
+          borderRadius: BorderRadius.circular(
             7,
           ),
-
-          border:
-              Border.all(
-            color:
-                GlassSurface
-                    .border(),
+          border: Border.all(
+            color: GlassSurface.border(),
           ),
         ),
-
-        child:
-            Row(
+        child: Row(
           children: [
             Expanded(
-              child:
-                  Text(
+              child: Text(
                 value == null
                     ? 'dd-mm-yyyy'
                     : '${value.day.toString().padLeft(2, '0')}-${value.month.toString().padLeft(2, '0')}-${value.year}',
-
-                style:
-                    TextStyle(
-                  color:
-                      value == null
-                          ? Colors
-                              .grey
-                          : Colors
-                              .black,
+                style: TextStyle(
+                  color: value == null ? Colors.grey : Colors.black,
                 ),
               ),
             ),
-
             const Icon(
-              Icons
-                  .calendar_today_outlined,
-
-              size:
-                  18,
-
-              color:
-                  Color(
+              Icons.calendar_today_outlined,
+              size: 18,
+              color: Color(
                 0xFF888888,
               ),
             ),
@@ -2299,8 +1604,7 @@ class _AddBillDialogState
 // SMALL HEADER
 // ============================================================
 
-class _SmallHeader
-    extends StatelessWidget {
+class _SmallHeader extends StatelessWidget {
   final String text;
 
   const _SmallHeader(
@@ -2313,17 +1617,10 @@ class _SmallHeader
   ) {
     return Text(
       text,
-
-      style:
-          const TextStyle(
-        fontSize:
-            12,
-
-        fontWeight:
-            FontWeight.bold,
-
-        color:
-            Color(
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+        color: Color(
           0xFF5B5B5B,
         ),
       ),
@@ -2340,50 +1637,35 @@ class BillModelDraft {
 
   final String vendorInvoiceNumber;
 
-  final String?
-      invoiceAttachmentPath;
+  final String? invoiceAttachmentPath;
 
   final String vendorId;
 
   final String vendorName;
 
-  final String?
-      purchaseOrderId;
+  final String? purchaseOrderId;
 
-  final String?
-      purchaseOrderNumber;
+  final String? purchaseOrderNumber;
 
   final DateTime billDate;
 
   final DateTime? dueDate;
 
-  final List<
-          PurchaseOrderItemModel>
-      items;
+  final List<PurchaseOrderItemModel> items;
 
   final double taxAmount;
 
   BillModelDraft({
     required this.billNumber,
-
     this.vendorInvoiceNumber = '',
-
     this.invoiceAttachmentPath,
-
     required this.vendorId,
-
     required this.vendorName,
-
     this.purchaseOrderId,
-
     this.purchaseOrderNumber,
-
     required this.billDate,
-
     this.dueDate,
-
     required this.items,
-
     this.taxAmount = 0,
   });
 }

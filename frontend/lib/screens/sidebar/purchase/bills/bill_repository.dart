@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 import 'bill_filter.dart';
 import 'bill_model.dart';
@@ -18,6 +19,8 @@ abstract class BillRepository {
     BillModel bill,
   );
 
+  Future<BillModel> updateBill(BillModel bill);
+
   Future<void> deleteBill(
     String id,
   );
@@ -27,17 +30,24 @@ abstract class BillRepository {
   Future<BillModel> recordPayment(
     String billId,
     double amountPaid,
+    DateTime paymentDate,
+    String paymentMode,
+    String reference,
+    [
+    String paidBy = '',
+    String notes = '',
+    ]
   );
+
+  Future<BillModel> voidBill(String billId);
 }
 
 // ============================================================
 // API BILL REPOSITORY
 // ============================================================
 
-class ApiBillRepository
-    implements BillRepository {
-  static const String baseUrl =
-      'http://localhost:3000/api';
+class ApiBillRepository implements BillRepository {
+  static const String baseUrl = 'http://localhost:3000/api';
 
   // ==========================================================
   // GET BILLS
@@ -48,56 +58,40 @@ class ApiBillRepository
     BillFilter? filter,
   }) async {
     try {
-      final Map<String, String>
-          queryParams =
-          filter?.toQueryParams() ??
-              <String, String>{};
+      final Map<String, String> queryParams =
+          filter?.toQueryParams() ?? <String, String>{};
 
       final Uri uri = Uri.parse(
         '$baseUrl/bills',
       ).replace(
-        queryParameters:
-            queryParams.isEmpty
-                ? null
-                : queryParams,
+        queryParameters: queryParams.isEmpty ? null : queryParams,
       );
 
-      final http.Response response =
-          await http.get(
+      final http.Response response = await http.get(
         uri,
         headers: const {
-          'Accept':
-              'application/json',
+          'Accept': 'application/json',
         },
       );
 
-      final dynamic body =
-          jsonDecode(
+      final dynamic body = jsonDecode(
         response.body,
       );
 
-      if (
-        body is! Map<String, dynamic>
-      ) {
+      if (body is! Map<String, dynamic>) {
         throw Exception(
           'Invalid response from server',
         );
       }
 
-      if (
-        response.statusCode != 200 ||
-        body['success'] != true
-      ) {
+      if (response.statusCode != 200 || body['success'] != true) {
         throw Exception(
-          body['message'] ??
-              'Failed to fetch bills',
+          body['message'] ?? 'Failed to fetch bills',
         );
       }
 
       final List<dynamic> data =
-          body['data'] is List
-              ? body['data']
-              : <dynamic>[];
+          body['data'] is List ? body['data'] : <dynamic>[];
 
       return data.map(
         (dynamic raw) {
@@ -124,52 +118,38 @@ class ApiBillRepository
     BillModel bill,
   ) async {
     try {
-      final Uri uri =
-          Uri.parse(
+      final Uri uri = Uri.parse(
         '$baseUrl/bills',
       );
 
-      final http.Response response =
-          await http.post(
+      final http.Response response = await http.post(
         uri,
         headers: const {
-          'Content-Type':
-              'application/json',
-
-          'Accept':
-              'application/json',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: jsonEncode(
           bill.toJson(),
         ),
       );
 
-      final dynamic body =
-          jsonDecode(
+      final dynamic body = jsonDecode(
         response.body,
       );
 
-      if (
-        body is! Map<String, dynamic>
-      ) {
+      if (body is! Map<String, dynamic>) {
         throw Exception(
           'Invalid response from server',
         );
       }
 
-      if (
-        response.statusCode != 201 ||
-        body['success'] != true
-      ) {
+      if (response.statusCode != 201 || body['success'] != true) {
         throw Exception(
-          body['message'] ??
-              'Failed to create bill',
+          body['message'] ?? 'Failed to create bill',
         );
       }
 
-      if (
-        body['data'] == null
-      ) {
+      if (body['data'] == null) {
         throw Exception(
           'Bill data missing from server response',
         );
@@ -188,6 +168,46 @@ class ApiBillRepository
   }
 
   // ==========================================================
+  // UPDATE BILL
+  // ==========================================================
+
+  @override
+  Future<BillModel> updateBill(BillModel bill) async {
+    final id = bill.id;
+    if (id == null || id.trim().isEmpty) {
+      throw Exception('Bill ID is missing');
+    }
+
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/bills/$id'),
+        headers: const {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(bill.toJson()),
+      );
+      final dynamic body = jsonDecode(response.body);
+      if (body is! Map<String, dynamic> ||
+          response.statusCode != 200 ||
+          body['success'] != true ||
+          body['data'] == null) {
+        throw Exception(
+          body is Map
+              ? body['message'] ?? 'Failed to update bill'
+              : 'Invalid response from server',
+        );
+      }
+
+      return BillModel.fromJson(
+        Map<String, dynamic>.from(body['data'] as Map),
+      );
+    } catch (error) {
+      throw Exception('Unable to update bill: $error');
+    }
+  }
+
+  // ==========================================================
   // DELETE BILL
   // ==========================================================
 
@@ -196,45 +216,34 @@ class ApiBillRepository
     String id,
   ) async {
     try {
-      if (
-        id.trim().isEmpty
-      ) {
+      if (id.trim().isEmpty) {
         throw Exception(
           'Bill ID is missing',
         );
       }
 
-      final http.Response response =
-          await http.delete(
+      final http.Response response = await http.delete(
         Uri.parse(
           '$baseUrl/bills/$id',
         ),
         headers: const {
-          'Accept':
-              'application/json',
+          'Accept': 'application/json',
         },
       );
 
-      final dynamic body =
-          jsonDecode(
+      final dynamic body = jsonDecode(
         response.body,
       );
 
-      if (
-        body is! Map<String, dynamic>
-      ) {
+      if (body is! Map<String, dynamic>) {
         throw Exception(
           'Invalid response from server',
         );
       }
 
-      if (
-        response.statusCode != 200 ||
-        body['success'] != true
-      ) {
+      if (response.statusCode != 200 || body['success'] != true) {
         throw Exception(
-          body['message'] ??
-              'Failed to delete bill',
+          body['message'] ?? 'Failed to delete bill',
         );
       }
     } catch (error) {
@@ -249,47 +258,34 @@ class ApiBillRepository
   // ==========================================================
 
   @override
-  Future<String>
-      nextBillNumber() async {
+  Future<String> nextBillNumber() async {
     try {
-      final http.Response response =
-          await http.get(
+      final http.Response response = await http.get(
         Uri.parse(
           '$baseUrl/bills/next-number',
         ),
         headers: const {
-          'Accept':
-              'application/json',
+          'Accept': 'application/json',
         },
       );
 
-      final dynamic body =
-          jsonDecode(
+      final dynamic body = jsonDecode(
         response.body,
       );
 
-      if (
-        body is! Map<String, dynamic>
-      ) {
+      if (body is! Map<String, dynamic>) {
         throw Exception(
           'Invalid response from server',
         );
       }
 
-      if (
-        response.statusCode != 200 ||
-        body['success'] != true
-      ) {
+      if (response.statusCode != 200 || body['success'] != true) {
         throw Exception(
-          body['message'] ??
-              'Failed to generate bill number',
+          body['message'] ?? 'Failed to generate bill number',
         );
       }
 
-      return body['data']
-                  ?['billNumber']
-              ?.toString() ??
-          'BILL-1';
+      return body['data']?['billNumber']?.toString() ?? 'BILL-1';
     } catch (error) {
       throw Exception(
         'Unable to generate bill number: $error',
@@ -305,62 +301,60 @@ class ApiBillRepository
   Future<BillModel> recordPayment(
     String billId,
     double amountPaid,
+    DateTime paymentDate,
+    String paymentMode,
+    String reference,
+    [
+    String paidBy = '',
+    String notes = '',
+    ]
   ) async {
     try {
-      if (
-        billId.trim().isEmpty
-      ) {
+      if (billId.trim().isEmpty) {
         throw Exception(
           'Bill ID is missing',
         );
       }
 
-      if (
-        amountPaid <= 0
-      ) {
+      if (amountPaid <= 0) {
         throw Exception(
           'Payment must be greater than zero',
         );
       }
 
-      final http.Response response =
-          await http.put(
+      final http.Response response = await http.put(
         Uri.parse(
           '$baseUrl/bills/$billId/payment',
         ),
         headers: const {
-          'Content-Type':
-              'application/json',
-
-          'Accept':
-              'application/json',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: jsonEncode({
-          'amountPaid':
-              amountPaid,
+          'amountPaid': amountPaid,
+          'paymentDate': DateFormat('yyyy-MM-dd').format(paymentDate),
+          'paymentMode': paymentMode,
+          'reference':           reference.trim(),
+          'paidBy':
+          paidBy.trim(),
+          'notes':
+          notes.trim(),
         }),
       );
 
-      final dynamic body =
-          jsonDecode(
+      final dynamic body = jsonDecode(
         response.body,
       );
 
-      if (
-        body is! Map<String, dynamic>
-      ) {
+      if (body is! Map<String, dynamic>) {
         throw Exception(
           'Invalid response from server',
         );
       }
 
-      if (
-        response.statusCode != 200 ||
-        body['success'] != true
-      ) {
+      if (response.statusCode != 200 || body['success'] != true) {
         throw Exception(
-          body['message'] ??
-              'Failed to record payment',
+          body['message'] ?? 'Failed to record payment',
         );
       }
 
@@ -376,6 +370,44 @@ class ApiBillRepository
     }
   }
 
+  @override
+  Future<BillModel> voidBill(String billId) async {
+    try {
+      if (billId.trim().isEmpty) {
+        throw Exception('Bill ID is missing');
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/bills/$billId/void'),
+        headers: const {'Accept': 'application/json'},
+      );
+      final dynamic body = jsonDecode(response.body);
+      final message = body is Map
+          ? body['message']?.toString() ?? 'Failed to void bill'
+          : 'Invalid response from server';
+
+      if (response.statusCode == 404 &&
+          message.contains('API route not found')) {
+        throw Exception(
+          'The running backend has not loaded the bill-void API. '
+          'Restart the backend server, then try again.',
+        );
+      }
+
+      if (body is! Map<String, dynamic> ||
+          response.statusCode != 200 ||
+          body['success'] != true) {
+        throw Exception(message);
+      }
+
+      return BillModel.fromJson(
+        Map<String, dynamic>.from(body['data'] as Map),
+      );
+    } catch (error) {
+      throw Exception('Unable to void bill: $error');
+    }
+  }
+
   // ==========================================================
   // OPTIONAL: GET SINGLE BILL
   // ==========================================================
@@ -384,31 +416,25 @@ class ApiBillRepository
     String id,
   ) async {
     try {
-      final http.Response response =
-          await http.get(
+      final http.Response response = await http.get(
         Uri.parse(
           '$baseUrl/bills/$id',
         ),
         headers: const {
-          'Accept':
-              'application/json',
+          'Accept': 'application/json',
         },
       );
 
-      final dynamic body =
-          jsonDecode(
+      final dynamic body = jsonDecode(
         response.body,
       );
 
-      if (
-        body is! Map<String, dynamic> ||
-        response.statusCode != 200 ||
-        body['success'] != true
-      ) {
+      if (body is! Map<String, dynamic> ||
+          response.statusCode != 200 ||
+          body['success'] != true) {
         throw Exception(
           body is Map
-              ? body['message'] ??
-                  'Failed to fetch bill'
+              ? body['message'] ?? 'Failed to fetch bill'
               : 'Failed to fetch bill',
         );
       }
@@ -435,7 +461,6 @@ class ApiBillRepository
 // Keep the name, but it now connects to the real API.
 // ============================================================
 
-class InMemoryBillRepository
-    extends ApiBillRepository {
+class InMemoryBillRepository extends ApiBillRepository {
   InMemoryBillRepository();
 }

@@ -11,7 +11,7 @@ class PurchaseOrderModel {
   final DateTime? dueDate;
   final String referenceNumber;
   final List<PurchaseOrderItemModel> items;
-  final String status; // Draft, Ordered, Received, Cancelled
+  final String status;
 
   PurchaseOrderModel({
     this.id,

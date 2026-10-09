@@ -10,18 +10,25 @@ import 'purchase_order_model.dart';
 // ============================================================
 
 abstract class PurchaseOrderRepository {
-  Future<List<PurchaseOrderModel>>
-      getPurchaseOrders({
+  Future<List<PurchaseOrderModel>> getPurchaseOrders({
     PurchaseOrderFilter? filter,
   });
 
-  Future<PurchaseOrderModel>
-      addPurchaseOrder(
+  Future<PurchaseOrderModel> addPurchaseOrder(
+    PurchaseOrderModel order,
+  );
+
+  Future<void> updatePurchaseOrder(
     PurchaseOrderModel order,
   );
 
   Future<void> deletePurchaseOrder(
     String id,
+  );
+
+  Future<void> updateStatus(
+    String id,
+    String status,
   );
 
   Future<String> nextPoNumber();
@@ -31,77 +38,56 @@ abstract class PurchaseOrderRepository {
 // API REPOSITORY
 // ============================================================
 
-class ApiPurchaseOrderRepository
-    implements PurchaseOrderRepository {
-  static const String baseUrl =
-      'http://localhost:3000/api';
+class ApiPurchaseOrderRepository implements PurchaseOrderRepository {
+  static const String baseUrl = 'http://localhost:3000/api';
 
   // ==========================================================
   // GET PURCHASE ORDERS
   // ==========================================================
 
   @override
-  Future<List<PurchaseOrderModel>>
-      getPurchaseOrders({
+  Future<List<PurchaseOrderModel>> getPurchaseOrders({
     PurchaseOrderFilter? filter,
   }) async {
     try {
-      final Map<String, String>
-          queryParams =
-          filter?.toQueryParams() ??
-              <String, String>{};
+      final Map<String, String> queryParams =
+          filter?.toQueryParams() ?? <String, String>{};
 
       final Uri uri = Uri.parse(
         '$baseUrl/purchase-orders',
       ).replace(
-        queryParameters:
-            queryParams.isEmpty
-                ? null
-                : queryParams,
+        queryParameters: queryParams.isEmpty ? null : queryParams,
       );
 
-      final http.Response response =
-          await http.get(
+      final http.Response response = await http.get(
         uri,
         headers: const {
-          'Accept':
-              'application/json',
+          'Accept': 'application/json',
         },
       );
 
-      final dynamic body =
-          jsonDecode(
+      final dynamic body = jsonDecode(
         response.body,
       );
 
-      if (
-        body
-            is! Map<String, dynamic>
-      ) {
+      if (body is! Map<String, dynamic>) {
         throw Exception(
           'Invalid response from server',
         );
       }
 
-      if (
-        response.statusCode != 200 ||
-        body['success'] != true
-      ) {
+      if (response.statusCode != 200 || body['success'] != true) {
         throw Exception(
-          body['message'] ??
-              'Failed to fetch purchase orders',
+          body['message'] ?? 'Failed to fetch purchase orders',
         );
       }
 
       final List<dynamic> data =
-          body['data'] is List
-              ? body['data']
-              : <dynamic>[];
+          body['data'] is List ? body['data'] : <dynamic>[];
 
       return data.map(
         (dynamic raw) {
-          return PurchaseOrderModel
-              .fromJson(
+          return PurchaseOrderModel.fromJson(
             Map<String, dynamic>.from(
               raw as Map,
             ),
@@ -115,57 +101,74 @@ class ApiPurchaseOrderRepository
     }
   }
 
+  @override
+  Future<void> updatePurchaseOrder(PurchaseOrderModel order) async {
+    final id = order.id;
+    if (id == null || id.trim().isEmpty) {
+      throw Exception('Purchase order ID is missing');
+    }
+
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/purchase-orders/$id'),
+        headers: const {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(order.toJson()),
+      );
+      final dynamic body = jsonDecode(response.body);
+      if (body is! Map<String, dynamic> ||
+          response.statusCode != 200 ||
+          body['success'] != true) {
+        throw Exception(
+          body is Map
+              ? body['message'] ?? 'Failed to update purchase order'
+              : 'Failed to update purchase order',
+        );
+      }
+    } catch (error) {
+      throw Exception('Unable to update purchase order: $error');
+    }
+  }
+
   // ==========================================================
   // ADD PURCHASE ORDER
   // ==========================================================
 
   @override
-  Future<PurchaseOrderModel>
-      addPurchaseOrder(
+  Future<PurchaseOrderModel> addPurchaseOrder(
     PurchaseOrderModel order,
   ) async {
     try {
-      final Uri uri =
-          Uri.parse(
+      final Uri uri = Uri.parse(
         '$baseUrl/purchase-orders',
       );
 
-      final http.Response response =
-          await http.post(
+      final http.Response response = await http.post(
         uri,
         headers: const {
-          'Content-Type':
-              'application/json',
-
-          'Accept':
-              'application/json',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: jsonEncode(
           order.toJson(),
         ),
       );
 
-      final dynamic body =
-          jsonDecode(
+      final dynamic body = jsonDecode(
         response.body,
       );
 
-      if (
-        body
-            is! Map<String, dynamic>
-      ) {
+      if (body is! Map<String, dynamic>) {
         throw Exception(
           'Invalid response from server',
         );
       }
 
-      if (
-        response.statusCode != 201 ||
-        body['success'] != true
-      ) {
+      if (response.statusCode != 201 || body['success'] != true) {
         throw Exception(
-          body['message'] ??
-              'Failed to create purchase order',
+          body['message'] ?? 'Failed to create purchase order',
         );
       }
 
@@ -175,8 +178,7 @@ class ApiPurchaseOrderRepository
         );
       }
 
-      return PurchaseOrderModel
-          .fromJson(
+      return PurchaseOrderModel.fromJson(
         Map<String, dynamic>.from(
           body['data'] as Map,
         ),
@@ -203,41 +205,30 @@ class ApiPurchaseOrderRepository
         );
       }
 
-      final Uri uri =
-          Uri.parse(
+      final Uri uri = Uri.parse(
         '$baseUrl/purchase-orders/$id',
       );
 
-      final http.Response response =
-          await http.delete(
+      final http.Response response = await http.delete(
         uri,
         headers: const {
-          'Accept':
-              'application/json',
+          'Accept': 'application/json',
         },
       );
 
-      final dynamic body =
-          jsonDecode(
+      final dynamic body = jsonDecode(
         response.body,
       );
 
-      if (
-        body
-            is! Map<String, dynamic>
-      ) {
+      if (body is! Map<String, dynamic>) {
         throw Exception(
           'Invalid response from server',
         );
       }
 
-      if (
-        response.statusCode != 200 ||
-        body['success'] != true
-      ) {
+      if (response.statusCode != 200 || body['success'] != true) {
         throw Exception(
-          body['message'] ??
-              'Failed to delete purchase order',
+          body['message'] ?? 'Failed to delete purchase order',
         );
       }
     } catch (error) {
@@ -252,51 +243,36 @@ class ApiPurchaseOrderRepository
   // ==========================================================
 
   @override
-  Future<String>
-      nextPoNumber() async {
+  Future<String> nextPoNumber() async {
     try {
-      final Uri uri =
-          Uri.parse(
+      final Uri uri = Uri.parse(
         '$baseUrl/purchase-orders/next-number',
       );
 
-      final http.Response response =
-          await http.get(
+      final http.Response response = await http.get(
         uri,
         headers: const {
-          'Accept':
-              'application/json',
+          'Accept': 'application/json',
         },
       );
 
-      final dynamic body =
-          jsonDecode(
+      final dynamic body = jsonDecode(
         response.body,
       );
 
-      if (
-        body
-            is! Map<String, dynamic>
-      ) {
+      if (body is! Map<String, dynamic>) {
         throw Exception(
           'Invalid response from server',
         );
       }
 
-      if (
-        response.statusCode != 200 ||
-        body['success'] != true
-      ) {
+      if (response.statusCode != 200 || body['success'] != true) {
         throw Exception(
-          body['message'] ??
-              'Failed to generate PO number',
+          body['message'] ?? 'Failed to generate PO number',
         );
       }
 
-      return body['data']
-                  ?['poNumber']
-              ?.toString() ??
-          'PO-1';
+      return body['data']?['poNumber']?.toString() ?? 'PO-1';
     } catch (error) {
       throw Exception(
         'Unable to generate PO number: $error',
@@ -308,43 +284,34 @@ class ApiPurchaseOrderRepository
   // GET SINGLE PURCHASE ORDER
   // ==========================================================
 
-  Future<PurchaseOrderModel>
-      getPurchaseOrderById(
+  Future<PurchaseOrderModel> getPurchaseOrderById(
     String id,
   ) async {
     try {
-      final http.Response response =
-          await http.get(
+      final http.Response response = await http.get(
         Uri.parse(
           '$baseUrl/purchase-orders/$id',
         ),
         headers: const {
-          'Accept':
-              'application/json',
+          'Accept': 'application/json',
         },
       );
 
-      final dynamic body =
-          jsonDecode(
+      final dynamic body = jsonDecode(
         response.body,
       );
 
-      if (
-        body
-            is! Map<String, dynamic> ||
-        response.statusCode != 200 ||
-        body['success'] != true
-      ) {
+      if (body is! Map<String, dynamic> ||
+          response.statusCode != 200 ||
+          body['success'] != true) {
         throw Exception(
           body is Map
-              ? body['message'] ??
-                  'Failed to fetch purchase order'
+              ? body['message'] ?? 'Failed to fetch purchase order'
               : 'Failed to fetch purchase order',
         );
       }
 
-      return PurchaseOrderModel
-          .fromJson(
+      return PurchaseOrderModel.fromJson(
         Map<String, dynamic>.from(
           body['data'] as Map,
         ),
@@ -360,43 +327,35 @@ class ApiPurchaseOrderRepository
   // UPDATE STATUS
   // ==========================================================
 
+  @override
   Future<void> updateStatus(
     String id,
     String status,
   ) async {
     try {
-      final http.Response response =
-          await http.put(
+      final http.Response response = await http.put(
         Uri.parse(
           '$baseUrl/purchase-orders/$id/status',
         ),
         headers: const {
-          'Content-Type':
-              'application/json',
-
-          'Accept':
-              'application/json',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: jsonEncode({
           'status': status,
         }),
       );
 
-      final dynamic body =
-          jsonDecode(
+      final dynamic body = jsonDecode(
         response.body,
       );
 
-      if (
-        body
-            is! Map<String, dynamic> ||
-        response.statusCode != 200 ||
-        body['success'] != true
-      ) {
+      if (body is! Map<String, dynamic> ||
+          response.statusCode != 200 ||
+          body['success'] != true) {
         throw Exception(
           body is Map
-              ? body['message'] ??
-                  'Failed to update status'
+              ? body['message'] ?? 'Failed to update status'
               : 'Failed to update status',
         );
       }
@@ -419,7 +378,6 @@ class ApiPurchaseOrderRepository
 // Purchase files continue compiling, but now it uses the API.
 // ============================================================
 
-class InMemoryPurchaseOrderRepository
-    extends ApiPurchaseOrderRepository {
+class InMemoryPurchaseOrderRepository extends ApiPurchaseOrderRepository {
   InMemoryPurchaseOrderRepository();
 }
