@@ -156,6 +156,11 @@ function mapBill(
         row.amount_paid
       ),
 
+    isVoided:
+      row.is_voided === true ||
+      row.is_voided === 1 ||
+      row.is_voided === '1',
+
     subTotal:
       toNumber(
         row.sub_total
@@ -429,12 +434,14 @@ router.get(
       const {
         vendor,
         vendorName,
+        vendor_id,
 
         dateFrom,
         dateTo,
 
         date_from,
         date_to,
+        status_filter,
       } = req.query;
 
       const finalVendor =
@@ -494,6 +501,12 @@ router.get(
           total,
           amount_paid,
 
+          EXISTS (
+            SELECT 1
+            FROM bill_voids
+            WHERE bill_voids.bill_id = CAST(bills.id AS CHAR)
+          ) AS is_voided,
+
           created_at,
           updated_at
 
@@ -503,6 +516,36 @@ router.get(
       `;
 
       const values = [];
+
+      const finalStatus =
+        (status_filter ?? '')
+          .toString()
+          .trim();
+
+      if (finalStatus === 'Void') {
+        sql += `
+          AND EXISTS (
+            SELECT 1
+            FROM bill_voids
+            WHERE bill_voids.bill_id = CAST(bills.id AS CHAR)
+          )
+        `;
+      } else if (['Unpaid', 'Partially Paid', 'Paid'].includes(finalStatus)) {
+        sql += `
+          AND NOT EXISTS (
+            SELECT 1
+            FROM bill_voids
+            WHERE bill_voids.bill_id = CAST(bills.id AS CHAR)
+          )
+        `;
+        if (finalStatus === 'Unpaid') {
+          sql += ' AND amount_paid <= 0';
+        } else if (finalStatus === 'Partially Paid') {
+          sql += ' AND amount_paid > 0 AND amount_paid < total';
+        } else {
+          sql += ' AND amount_paid >= total';
+        }
+      }
 
       if (
         finalVendor !== ''
@@ -514,6 +557,18 @@ router.get(
 
         values.push(
           `%${finalVendor}%`
+        );
+      }
+
+      if (
+        vendor_id
+      ) {
+        sql += `
+          AND vendor_id = ?
+        `;
+
+        values.push(
+          vendor_id
         );
       }
 
@@ -685,6 +740,313 @@ router.get(
 );
 
 // ============================================================
+// GET PAYMENTS MADE
+//
+// GET /api/bills/payments-made
+// ============================================================
+
+router.get(
+  '/payments-made',
+  async (req, res) => {
+    try {
+      const conditions = [];
+      const values = [];
+      const vendor = req.query.vendor?.toString().trim() ?? '';
+      const billNumber = req.query.billNumber?.toString().trim() ?? '';
+      const dateFrom = normalizeDate(req.query.dateFrom);
+      const dateTo = normalizeDate(req.query.dateTo);
+
+      if (vendor) {
+        conditions.push('b.vendor_name LIKE ?');
+        values.push(`%${vendor}%`);
+      }
+      if (billNumber) {
+        conditions.push('b.bill_number LIKE ?');
+        values.push(`%${billNumber}%`);
+      }
+      if (dateFrom) {
+        conditions.push('p.payment_date >= ?');
+        values.push(dateFrom);
+      }
+      if (dateTo) {
+        conditions.push('p.payment_date <= ?');
+        values.push(dateTo);
+      }
+
+      const where = conditions.length
+        ? `WHERE ${conditions.join(' AND ')}`
+        : '';
+      const [rows] = await db.query(
+        `
+        SELECT
+          p.id,
+          p.bill_id,
+          DATE_FORMAT(p.payment_date, '%Y-%m-%d') AS payment_date,
+          p.amount,
+          p.payment_mode,
+          p.reference_number,
+          p.paid_by,
+          p.notes,
+          b.bill_number,
+          b.vendor_name,
+          b.vendor_invoice_number,
+          v.email AS vendor_email,
+          v.phone AS vendor_phone
+        FROM bill_payments p
+        INNER JOIN bills b ON b.id = p.bill_id
+        LEFT JOIN vendors v ON v.id = b.vendor_id
+        ${where}
+        ORDER BY p.payment_date DESC, p.id DESC
+        `,
+        values
+      );
+
+      return res.status(200).json({
+        success: true,
+        data: rows.map((row) => ({
+          id: row.id.toString(),
+          paymentNumber: `PAY-${row.id}`,
+          billId: row.bill_id.toString(),
+          billNumber: row.bill_number ?? '',
+          vendorName: row.vendor_name ?? '',
+          vendorInvoiceNumber: row.vendor_invoice_number ?? '',
+          date: row.payment_date,
+          amount: toNumber(row.amount),
+          mode: row.payment_mode ?? '',
+          reference: row.reference_number ?? '',
+          paidBy: row.paid_by ?? '',
+          notes: row.notes ?? '',
+          vendorEmail: row.vendor_email ?? '',
+          vendorPhone: row.vendor_phone ?? '',
+        })),
+      });
+    } catch (error) {
+      console.error('Get payments made error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch payments made',
+        error: error.message,
+      });
+    }
+  }
+);
+
+router.put(
+  '/payments-made/:paymentId',
+  async (req, res) => {
+    let connection;
+    let transactionStarted = false;
+    try {
+      const { paymentId } = req.params;
+      const payment = Number(toNumber(req.body.amount).toFixed(2));
+      const paymentDate = normalizeDate(req.body.date);
+      const paymentMode = req.body.mode?.toString().trim() ?? '';
+      const reference = req.body.reference?.toString().trim() ?? '';
+      const paidBy = req.body.paidBy?.toString().trim() ?? '';
+      const notes = req.body.notes?.toString().trim() ?? '';
+      const parsedDate = paymentDate
+        ? new Date(`${paymentDate}T00:00:00.000Z`)
+        : null;
+
+      if (
+        payment <= 0 ||
+        !parsedDate ||
+        Number.isNaN(parsedDate.getTime()) ||
+        parsedDate.toISOString().substring(0, 10) !== paymentDate ||
+        !paymentMode ||
+        paymentMode.length > 60 ||
+        reference.length > 255 ||
+        paidBy.length > 255 ||
+        notes.length > 2000
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Payment details are invalid',
+        });
+      }
+
+      connection = await db.getConnection();
+      await connection.beginTransaction();
+      transactionStarted = true;
+
+      const [rows] = await connection.query(
+        `
+        SELECT
+          p.id,
+          p.bill_id,
+          p.amount,
+          b.total,
+          b.amount_paid,
+          EXISTS (
+            SELECT 1
+            FROM bill_voids
+            WHERE bill_voids.bill_id = CAST(b.id AS CHAR)
+          ) AS is_voided
+        FROM bill_payments p
+        INNER JOIN bills b ON b.id = p.bill_id
+        WHERE p.id = ?
+        LIMIT 1
+        FOR UPDATE
+        `,
+        [paymentId]
+      );
+      if (rows.length === 0) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(404).json({
+          success: false,
+          message: 'Payment not found',
+        });
+      }
+      const row = rows[0];
+      if (
+        row.is_voided === true ||
+        row.is_voided === 1 ||
+        row.is_voided === '1'
+      ) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(409).json({
+          success: false,
+          message: 'Payments for voided bills cannot be edited',
+        });
+      }
+      const adjustedPaid = Number(
+        (
+          toNumber(row.amount_paid) -
+          toNumber(row.amount) +
+          payment
+        ).toFixed(2)
+      );
+      if (adjustedPaid > toNumber(row.total) || adjustedPaid < 0) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(400).json({
+          success: false,
+          message: 'Payment would exceed the bill total',
+        });
+      }
+
+      await connection.query(
+        `
+        UPDATE bill_payments
+        SET
+          amount = ?,
+          payment_date = ?,
+          payment_mode = ?,
+          reference_number = ?,
+          paid_by = ?,
+          notes = ?
+        WHERE id = ?
+        `,
+        [
+          payment,
+          paymentDate,
+          paymentMode,
+          reference || null,
+          paidBy || null,
+          notes || null,
+          paymentId,
+        ]
+      );
+      await connection.query(
+        'UPDATE bills SET amount_paid = ? WHERE id = ?',
+        [adjustedPaid, row.bill_id]
+      );
+      await connection.commit();
+      transactionStarted = false;
+      return res.status(200).json({
+        success: true,
+        message: 'Payment updated successfully',
+      });
+    } catch (error) {
+      if (connection && transactionStarted) await connection.rollback();
+      console.error('Update payment made error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to update payment',
+        error: error.message,
+      });
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+);
+
+router.delete(
+  '/payments-made/:paymentId',
+  async (req, res) => {
+    let connection;
+    let transactionStarted = false;
+    try {
+      const { paymentId } = req.params;
+      connection = await db.getConnection();
+      await connection.beginTransaction();
+      transactionStarted = true;
+      const [rows] = await connection.query(
+        `
+        SELECT p.id, p.bill_id, p.amount, b.amount_paid,
+          EXISTS (
+            SELECT 1
+            FROM bill_voids
+            WHERE bill_voids.bill_id = CAST(b.id AS CHAR)
+          ) AS is_voided
+        FROM bill_payments p
+        INNER JOIN bills b ON b.id = p.bill_id
+        WHERE p.id = ?
+        LIMIT 1
+        FOR UPDATE
+        `,
+        [paymentId]
+      );
+      if (rows.length === 0) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(404).json({
+          success: false,
+          message: 'Payment not found',
+        });
+      }
+
+      const row = rows[0];
+      await connection.query('DELETE FROM bill_payments WHERE id = ?', [
+        paymentId,
+      ]);
+      if (
+        row.is_voided !== true &&
+        row.is_voided !== 1 &&
+        row.is_voided !== '1'
+      ) {
+        const adjustedPaid = Math.max(
+          0,
+          Number((toNumber(row.amount_paid) - toNumber(row.amount)).toFixed(2))
+        );
+        await connection.query(
+          'UPDATE bills SET amount_paid = ? WHERE id = ?',
+          [adjustedPaid, row.bill_id]
+        );
+      }
+      await connection.commit();
+      transactionStarted = false;
+      return res.status(200).json({
+        success: true,
+        message: 'Payment deleted successfully',
+      });
+    } catch (error) {
+      if (connection && transactionStarted) await connection.rollback();
+      console.error('Delete payment made error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to delete payment',
+        error: error.message,
+      });
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+);
+
+// ============================================================
 // GET SINGLE BILL
 //
 // GET /api/bills/:id
@@ -735,6 +1097,12 @@ router.get(
             tax_amount,
             total,
             amount_paid,
+
+            EXISTS (
+              SELECT 1
+              FROM bill_voids
+              WHERE bill_voids.bill_id = CAST(bills.id AS CHAR)
+            ) AS is_voided,
 
             created_at,
             updated_at
@@ -1002,18 +1370,15 @@ router.post(
           : null;
 
       if (
-        purchaseOrderId != null &&
-        Number(
-          purchaseOrderId
-        ) > 0
+        (purchaseOrderId != null &&
+          Number(purchaseOrderId) > 0) ||
+        finalPurchaseOrderNumber != null
       ) {
-        const parsedPoId =
-          Number(
-            purchaseOrderId
-          );
+        let poRows = [];
+        const parsedPoId = Number(purchaseOrderId);
 
-        const [poRows] =
-          await connection.query(
+        if (Number.isInteger(parsedPoId) && parsedPoId > 0) {
+          [poRows] = await connection.query(
             `
             SELECT
               id,
@@ -1022,13 +1387,40 @@ router.post(
             FROM purchase_orders
 
             WHERE id = ?
+              AND vendor_id = ?
 
             LIMIT 1
             `,
             [
               parsedPoId,
+              parsedVendorId,
             ]
           );
+        }
+
+        if (
+          poRows.length === 0 &&
+          finalPurchaseOrderNumber != null
+        ) {
+          [poRows] = await connection.query(
+            `
+            SELECT
+              id,
+              po_number
+
+            FROM purchase_orders
+
+            WHERE po_number = ?
+              AND vendor_id = ?
+
+            LIMIT 1
+            `,
+            [
+              finalPurchaseOrderNumber,
+              parsedVendorId,
+            ]
+          );
+        }
 
         if (
           poRows.length === 0
@@ -1047,7 +1439,7 @@ router.post(
         }
 
         finalPurchaseOrderId =
-          parsedPoId;
+          Number(poRows[0].id);
 
         finalPurchaseOrderNumber =
           poRows[0]
@@ -1391,6 +1783,8 @@ router.post(
             total,
             amount_paid,
 
+            0 AS is_voided,
+
             created_at,
             updated_at
 
@@ -1514,6 +1908,327 @@ router.post(
 );
 
 // ============================================================
+// UPDATE BILL
+//
+// PUT /api/bills/:id
+// ============================================================
+
+router.put(
+  '/:id',
+  async (req, res) => {
+    let connection;
+    let transactionStarted = false;
+
+    try {
+      const { id } = req.params;
+      const {
+        vendorInvoiceNumber,
+        invoiceAttachmentPath,
+        vendorId,
+        billDate,
+        dueDate,
+        items,
+        taxAmount,
+      } = req.body;
+      const parsedVendorId = Number(vendorId);
+      const finalBillDate = normalizeDate(billDate);
+
+      if (!Number.isInteger(parsedVendorId) || parsedVendorId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please select a valid vendor',
+        });
+      }
+      if (!finalBillDate) {
+        return res.status(400).json({
+          success: false,
+          message: 'Bill date is required',
+        });
+      }
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'At least one item is required',
+        });
+      }
+
+      connection = await db.getConnection();
+      await connection.beginTransaction();
+      transactionStarted = true;
+
+      const [existingRows] = await connection.query(
+        `
+        SELECT
+          id,
+          vendor_id,
+          purchase_order_id,
+          purchase_order_number,
+          amount_paid,
+          total,
+          EXISTS (
+            SELECT 1
+            FROM bill_voids
+            WHERE bill_voids.bill_id = CAST(bills.id AS CHAR)
+          ) AS is_voided
+        FROM bills
+        WHERE id = ?
+        LIMIT 1
+        FOR UPDATE
+        `,
+        [id]
+      );
+
+      if (existingRows.length === 0) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(404).json({
+          success: false,
+          message: 'Bill not found',
+        });
+      }
+      const existing = existingRows[0];
+      if (
+        existing.is_voided === true ||
+        existing.is_voided === 1 ||
+        existing.is_voided === '1'
+      ) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(409).json({
+          success: false,
+          message: 'Voided bills cannot be edited',
+        });
+      }
+
+      const [vendorRows] = await connection.query(
+        `
+        SELECT id, display_name
+        FROM vendors
+        WHERE id = ?
+        LIMIT 1
+        `,
+        [parsedVendorId]
+      );
+      if (vendorRows.length === 0) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(404).json({
+          success: false,
+          message: 'Selected vendor not found',
+        });
+      }
+
+      const preparedItems = [];
+      let calculatedSubTotal = 0;
+      for (const line of items) {
+        const itemName = line.itemName?.toString().trim() ?? '';
+        if (!itemName) {
+          await connection.rollback();
+          transactionStarted = false;
+          return res.status(400).json({
+            success: false,
+            message: 'Every bill row must have an item',
+          });
+        }
+
+        const qty = toNumber(line.qty);
+        const rate = toNumber(line.rate);
+        if (qty <= 0 || rate < 0) {
+          await connection.rollback();
+          transactionStarted = false;
+          return res.status(400).json({
+            success: false,
+            message: `Invalid quantity or rate for "${itemName}"`,
+          });
+        }
+
+        const product = await resolveCatalogProduct(
+          connection,
+          itemName,
+          rate
+        );
+        const amount = Number((qty * rate).toFixed(2));
+        calculatedSubTotal += amount;
+        preparedItems.push({
+          sourceType: product.sourceType,
+          itemId: product.itemId,
+          partId: product.partId,
+          itemName: product.name,
+          description:
+            line.description?.toString().trim() ||
+            product.description ||
+            '',
+          qty,
+          rate,
+          amount,
+        });
+      }
+
+      calculatedSubTotal = Number(calculatedSubTotal.toFixed(2));
+      const finalTaxAmount = toNumber(taxAmount);
+      if (finalTaxAmount < 0) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(400).json({
+          success: false,
+          message: 'Tax cannot be negative',
+        });
+      }
+      const calculatedTotal = Number(
+        (calculatedSubTotal + finalTaxAmount).toFixed(2)
+      );
+      if (calculatedTotal < toNumber(existing.amount_paid)) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(400).json({
+          success: false,
+          message: 'Bill total cannot be less than the amount already paid',
+        });
+      }
+
+      const keepPurchaseOrder =
+        Number(existing.vendor_id) === parsedVendorId;
+      await connection.query(
+        `
+        UPDATE bills
+        SET
+          vendor_invoice_number = ?,
+          invoice_attachment_path = ?,
+          vendor_id = ?,
+          vendor_name = ?,
+          purchase_order_id = ?,
+          purchase_order_number = ?,
+          bill_date = ?,
+          due_date = ?,
+          sub_total = ?,
+          tax_amount = ?,
+          total = ?
+        WHERE id = ?
+        `,
+        [
+          vendorInvoiceNumber?.toString().trim() || null,
+          invoiceAttachmentPath?.toString().trim() || null,
+          parsedVendorId,
+          vendorRows[0].display_name,
+          keepPurchaseOrder ? existing.purchase_order_id : null,
+          keepPurchaseOrder ? existing.purchase_order_number : null,
+          finalBillDate,
+          normalizeDate(dueDate),
+          calculatedSubTotal,
+          finalTaxAmount,
+          calculatedTotal,
+          id,
+        ]
+      );
+
+      await connection.query(
+        'DELETE FROM bill_items WHERE bill_id = ?',
+        [id]
+      );
+      for (const line of preparedItems) {
+        await connection.query(
+          `
+          INSERT INTO bill_items (
+            bill_id,
+            source_type,
+            item_id,
+            part_id,
+            item_name,
+            description,
+            qty,
+            rate,
+            amount
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          [
+            id,
+            line.sourceType,
+            line.itemId,
+            line.partId,
+            line.itemName,
+            line.description || null,
+            line.qty,
+            line.rate,
+            line.amount,
+          ]
+        );
+      }
+
+      await connection.commit();
+      transactionStarted = false;
+
+      const [savedRows] = await db.query(
+        `
+        SELECT
+          bills.id,
+          bills.bill_number,
+          bills.vendor_invoice_number,
+          bills.invoice_attachment_path,
+          bills.vendor_id,
+          bills.vendor_name,
+          bills.purchase_order_id,
+          bills.purchase_order_number,
+          DATE_FORMAT(bills.bill_date, '%Y-%m-%d') AS bill_date,
+          CASE
+            WHEN bills.due_date IS NULL THEN NULL
+            ELSE DATE_FORMAT(bills.due_date, '%Y-%m-%d')
+          END AS due_date,
+          bills.sub_total,
+          bills.tax_amount,
+          bills.total,
+          bills.amount_paid,
+          0 AS is_voided,
+          bills.created_at,
+          bills.updated_at
+        FROM bills
+        WHERE bills.id = ?
+        LIMIT 1
+        `,
+        [id]
+      );
+      const [savedItems] = await db.query(
+        `
+        SELECT
+          id,
+          bill_id,
+          source_type,
+          item_id,
+          part_id,
+          item_name,
+          description,
+          qty,
+          rate,
+          amount
+        FROM bill_items
+        WHERE bill_id = ?
+        ORDER BY id ASC
+        `,
+        [id]
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: 'Bill updated successfully',
+        data: mapBill(savedRows[0], savedItems.map(mapBillItem)),
+      });
+    } catch (error) {
+      if (connection && transactionStarted) {
+        await connection.rollback();
+      }
+      console.error('Update bill error:', error);
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message || 'Failed to update bill',
+        error: error.message,
+      });
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+);
+
+// ============================================================
 // RECORD PAYMENT
 //
 // PUT /api/bills/:id/payment
@@ -1529,15 +2244,44 @@ router.post(
 router.put(
   '/:id/payment',
   async (req, res) => {
+    let connection;
+    let transactionStarted = false;
+
     try {
       const {
         id,
       } = req.params;
 
       const payment =
-        toNumber(
-          req.body.amountPaid
+        Number(
+          toNumber(
+            req.body.amountPaid
+          ).toFixed(2)
         );
+
+      const paymentDate =
+        normalizeDate(req.body.paymentDate) ??
+        new Date().toISOString().substring(0, 10);
+
+      const paymentMode =
+        req.body.paymentMode
+          ?.toString()
+          .trim() ?? '';
+
+      const reference =
+        req.body.reference
+          ?.toString()
+          .trim() ?? '';
+
+      const paidBy =
+        req.body.paidBy
+          ?.toString()
+          .trim() ?? '';
+
+      const notes =
+        req.body.notes
+          ?.toString()
+          .trim() ?? '';
 
       if (
         payment <= 0
@@ -1552,19 +2296,69 @@ router.put(
           });
       }
 
+      const dateParts =
+        /^(\d{4})-(\d{2})-(\d{2})$/.exec(paymentDate);
+      const parsedPaymentDate = dateParts
+        ? new Date(`${paymentDate}T00:00:00.000Z`)
+        : null;
+
+      if (
+        !parsedPaymentDate ||
+        Number.isNaN(parsedPaymentDate.getTime()) ||
+        parsedPaymentDate
+          .toISOString()
+          .substring(0, 10) !== paymentDate
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'A valid payment date is required',
+        });
+      }
+
+      if (!paymentMode || paymentMode.length > 60) {
+        return res.status(400).json({
+          success: false,
+          message: 'A valid payment mode is required',
+        });
+      }
+
+      if (reference.length > 255) {
+        return res.status(400).json({
+          success: false,
+          message: 'Payment reference cannot exceed 255 characters',
+        });
+      }
+
+      if (paidBy.length > 255 || notes.length > 2000) {
+        return res.status(400).json({
+          success: false,
+          message: 'Paid By must be 255 characters or fewer and Notes must be 2000 characters or fewer',
+        });
+      }
+
+      connection = await db.getConnection();
+      await connection.beginTransaction();
+      transactionStarted = true;
+
       const [billRows] =
-        await db.query(
+        await connection.query(
           `
           SELECT
-            id,
-            total,
-            amount_paid
+            bills.id,
+            bills.total,
+            bills.amount_paid,
+            EXISTS (
+              SELECT 1
+              FROM bill_voids
+              WHERE bill_voids.bill_id = CAST(bills.id AS CHAR)
+            ) AS is_voided
 
           FROM bills
 
-          WHERE id = ?
+          WHERE bills.id = ?
 
           LIMIT 1
+          FOR UPDATE
           `,
           [
             id,
@@ -1574,6 +2368,8 @@ router.put(
       if (
         billRows.length === 0
       ) {
+        await connection.rollback();
+        transactionStarted = false;
         return res
           .status(404)
           .json({
@@ -1582,6 +2378,19 @@ router.put(
             message:
               'Bill not found',
           });
+      }
+
+      if (
+        billRows[0].is_voided === true ||
+        billRows[0].is_voided === 1 ||
+        billRows[0].is_voided === '1'
+      ) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(409).json({
+          success: false,
+          message: 'A voided bill cannot receive payments',
+        });
       }
 
       const currentAmountPaid =
@@ -1596,19 +2405,48 @@ router.put(
             .total
         );
 
-      const newAmountPaid =
-        Math.min(
-          total,
+      const amountDue = Number(
+        (total - currentAmountPaid).toFixed(2)
+      );
 
-          Number(
-            (
-              currentAmountPaid +
-              payment
-            ).toFixed(2)
-          )
-        );
+      if (payment > amountDue) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(400).json({
+          success: false,
+          message: 'Payment amount cannot exceed the amount due',
+        });
+      }
 
-      await db.query(
+      const newAmountPaid = Number(
+        (currentAmountPaid + payment).toFixed(2)
+      );
+
+      await connection.query(
+        `
+        INSERT INTO bill_payments (
+          bill_id,
+          amount,
+          payment_date,
+          payment_mode,
+          reference_number,
+          paid_by,
+          notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        `,
+        [
+          id.toString(),
+          payment,
+          paymentDate,
+          paymentMode,
+          reference || null,
+          paidBy || null,
+          notes || null,
+        ]
+      );
+
+      await connection.query(
         `
         UPDATE bills
 
@@ -1622,6 +2460,9 @@ router.put(
           id,
         ]
       );
+
+      await connection.commit();
+      transactionStarted = false;
 
       const [updatedRows] =
         await db.query(
@@ -1661,12 +2502,18 @@ router.put(
             total,
             amount_paid,
 
+            EXISTS (
+              SELECT 1
+              FROM bill_voids
+              WHERE bill_voids.bill_id = CAST(bills.id AS CHAR)
+            ) AS is_voided,
+
             created_at,
             updated_at
 
           FROM bills
 
-          WHERE id = ?
+          WHERE bills.id = ?
 
           LIMIT 1
           `,
@@ -1723,6 +2570,10 @@ router.put(
             ),
         });
     } catch (error) {
+      if (transactionStarted && connection) {
+        await connection.rollback();
+      }
+
       console.error(
         'Record bill payment error:',
         error
@@ -1739,6 +2590,133 @@ router.put(
           error:
             error.message,
         });
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+);
+
+// ============================================================
+// VOID BILL
+//
+// POST /api/bills/:id/void
+// ============================================================
+
+router.post(
+  '/:id/void',
+  async (req, res) => {
+    let connection;
+    let transactionStarted = false;
+
+    try {
+      const { id } = req.params;
+      connection = await db.getConnection();
+      await connection.beginTransaction();
+      transactionStarted = true;
+
+      const [billRows] = await connection.query(
+        `
+        SELECT id
+        FROM bills
+        WHERE id = ?
+        LIMIT 1
+        FOR UPDATE
+        `,
+        [id]
+      );
+
+      if (billRows.length === 0) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(404).json({
+          success: false,
+          message: 'Bill not found',
+        });
+      }
+
+      await connection.query(
+        `
+        INSERT IGNORE INTO bill_voids (bill_id)
+        VALUES (?)
+        `,
+        [id.toString()]
+      );
+
+      await connection.commit();
+      transactionStarted = false;
+
+      const [updatedRows] = await db.query(
+        `
+        SELECT
+          bills.id,
+          bills.bill_number,
+          bills.vendor_invoice_number,
+          bills.invoice_attachment_path,
+          bills.vendor_id,
+          bills.vendor_name,
+          bills.purchase_order_id,
+          bills.purchase_order_number,
+          DATE_FORMAT(bills.bill_date, '%Y-%m-%d') AS bill_date,
+          CASE
+            WHEN bills.due_date IS NULL THEN NULL
+            ELSE DATE_FORMAT(bills.due_date, '%Y-%m-%d')
+          END AS due_date,
+          bills.sub_total,
+          bills.tax_amount,
+          bills.total,
+          bills.amount_paid,
+          EXISTS (
+            SELECT 1
+            FROM bill_voids
+            WHERE bill_voids.bill_id = CAST(bills.id AS CHAR)
+          ) AS is_voided,
+          bills.created_at,
+          bills.updated_at
+        FROM bills
+        WHERE bills.id = ?
+        LIMIT 1
+        `,
+        [id]
+      );
+
+      const [itemRows] = await db.query(
+        `
+        SELECT
+          id,
+          bill_id,
+          source_type,
+          item_id,
+          part_id,
+          item_name,
+          description,
+          qty,
+          rate,
+          amount
+        FROM bill_items
+        WHERE bill_id = ?
+        ORDER BY id ASC
+        `,
+        [id]
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: 'Bill voided successfully',
+        data: mapBill(updatedRows[0], itemRows.map(mapBillItem)),
+      });
+    } catch (error) {
+      if (connection && transactionStarted) {
+        await connection.rollback();
+      }
+
+      console.error('Void bill error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to void bill',
+        error: error.message,
+      });
+    } finally {
+      if (connection) connection.release();
     }
   }
 );
@@ -1752,13 +2730,36 @@ router.put(
 router.delete(
   '/:id',
   async (req, res) => {
+    let connection;
+    let transactionStarted = false;
+
     try {
       const {
         id,
       } = req.params;
 
+      connection = await db.getConnection();
+      await connection.beginTransaction();
+      transactionStarted = true;
+
+      await connection.query(
+        `
+        DELETE FROM bill_payments
+        WHERE bill_id = ?
+        `,
+        [id.toString()]
+      );
+
+      await connection.query(
+        `
+        DELETE FROM bill_voids
+        WHERE bill_id = ?
+        `,
+        [id.toString()]
+      );
+
       const [result] =
-        await db.query(
+        await connection.query(
           `
           DELETE FROM bills
 
@@ -1772,6 +2773,8 @@ router.delete(
       if (
         result.affectedRows === 0
       ) {
+        await connection.rollback();
+        transactionStarted = false;
         return res
           .status(404)
           .json({
@@ -1782,6 +2785,9 @@ router.delete(
           });
       }
 
+      await connection.commit();
+      transactionStarted = false;
+
       return res
         .status(200)
         .json({
@@ -1791,7 +2797,11 @@ router.delete(
             'Bill deleted successfully',
         });
     } catch (error) {
-      console.error(
+        if (connection && transactionStarted) {
+          await connection.rollback();
+        }
+
+        console.error(
         'Delete bill error:',
         error
       );
@@ -1807,6 +2817,8 @@ router.delete(
           error:
             error.message,
         });
+    } finally {
+      if (connection) connection.release();
     }
   }
 );

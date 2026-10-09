@@ -353,7 +353,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
       case 'purchase':
       case 'vendors':
-        return const VendorsPage();
+        return VendorsPage(userName: _welcomeName);
 
       case 'purchase orders':
         return const PurchaseOrdersPage();

@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../shared/glass_modal_shell.dart';
+import '../bills/bill_model.dart';
+import '../bills/bill_repository.dart';
+import '../bills/widgets/add_bill_dialog.dart';
+import '../vendors/vendor_model.dart';
+import '../vendors/vendor_repository.dart';
 import 'purchase_order_filter.dart';
 import 'purchase_order_model.dart';
 import 'purchase_order_repository.dart';
 import 'widgets/add_purchase_order_dialog.dart';
+import 'widgets/purchase_order_preview_dialog.dart';
 
 class PurchaseOrdersPage extends StatefulWidget {
   const PurchaseOrdersPage({super.key});
@@ -15,8 +21,11 @@ class PurchaseOrdersPage extends StatefulWidget {
 
 class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
   final PurchaseOrderRepository _repository = InMemoryPurchaseOrderRepository();
+  final BillRepository _billRepository = InMemoryBillRepository();
+  final VendorRepository _vendorRepository = InMemoryVendorRepository();
 
   List<PurchaseOrderModel> _orders = [];
+  final Set<String> _updatingStatusIds = <String>{};
   bool _isLoading = true;
 
   final vendorController = TextEditingController();
@@ -25,7 +34,20 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
   DateTime? dateTo;
 
   String statusFilter = 'All';
-  final statusOptions = const ['All', 'Draft', 'Ordered', 'Received', 'Cancelled'];
+  final statusOptions = const [
+    'All',
+    'Draft',
+    'Sent',
+    'Closed',
+    'Ordered',
+    'Received',
+    'Cancelled'
+  ];
+  static const List<String> _editableStatusOptions = [
+    'Draft',
+    'Sent',
+    'Closed',
+  ];
 
   @override
   void initState() {
@@ -78,8 +100,214 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
 
   Future<void> _deleteOrder(PurchaseOrderModel order) async {
     if (order.id == null) return;
-    await _repository.deletePurchaseOrder(order.id!);
-    await _loadOrders();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete purchase order?'),
+        content: Text('Delete purchase order ${order.poNumber}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFAB2A2A),
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await _repository.deletePurchaseOrder(order.id!);
+      await _loadOrders();
+    } catch (error) {
+      _showActionError('delete purchase order', error);
+    }
+  }
+
+  Future<void> _editOrder(PurchaseOrderModel currentOrder) async {
+    final updated = await showDialog<PurchaseOrderModel>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AddPurchaseOrderDialog(initialOrder: currentOrder),
+    );
+    if (updated == null || !mounted) return;
+
+    try {
+      await _repository.updatePurchaseOrder(updated);
+      await _loadOrders();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Purchase order updated successfully')),
+      );
+    } catch (error) {
+      _showActionError('update purchase order', error);
+    }
+  }
+
+  Future<void> _updateOrderStatus(
+    PurchaseOrderModel order,
+    String status,
+  ) async {
+    final id = order.id;
+    if (id == null || id.trim().isEmpty) {
+      _showActionError(
+        'update purchase order status',
+        Exception('Purchase order ID is missing'),
+      );
+      return;
+    }
+
+    setState(() => _updatingStatusIds.add(id));
+    try {
+      await _repository.updateStatus(id, status);
+      if (!mounted) return;
+      setState(() {
+        _orders = _orders
+            .map(
+              (candidate) => candidate.id == id
+                  ? candidate.copyWith(status: status)
+                  : candidate,
+            )
+            .where(
+              (candidate) =>
+                  statusFilter == 'All' || candidate.status == statusFilter,
+            )
+            .toList();
+      });
+    } catch (error) {
+      _showActionError('update purchase order status', error);
+    } finally {
+      if (mounted) {
+        setState(() => _updatingStatusIds.remove(id));
+      }
+    }
+  }
+
+  Future<void> _duplicateOrder(PurchaseOrderModel order) async {
+    try {
+      final duplicate = PurchaseOrderModel(
+        poNumber: await _repository.nextPoNumber(),
+        vendorId: order.vendorId,
+        vendorName: order.vendorName,
+        date: DateTime.now(),
+        deliveryExpectedDate: order.deliveryExpectedDate,
+        paymentTerms: order.paymentTerms,
+        dueDate: order.dueDate,
+        referenceNumber: order.referenceNumber,
+        items: order.items,
+      );
+      await _repository.addPurchaseOrder(duplicate);
+      await _loadOrders();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Purchase order duplicated successfully'),
+        ),
+      );
+    } catch (error) {
+      _showActionError('duplicate purchase order', error);
+    }
+  }
+
+  void _showActionError(String action, Object error) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Unable to $action: $error')),
+    );
+  }
+
+  Future<void> _previewOrder(PurchaseOrderModel order) async {
+    VendorModel? vendor;
+    try {
+      vendor = await _vendorRepository.getVendorById(order.vendorId);
+    } catch (error) {
+      _showActionError('load vendor contact details', error);
+    }
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.55),
+      builder: (_) => PurchaseOrderPreviewDialog(
+        order: order,
+        vendor: vendor,
+        onConvertToBill: () => _convertOrderToBill(order),
+        onVoid: () => _voidOrder(order),
+      ),
+    );
+  }
+
+  Future<bool> _convertOrderToBill(PurchaseOrderModel order) async {
+    try {
+      final purchaseOrderId = order.id;
+      if (purchaseOrderId == null || purchaseOrderId.trim().isEmpty) {
+        throw Exception('Purchase order ID is missing');
+      }
+
+      final bills = await _billRepository.getBills();
+      if (bills.any((bill) => bill.purchaseOrderId == purchaseOrderId)) {
+        throw Exception(
+            'This purchase order has already been converted to a bill');
+      }
+      if (!mounted) return false;
+
+      final BillModelDraft? draft = await showDialog<BillModelDraft>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => AddBillDialog(initialPurchaseOrder: order),
+      );
+      if (!mounted || draft == null) return false;
+
+      final bill = BillModel(
+        billNumber: draft.billNumber,
+        vendorInvoiceNumber: draft.vendorInvoiceNumber,
+        invoiceAttachmentPath: draft.invoiceAttachmentPath,
+        vendorId: draft.vendorId,
+        vendorName: draft.vendorName,
+        purchaseOrderId: purchaseOrderId,
+        purchaseOrderNumber: order.poNumber,
+        billDate: draft.billDate,
+        dueDate: draft.dueDate,
+        items: draft.items,
+        taxAmount: draft.taxAmount,
+      );
+      await _billRepository.addBill(bill);
+      await _loadOrders();
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Bill saved successfully')),
+        );
+      return true;
+    } catch (error) {
+      _showActionError('convert purchase order to bill', error);
+      return false;
+    }
+  }
+
+  Future<bool> _voidOrder(PurchaseOrderModel order) async {
+    try {
+      final id = order.id;
+      if (id == null || id.trim().isEmpty) {
+        throw Exception('Purchase order ID is missing');
+      }
+      await _repository.updateStatus(id, 'Cancelled');
+      await _loadOrders();
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Purchase order marked as Cancelled')),
+      );
+      return true;
+    } catch (error) {
+      _showActionError('void purchase order', error);
+      return false;
+    }
   }
 
   void _clearFilters() {
@@ -91,7 +319,8 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
     _loadOrders();
   }
 
-  Future<void> _pickDate(DateTime? initial, ValueChanged<DateTime> onPicked) async {
+  Future<void> _pickDate(
+      DateTime? initial, ValueChanged<DateTime> onPicked) async {
     final picked = await showDatePicker(
       context: context,
       initialDate: initial ?? DateTime.now(),
@@ -153,7 +382,8 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                           value: statusFilter,
                           isExpanded: true,
                           items: statusOptions
-                              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                              .map((s) =>
+                                  DropdownMenuItem(value: s, child: Text(s)))
                               .toList(),
                           onChanged: (value) {
                             if (value == null) return;
@@ -165,24 +395,32 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                   ),
                   _filterField(
                     label: 'Vendor Name',
-                    child: SizedBox(width: 170, child: _filterTextField(vendorController, 'Vendor name...')),
+                    child: SizedBox(
+                        width: 170,
+                        child: _filterTextField(
+                            vendorController, 'Vendor name...')),
                   ),
                   _filterField(
                     label: 'Reference #',
-                    child: SizedBox(width: 150, child: _filterTextField(referenceController, 'Reference...')),
+                    child: SizedBox(
+                        width: 150,
+                        child: _filterTextField(
+                            referenceController, 'Reference...')),
                   ),
                   _filterField(
                     label: 'Date From',
                     child: SizedBox(
                       width: 150,
-                      child: _filterDateField(dateFrom, (d) => setState(() => dateFrom = d)),
+                      child: _filterDateField(
+                          dateFrom, (d) => setState(() => dateFrom = d)),
                     ),
                   ),
                   _filterField(
                     label: 'Date To',
                     child: SizedBox(
                       width: 150,
-                      child: _filterDateField(dateTo, (d) => setState(() => dateTo = d)),
+                      child: _filterDateField(
+                          dateTo, (d) => setState(() => dateTo = d)),
                     ),
                   ),
                   GlassButton(
@@ -215,100 +453,258 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                      Container(
-                        width: 1000,
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.35),
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                        ),
-                        child: const Row(
-                          children: [
-                            Expanded(flex: 2, child: _HeaderText('DATE')),
-                            Expanded(flex: 2, child: _HeaderText('PO #')),
-                            Expanded(flex: 3, child: _HeaderText('VENDOR NAME')),
-                            Expanded(flex: 2, child: _HeaderText('STATUS')),
-                            Expanded(flex: 2, child: _HeaderText('REFERENCE #')),
-                            Expanded(flex: 2, child: _HeaderText('AMOUNT')),
-                            Expanded(flex: 1, child: _HeaderText('ACTIONS')),
-                          ],
-                        ),
-                      ),
-                      const Divider(height: 1, color: Color(0xFFD9DEE5)),
-
-                      if (_isLoading)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 30),
-                          child: Center(child: CircularProgressIndicator()),
-                        )
-                      else if (_orders.isEmpty)
-                        Container(
-                          width: 1000,
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
-                          child: const Text(
-                            'No purchase orders found. Click "+ New Purchase Order" to add one!',
-                            style: TextStyle(fontSize: 16, color: Color(0xFF42474D)),
-                          ),
-                        )
-                      else
-                        ..._orders.map((order) {
-                          return Column(
-                            children: [
+                            Container(
+                              width: 1000,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 18, vertical: 18),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.35),
+                                borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(14)),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Expanded(flex: 2, child: _HeaderText('DATE')),
+                                  Expanded(flex: 2, child: _HeaderText('PO #')),
+                                  Expanded(
+                                      flex: 3,
+                                      child: _HeaderText('VENDOR NAME')),
+                                  Expanded(
+                                      flex: 2, child: _HeaderText('STATUS')),
+                                  Expanded(
+                                      flex: 2,
+                                      child: _HeaderText('REFERENCE #')),
+                                  Expanded(
+                                      flex: 2, child: _HeaderText('AMOUNT')),
+                                  Expanded(
+                                      flex: 2, child: _HeaderText('ACTIONS')),
+                                ],
+                              ),
+                            ),
+                            const Divider(height: 1, color: Color(0xFFD9DEE5)),
+                            if (_isLoading)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 30),
+                                child:
+                                    Center(child: CircularProgressIndicator()),
+                              )
+                            else if (_orders.isEmpty)
                               Container(
                                 width: 1000,
-                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                                child: Row(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 18, vertical: 24),
+                                child: const Text(
+                                  'No purchase orders found. Click "+ New Purchase Order" to add one!',
+                                  style: TextStyle(
+                                      fontSize: 16, color: Color(0xFF42474D)),
+                                ),
+                              )
+                            else
+                              ..._orders.map((order) {
+                                return Column(
                                   children: [
-                                    Expanded(
-                                      flex: 2,
-                                      child: Text(
-                                        '${order.date.day.toString().padLeft(2, '0')}-${order.date.month.toString().padLeft(2, '0')}-${order.date.year}',
-                                      ),
-                                    ),
-                                    Expanded(flex: 2, child: Text(order.poNumber)),
-                                    Expanded(flex: 3, child: Text(order.vendorName)),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFE7EEF6),
-                                            borderRadius: BorderRadius.circular(20),
-                                          ),
-                                          child: Text(
-                                            order.status,
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: Color(0xFF123456),
+                                    Container(
+                                      width: 1000,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 18, vertical: 16),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              '${order.date.day.toString().padLeft(2, '0')}-${order.date.month.toString().padLeft(2, '0')}-${order.date.year}',
                                             ),
                                           ),
-                                        ),
+                                          Expanded(
+                                              flex: 2,
+                                              child: Text(order.poNumber)),
+                                          Expanded(
+                                              flex: 3,
+                                              child: Text(order.vendorName)),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFE7EEF6),
+                                                  borderRadius:
+                                                      BorderRadius.circular(20),
+                                                ),
+                                                child: Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(horizontal: 8),
+                                                  child: DropdownButtonHideUnderline(
+                                                    child: DropdownButton<String>(
+                                                      value: order.status,
+                                                      isDense: true,
+                                                      icon: const Icon(
+                                                        Icons.arrow_drop_down,
+                                                        size: 18,
+                                                      ),
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color:
+                                                            Color(0xFF123456),
+                                                      ),
+                                                      items: [
+                                                        ..._editableStatusOptions,
+                                                        if (!_editableStatusOptions
+                                                            .contains(
+                                                          order.status,
+                                                        ))
+                                                          order.status,
+                                                      ]
+                                                          .map(
+                                                            (status) =>
+                                                                DropdownMenuItem<
+                                                                    String>(
+                                                              value: status,
+                                                              child: Text(
+                                                                status,
+                                                                style:
+                                                                    const TextStyle(
+                                                                  fontSize: 12,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          )
+                                                          .toList(),
+                                                      onChanged:
+                                                          order.status ==
+                                                                  'Cancelled' ||
+                                                              order.id == null ||
+                                                              _updatingStatusIds
+                                                                  .contains(
+                                                                order.id,
+                                                              )
+                                                          ? null
+                                                          : (status) {
+                                                              if (status !=
+                                                                  null) {
+                                                                _updateOrderStatus(
+                                                                  order,
+                                                                  status,
+                                                                );
+                                                              }
+                                                            },
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                                order.referenceNumber.isEmpty
+                                                    ? '-'
+                                                    : order.referenceNumber),
+                                          ),
+                                          Expanded(
+                                              flex: 2,
+                                              child: Text(
+                                                  'INR ${order.total.toStringAsFixed(2)}')),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                IconButton(
+                                                  onPressed: () =>
+                                                      _previewOrder(order),
+                                                  padding: EdgeInsets.zero,
+                                                  visualDensity:
+                                                      VisualDensity.compact,
+                                                  constraints:
+                                                      const BoxConstraints
+                                                          .tightFor(
+                                                    width: 30,
+                                                    height: 32,
+                                                  ),
+                                                  icon: const Icon(
+                                                    Icons.visibility_outlined,
+                                                    color: Color(0xFF7A8490),
+                                                    size: 20,
+                                                  ),
+                                                  tooltip:
+                                                      'View purchase order',
+                                                ),
+                                                IconButton(
+                                                  onPressed: () =>
+                                                      _editOrder(order),
+                                                  padding: EdgeInsets.zero,
+                                                  visualDensity:
+                                                      VisualDensity.compact,
+                                                  constraints:
+                                                      const BoxConstraints
+                                                          .tightFor(
+                                                    width: 30,
+                                                    height: 32,
+                                                  ),
+                                                  icon: const Icon(
+                                                    Icons.edit_outlined,
+                                                    color: Color(0xFF7A8490),
+                                                    size: 19,
+                                                  ),
+                                                  tooltip:
+                                                      'Edit purchase order',
+                                                ),
+                                                IconButton(
+                                                  onPressed: () =>
+                                                      _duplicateOrder(order),
+                                                  padding: EdgeInsets.zero,
+                                                  visualDensity:
+                                                      VisualDensity.compact,
+                                                  constraints:
+                                                      const BoxConstraints
+                                                          .tightFor(
+                                                    width: 30,
+                                                    height: 32,
+                                                  ),
+                                                  icon: const Icon(
+                                                    Icons.content_copy_outlined,
+                                                    color: Color(0xFF7A8490),
+                                                    size: 18,
+                                                  ),
+                                                  tooltip:
+                                                      'Duplicate purchase order',
+                                                ),
+                                                IconButton(
+                                                  onPressed: () =>
+                                                      _deleteOrder(order),
+                                                  padding: EdgeInsets.zero,
+                                                  visualDensity:
+                                                      VisualDensity.compact,
+                                                  constraints:
+                                                      const BoxConstraints
+                                                          .tightFor(
+                                                    width: 30,
+                                                    height: 32,
+                                                  ),
+                                                  icon: const Icon(
+                                                    Icons.delete_outline,
+                                                    color: Color(0xFFAB2A2A),
+                                                    size: 20,
+                                                  ),
+                                                  tooltip:
+                                                      'Delete purchase order',
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Text(order.referenceNumber.isEmpty ? '-' : order.referenceNumber),
-                                    ),
-                                    Expanded(flex: 2, child: Text('INR ${order.total.toStringAsFixed(2)}')),
-                                    Expanded(
-                                      flex: 1,
-                                      child: IconButton(
-                                        onPressed: () => _deleteOrder(order),
-                                        icon: const Icon(Icons.delete_outline,
-                                            color: Color(0xFFAB2A2A), size: 20),
-                                        tooltip: 'Delete purchase order',
-                                      ),
-                                    ),
+                                    const Divider(
+                                        height: 1, color: Color(0xFFEDEFF2)),
                                   ],
-                                ),
-                              ),
-                              const Divider(height: 1, color: Color(0xFFEDEFF2)),
-                            ],
-                          );
-                        }),
+                                );
+                              }),
                           ],
                         ),
                       ),
@@ -328,7 +724,10 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF5B5B5B))),
+            style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF5B5B5B))),
         const SizedBox(height: 6),
         child,
       ],
@@ -342,7 +741,8 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
         hintText: hint,
         filled: true,
         fillColor: const Color(0xFFF8F9FA),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(7)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(7),
@@ -374,10 +774,13 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                 value == null
                     ? 'dd-mm-yyyy'
                     : '${value.day.toString().padLeft(2, '0')}-${value.month.toString().padLeft(2, '0')}-${value.year}',
-                style: TextStyle(color: value == null ? Colors.grey : Colors.black, fontSize: 14),
+                style: TextStyle(
+                    color: value == null ? Colors.grey : Colors.black,
+                    fontSize: 14),
               ),
             ),
-            const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF888888)),
+            const Icon(Icons.calendar_today_outlined,
+                size: 16, color: Color(0xFF888888)),
           ],
         ),
       ),
@@ -393,7 +796,8 @@ class _HeaderText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF5B5B5B)),
+      style: const TextStyle(
+          fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF5B5B5B)),
     );
   }
 }

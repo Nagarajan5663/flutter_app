@@ -14,6 +14,7 @@ class BillModel {
   final List<PurchaseOrderItemModel> items;
   final double taxAmount;
   final double amountPaid;
+  final bool isVoided;
 
   BillModel({
     this.id,
@@ -29,6 +30,7 @@ class BillModel {
     required this.items,
     this.taxAmount = 0,
     this.amountPaid = 0,
+    this.isVoided = false,
   });
 
   double get subTotal => items.fold(0.0, (sum, item) => sum + item.amount);
@@ -36,12 +38,17 @@ class BillModel {
   double get amountDue => (total - amountPaid) < 0 ? 0 : (total - amountPaid);
 
   String get status {
+    if (isVoided) return 'Void';
     if (amountPaid <= 0) return 'Unpaid';
     if (amountPaid >= total) return 'Paid';
     return 'Partially Paid';
   }
 
-  BillModel copyWith({String? id, double? amountPaid}) {
+  BillModel copyWith({
+    String? id,
+    double? amountPaid,
+    bool? isVoided,
+  }) {
     return BillModel(
       id: id ?? this.id,
       billNumber: billNumber,
@@ -56,6 +63,7 @@ class BillModel {
       items: items,
       taxAmount: taxAmount,
       amountPaid: amountPaid ?? this.amountPaid,
+      isVoided: isVoided ?? this.isVoided,
     );
   }
 
@@ -76,6 +84,8 @@ class BillModel {
           .toList(),
       taxAmount: double.tryParse(json['taxAmount']?.toString() ?? '') ?? 0,
       amountPaid: double.tryParse(json['amountPaid']?.toString() ?? '') ?? 0,
+      isVoided: json['isVoided'] == true ||
+          json['isVoided']?.toString() == '1',
     );
   }
 
@@ -93,5 +103,6 @@ class BillModel {
         'items': items.map((e) => e.toJson()).toList(),
         'taxAmount': taxAmount,
         'amountPaid': amountPaid,
+        'isVoided': isVoided,
       };
 }

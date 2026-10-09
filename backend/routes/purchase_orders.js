@@ -10,6 +10,8 @@ const router = express.Router();
 
 const ALLOWED_STATUSES = [
   'Draft',
+  'Sent',
+  'Closed',
   'Ordered',
   'Received',
   'Cancelled',
@@ -417,6 +419,7 @@ router.get(
       const {
         status_filter,
         vendor_filter,
+        vendor_id,
         reference_filter,
         date_from,
         date_to,
@@ -503,6 +506,14 @@ router.get(
         values.push(
           `%${vendor_filter.trim()}%`
         );
+      }
+
+      if (vendor_id) {
+        sql += `
+          AND vendor_id = ?
+        `;
+
+        values.push(vendor_id);
       }
 
       if (
@@ -1470,8 +1481,215 @@ router.post(
 );
 
 // ============================================================
-// UPDATE STATUS
+// UPDATE PURCHASE ORDER
 // ============================================================
+
+router.put(
+  '/:id',
+  async (req, res) => {
+    let connection;
+
+    try {
+      const id = Number(req.params.id);
+      const {
+        poNumber,
+        vendorId,
+        date,
+        deliveryExpectedDate,
+        paymentTerms,
+        dueDate,
+        referenceNumber,
+        items,
+      } = req.body;
+
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid purchase order ID',
+        });
+      }
+      if (!poNumber || poNumber.toString().trim() === '') {
+        return res.status(400).json({
+          success: false,
+          message: 'Purchase order number is required',
+        });
+      }
+
+      const parsedVendorId = Number(vendorId);
+      if (!Number.isInteger(parsedVendorId) || parsedVendorId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please select a valid vendor',
+        });
+      }
+
+      const orderDate = normalizeDate(date);
+      if (!orderDate) {
+        return res.status(400).json({
+          success: false,
+          message: 'Purchase order date is required',
+        });
+      }
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'At least one item is required',
+        });
+      }
+
+      connection = await db.getConnection();
+      await connection.beginTransaction();
+
+      const [orderRows] = await connection.query(
+        'SELECT id FROM purchase_orders WHERE id = ? LIMIT 1',
+        [id]
+      );
+      if (orderRows.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({
+          success: false,
+          message: 'Purchase order not found',
+        });
+      }
+
+      const [vendorRows] = await connection.query(
+        'SELECT id, display_name FROM vendors WHERE id = ? LIMIT 1',
+        [parsedVendorId]
+      );
+      if (vendorRows.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({
+          success: false,
+          message: 'Selected vendor not found',
+        });
+      }
+
+      const preparedItems = [];
+      let subTotal = 0;
+      for (const line of items) {
+        const itemName = line.itemName?.toString().trim() ?? '';
+        if (!itemName) {
+          await connection.rollback();
+          return res.status(400).json({
+            success: false,
+            message: 'Every purchase order row must have an item',
+          });
+        }
+
+        const qty = toNumber(line.qty);
+        const rate = toNumber(line.rate);
+        if (qty <= 0 || rate < 0) {
+          await connection.rollback();
+          return res.status(400).json({
+            success: false,
+            message: `Invalid quantity or rate for "${itemName}"`,
+          });
+        }
+
+        const product = await resolveCatalogProduct(connection, itemName, rate);
+        const amount = Number((qty * rate).toFixed(2));
+        subTotal += amount;
+        preparedItems.push({
+          sourceType: product.sourceType,
+          itemId: product.itemId,
+          partId: product.partId,
+          itemName: product.name,
+          description:
+            line.description?.toString().trim() ||
+            product.description ||
+            '',
+          qty,
+          rate,
+          amount,
+        });
+      }
+      subTotal = Number(subTotal.toFixed(2));
+
+      await connection.query(
+        `
+        UPDATE purchase_orders
+        SET
+          po_number = ?,
+          vendor_id = ?,
+          vendor_name = ?,
+          order_date = ?,
+          delivery_expected_date = ?,
+          payment_terms = ?,
+          due_date = ?,
+          reference_number = ?,
+          sub_total = ?,
+          total = ?,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+        `,
+        [
+          poNumber.trim(),
+          parsedVendorId,
+          vendorRows[0].display_name,
+          orderDate,
+          normalizeDate(deliveryExpectedDate),
+          paymentTerms?.toString().trim() || '100% Advance',
+          normalizeDate(dueDate),
+          referenceNumber?.toString().trim() || null,
+          subTotal,
+          subTotal,
+          id,
+        ]
+      );
+
+      await connection.query(
+        'DELETE FROM purchase_order_items WHERE purchase_order_id = ?',
+        [id]
+      );
+      for (const line of preparedItems) {
+        await connection.query(
+          `
+          INSERT INTO purchase_order_items (
+            purchase_order_id,
+            source_type,
+            item_id,
+            part_id,
+            item_name,
+            description,
+            qty,
+            rate,
+            amount
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          [
+            id,
+            line.sourceType,
+            line.itemId,
+            line.partId,
+            line.itemName,
+            line.description || null,
+            line.qty,
+            line.rate,
+            line.amount,
+          ]
+        );
+      }
+
+      await connection.commit();
+      return res.status(200).json({
+        success: true,
+        message: 'Purchase order updated successfully',
+      });
+    } catch (error) {
+      if (connection) {
+        await connection.rollback();
+      }
+      console.error('Update purchase order error:', error);
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message || 'Failed to update purchase order',
+      });
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+);
 
 router.put(
   '/:id/status',
