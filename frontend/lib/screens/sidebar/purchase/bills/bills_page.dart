@@ -827,282 +827,242 @@ class _BillsPageState extends State<BillsPage> {
             // ==================================================
 
             GlassPanel(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  width: 1200,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 1200,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 18,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(
-                            alpha: 0.35,
-                          ),
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(
-                              14,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return FittedBox(
+                    alignment: Alignment.topLeft,
+                    fit: BoxFit.scaleDown,
+                    child: SizedBox(
+                      width: 1200,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 1200,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 18,
                             ),
-                          ),
-                        ),
-                        child: const Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: _HeaderText(
-                                'DATE',
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(
+                                alpha: 0.35,
+                              ),
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(14),
                               ),
                             ),
-                            Expanded(
-                              flex: 2,
-                              child: _HeaderText(
-                                'BILL #',
-                              ),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: _HeaderText(
-                                'VENDOR NAME',
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: _HeaderText(
-                                'DUE DATE',
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: _HeaderText(
-                                'STATUS',
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: _HeaderText(
-                                'AMOUNT DUE',
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: _HeaderText(
-                                'TOTAL',
-                              ),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: _HeaderText(
-                                'ACTIONS',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Divider(
-                        height: 1,
-                        color: Color(
-                          0xFFD9DEE5,
-                        ),
-                      ),
-                      if (_isLoading)
-                        const SizedBox(
-                          width: 1200,
-                          height: 180,
-                          child: Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        )
-                      else if (_bills.isEmpty)
-                        Container(
-                          width: 1200,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 35,
-                          ),
-                          child: const Text(
-                            'No bills found. Click "+ New Bill" to add one!',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(
-                                0xFF42474D,
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        ..._bills.map(
-                          (
-                            BillModel bill,
-                          ) {
-                            return Column(
+                            child: const Row(
                               children: [
-                                Container(
-                                  width: 1200,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 18,
-                                    vertical: 16,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(
-                                          _fmt(
-                                            bill.billDate,
+                                Expanded(
+                                  flex: 2,
+                                  child: _HeaderText('DATE'),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: _HeaderText('BILL #'),
+                                ),
+                                Expanded(
+                                  flex: 3,
+                                  child: _HeaderText('VENDOR NAME'),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: _HeaderText('DUE DATE'),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: _HeaderText('STATUS'),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: _HeaderText('AMOUNT DUE'),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: _HeaderText('TOTAL'),
+                                ),
+                                Expanded(
+                                  flex: 3,
+                                  child: _HeaderText('ACTIONS'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Divider(
+                            height: 1,
+                            color: Color(0xFFD9DEE5),
+                          ),
+                          if (_isLoading)
+                            const SizedBox(
+                              width: 1200,
+                              height: 180,
+                              child: Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            )
+                          else if (_bills.isEmpty)
+                            Container(
+                              width: 1200,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 35,
+                              ),
+                              child: const Text(
+                                'No bills found. Click "+ New Bill" to add one!',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Color(0xFF42474D),
+                                ),
+                              ),
+                            )
+                          else
+                            ..._bills.map((BillModel bill) {
+                              return Column(
+                                children: [
+                                  Container(
+                                    width: 1200,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
+                                      vertical: 16,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(_fmt(bill.billDate)),
+                                        ),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(bill.billNumber),
+                                        ),
+                                        Expanded(
+                                          flex: 3,
+                                          child: Text(
+                                            bill.vendorName,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(
-                                          bill.billNumber,
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(_fmt(bill.dueDate)),
                                         ),
-                                      ),
-                                      Expanded(
-                                        flex: 3,
-                                        child: Text(
-                                          bill.vendorName,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(
-                                          _fmt(
-                                            bill.dueDate,
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 10,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: _statusBg(
+                                        Expanded(
+                                          flex: 2,
+                                          child: Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: _statusBg(bill.status),
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                              ),
+                                              child: Text(
                                                 bill.status,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                20,
-                                              ),
-                                            ),
-                                            child: Text(
-                                              bill.status,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: _statusFg(
-                                                  bill.status,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: _statusFg(bill.status),
                                                 ),
                                               ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(
-                                          'INR ${bill.amountDue.toStringAsFixed(2)}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(
+                                            'INR ${bill.amountDue.toStringAsFixed(2)}',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(
-                                          'INR ${bill.total.toStringAsFixed(2)}',
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(
+                                            'INR ${bill.total.toStringAsFixed(2)}',
+                                          ),
                                         ),
-                                      ),
-                                      Expanded(
-                                        flex: 3,
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            IconButton(
-                                              onPressed: () =>
-                                                  _previewBill(bill),
-                                              tooltip: 'View bill',
-                                              padding: EdgeInsets.zero,
-                                              visualDensity:
-                                                  VisualDensity.compact,
-                                              constraints:
-                                                  const BoxConstraints.tightFor(
-                                                width: 30,
-                                                height: 30,
+                                        Expanded(
+                                          flex: 3,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                onPressed: () => _previewBill(bill),
+                                                tooltip: 'View bill',
+                                                padding: EdgeInsets.zero,
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                constraints:
+                                                    const BoxConstraints.tightFor(
+                                                  width: 30,
+                                                  height: 30,
+                                                ),
+                                                icon: const Icon(
+                                                  Icons.visibility_outlined,
+                                                  color: Color(0xFF7A8490),
+                                                  size: 19,
+                                                ),
                                               ),
-                                              icon: const Icon(
-                                                Icons.visibility_outlined,
-                                                color: Color(0xFF7A8490),
-                                                size: 19,
+                                              IconButton(
+                                                onPressed: bill.isVoided
+                                                    ? null
+                                                    : () => _editBill(bill),
+                                                tooltip: 'Edit bill',
+                                                padding: EdgeInsets.zero,
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                constraints:
+                                                    const BoxConstraints.tightFor(
+                                                  width: 30,
+                                                  height: 30,
+                                                ),
+                                                icon: const Icon(
+                                                  Icons.edit_outlined,
+                                                  color: Color(0xFF7A8490),
+                                                  size: 18,
+                                                ),
                                               ),
-                                            ),
-                                            IconButton(
-                                              onPressed: bill.isVoided
-                                                  ? null
-                                                  : () => _editBill(bill),
-                                              tooltip: 'Edit bill',
-                                              padding: EdgeInsets.zero,
-                                              visualDensity:
-                                                  VisualDensity.compact,
-                                              constraints:
-                                                  const BoxConstraints.tightFor(
-                                                width: 30,
-                                                height: 30,
+                                              IconButton(
+                                                onPressed: () => _deleteBill(bill),
+                                                tooltip: 'Delete bill',
+                                                padding: EdgeInsets.zero,
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                constraints:
+                                                    const BoxConstraints.tightFor(
+                                                  width: 30,
+                                                  height: 30,
+                                                ),
+                                                icon: const Icon(
+                                                  Icons.delete_outline,
+                                                  color: Color(0xFFAB2A2A),
+                                                  size: 19,
+                                                ),
                                               ),
-                                              icon: const Icon(
-                                                Icons.edit_outlined,
-                                                color: Color(0xFF7A8490),
-                                                size: 18,
-                                              ),
-                                            ),
-                                            IconButton(
-                                              onPressed: () =>
-                                                  _deleteBill(bill),
-                                              tooltip: 'Delete bill',
-                                              padding: EdgeInsets.zero,
-                                              visualDensity:
-                                                  VisualDensity.compact,
-                                              constraints:
-                                                  const BoxConstraints.tightFor(
-                                                width: 30,
-                                                height: 30,
-                                              ),
-                                              icon: const Icon(
-                                                Icons.delete_outline,
-                                                color: Color(0xFFAB2A2A),
-                                                size: 19,
-                                              ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                const Divider(
-                                  height: 1,
-                                  color: Color(
-                                    0xFFEDEFF2,
+                                  const Divider(
+                                    height: 1,
+                                    color: Color(0xFFEDEFF2),
                                   ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                    ],
-                  ),
-                ),
+                                ],
+                              );
+                            }),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
