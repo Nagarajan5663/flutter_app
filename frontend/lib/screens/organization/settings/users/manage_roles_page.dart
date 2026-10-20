@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; import 'package:flutter_app/config/api_config.dart';
 import 'package:http/http.dart' as http;
 
 class ManageRolesPage extends StatefulWidget {
@@ -16,7 +16,7 @@ class ManageRolesPage extends StatefulWidget {
 }
 
 class _ManageRolesPageState extends State<ManageRolesPage> {
-  static const String _rolesUrl = 'http://localhost:3000/api/roles';
+  static const String _rolesUrl = '${ApiConfig.baseUrl}/roles';
 
   final List<_RoleData> _roles = [];
   bool _isLoading = true;

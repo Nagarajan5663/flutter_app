@@ -1,3 +1,5 @@
+import 'package:flutter_app/config/api_config.dart';
+
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -56,7 +58,7 @@ abstract class CustomerRepository {
 // ============================================================
 
 class ApiCustomerRepository implements CustomerRepository {
-  static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl = '${ApiConfig.baseUrl}';
 
   @override
   Future<List<CustomerComment>> getCustomerComments(String customerId) async {

@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; import 'package:flutter_app/config/api_config.dart';
 import 'package:http/http.dart' as http;
 
-const String _rolesApiUrl = 'http://localhost:3000/api/roles';
+const String _rolesApiUrl = '${ApiConfig.baseUrl}/roles';
 
 Future<List<String>> _fetchRoleNames() async {
   final response = await http.get(
@@ -52,7 +52,7 @@ class ManageUsersPage extends StatefulWidget {
 }
 
 class _ManageUsersPageState extends State<ManageUsersPage> {
-  static const String _usersApiUrl = 'http://localhost:3000/api/users';
+  static const String _usersApiUrl = '${ApiConfig.baseUrl}/users';
 
   final List<_UserData> _users = [];
 

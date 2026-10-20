@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; import 'package:flutter_app/config/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
@@ -20,7 +20,7 @@ import '../delivery_challans/delivery_challan_repository.dart';
 // ============================================================
 
 class SalesOrdersApi {
-  static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl = '${ApiConfig.baseUrl}';
 
   static Future<SalesOrderData> approveSalesOrder(int id) async {
     final response = await http

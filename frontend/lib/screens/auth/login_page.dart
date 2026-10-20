@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; import 'package:flutter_app/config/api_config.dart';
 import 'package:http/http.dart' as http;
 
 import '../dashboard/dashboard_page.dart';
@@ -25,7 +25,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   static const String _loginApiUrl =
-      'http://localhost:3000/api/users/login';
+      '${ApiConfig.baseUrl}/users/login';
 
   final _emailController = TextEditingController();
 

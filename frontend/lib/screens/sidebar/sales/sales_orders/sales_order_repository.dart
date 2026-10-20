@@ -1,3 +1,5 @@
+import 'package:flutter_app/config/api_config.dart';
+
 import 'sales_order_model.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -12,7 +14,7 @@ class InMemorySalesOrderRepository implements SalesOrderRepository {
   static final InMemorySalesOrderRepository instance = InMemorySalesOrderRepository._internal();
   factory InMemorySalesOrderRepository() => instance;
 
-  static const String _baseUrl = 'http://localhost:3000/api';
+  static const String _baseUrl = '${ApiConfig.baseUrl}';
 
   @override
   Future<List<SalesOrderModel>> getSalesOrders() async {

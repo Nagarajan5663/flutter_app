@@ -1,9 +1,9 @@
+
 require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
-const { syncDatabase } = require('./database/sync');
 
 // ============================================================
 // ROUTES
@@ -408,6 +408,10 @@ app.use(
       error
     );
 
+    if (res.headersSent) {
+      return next(error);
+    }
+
     return res.status(500).json({
       success: false,
 
@@ -422,107 +426,113 @@ app.use(
 
 // ============================================================
 // START SERVER
+//
+// Do not automatically execute SQL migration files.
+// Existing tables are managed separately in phpMyAdmin.
 // ============================================================
 
 const PORT =
   Number(process.env.PORT) ||
   3000;
 
-(async () => {
-  try {
-    await syncDatabase();
-
-    app.listen(
-      PORT,
-      () => {
-        console.log(
-          '======================================================'
-        );
-
-        console.log(
-          `Codexia backend running on http://localhost:${PORT}`
-        );
-
-        console.log(
-          '------------------------------------------------------'
-        );
-
-        console.log(
-          `DB Test              : http://localhost:${PORT}/api/test-db`
-        );
-
-        console.log(
-          `MySQL Test           : http://localhost:${PORT}/api/mysql-test`
-        );
-
-        console.log(
-          `Transaction Series   : http://localhost:${PORT}/api/transaction-number-series`
-        );
-
-        console.log(
-          `Items                : http://localhost:${PORT}/api/items`
-        );
-
-        console.log(
-          `Parts                : http://localhost:${PORT}/api/parts`
-        );
-
-        console.log(
-          `Customers            : http://localhost:${PORT}/api/customers`
-        );
-
-        console.log(
-          `Estimates            : http://localhost:${PORT}/api/estimates`
-        );
-
-        console.log(
-          `Sales Orders         : http://localhost:${PORT}/api/sales-orders`
-        );
-
-        console.log(
-          `Next Sales Order     : http://localhost:${PORT}/api/sales-orders/next-number`
-        );
-
-        console.log(
-          `Vendors              : http://localhost:${PORT}/api/vendors`
-        );
-
-        console.log(
-          `Purchase Orders      : http://localhost:${PORT}/api/purchase-orders`
-        );
-
-        console.log(
-          `Next Purchase Order  : http://localhost:${PORT}/api/purchase-orders/next-number`
-        );
-
-        console.log(
-          `Bills                : http://localhost:${PORT}/api/bills`
-        );
-
-        console.log(
-          `Users                : http://localhost:${PORT}/api/users`
-        );
-
-        console.log(
-          `Roles                : http://localhost:${PORT}/api/roles`
-        );
-
-        console.log(
-          `Email Test           : http://localhost:${PORT}/api/email-test/verify`
-        );
-
-        console.log(
-          `Health               : http://localhost:${PORT}/api/health`
-        );
-
-        console.log(
-          '======================================================'
-        );
-      }
+app.listen(
+  PORT,
+  '0.0.0.0',
+  () => {
+    console.log(
+      '======================================================'
     );
-  } catch (error) {
-    console.error('Database sync failed before startup:', error.message);
-    process.exitCode = 1;
-    await db.end();
+
+    console.log(
+      `Codexia backend running on port ${PORT}`
+    );
+
+    console.log(
+      '------------------------------------------------------'
+    );
+
+    console.log(
+      `DB Test              : /api/test-db`
+    );
+
+    console.log(
+      `MySQL Test           : /api/mysql-test`
+    );
+
+    console.log(
+      `Transaction Series   : /api/transaction-number-series`
+    );
+
+    console.log(
+      `Items                : /api/items`
+    );
+
+    console.log(
+      `Parts                : /api/parts`
+    );
+
+    console.log(
+      `Customers            : /api/customers`
+    );
+
+    console.log(
+      `Estimates            : /api/estimates`
+    );
+
+    console.log(
+      `Sales Orders         : /api/sales-orders`
+    );
+
+    console.log(
+      `Next Sales Order     : /api/sales-orders/next-number`
+    );
+
+    console.log(
+      `Invoices             : /api/invoices`
+    );
+
+    console.log(
+      `Payments Received    : /api/payments-received`
+    );
+
+    console.log(
+      `Delivery Challans    : /api/delivery-challans`
+    );
+
+    console.log(
+      `Vendors              : /api/vendors`
+    );
+
+    console.log(
+      `Purchase Orders      : /api/purchase-orders`
+    );
+
+    console.log(
+      `Next Purchase Order  : /api/purchase-orders/next-number`
+    );
+
+    console.log(
+      `Bills                : /api/bills`
+    );
+
+    console.log(
+      `Users                : /api/users`
+    );
+
+    console.log(
+      `Roles                : /api/roles`
+    );
+
+    console.log(
+      `Email Test           : /api/email-test/verify`
+    );
+
+    console.log(
+      `Health               : /api/health`
+    );
+
+    console.log(
+      '======================================================'
+    );
   }
-})();
+);

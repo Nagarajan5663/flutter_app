@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; import 'package:flutter_app/config/api_config.dart';
 import 'package:http/http.dart' as http;
 
 // ============================================================
@@ -76,7 +76,7 @@ class TransactionNumberSeriesPage extends StatefulWidget {
 
 class _TransactionNumberSeriesPageState
     extends State<TransactionNumberSeriesPage> {
-  static const String _baseUrl = 'http://localhost:3000/api';
+  static const String _baseUrl = '${ApiConfig.baseUrl}';
 
   List<TransactionNumberSeriesItem> _items = [];
 

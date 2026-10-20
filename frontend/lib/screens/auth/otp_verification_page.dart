@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; import 'package:flutter_app/config/api_config.dart';
 import 'package:http/http.dart' as http;
 
 import '../../widgets/futuristic_auth_widgets.dart';
@@ -23,7 +23,7 @@ class OtpVerificationPage extends StatefulWidget {
 
 class _OtpVerificationPageState extends State<OtpVerificationPage> {
   static const String _verifyOtpApiUrl =
-      'http://localhost:3000/api/users/verify-reset-otp';
+      '${ApiConfig.baseUrl}/users/verify-reset-otp';
 
   final _otpController = TextEditingController();
 

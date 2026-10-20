@@ -1,3 +1,5 @@
+import 'package:flutter_app/config/api_config.dart';
+
 import 'invoice_filter.dart';
 import 'invoice_model.dart';
 import 'dart:convert';
@@ -25,7 +27,7 @@ class InMemoryInvoiceRepository implements InvoiceRepository {
   static final InMemoryInvoiceRepository instance = InMemoryInvoiceRepository._internal();
   factory InMemoryInvoiceRepository() => instance;
 
-  static const String _baseUrl = 'http://localhost:3000/api';
+  static const String _baseUrl = '${ApiConfig.baseUrl}';
 
   Map<String, String> get _headers => {
     'Accept': 'application/json',

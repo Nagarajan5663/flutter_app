@@ -1,3 +1,5 @@
+import 'package:flutter_app/config/api_config.dart';
+
 import 'delivery_challan_filter.dart';
 import 'delivery_challan_model.dart';
 import 'dart:convert';
@@ -27,7 +29,7 @@ class InMemoryDeliveryChallanRepository implements DeliveryChallanRepository {
       InMemoryDeliveryChallanRepository._internal();
   factory InMemoryDeliveryChallanRepository() => instance;
 
-  static const String _baseUrl = 'http://localhost:3000/api';
+  static const String _baseUrl = '${ApiConfig.baseUrl}';
   Map<String, String> get _headers =>
       {'Accept': 'application/json', ...SalesWorkflowSession.headers};
 

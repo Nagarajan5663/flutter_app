@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; import 'package:flutter_app/config/api_config.dart';
 import 'package:http/http.dart' as http;
 
 import '../../shared/glass_modal_shell.dart';
@@ -111,7 +111,7 @@ class AddBillDialog extends StatefulWidget {
 }
 
 class _AddBillDialogState extends State<AddBillDialog> {
-  static const String _baseUrl = 'http://localhost:3000/api';
+  static const String _baseUrl = '${ApiConfig.baseUrl}';
 
   final VendorRepository _vendorRepository = InMemoryVendorRepository();
 

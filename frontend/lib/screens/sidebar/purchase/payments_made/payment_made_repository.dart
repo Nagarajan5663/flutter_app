@@ -1,3 +1,5 @@
+import 'package:flutter_app/config/api_config.dart';
+
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -5,7 +7,7 @@ import 'package:http/http.dart' as http;
 import 'payment_made_model.dart';
 
 class PaymentMadeRepository {
-  static const _baseUrl = 'http://localhost:3000/api';
+  static const _baseUrl = '${ApiConfig.baseUrl}';
 
   Future<void> updatePayment(PaymentMadeModel payment) async {
     final response = await http.put(

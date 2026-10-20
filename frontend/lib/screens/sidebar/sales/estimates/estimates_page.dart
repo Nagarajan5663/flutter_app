@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; import 'package:flutter_app/config/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
@@ -16,7 +16,7 @@ import '../workflow_session.dart';
 // ============================================================
 
 class EstimatesApi {
-  static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl = '${ApiConfig.baseUrl}';
 
   static Future<EstimateData> approveEstimate(int id) async {
     final response =

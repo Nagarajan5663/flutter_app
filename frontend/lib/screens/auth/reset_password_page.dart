@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; import 'package:flutter_app/config/api_config.dart';
 import 'package:http/http.dart' as http;
 
 import '../../widgets/futuristic_aurora_background.dart';
@@ -22,7 +22,7 @@ class ResetPasswordPage extends StatefulWidget {
 
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
   static const String _resetPasswordApiUrl =
-      'http://localhost:3000/api/users/reset-password';
+      '${ApiConfig.baseUrl}/users/reset-password';
 
   final _formKey = GlobalKey<FormState>();
 

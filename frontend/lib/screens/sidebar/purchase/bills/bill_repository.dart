@@ -1,3 +1,5 @@
+import 'package:flutter_app/config/api_config.dart';
+
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -47,7 +49,7 @@ abstract class BillRepository {
 // ============================================================
 
 class ApiBillRepository implements BillRepository {
-  static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl = '${ApiConfig.baseUrl}';
 
   // ==========================================================
   // GET BILLS

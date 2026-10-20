@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; import 'package:flutter_app/config/api_config.dart';
 import 'package:http/http.dart' as http;
 
 import '../../widgets/futuristic_auth_widgets.dart';
@@ -19,7 +19,7 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   static const String _forgotPasswordApiUrl =
-      'http://localhost:3000/api/users/forgot-password';
+      '${ApiConfig.baseUrl}/users/forgot-password';
 
   final _emailController = TextEditingController();
 

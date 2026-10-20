@@ -1,3 +1,5 @@
+import 'package:flutter_app/config/api_config.dart';
+
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -7,7 +9,7 @@ import '../part_model.dart';
 
 class ItemsPartsApi {
   static const String baseUrl =
-      'http://localhost:3000/api';
+      '${ApiConfig.baseUrl}';
 
   // ============================================================
   // ITEMS
