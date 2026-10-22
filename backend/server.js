@@ -66,7 +66,24 @@ const app = express();
 
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      const configuredOrigins = (process.env.CORS_ORIGINS || '')
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+      const isLocalDevelopmentOrigin =
+        process.env.NODE_ENV !== 'production' &&
+        /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(
+          origin || ''
+        );
+
+      callback(
+        null,
+        !origin ||
+          isLocalDevelopmentOrigin ||
+          configuredOrigins.includes(origin)
+      );
+    },
     credentials: true,
   })
 );
