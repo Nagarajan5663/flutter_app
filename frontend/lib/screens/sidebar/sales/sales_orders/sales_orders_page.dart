@@ -483,6 +483,273 @@ class CatalogOption {
   });
 }
 
+class _NoSalesOrderResultsCustomer extends CustomerOption {
+  const _NoSalesOrderResultsCustomer()
+      : super(id: -1, name: '', companyName: '', email: '');
+}
+
+class _NoSalesOrderResultsCatalogOption extends CatalogOption {
+  const _NoSalesOrderResultsCatalogOption()
+      : super(
+          sourceType: '',
+          id: -1,
+          name: '',
+          sku: '',
+          description: '',
+          rate: 0,
+        );
+}
+
+const _noSalesOrderResultsCustomer = _NoSalesOrderResultsCustomer();
+const _noSalesOrderResultsCatalogOption = _NoSalesOrderResultsCatalogOption();
+
+List<CustomerOption> searchSalesOrderCustomers(
+  Iterable<CustomerOption> customers,
+  String query,
+) {
+  final normalizedQuery = query.trim().toLowerCase();
+  if (normalizedQuery.isEmpty) {
+    return customers.toList();
+  }
+
+  return customers
+      .where(
+        (customer) =>
+            customer.name.toLowerCase().contains(normalizedQuery) ||
+            customer.companyName.toLowerCase().contains(normalizedQuery) ||
+            customer.email.toLowerCase().contains(normalizedQuery),
+      )
+      .toList();
+}
+
+List<CatalogOption> searchSalesOrderCatalog(
+  Iterable<CatalogOption> catalog,
+  String query,
+) {
+  final normalizedQuery = query.trim().toLowerCase();
+  if (normalizedQuery.isEmpty) {
+    return catalog.toList();
+  }
+
+  return catalog
+      .where(
+        (product) =>
+            product.name.toLowerCase().contains(normalizedQuery) ||
+            product.sku.toLowerCase().contains(normalizedQuery),
+      )
+      .toList();
+}
+
+class SalesOrderCustomerOptionsView extends StatelessWidget {
+  const SalesOrderCustomerOptionsView({
+    super.key,
+    required this.customers,
+    required this.onSelected,
+    this.showNoResults = false,
+  });
+
+  final List<CustomerOption> customers;
+  final ValueChanged<CustomerOption> onSelected;
+  final bool showNoResults;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final background = isDark ? const Color(0xFF263746) : Colors.white;
+    final primaryText = isDark ? Colors.white : const Color(0xFF1F2937);
+    final secondaryText =
+        isDark ? const Color(0xFFD1D5DB) : const Color(0xFF64748B);
+
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Material(
+        color: background,
+        surfaceTintColor: Colors.transparent,
+        elevation: 10,
+        borderRadius: BorderRadius.circular(9),
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 340, maxHeight: 260),
+          child: showNoResults
+              ? _salesOrderNoResults(secondaryText)
+              : ListView.builder(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: customers.length,
+                  itemBuilder: (_, index) {
+                    final customer = customers[index];
+                    return ListTile(
+                      tileColor: background,
+                      hoverColor: isDark
+                          ? const Color(0xFF34495E)
+                          : const Color(0xFFEAF4FC),
+                      title: Text(
+                        customer.name,
+                        style: TextStyle(color: primaryText),
+                      ),
+                      subtitle: customer.companyName.isEmpty
+                          ? null
+                          : Text(
+                              customer.companyName,
+                              style: TextStyle(color: secondaryText),
+                            ),
+                      onTap: () => onSelected(customer),
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class SalesOrderCatalogOptionsView extends StatelessWidget {
+  const SalesOrderCatalogOptionsView({
+    super.key,
+    required this.products,
+    required this.onSelected,
+    this.showNoResults = false,
+  });
+
+  final List<CatalogOption> products;
+  final ValueChanged<CatalogOption> onSelected;
+  final bool showNoResults;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final background = isDark ? const Color(0xFF263746) : Colors.white;
+    final primaryText = isDark ? Colors.white : const Color(0xFF1F2937);
+    final secondaryText =
+        isDark ? const Color(0xFFD1D5DB) : const Color(0xFF64748B);
+
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Material(
+        color: background,
+        surfaceTintColor: Colors.transparent,
+        elevation: 10,
+        borderRadius: BorderRadius.circular(9),
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460, maxHeight: 280),
+          child: showNoResults
+              ? _salesOrderNoResults(secondaryText)
+              : ListView.separated(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: products.length,
+                  separatorBuilder: (_, __) => Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF475569)
+                        : const Color(0xFFE2E8F0),
+                  ),
+                  itemBuilder: (_, index) {
+                    final product = products[index];
+                    final isItem = product.sourceType == 'Item';
+                    return ListTile(
+                      tileColor: background,
+                      hoverColor: isDark
+                          ? const Color(0xFF34495E)
+                          : const Color(0xFFF1F5F9),
+                      leading: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isItem
+                              ? const Color(0xFFE3F2FD)
+                              : const Color(0xFFFFF3E0),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          product.sourceType,
+                          style: TextStyle(
+                            color: isItem
+                                ? const Color(0xFF1565C0)
+                                : const Color(0xFF7A4B00),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        product.name,
+                        style: TextStyle(color: primaryText),
+                      ),
+                      subtitle: Text(
+                        [
+                          if (product.sku.isNotEmpty) product.sku,
+                          product.description,
+                          'INR ${product.rate.toStringAsFixed(2)}',
+                        ].join(' • '),
+                        style: TextStyle(color: secondaryText),
+                      ),
+                      onTap: () => onSelected(product),
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+Widget _salesOrderNoResults(Color textColor) {
+  return SizedBox(
+    height: 56,
+    child: Center(
+      child: Text(
+        'No results found',
+        style: TextStyle(color: textColor),
+      ),
+    ),
+  );
+}
+
+class SalesOrderFormTheme extends StatelessWidget {
+  const SalesOrderFormTheme({
+    super.key,
+    required this.child,
+  });
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final inheritedTheme = Theme.of(context);
+    return Theme(
+      data: inheritedTheme.copyWith(
+        brightness: Brightness.light,
+        colorScheme: inheritedTheme.colorScheme.copyWith(
+          brightness: Brightness.light,
+          primary: const Color(0xFF1E78B7),
+          onPrimary: Colors.white,
+          surface: Colors.white,
+          onSurface: const Color(0xFF1F2937),
+        ),
+        textTheme: inheritedTheme.textTheme.apply(
+          bodyColor: const Color(0xFF1F2937),
+          displayColor: const Color(0xFF1F2937),
+        ),
+        inputDecorationTheme: inheritedTheme.inputDecorationTheme.copyWith(
+          hintStyle: const TextStyle(color: Color(0xFF64748B)),
+          labelStyle: const TextStyle(color: Color(0xFF1F2937)),
+          floatingLabelStyle: const TextStyle(color: Color(0xFF1F2937)),
+        ),
+        textSelectionTheme: const TextSelectionThemeData(
+          cursorColor: Color(0xFF1E78B7),
+          selectionColor: Color(0x553B82F6),
+          selectionHandleColor: Color(0xFF1E78B7),
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
 // ============================================================
 // ENUMS
 // ============================================================
@@ -813,6 +1080,376 @@ class SalesOrderData {
           ? null
           : int.tryParse(json['invoiceId'].toString()),
       invoiceNumber: json['invoiceNumber']?.toString(),
+    );
+  }
+}
+
+class _SalesOrderFilterCalendar extends StatefulWidget {
+  const _SalesOrderFilterCalendar({
+    required this.selectedDate,
+    required this.firstDate,
+    required this.lastDate,
+    required this.onResult,
+    this.canClear = true,
+    this.useFormActionStyles = false,
+  });
+
+  final DateTime? selectedDate;
+  final DateTime firstDate;
+  final DateTime lastDate;
+  final ValueChanged<DateTime?> onResult;
+  final bool canClear;
+  final bool useFormActionStyles;
+
+  @override
+  State<_SalesOrderFilterCalendar> createState() =>
+      _SalesOrderFilterCalendarState();
+}
+
+class _SalesOrderFilterCalendarState extends State<_SalesOrderFilterCalendar> {
+  late DateTime _displayedMonth;
+
+  static const _weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  @override
+  void initState() {
+    super.initState();
+    final initialDate = widget.selectedDate ?? DateTime.now();
+    _displayedMonth = DateTime(initialDate.year, initialDate.month);
+  }
+
+  DateTime get _firstOfDisplayedMonth =>
+      DateTime(_displayedMonth.year, _displayedMonth.month);
+
+  bool get _canGoPrevious => !DateTime(
+        _displayedMonth.year,
+        _displayedMonth.month,
+        0,
+      ).isBefore(_salesOrderDateOnly(widget.firstDate));
+
+  bool get _canGoNext => !DateTime(
+        _displayedMonth.year,
+        _displayedMonth.month + 1,
+      ).isAfter(_salesOrderDateOnly(widget.lastDate));
+
+  bool _isSelectable(DateTime date) {
+    final day = _salesOrderDateOnly(date);
+    return !day.isBefore(_salesOrderDateOnly(widget.firstDate)) &&
+        !day.isAfter(_salesOrderDateOnly(widget.lastDate));
+  }
+
+  void _changeMonth(int amount) {
+    setState(() {
+      _displayedMonth =
+          DateTime(_displayedMonth.year, _displayedMonth.month + amount);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final today = _salesOrderDateOnly(DateTime.now());
+    final selectedDay = widget.selectedDate == null
+        ? null
+        : _salesOrderDateOnly(widget.selectedDate!);
+    final firstGridDay = _firstOfDisplayedMonth.subtract(
+      Duration(days: _firstOfDisplayedMonth.weekday % 7),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  DateFormat('MMMM yyyy').format(_displayedMonth),
+                  style: const TextStyle(
+                    color: Color(0xFF263746),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Previous month',
+                onPressed: _canGoPrevious ? () => _changeMonth(-1) : null,
+                icon: const Icon(Icons.chevron_left),
+                color: const Color(0xFF425466),
+                visualDensity: VisualDensity.compact,
+              ),
+              IconButton(
+                tooltip: 'Next month',
+                onPressed: _canGoNext ? () => _changeMonth(1) : null,
+                icon: const Icon(Icons.chevron_right),
+                color: const Color(0xFF425466),
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              for (final weekday in _weekdays)
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      weekday,
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          for (var week = 0; week < 6; week++)
+            Row(
+              children: [
+                for (var weekday = 0; weekday < 7; weekday++)
+                  Expanded(
+                    child: _buildDay(
+                      firstGridDay.add(Duration(days: week * 7 + weekday)),
+                      selectedDay: selectedDay,
+                      today: today,
+                    ),
+                  ),
+              ],
+            ),
+          const Divider(height: 16, color: Color(0xFFE2E8F0)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                onPressed: widget.canClear ? () => widget.onResult(null) : null,
+                style: widget.useFormActionStyles
+                    ? TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF1E78B7),
+                        disabledForegroundColor: const Color(0xFF94A3B8),
+                      )
+                    : null,
+                child: const Text('Clear'),
+              ),
+              TextButton(
+                onPressed:
+                    _isSelectable(today) ? () => widget.onResult(today) : null,
+                style: widget.useFormActionStyles
+                    ? TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF1E78B7),
+                        disabledForegroundColor: const Color(0xFF94A3B8),
+                      )
+                    : null,
+                child: const Text('Today'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDay(
+    DateTime date, {
+    required DateTime? selectedDay,
+    required DateTime today,
+  }) {
+    final day = _salesOrderDateOnly(date);
+    final isCurrentMonth = date.month == _displayedMonth.month;
+    final isSelected = selectedDay == day;
+    final isToday = today == day;
+    final isSelectable = _isSelectable(date);
+    final dayKey = DateFormat('yyyy-MM-dd').format(date);
+
+    return Padding(
+      padding: const EdgeInsets.all(1),
+      child: Semantics(
+        label: DateFormat('EEEE, d MMMM yyyy').format(date),
+        button: isSelectable,
+        selected: isSelected,
+        child: InkWell(
+          key: ValueKey('sales-order-calendar-day-$dayKey'),
+          borderRadius: BorderRadius.circular(18),
+          onTap: isSelectable ? () => widget.onResult(day) : null,
+          child: Container(
+            height: 34,
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFF1E78B7) : null,
+              borderRadius: BorderRadius.circular(18),
+              border: isToday && !isSelected
+                  ? Border.all(color: const Color(0xFF1E78B7))
+                  : null,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '${date.day}',
+              style: TextStyle(
+                color: isSelected
+                    ? Colors.white
+                    : !isSelectable
+                        ? const Color(0xFFCBD5E1)
+                        : isCurrentMonth
+                            ? const Color(0xFF263746)
+                            : const Color(0xFF94A3B8),
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+DateTime _salesOrderDateOnly(DateTime date) =>
+    DateTime(date.year, date.month, date.day);
+
+class SalesOrderDatePickerField extends StatefulWidget {
+  const SalesOrderDatePickerField({
+    super.key,
+    required this.value,
+    required this.firstDate,
+    required this.lastDate,
+    required this.decoration,
+    required this.onChanged,
+    this.canClear = true,
+    this.calendarKey = const ValueKey('sales-order-filter-calendar'),
+    this.emptyTextStyle,
+    this.useFormActionStyles = false,
+  });
+
+  final DateTime? value;
+  final DateTime firstDate;
+  final DateTime lastDate;
+  final InputDecoration decoration;
+  final ValueChanged<DateTime?> onChanged;
+  final bool canClear;
+  final Key calendarKey;
+  final TextStyle? emptyTextStyle;
+  final bool useFormActionStyles;
+
+  @override
+  State<SalesOrderDatePickerField> createState() =>
+      _SalesOrderDatePickerFieldState();
+}
+
+class _SalesOrderDatePickerFieldState extends State<SalesOrderDatePickerField> {
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _calendarOverlay;
+  bool _alignCalendarRight = false;
+  double _calendarWidth = 340;
+
+  @override
+  void dispose() {
+    _removeCalendarOverlay();
+    super.dispose();
+  }
+
+  void _toggleCalendar() {
+    if (_calendarOverlay != null) {
+      _removeCalendarOverlay();
+      return;
+    }
+
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final targetBox = context.findRenderObject()! as RenderBox;
+    final targetLeft = targetBox.localToGlobal(Offset.zero).dx;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final targetRight = targetLeft + targetBox.size.width;
+    final desiredWidth = screenWidth < 372 ? screenWidth - 32.0 : 340.0;
+    final availableLeft = screenWidth - targetLeft - 8;
+    final availableRight = targetRight - 8;
+    _alignCalendarRight =
+        desiredWidth > availableLeft && availableRight > availableLeft;
+    _calendarWidth = _alignCalendarRight
+        ? desiredWidth.clamp(0, availableRight)
+        : desiredWidth.clamp(0, availableLeft);
+    _calendarOverlay = OverlayEntry(
+      builder: (_) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _removeCalendarOverlay,
+            ),
+          ),
+          CompositedTransformFollower(
+            link: _layerLink,
+            showWhenUnlinked: false,
+            targetAnchor: _alignCalendarRight
+                ? Alignment.bottomRight
+                : Alignment.bottomLeft,
+            followerAnchor:
+                _alignCalendarRight ? Alignment.topRight : Alignment.topLeft,
+            offset: const Offset(0, 6),
+            child: Material(
+              key: widget.calendarKey,
+              color: Colors.white,
+              surfaceTintColor: Colors.transparent,
+              elevation: 8,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: SizedBox(
+                width: _calendarWidth,
+                child: _SalesOrderFilterCalendar(
+                  selectedDate: widget.value,
+                  firstDate: widget.firstDate,
+                  lastDate: widget.lastDate,
+                  canClear: widget.canClear,
+                  useFormActionStyles: widget.useFormActionStyles,
+                  onResult: (date) {
+                    widget.onChanged(date);
+                    _removeCalendarOverlay();
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    overlay.insert(_calendarOverlay!);
+  }
+
+  void _removeCalendarOverlay() {
+    _calendarOverlay?.remove();
+    _calendarOverlay = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: InkWell(
+        onTap: _toggleCalendar,
+        child: InputDecorator(
+          decoration: widget.decoration,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.value == null
+                      ? 'dd-mm-yyyy'
+                      : DateFormat('dd-MM-yyyy').format(widget.value!),
+                  style: widget.value == null ? widget.emptyTextStyle : null,
+                ),
+              ),
+              const Icon(
+                Icons.calendar_today_outlined,
+                color: Color(0xFF1F2937),
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1393,6 +2030,11 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                       onChanged: (value) {
                         setState(() {
                           _dateFrom = value;
+                          if (value != null &&
+                              _dateTo != null &&
+                              _dateTo!.isBefore(value)) {
+                            _dateTo = value;
+                          }
                         });
                       },
                     ),
@@ -1616,41 +2258,14 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
         const SizedBox(
           height: 6,
         ),
-        InkWell(
-          onTap: () async {
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: value ?? DateTime.now(),
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2100),
-            );
-
-            if (picked != null) {
-              onChanged(picked);
-            }
-          },
-          child: InputDecorator(
-            decoration: _inputDecoration(),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    value == null
-                        ? 'dd-mm-yyyy'
-                        : DateFormat(
-                            'dd-MM-yyyy',
-                          ).format(
-                            value,
-                          ),
-                  ),
-                ),
-                const Icon(
-                  Icons.calendar_today_outlined,
-                  size: 16,
-                ),
-              ],
-            ),
-          ),
+        SalesOrderDatePickerField(
+          value: value,
+          firstDate: label == 'Date To:' && _dateFrom != null
+              ? _dateFrom!
+              : DateTime(2000),
+          lastDate: DateTime(2100),
+          decoration: _inputDecoration(),
+          onChanged: onChanged,
         ),
       ],
     );
@@ -2272,8 +2887,7 @@ class _SalesOrderPreviewDialogState extends State<_SalesOrderPreviewDialog> {
                       style: TextStyle(
                           color: Colors.black, fontWeight: FontWeight.w600)),
                   SizedBox(width: 6),
-                  Icon(Icons.keyboard_arrow_down,
-                      color: Colors.black, size: 20)
+                  Icon(Icons.keyboard_arrow_down, color: Colors.black, size: 20)
                 ]))),
       const SizedBox(width: 8),
       OutlinedButton(
@@ -2709,36 +3323,6 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
   // DATES
   // ==========================================================
 
-  Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-
-    if (picked != null) {
-      setState(() {
-        selectedDate = picked;
-      });
-    }
-  }
-
-  Future<void> _selectShipmentDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: expectedShipmentDate ?? selectedDate,
-      firstDate: selectedDate,
-      lastDate: DateTime(2100),
-    );
-
-    if (picked != null) {
-      setState(() {
-        expectedShipmentDate = picked;
-      });
-    }
-  }
-
   // ==========================================================
   // SAVE
   // ==========================================================
@@ -2907,412 +3491,422 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
   Widget build(
     BuildContext context,
   ) {
-    return SalesGlassDialog(
-      insetPadding: const EdgeInsets.all(
-        12,
-      ),
-      backgroundColor: Colors.transparent,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 1180,
-          maxHeight: 790,
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(
-              0xFFE6EAED,
-            ),
-            borderRadius: BorderRadius.circular(
-              16,
-            ),
+    return SalesOrderFormTheme(
+      child: SalesGlassDialog(
+        insetPadding: const EdgeInsets.all(12),
+        backgroundColor: Colors.transparent,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: 1180,
+            maxHeight: 790,
           ),
-          child: Column(
-            children: [
-              // HEADER
-
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  22,
-                  16,
-                  12,
-                  16,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.initialOrder == null
-                            ? 'New Sales Order'
-                            : widget.isClone
-                                ? 'Clone Sales Order'
-                                : 'Edit Sales Order',
-                        style: TextStyle(
-                          color: Color(
-                            0xFF17395C,
-                          ),
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: _isSaving
-                          ? null
-                          : () {
-                              Navigator.pop(
-                                context,
-                              );
-                            },
-                      icon: const Icon(
-                        Icons.close,
-                        color: Color(
-                          0xFF777777,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(
+                0xFFE6EAED,
               ),
-
-              const Divider(
-                height: 1,
+              borderRadius: BorderRadius.circular(
+                16,
               ),
+            ),
+            child: Column(
+              children: [
+                // HEADER
 
-              if (_isLoadingData) const LinearProgressIndicator(),
-
-              if (_loadingError != null)
                 Padding(
-                  padding: const EdgeInsets.all(
+                  padding: const EdgeInsets.fromLTRB(
+                    22,
+                    16,
                     12,
+                    16,
                   ),
                   child: Row(
                     children: [
                       Expanded(
                         child: Text(
-                          _loadingError!,
-                          style: const TextStyle(
-                            color: Colors.red,
+                          widget.initialOrder == null
+                              ? 'New Sales Order'
+                              : widget.isClone
+                                  ? 'Clone Sales Order'
+                                  : 'Edit Sales Order',
+                          style: TextStyle(
+                            color: Color(
+                              0xFF17395C,
+                            ),
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
-                      TextButton(
-                        onPressed: _loadReferenceData,
-                        child: const Text(
-                          'Retry',
+                      IconButton(
+                        onPressed: _isSaving
+                            ? null
+                            : () {
+                                Navigator.pop(
+                                  context,
+                                );
+                              },
+                        icon: const Icon(
+                          Icons.close,
+                          color: Color(
+                            0xFF777777,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
 
-              Expanded(
-                child: Form(
-                  key: _formKey,
-                  child: SingleChildScrollView(
+                const Divider(
+                  height: 1,
+                ),
+
+                if (_isLoadingData) const LinearProgressIndicator(),
+
+                if (_loadingError != null)
+                  Padding(
                     padding: const EdgeInsets.all(
-                      22,
+                      12,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: _buildCustomerSearch(),
-                            ),
-                            const SizedBox(
-                              width: 18,
-                            ),
-                            Expanded(
-                              child: _buildTextField(
-                                label: 'Sales Order # *',
-                                controller: orderNumberController,
-                                readOnly: true,
-                              ),
-                            ),
-                            const SizedBox(
-                              width: 18,
-                            ),
-                            Expanded(
-                              child: _buildTextField(
-                                label: 'Sales Person Name',
-                                controller: salesPersonController,
-                              ),
-                            ),
-                            const SizedBox(
-                              width: 18,
-                            ),
-                            Expanded(
-                              child: _buildDateField(
-                                label: 'Date *',
-                                value: selectedDate,
-                                onTap: _selectDate,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(
-                          height: 20,
-                        ),
-
-                        SizedBox(
-                          width: 330,
-                          child: _buildOptionalDateField(
-                            label: 'Expected Shipment Date',
-                            value: expectedShipmentDate,
-                            onTap: _selectShipmentDate,
-                          ),
-                        ),
-
-                        const SizedBox(
-                          height: 26,
-                        ),
-
-                        // ITEMS TABLE
-
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: const Color(
-                                0xFFFFFFFF,
-                              ),
-                            ),
-                            borderRadius: BorderRadius.circular(
-                              8,
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 18,
-                                  vertical: 16,
-                                ),
-                                decoration: const BoxDecoration(
-                                  color: Color(
-                                    0xFFF7F8FA,
-                                  ),
-                                ),
-                                child: const Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 5,
-                                      child: Text(
-                                        'Item Details',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 100,
-                                      child: Text(
-                                        'Qty',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 140,
-                                      child: Text(
-                                        'Rate',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 150,
-                                      child: Text(
-                                        'Amount',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 55,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              ..._itemRows.map(
-                                (row) {
-                                  return _buildItemRow(
-                                    row,
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(
-                          height: 14,
-                        ),
-
-                        ElevatedButton.icon(
-                          onPressed: _isLoadingData ? null : _addRow,
-                          icon: const Icon(
-                            Icons.add,
-                          ),
-                          label: const Text(
-                            'Add Row',
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(
-                              0xFF1E78B7,
-                            ),
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-
-                        const SizedBox(
-                          height: 28,
-                        ),
-
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: SizedBox(
-                            width: 390,
-                            child: Column(
-                              children: [
-                                _buildTotalRow(
-                                  'Sub Total',
-                                  subTotal,
-                                ),
-                                const SizedBox(
-                                  height: 12,
-                                ),
-                                _buildTotalRow(
-                                  'Total',
-                                  total,
-                                  isBold: true,
-                                ),
-                              ],
+                        Expanded(
+                          child: Text(
+                            _loadingError!,
+                            style: const TextStyle(
+                              color: Colors.red,
                             ),
                           ),
                         ),
-
-                        const SizedBox(
-                          height: 25,
-                        ),
-
-                        const Text(
-                          'Notes',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
+                        TextButton(
+                          onPressed: _loadReferenceData,
+                          child: const Text(
+                            'Retry',
                           ),
-                        ),
-
-                        const SizedBox(
-                          height: 8,
-                        ),
-
-                        TextFormField(
-                          controller: notesController,
-                          maxLines: 3,
-                          decoration: _inputDecoration(),
-                        ),
-
-                        const SizedBox(
-                          height: 18,
-                        ),
-
-                        const Text(
-                          'Terms & Conditions',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
-
-                        const SizedBox(
-                          height: 8,
-                        ),
-
-                        TextFormField(
-                          controller: termsController,
-                          maxLines: 3,
-                          decoration: _inputDecoration(),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ),
 
-              // FOOTER
-
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
-                  vertical: 16,
-                ),
-                color: const Color(
-                  0xFFF8F8FA,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    ElevatedButton(
-                      onPressed: _isSaving
-                          ? null
-                          : () {
-                              Navigator.pop(
-                                context,
-                              );
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(
-                          0xFF747B82,
-                        ),
-                        foregroundColor: Colors.white,
+                Expanded(
+                  child: Form(
+                    key: _formKey,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(
+                        22,
                       ),
-                      child: const Text(
-                        'Cancel',
-                      ),
-                    ),
-                    const SizedBox(
-                      width: 16,
-                    ),
-                    ElevatedButton(
-                      onPressed:
-                          _isSaving || _isLoadingData ? null : _saveOrder,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(
-                          0xFF1E78B7,
-                        ),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 28,
-                          vertical: 14,
-                        ),
-                      ),
-                      child: _isSaving
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: _buildCustomerSearch(),
                               ),
-                            )
-                          : Text(
-                              widget.initialOrder != null && !widget.isClone
-                                  ? 'Update Sales Order'
-                                  : 'Save Sales Order',
+                              const SizedBox(
+                                width: 18,
+                              ),
+                              Expanded(
+                                child: _buildTextField(
+                                  label: 'Sales Order # *',
+                                  controller: orderNumberController,
+                                  readOnly: true,
+                                ),
+                              ),
+                              const SizedBox(
+                                width: 18,
+                              ),
+                              Expanded(
+                                child: _buildTextField(
+                                  label: 'Sales Person Name',
+                                  controller: salesPersonController,
+                                ),
+                              ),
+                              const SizedBox(
+                                width: 18,
+                              ),
+                              Expanded(
+                                child: _buildDateField(
+                                  label: 'Date *',
+                                  value: selectedDate,
+                                  onChanged: (date) {
+                                    if (date != null) {
+                                      setState(() {
+                                        selectedDate = date;
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(
+                            height: 20,
+                          ),
+
+                          SizedBox(
+                            width: 330,
+                            child: _buildOptionalDateField(
+                              label: 'Expected Shipment Date',
+                              value: expectedShipmentDate,
+                              onChanged: (date) {
+                                setState(() {
+                                  expectedShipmentDate = date;
+                                });
+                              },
                             ),
+                          ),
+
+                          const SizedBox(
+                            height: 26,
+                          ),
+
+                          // ITEMS TABLE
+
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: const Color(
+                                  0xFFFFFFFF,
+                                ),
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                8,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 18,
+                                    vertical: 16,
+                                  ),
+                                  decoration: const BoxDecoration(
+                                    color: Color(
+                                      0xFFF7F8FA,
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 5,
+                                        child: Text(
+                                          'Item Details',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 100,
+                                        child: Text(
+                                          'Qty',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 140,
+                                        child: Text(
+                                          'Rate',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 150,
+                                        child: Text(
+                                          'Amount',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 55,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                ..._itemRows.map(
+                                  (row) {
+                                    return _buildItemRow(
+                                      row,
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(
+                            height: 14,
+                          ),
+
+                          ElevatedButton.icon(
+                            onPressed: _isLoadingData ? null : _addRow,
+                            icon: const Icon(
+                              Icons.add,
+                            ),
+                            label: const Text(
+                              'Add Row',
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(
+                                0xFF1E78B7,
+                              ),
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+
+                          const SizedBox(
+                            height: 28,
+                          ),
+
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: SizedBox(
+                              width: 390,
+                              child: Column(
+                                children: [
+                                  _buildTotalRow(
+                                    'Sub Total',
+                                    subTotal,
+                                  ),
+                                  const SizedBox(
+                                    height: 12,
+                                  ),
+                                  _buildTotalRow(
+                                    'Total',
+                                    total,
+                                    isBold: true,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(
+                            height: 25,
+                          ),
+
+                          const Text(
+                            'Notes',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                          ),
+
+                          const SizedBox(
+                            height: 8,
+                          ),
+
+                          TextFormField(
+                            controller: notesController,
+                            maxLines: 3,
+                            decoration: _inputDecoration(),
+                          ),
+
+                          const SizedBox(
+                            height: 18,
+                          ),
+
+                          const Text(
+                            'Terms & Conditions',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                          ),
+
+                          const SizedBox(
+                            height: 8,
+                          ),
+
+                          TextFormField(
+                            controller: termsController,
+                            maxLines: 3,
+                            decoration: _inputDecoration(),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+
+                // FOOTER
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 22,
+                    vertical: 16,
+                  ),
+                  color: const Color(
+                    0xFFF8F8FA,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _isSaving
+                            ? null
+                            : () {
+                                Navigator.pop(
+                                  context,
+                                );
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(
+                            0xFF747B82,
+                          ),
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text(
+                          'Cancel',
+                        ),
+                      ),
+                      const SizedBox(
+                        width: 16,
+                      ),
+                      ElevatedButton(
+                        onPressed:
+                            _isSaving || _isLoadingData ? null : _saveOrder,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(
+                            0xFF1E78B7,
+                          ),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 28,
+                            vertical: 14,
+                          ),
+                        ),
+                        child: _isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                widget.initialOrder != null && !widget.isClone
+                                    ? 'Update Sales Order'
+                                    : 'Save Sales Order',
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -3340,30 +3934,23 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
         RawAutocomplete<CustomerOption>(
           textEditingController: customerController,
           focusNode: customerFocusNode,
-          displayStringForOption: (customer) => customer.name,
+          displayStringForOption: (customer) =>
+              identical(customer, _noSalesOrderResultsCustomer)
+                  ? customerController.text
+                  : customer.name,
           optionsBuilder: (textValue) {
-            final query = textValue.text.trim().toLowerCase();
-
-            if (query.isEmpty) {
-              return _customers.take(8);
-            }
-
-            return _customers
-                .where(
-                  (customer) =>
-                      customer.name.toLowerCase().contains(
-                            query,
-                          ) ||
-                      customer.companyName.toLowerCase().contains(
-                            query,
-                          ) ||
-                      customer.email.toLowerCase().contains(
-                            query,
-                          ),
-                )
-                .take(8);
+            final matches =
+                searchSalesOrderCustomers(_customers, textValue.text)
+                    .take(8)
+                    .toList();
+            return matches.isEmpty
+                ? const [_noSalesOrderResultsCustomer]
+                : matches;
           },
           onSelected: (customer) {
+            if (identical(customer, _noSalesOrderResultsCustomer)) {
+              return;
+            }
             setState(() {
               _selectedCustomer = customer;
 
@@ -3379,8 +3966,11 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
             return TextFormField(
               controller: controller,
               focusNode: focusNode,
+              style: const TextStyle(color: Color(0xFF1F2937)),
               decoration: _inputDecoration().copyWith(
                 hintText: 'Select or type to search...',
+                hintStyle: const TextStyle(color: Color(0xFF64748B)),
+                fillColor: const Color(0xFFF8FAFB),
               ),
               onChanged: (value) {
                 if (_selectedCustomer != null &&
@@ -3404,43 +3994,20 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
             onSelected,
             options,
           ) {
-            final list = options.toList();
-
-            return Align(
-              alignment: Alignment.topLeft,
-              child: Material(
-                elevation: 10,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: 340,
-                    maxHeight: 260,
-                  ),
-                  child: ListView.builder(
-                    padding: EdgeInsets.zero,
-                    shrinkWrap: true,
-                    itemCount: list.length,
-                    itemBuilder: (_, index) {
-                      final customer = list[index];
-
-                      return ListTile(
-                        title: Text(
-                          customer.name,
-                        ),
-                        subtitle: customer.companyName.isEmpty
-                            ? null
-                            : Text(
-                                customer.companyName,
-                              ),
-                        onTap: () {
-                          onSelected(
-                            customer,
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
+            final availableOptions = options.toList();
+            final showNoResults = availableOptions.length == 1 &&
+                identical(
+                  availableOptions.single,
+                  _noSalesOrderResultsCustomer,
+                );
+            return SalesOrderCustomerOptionsView(
+              customers: showNoResults ? const [] : availableOptions,
+              showNoResults: showNoResults,
+              onSelected: (customer) {
+                if (!identical(customer, _noSalesOrderResultsCustomer)) {
+                  onSelected(customer);
+                }
+              },
             );
           },
         ),
@@ -3469,30 +4036,23 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
                 RawAutocomplete<CatalogOption>(
                   textEditingController: row.itemController,
                   focusNode: row.focusNode,
-                  displayStringForOption: (product) => product.name,
+                  displayStringForOption: (product) =>
+                      identical(product, _noSalesOrderResultsCatalogOption)
+                          ? row.itemController.text
+                          : product.name,
                   optionsBuilder: (textValue) {
-                    final query = textValue.text.trim().toLowerCase();
-
-                    if (query.isEmpty) {
-                      return _catalog.take(10);
-                    }
-
-                    return _catalog
-                        .where(
-                          (product) =>
-                              product.name.toLowerCase().contains(
-                                    query,
-                                  ) ||
-                              product.sku.toLowerCase().contains(
-                                    query,
-                                  ) ||
-                              product.sourceType.toLowerCase().contains(
-                                    query,
-                                  ),
-                        )
-                        .take(10);
+                    final matches = searchSalesOrderCatalog(
+                      _catalog,
+                      textValue.text,
+                    ).take(10).toList();
+                    return matches.isEmpty
+                        ? const [_noSalesOrderResultsCatalogOption]
+                        : matches;
                   },
                   onSelected: (product) {
+                    if (identical(product, _noSalesOrderResultsCatalogOption)) {
+                      return;
+                    }
                     setState(() {
                       row.selectedProduct = product;
 
@@ -3514,8 +4074,11 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
                     return TextFormField(
                       controller: controller,
                       focusNode: focusNode,
+                      style: const TextStyle(color: Color(0xFF1F2937)),
                       decoration: _cellDecoration().copyWith(
                         hintText: 'Select or type to search...',
+                        hintStyle: const TextStyle(color: Color(0xFF64748B)),
+                        fillColor: const Color(0xFFF8FAFB),
                       ),
                       onChanged: (value) {
                         if (row.selectedProduct != null &&
@@ -3532,67 +4095,23 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
                     onSelected,
                     options,
                   ) {
-                    final list = options.toList();
-
-                    return Align(
-                      alignment: Alignment.topLeft,
-                      child: Material(
-                        elevation: 10,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            maxWidth: 460,
-                            maxHeight: 280,
-                          ),
-                          child: ListView.builder(
-                            padding: EdgeInsets.zero,
-                            shrinkWrap: true,
-                            itemCount: list.length,
-                            itemBuilder: (_, index) {
-                              final product = list[index];
-
-                              return ListTile(
-                                leading: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: product.sourceType == 'Item'
-                                        ? const Color(
-                                            0xFFE3F2FD,
-                                          )
-                                        : const Color(
-                                            0xFFFFF3E0,
-                                          ),
-                                    borderRadius: BorderRadius.circular(
-                                      10,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    product.sourceType,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ),
-                                title: Text(
-                                  product.name,
-                                ),
-                                subtitle: Text(
-                                  product.sku.isEmpty
-                                      ? 'INR ${product.rate.toStringAsFixed(2)}'
-                                      : '${product.sku} • INR ${product.rate.toStringAsFixed(2)}',
-                                ),
-                                onTap: () {
-                                  onSelected(
-                                    product,
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                      ),
+                    final availableOptions = options.toList();
+                    final showNoResults = availableOptions.length == 1 &&
+                        identical(
+                          availableOptions.single,
+                          _noSalesOrderResultsCatalogOption,
+                        );
+                    return SalesOrderCatalogOptionsView(
+                      products: showNoResults ? const [] : availableOptions,
+                      showNoResults: showNoResults,
+                      onSelected: (product) {
+                        if (!identical(
+                          product,
+                          _noSalesOrderResultsCatalogOption,
+                        )) {
+                          onSelected(product);
+                        }
+                      },
                     );
                   },
                 ),
@@ -3728,7 +4247,7 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
   Widget _buildDateField({
     required String label,
     required DateTime value,
-    required VoidCallback onTap,
+    required ValueChanged<DateTime?> onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3743,28 +4262,16 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
         const SizedBox(
           height: 8,
         ),
-        InkWell(
-          onTap: onTap,
-          child: InputDecorator(
-            decoration: _inputDecoration(),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    DateFormat(
-                      'dd-MM-yyyy',
-                    ).format(
-                      value,
-                    ),
-                  ),
-                ),
-                const Icon(
-                  Icons.calendar_today_outlined,
-                  size: 18,
-                ),
-              ],
-            ),
-          ),
+        SalesOrderDatePickerField(
+          value: value,
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+          canClear: false,
+          calendarKey: const ValueKey('sales-order-form-calendar'),
+          emptyTextStyle: const TextStyle(color: Color(0xFF9AA3AD)),
+          useFormActionStyles: true,
+          decoration: _inputDecoration(),
+          onChanged: onChanged,
         ),
       ],
     );
@@ -3773,7 +4280,7 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
   Widget _buildOptionalDateField({
     required String label,
     required DateTime? value,
-    required VoidCallback onTap,
+    required ValueChanged<DateTime?> onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3788,37 +4295,15 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
         const SizedBox(
           height: 8,
         ),
-        InkWell(
-          onTap: onTap,
-          child: InputDecorator(
-            decoration: _inputDecoration(),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    value == null
-                        ? 'dd-mm-yyyy'
-                        : DateFormat(
-                            'dd-MM-yyyy',
-                          ).format(
-                            value,
-                          ),
-                    style: TextStyle(
-                      color: value == null
-                          ? const Color(
-                              0xFF9AA3AD,
-                            )
-                          : Colors.black,
-                    ),
-                  ),
-                ),
-                const Icon(
-                  Icons.calendar_today_outlined,
-                  size: 18,
-                ),
-              ],
-            ),
-          ),
+        SalesOrderDatePickerField(
+          value: value,
+          firstDate: selectedDate,
+          lastDate: DateTime(2100),
+          calendarKey: const ValueKey('sales-order-form-calendar'),
+          emptyTextStyle: const TextStyle(color: Color(0xFF9AA3AD)),
+          useFormActionStyles: true,
+          decoration: _inputDecoration(),
+          onChanged: onChanged,
         ),
       ],
     );

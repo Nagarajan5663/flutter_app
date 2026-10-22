@@ -842,8 +842,99 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
                                 selectedVendor = vendor;
                               });
                             },
-                            popupProps: const PopupProps.menu(
+                            popupProps: PopupProps.menu(
                               showSearchBox: true,
+                              searchDelay: Duration.zero,
+                              disableFilter: true,
+                              constraints: const BoxConstraints(
+                                maxHeight: 320,
+                              ),
+                              menuProps: const MenuProps(
+                                backgroundColor: Colors.white,
+                                elevation: 4,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(7)),
+                                ),
+                              ),
+                              searchFieldProps: const TextFieldProps(
+                                style: TextStyle(
+                                  color: Color(0xFF102A43),
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: 'Search vendors...',
+                                  prefixIcon: Icon(Icons.search, size: 20),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(7),
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: Color(0xFFD9DEE5),
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(7),
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: Color(0xFFD9DEE5),
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(7),
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: Color(0xFF6BAED6),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              itemClickProps: const ClickProps(
+                                hoverColor: Color(0xFFF1F3F5),
+                                focusColor: Color(0xFFF1F3F5),
+                                splashColor: Colors.transparent,
+                              ),
+                              itemBuilder: (context, vendor, isDisabled,
+                                      isSelected) => SizedBox(
+                                height: 40,
+                                width: double.infinity,
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
+                                    child: Text(
+                                      vendor.companyName.trim().isEmpty
+                                          ? vendor.vendorName
+                                          : '${vendor.vendorName} - ${vendor.companyName}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Color(0xFF102A43),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              emptyBuilder: (context, searchEntry) => const Padding(
+                                padding: EdgeInsets.all(16),
+                                child: Text(
+                                  'No vendors found',
+                                  style: TextStyle(
+                                    color: Color(0xFF102A43),
+                                  ),
+                                ),
+                              ),
                             ),
                             decoratorProps: DropDownDecoratorProps(
                               decoration: _fieldDecoration(
