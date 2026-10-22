@@ -26,6 +26,13 @@ Leave the watch command running. New or saved `.sql` files are executed against 
 
 This project is a starting point for a Flutter application.
 
+Dashboard payment and bill APIs use `http://localhost:3000/api` by default for
+local development. For a deployed Flutter build, set `API_BASE_URL` to the
+production API base URL, including `/api` (for example,
+`flutter build web --dart-define=API_BASE_URL=https://api.example.com/api`).
+Dashboard financial cards and the corresponding payment pages use the same
+setting.
+
 A few resources to get you started if this is your first Flutter project:
 
 - [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)

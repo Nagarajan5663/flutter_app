@@ -24,7 +24,10 @@ class InMemoryPaymentReceivedRepository implements PaymentReceivedRepository {
 
   factory InMemoryPaymentReceivedRepository() => instance;
 
-  static const String _baseUrl = 'http://localhost:3000/api';
+  static const String _baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:3000/api',
+  );
 
   Map<String, String> get _headers => {
         'Accept': 'application/json',

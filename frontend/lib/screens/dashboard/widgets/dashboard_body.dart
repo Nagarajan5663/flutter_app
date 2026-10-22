@@ -1,7 +1,13 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import 'read_only_preview_scope.dart';
 import 'summary_card.dart';
+import '../../sidebar/sales/payments_received/payment_received_repository.dart';
+import '../../sidebar/purchase/bills/bill_repository.dart';
+import '../../sidebar/purchase/payments_made/payment_made_repository.dart';
 
 import 'profit_loss_section.dart';
 import 'sales_purchase_section.dart';
@@ -24,10 +30,121 @@ class _CustomDateSelection {
 }
 
 class _DashboardBodyState extends State<DashboardBody> {
+  late final Future<double> _totalRevenue;
+  late final Future<double> _totalExpenses;
+  late final Future<double> _costOfGoods;
+  late final Future<double> _netCashFlow;
   String _selectedDateRange = 'This Month';
   String? _customRangeLabel;
   DateTime? _customStartDate;
   DateTime? _customEndDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _totalRevenue = _loadTotalRevenue();
+    _totalExpenses = _loadTotalExpenses();
+    _costOfGoods = _loadCostOfGoods();
+    _netCashFlow = _loadNetCashFlow();
+  }
+
+  Future<double> _loadTotalRevenue() async {
+    final payments = await InMemoryPaymentReceivedRepository().getPayments();
+    return payments.fold<double>(
+      0,
+      (total, payment) => total + payment.amountReceived,
+    );
+  }
+
+  Future<double> _loadTotalExpenses() async {
+    final payments = await PaymentMadeRepository().getPayments();
+    return payments.fold<double>(
+      0,
+      (total, payment) => total + payment.amount,
+    );
+  }
+
+  Future<double> _loadCostOfGoods() async {
+    final bills = await ApiBillRepository().getBills();
+    return bills
+        .where((bill) => !bill.isVoided)
+        .fold<double>(0, (total, bill) => total + bill.taxAmount);
+  }
+
+  Future<double> _loadNetCashFlow() async {
+    final totals = await Future.wait([
+      _totalRevenue,
+      _totalExpenses,
+      _costOfGoods,
+    ]);
+    return totals[0] - totals[1] + totals[2];
+  }
+
+  Widget _buildAmountCard({
+    required String title,
+    required Future<double> amount,
+    required IconData icon,
+  }) {
+    return FutureBuilder<double>(
+      future: amount,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Tooltip(
+            message: 'Unable to load $title: ${snapshot.error}',
+            child: SummaryCard(
+              title: title,
+              amount: 'Unavailable',
+              icon: icon,
+            ),
+          );
+        }
+
+        if (snapshot.connectionState != ConnectionState.done) {
+          return SummaryCard(
+            title: title,
+            amount: 'Loading...',
+            icon: icon,
+          );
+        }
+
+        final formattedAmount = NumberFormat.currency(
+          locale: 'en_IN',
+          symbol: '₹',
+          decimalDigits: 2,
+        ).format(snapshot.data!);
+
+        return SummaryCard(
+          title: title,
+          amount: formattedAmount,
+          icon: icon,
+        );
+      },
+    );
+  }
+
+  Widget _buildTotalRevenueCard() => _buildAmountCard(
+        title: 'Total Revenue',
+        amount: _totalRevenue,
+        icon: Icons.trending_up,
+      );
+
+  Widget _buildTotalExpensesCard() => _buildAmountCard(
+        title: 'Total Expenses',
+        amount: _totalExpenses,
+        icon: Icons.trending_down,
+      );
+
+  Widget _buildCostOfGoodsCard() => _buildAmountCard(
+        title: 'Cost of Goods',
+        amount: _costOfGoods,
+        icon: Icons.shopping_cart_outlined,
+      );
+
+  Widget _buildNetCashFlowCard() => _buildAmountCard(
+        title: 'Net Cash Flow',
+        amount: _netCashFlow,
+        icon: Icons.account_balance_wallet_outlined,
+      );
 
   static const List<String> _dateRangeOptions = [
     'This Week',
@@ -44,7 +161,8 @@ class _DashboardBodyState extends State<DashboardBody> {
   }
 
   Future<void> _openCustomDatePicker() async {
-    final initialStart = _customStartDate ?? DateTime.now().subtract(const Duration(days: 30));
+    final initialStart =
+        _customStartDate ?? DateTime.now().subtract(const Duration(days: 30));
     final initialEnd = _customEndDate ?? DateTime.now();
 
     final result = await showDialog<_CustomDateSelection>(
@@ -64,7 +182,8 @@ class _DashboardBodyState extends State<DashboardBody> {
     setState(() {
       _customStartDate = result.start;
       _customEndDate = result.end;
-      _customRangeLabel = 'From: ${_formatDisplayDate(result.start)}  To: ${_formatDisplayDate(result.end)}';
+      _customRangeLabel =
+          'From: ${_formatDisplayDate(result.start)}  To: ${_formatDisplayDate(result.end)}';
       _selectedDateRange = 'Custom Selection';
     });
   }
@@ -157,15 +276,19 @@ class _DashboardBodyState extends State<DashboardBody> {
                         selectedItemBuilder: (context) {
                           return _dateRangeOptions.map((option) {
                             final isSelected = option == _selectedDateRange;
-                            final displayText = option == 'Custom Selection' && _customRangeLabel != null
+                            final displayText = option == 'Custom Selection' &&
+                                    _customRangeLabel != null
                                 ? _customRangeLabel!
                                 : option;
 
                             return Container(
                               alignment: Alignment.centerLeft,
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFFE5E7EB) : Colors.transparent,
+                                color: isSelected
+                                    ? const Color(0xFFE5E7EB)
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -185,9 +308,12 @@ class _DashboardBodyState extends State<DashboardBody> {
                             value: option,
                             child: Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 8),
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFFE5E7EB) : Colors.white,
+                                color: isSelected
+                                    ? const Color(0xFFE5E7EB)
+                                    : Colors.white,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -254,49 +380,33 @@ class _DashboardBodyState extends State<DashboardBody> {
                   // LARGE WEB SCREEN
                   // --------------------------------------------------
                   if (constraints.maxWidth >= 900) {
-                    return const Row(
+                    return Row(
                       children: [
                         Expanded(
                           child: SizedBox(
                             height: 110,
-                            child: SummaryCard(
-                              title: 'Total Revenue',
-                              amount: '₹0.00',
-                              icon: Icons.trending_up,
-                            ),
+                            child: _buildTotalRevenueCard(),
                           ),
                         ),
                         SizedBox(width: 16),
                         Expanded(
                           child: SizedBox(
                             height: 110,
-                            child: SummaryCard(
-                              title: 'Total Expenses',
-                              amount: '₹0.00',
-                              icon: Icons.trending_down,
-                            ),
+                            child: _buildTotalExpensesCard(),
                           ),
                         ),
                         SizedBox(width: 16),
                         Expanded(
                           child: SizedBox(
                             height: 110,
-                            child: SummaryCard(
-                              title: 'Cost of Goods',
-                              amount: '₹0.00',
-                              icon: Icons.shopping_cart_outlined,
-                            ),
+                            child: _buildCostOfGoodsCard(),
                           ),
                         ),
                         SizedBox(width: 16),
                         Expanded(
                           child: SizedBox(
                             height: 110,
-                            child: SummaryCard(
-                              title: 'Net Cash Flow',
-                              amount: '₹0.00',
-                              icon: Icons.account_balance_wallet_outlined,
-                            ),
+                            child: _buildNetCashFlowCard(),
                           ),
                         ),
                       ],
@@ -318,38 +428,22 @@ class _DashboardBodyState extends State<DashboardBody> {
                         SizedBox(
                           width: cardWidth,
                           height: 110,
-                          child: const SummaryCard(
-                            title: 'Total Revenue',
-                            amount: '₹0.00',
-                            icon: Icons.trending_up,
-                          ),
+                          child: _buildTotalRevenueCard(),
                         ),
                         SizedBox(
                           width: cardWidth,
                           height: 110,
-                          child: const SummaryCard(
-                            title: 'Total Expenses',
-                            amount: '₹0.00',
-                            icon: Icons.trending_down,
-                          ),
+                          child: _buildTotalExpensesCard(),
                         ),
                         SizedBox(
                           width: cardWidth,
                           height: 110,
-                          child: const SummaryCard(
-                            title: 'Cost of Goods',
-                            amount: '₹0.00',
-                            icon: Icons.shopping_cart_outlined,
-                          ),
+                          child: _buildCostOfGoodsCard(),
                         ),
                         SizedBox(
                           width: cardWidth,
                           height: 110,
-                          child: const SummaryCard(
-                            title: 'Net Cash Flow',
-                            amount: '₹0.00',
-                            icon: Icons.account_balance_wallet_outlined,
-                          ),
+                          child: _buildNetCashFlowCard(),
                         ),
                       ],
                     );
@@ -358,46 +452,30 @@ class _DashboardBodyState extends State<DashboardBody> {
                   // --------------------------------------------------
                   // MOBILE
                   // --------------------------------------------------
-                  return const Column(
+                  return Column(
                     children: [
                       SizedBox(
                         width: double.infinity,
                         height: 110,
-                        child: SummaryCard(
-                          title: 'Total Revenue',
-                          amount: '₹0.00',
-                          icon: Icons.trending_up,
-                        ),
+                        child: _buildTotalRevenueCard(),
                       ),
                       SizedBox(height: 12),
                       SizedBox(
                         width: double.infinity,
                         height: 110,
-                        child: SummaryCard(
-                          title: 'Total Expenses',
-                          amount: '₹0.00',
-                          icon: Icons.trending_down,
-                        ),
+                        child: _buildTotalExpensesCard(),
                       ),
                       SizedBox(height: 12),
                       SizedBox(
                         width: double.infinity,
                         height: 110,
-                        child: SummaryCard(
-                          title: 'Cost of Goods',
-                          amount: '₹0.00',
-                          icon: Icons.shopping_cart_outlined,
-                        ),
+                        child: _buildCostOfGoodsCard(),
                       ),
                       SizedBox(height: 12),
                       SizedBox(
                         width: double.infinity,
                         height: 110,
-                        child: SummaryCard(
-                          title: 'Net Cash Flow',
-                          amount: '₹0.00',
-                          icon: Icons.account_balance_wallet_outlined,
-                        ),
+                        child: _buildNetCashFlowCard(),
                       ),
                     ],
                   );
@@ -562,7 +640,8 @@ class _CustomDateRangeDialogState extends State<_CustomDateRangeDialog> {
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF3F4F6),
                     borderRadius: BorderRadius.circular(10),
@@ -604,7 +683,8 @@ class _CustomDateRangeDialogState extends State<_CustomDateRangeDialog> {
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF3F4F6),
                     borderRadius: BorderRadius.circular(10),
@@ -853,7 +933,7 @@ class _CashFlowSummaryGridPainter extends CustomPainter {
             fontWeight: FontWeight.w400,
           ),
         ),
-        textDirection: TextDirection.ltr,
+        textDirection: ui.TextDirection.ltr,
       );
 
       textPainter.layout();
@@ -902,7 +982,7 @@ class _CashFlowSummaryGridPainter extends CustomPainter {
             fontWeight: FontWeight.w400,
           ),
         ),
-        textDirection: TextDirection.ltr,
+        textDirection: ui.TextDirection.ltr,
         textAlign: TextAlign.center,
       );
 

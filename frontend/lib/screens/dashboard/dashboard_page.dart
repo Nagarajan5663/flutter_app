@@ -647,7 +647,6 @@ class _DashboardPageState extends State<DashboardPage> {
                   appBar: DashboardAppBar(
                     onProfilePressed: _openOrganizationSettings,
                     welcomeName: _welcomeName,
-                    canOpenProfile: true,
                     onPowerPressed: _logout,
                   ),
                   body: Container(
