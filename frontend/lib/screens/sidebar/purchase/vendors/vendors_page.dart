@@ -27,6 +27,7 @@ class _VendorsPageState extends State<VendorsPage> {
   final countryController = TextEditingController();
 
   String statusFilter = 'All';
+  bool _isStatusFocused = false;
 
   @override
   void initState() {
@@ -218,23 +219,78 @@ class _VendorsPageState extends State<VendorsPage> {
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8F9FA),
                         borderRadius: BorderRadius.circular(7),
-                        border: Border.all(color: const Color(0xFFD9DEE5)),
+                        border: Border.all(
+                          color: _isStatusFocused
+                              ? const Color(0xFF9CCFEA)
+                              : const Color(0xFFD9DEE5),
+                          width: _isStatusFocused ? 1.25 : 1,
+                        ),
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: statusFilter,
-                          isExpanded: true,
-                          items: const [
-                            DropdownMenuItem(value: 'All', child: Text('All')),
-                            DropdownMenuItem(
-                                value: 'Active', child: Text('Active')),
-                            DropdownMenuItem(
-                                value: 'Inactive', child: Text('Inactive')),
-                          ],
-                          onChanged: (value) {
-                            if (value == null) return;
-                            setState(() => statusFilter = value);
-                          },
+                      child: Focus(
+                        canRequestFocus: false,
+                        onFocusChange: (hasFocus) {
+                          if (_isStatusFocused != hasFocus) {
+                            setState(() => _isStatusFocused = hasFocus);
+                          }
+                        },
+                        child: Theme(
+                          data: Theme.of(context).copyWith(
+                            hoverColor: const Color(0xFFF1F3F5),
+                          ),
+                          child: PopupMenuButton<String>(
+                            padding: EdgeInsets.zero,
+                            position: PopupMenuPosition.under,
+                            color: Colors.white,
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            constraints: const BoxConstraints.tightFor(
+                              width: 144,
+                            ),
+                            onSelected: (value) {
+                              setState(() => statusFilter = value);
+                            },
+                            itemBuilder: (context) => [
+                              for (final value in ['All', 'Active', 'Inactive'])
+                                PopupMenuItem<String>(
+                                  value: value,
+                                  height: 38,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  child: Text(
+                                    value,
+                                    style: const TextStyle(
+                                      color: Color(0xFF102A43),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                            child: SizedBox(
+                              width: 136,
+                              height: 40,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    statusFilter,
+                                    style: const TextStyle(
+                                      color: Color(0xFF102A43),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.keyboard_arrow_down,
+                                    color: Color(0xFF102A43),
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),

@@ -318,21 +318,12 @@ class EstimatesApi {
   // ==========================================================
 
   static Future<List<CatalogOption>> getCatalog() async {
-    final itemFuture = http.get(
-      Uri.parse(
-        '$baseUrl/items',
-      ),
-    );
-
-    final partFuture = http.get(
-      Uri.parse(
-        '$baseUrl/parts',
-      ),
-    );
-
-    final itemResponse = await itemFuture;
-
-    final partResponse = await partFuture;
+    final responses = await Future.wait<http.Response>([
+      http.get(Uri.parse('$baseUrl/items')),
+      http.get(Uri.parse('$baseUrl/parts')),
+    ]);
+    final itemResponse = responses[0];
+    final partResponse = responses[1];
 
     final itemBody = jsonDecode(
       itemResponse.body,
@@ -452,6 +443,166 @@ class CustomerOption {
     required this.email,
     required this.phone,
   });
+}
+
+class CustomerOptionsView extends StatelessWidget {
+  const CustomerOptionsView({
+    super.key,
+    required this.customers,
+    required this.onSelected,
+  });
+
+  final List<CustomerOption> customers;
+  final ValueChanged<CustomerOption> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Material(
+        color: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 10,
+        borderRadius: BorderRadius.circular(10),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxHeight: 250,
+            maxWidth: 330,
+          ),
+          child: ListView.builder(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            itemCount: customers.length,
+            itemBuilder: (_, index) {
+              final customer = customers[index];
+              return ListTile(
+                tileColor: Colors.white,
+                hoverColor: const Color(0xFFDCEEFF),
+                title: Text(
+                  customer.name,
+                  style: const TextStyle(
+                    color: Color(0xFF172B4D),
+                  ),
+                ),
+                subtitle: customer.companyName.isEmpty
+                    ? null
+                    : Text(
+                        customer.companyName,
+                        style: const TextStyle(
+                          color: Color(0xFF425466),
+                        ),
+                      ),
+                onTap: () => onSelected(customer),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class CatalogOptionsView extends StatelessWidget {
+  const CatalogOptionsView({
+    super.key,
+    required this.items,
+    required this.onSelected,
+    this.showNoResults = false,
+  });
+
+  final List<CatalogOption> items;
+  final ValueChanged<CatalogOption> onSelected;
+  final bool showNoResults;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Material(
+        color: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 10,
+        borderRadius: BorderRadius.circular(10),
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: 450,
+            maxHeight: 280,
+          ),
+          child: showNoResults
+              ? const SizedBox(
+                  height: 56,
+                  child: Center(
+                    child: Text(
+                      'No items found',
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const Divider(
+                    height: 1,
+                    color: Color(0xFFE2E8F0),
+                  ),
+                  itemBuilder: (_, index) {
+                    final item = items[index];
+                    final isCatalogItem = item.sourceType == 'Item';
+                    return ListTile(
+                      tileColor: Colors.white,
+                      hoverColor: const Color(0xFFF1F5F9),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      leading: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isCatalogItem
+                              ? const Color(0xFFE3F2FD)
+                              : const Color(0xFFFFF3E0),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          item.sourceType,
+                          style: TextStyle(
+                            color: isCatalogItem
+                                ? const Color(0xFF1565C0)
+                                : const Color(0xFF7A4B00),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        item.name,
+                        style: const TextStyle(
+                          color: Color(0xFF263746),
+                        ),
+                      ),
+                      subtitle: Text(
+                        item.sku.isEmpty
+                            ? 'Rate: INR ${item.rate.toStringAsFixed(2)}'
+                            : '${item.sku} • INR ${item.rate.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                      onTap: () => onSelected(item),
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
+  }
 }
 
 // ============================================================
@@ -632,6 +783,38 @@ class EstimateItem {
   }
 }
 
+class _NoCatalogResultsOption extends CatalogOption {
+  const _NoCatalogResultsOption()
+      : super(
+          sourceType: '',
+          id: -1,
+          name: '',
+          sku: '',
+          description: '',
+          rate: 0,
+        );
+}
+
+const _noCatalogResultsOption = _NoCatalogResultsOption();
+
+List<CatalogOption> searchCatalogOptions(
+  Iterable<CatalogOption> catalog,
+  String query,
+) {
+  final normalizedQuery = query.trim().toLowerCase();
+  if (normalizedQuery.isEmpty) {
+    return catalog.toList();
+  }
+
+  return catalog
+      .where(
+        (item) =>
+            item.name.toLowerCase().contains(normalizedQuery) ||
+            item.sku.toLowerCase().contains(normalizedQuery),
+      )
+      .toList();
+}
+
 // ============================================================
 // ESTIMATE MODEL
 // ============================================================
@@ -788,6 +971,452 @@ class EstimatesPage extends StatefulWidget {
 
   @override
   State<EstimatesPage> createState() => _EstimatesPageState();
+}
+
+Future<DateTime?> _showEstimateDatePicker(
+  BuildContext context, {
+  required DateTime initialDate,
+  required DateTime firstDate,
+  required DateTime lastDate,
+}) {
+  final screenWidth = MediaQuery.sizeOf(context).width;
+  final screenHeight = MediaQuery.sizeOf(context).height;
+  final calendarScale = screenWidth >= 900 && screenHeight >= 700
+      ? 1.12
+      : screenWidth >= 600 && screenHeight >= 640
+          ? 1.05
+          : 1.0;
+
+  return showDatePicker(
+    context: context,
+    initialDate: initialDate,
+    firstDate: firstDate,
+    lastDate: lastDate,
+    cancelText: 'Cancel',
+    confirmText: 'OK',
+    useRootNavigator: true,
+    builder: (context, child) {
+      final colorScheme = Theme.of(context).colorScheme.copyWith(
+            brightness: Brightness.light,
+            primary: const Color(0xFF1E78B7),
+            onPrimary: Colors.white,
+            surface: Colors.white,
+            onSurface: const Color(0xFF202A36),
+            onSurfaceVariant: const Color(0xFF5F6B7A),
+          );
+
+      return MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: TextScaler.linear(calendarScale),
+        ),
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: colorScheme,
+            dialogTheme: Theme.of(context).dialogTheme.copyWith(
+                  insetPadding: EdgeInsets.symmetric(
+                    horizontal: screenWidth < 360
+                        ? 4
+                        : screenWidth < 600
+                            ? 8
+                            : 24,
+                    vertical: 24,
+                  ),
+                ),
+            datePickerTheme: DatePickerThemeData(
+              backgroundColor: Colors.white,
+              headerBackgroundColor: const Color(0xFF0B1F3A),
+              headerForegroundColor: Colors.white,
+              headerHeadlineStyle: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+              ),
+              headerHelpStyle: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+              weekdayStyle: const TextStyle(
+                color: Color(0xFF5F6B7A),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              dayStyle: const TextStyle(
+                color: Color(0xFF202A36),
+                fontSize: 15,
+              ),
+              dayForegroundColor: WidgetStateProperty.resolveWith<Color?>(
+                (states) => states.contains(WidgetState.selected)
+                    ? Colors.white
+                    : const Color(0xFF202A36),
+              ),
+              dayBackgroundColor: WidgetStateProperty.resolveWith<Color?>(
+                (states) => states.contains(WidgetState.selected)
+                    ? const Color(0xFF1E78B7)
+                    : null,
+              ),
+              subHeaderForegroundColor: const Color(0xFF202A36),
+              cancelButtonStyle: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF1E78B7),
+              ),
+              confirmButtonStyle: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF1E78B7),
+                textStyle: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+          child: child!,
+        ),
+      );
+    },
+  );
+}
+
+class _EstimateFilterCalendar extends StatefulWidget {
+  const _EstimateFilterCalendar({
+    required this.selectedDate,
+    required this.firstDate,
+    required this.lastDate,
+    required this.onResult,
+  });
+
+  final DateTime? selectedDate;
+  final DateTime firstDate;
+  final DateTime lastDate;
+  final ValueChanged<DateTime?> onResult;
+
+  @override
+  State<_EstimateFilterCalendar> createState() =>
+      _EstimateFilterCalendarState();
+}
+
+class _EstimateFilterCalendarState extends State<_EstimateFilterCalendar> {
+  late DateTime _displayedMonth;
+
+  static const _weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  @override
+  void initState() {
+    super.initState();
+    final initialDate = widget.selectedDate ?? DateTime.now();
+    _displayedMonth = DateTime(initialDate.year, initialDate.month);
+  }
+
+  DateTime get _firstOfDisplayedMonth =>
+      DateTime(_displayedMonth.year, _displayedMonth.month);
+
+  bool get _canGoPrevious => !DateTime(
+        _displayedMonth.year,
+        _displayedMonth.month,
+        0,
+      ).isBefore(_dateOnly(widget.firstDate));
+
+  bool get _canGoNext => !DateTime(
+        _displayedMonth.year,
+        _displayedMonth.month + 1,
+      ).isAfter(_dateOnly(widget.lastDate));
+
+  bool _isSelectable(DateTime date) {
+    final day = _dateOnly(date);
+    return !day.isBefore(_dateOnly(widget.firstDate)) &&
+        !day.isAfter(_dateOnly(widget.lastDate));
+  }
+
+  String _dayKey(DateTime date) =>
+      'estimate-calendar-day-${DateFormat('yyyy-MM-dd').format(date)}';
+
+  void _changeMonth(int amount) {
+    setState(() {
+      _displayedMonth =
+          DateTime(_displayedMonth.year, _displayedMonth.month + amount);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final today = _dateOnly(DateTime.now());
+    final selectedDay =
+        widget.selectedDate == null ? null : _dateOnly(widget.selectedDate!);
+    final firstGridDay = _firstOfDisplayedMonth.subtract(
+      Duration(days: _firstOfDisplayedMonth.weekday % 7),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  DateFormat('MMMM yyyy').format(_displayedMonth),
+                  style: const TextStyle(
+                    color: Color(0xFF263746),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Previous month',
+                onPressed: _canGoPrevious ? () => _changeMonth(-1) : null,
+                icon: const Icon(Icons.chevron_left),
+                color: const Color(0xFF425466),
+                visualDensity: VisualDensity.compact,
+              ),
+              IconButton(
+                tooltip: 'Next month',
+                onPressed: _canGoNext ? () => _changeMonth(1) : null,
+                icon: const Icon(Icons.chevron_right),
+                color: const Color(0xFF425466),
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              for (final weekday in _weekdays)
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      weekday,
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          for (var week = 0; week < 6; week++)
+            Row(
+              children: [
+                for (var weekday = 0; weekday < 7; weekday++)
+                  Expanded(
+                    child: _buildDay(
+                      firstGridDay.add(
+                        Duration(days: week * 7 + weekday),
+                      ),
+                      selectedDay: selectedDay,
+                      today: today,
+                    ),
+                  ),
+              ],
+            ),
+          const Divider(height: 16, color: Color(0xFFE2E8F0)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                onPressed: () => widget.onResult(null),
+                child: const Text('Clear'),
+              ),
+              TextButton(
+                onPressed:
+                    _isSelectable(today) ? () => widget.onResult(today) : null,
+                child: const Text('Today'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDay(
+    DateTime date, {
+    required DateTime? selectedDay,
+    required DateTime today,
+  }) {
+    final day = _dateOnly(date);
+    final isCurrentMonth = date.month == _displayedMonth.month;
+    final isSelected = selectedDay == day;
+    final isToday = today == day;
+    final isSelectable = _isSelectable(date);
+
+    return Padding(
+      padding: const EdgeInsets.all(1),
+      child: Semantics(
+        label: DateFormat('EEEE, d MMMM yyyy').format(date),
+        button: isSelectable,
+        selected: isSelected,
+        child: InkWell(
+          key: ValueKey(_dayKey(date)),
+          borderRadius: BorderRadius.circular(18),
+          onTap: isSelectable ? () => widget.onResult(day) : null,
+          child: Container(
+            height: 34,
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFF1E78B7) : null,
+              borderRadius: BorderRadius.circular(18),
+              border: isToday && !isSelected
+                  ? Border.all(color: const Color(0xFF1E78B7))
+                  : null,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '${date.day}',
+              style: TextStyle(
+                color: isSelected
+                    ? Colors.white
+                    : !isSelectable
+                        ? const Color(0xFFCBD5E1)
+                        : isCurrentMonth
+                            ? const Color(0xFF263746)
+                            : const Color(0xFF94A3B8),
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
+
+class _EstimateFilterDateField extends StatefulWidget {
+  const _EstimateFilterDateField({
+    required this.value,
+    required this.firstDate,
+    required this.lastDate,
+    required this.decoration,
+    required this.onChanged,
+  });
+
+  final DateTime? value;
+  final DateTime firstDate;
+  final DateTime lastDate;
+  final InputDecoration decoration;
+  final ValueChanged<DateTime?> onChanged;
+
+  @override
+  State<_EstimateFilterDateField> createState() =>
+      _EstimateFilterDateFieldState();
+}
+
+class _EstimateFilterDateFieldState extends State<_EstimateFilterDateField> {
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _calendarOverlay;
+  bool _alignCalendarRight = false;
+  double _calendarWidth = 340;
+
+  @override
+  void dispose() {
+    _removeCalendarOverlay();
+    super.dispose();
+  }
+
+  void _toggleCalendar() {
+    if (_calendarOverlay != null) {
+      _removeCalendarOverlay();
+      return;
+    }
+
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final targetBox = context.findRenderObject()! as RenderBox;
+    final targetLeft = targetBox.localToGlobal(Offset.zero).dx;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final targetRight = targetLeft + targetBox.size.width;
+    final desiredWidth = screenWidth < 372 ? screenWidth - 32 : 340.0;
+    final availableLeft = screenWidth - targetLeft - 8;
+    final availableRight = targetRight - 8;
+    _alignCalendarRight =
+        desiredWidth > availableLeft && availableRight > availableLeft;
+    _calendarWidth = _alignCalendarRight
+        ? desiredWidth.clamp(0, availableRight)
+        : desiredWidth.clamp(0, availableLeft);
+    _calendarOverlay = OverlayEntry(
+      builder: (overlayContext) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _removeCalendarOverlay,
+              ),
+            ),
+            CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              targetAnchor: _alignCalendarRight
+                  ? Alignment.bottomRight
+                  : Alignment.bottomLeft,
+              followerAnchor:
+                  _alignCalendarRight ? Alignment.topRight : Alignment.topLeft,
+              offset: const Offset(0, 6),
+              child: Material(
+                key: const ValueKey('estimate-filter-calendar'),
+                color: Colors.white,
+                surfaceTintColor: Colors.transparent,
+                elevation: 8,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: SizedBox(
+                  width: _calendarWidth,
+                  child: _EstimateFilterCalendar(
+                    selectedDate: widget.value,
+                    firstDate: widget.firstDate,
+                    lastDate: widget.lastDate,
+                    onResult: (date) {
+                      widget.onChanged(date);
+                      _removeCalendarOverlay();
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    overlay.insert(_calendarOverlay!);
+  }
+
+  void _removeCalendarOverlay() {
+    _calendarOverlay?.remove();
+    _calendarOverlay = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: InkWell(
+        onTap: _toggleCalendar,
+        child: InputDecorator(
+          decoration: widget.decoration,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.value == null
+                      ? 'dd-mm-yyyy'
+                      : DateFormat('dd-MM-yyyy').format(widget.value!),
+                ),
+              ),
+              const Icon(
+                Icons.calendar_today_outlined,
+                color: Color(0xFF1F2937),
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _EstimatesPageState extends State<EstimatesPage> {
@@ -1296,6 +1925,11 @@ class _EstimatesPageState extends State<EstimatesPage> {
                       onChanged: (value) {
                         setState(() {
                           _dateFrom = value;
+                          if (value != null &&
+                              _dateTo != null &&
+                              _dateTo!.isBefore(value)) {
+                            _dateTo = value;
+                          }
                         });
                       },
                     ),
@@ -1535,41 +2169,14 @@ class _EstimatesPageState extends State<EstimatesPage> {
         const SizedBox(
           height: 6,
         ),
-        InkWell(
-          onTap: () async {
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: value ?? DateTime.now(),
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2100),
-            );
-
-            if (picked != null) {
-              onChanged(picked);
-            }
-          },
-          child: InputDecorator(
-            decoration: _filterInputDecoration(),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    value == null
-                        ? 'dd-mm-yyyy'
-                        : DateFormat(
-                            'dd-MM-yyyy',
-                          ).format(
-                            value,
-                          ),
-                  ),
-                ),
-                const Icon(
-                  Icons.calendar_today_outlined,
-                  size: 16,
-                ),
-              ],
-            ),
-          ),
+        _EstimateFilterDateField(
+          value: value,
+          firstDate: label == 'Date To:' && _dateFrom != null
+              ? _dateFrom!
+              : DateTime(2000),
+          lastDate: DateTime(2100),
+          decoration: _filterInputDecoration(),
+          onChanged: onChanged,
         ),
       ],
     );
@@ -1894,8 +2501,7 @@ class _EstimatesPageState extends State<EstimatesPage> {
 
 class _EstimatePreviewDialog extends StatefulWidget {
   const _EstimatePreviewDialog(
-      {required this.estimate,
-      required this.onConvert});
+      {required this.estimate, required this.onConvert});
 
   final EstimateData estimate;
   final Future<bool> Function(EstimateData) onConvert;
@@ -2604,13 +3210,12 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
     });
 
     try {
-      final customerFuture = EstimatesApi.getCustomers();
-
-      final catalogFuture = EstimatesApi.getCatalog();
-
-      final customers = await customerFuture;
-
-      final catalog = await catalogFuture;
+      final referenceData = await Future.wait<Object>([
+        EstimatesApi.getCustomers(),
+        EstimatesApi.getCatalog(),
+      ]);
+      final customers = referenceData[0] as List<CustomerOption>;
+      final catalog = referenceData[1] as List<CatalogOption>;
 
       if (!mounted) return;
 
@@ -2738,8 +3343,8 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
   // ==========================================================
 
   Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await _showEstimateDatePicker(
+      context,
       initialDate: selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
@@ -2753,8 +3358,8 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
   }
 
   Future<void> _selectExpiryDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await _showEstimateDatePicker(
+      context,
       initialDate: expiryDate ?? selectedDate,
       firstDate: selectedDate,
       lastDate: DateTime(2100),
@@ -3164,8 +3769,9 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                               ),
                               ..._itemRows.map(
                                 (row) {
-                                  return _buildItemRow(
-                                    row,
+                                  return KeyedSubtree(
+                                    key: ObjectKey(row),
+                                    child: _buildItemRow(row),
                                   );
                                 },
                               ),
@@ -3391,6 +3997,10 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
               ),
               decoration: _inputDecoration().copyWith(
                 hintText: 'Select or type to search...',
+                hintStyle: const TextStyle(
+                  color: Color(0xFF757575),
+                ),
+                fillColor: Colors.white,
               ),
               onChanged: (value) {
                 if (_selectedCustomer != null &&
@@ -3412,46 +4022,9 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
             onSelected,
             options,
           ) {
-            final list = options.toList();
-
-            return Align(
-              alignment: Alignment.topLeft,
-              child: Material(
-                elevation: 10,
-                borderRadius: BorderRadius.circular(
-                  10,
-                ),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxHeight: 250,
-                    maxWidth: 330,
-                  ),
-                  child: ListView.builder(
-                    padding: EdgeInsets.zero,
-                    shrinkWrap: true,
-                    itemCount: list.length,
-                    itemBuilder: (_, index) {
-                      final customer = list[index];
-
-                      return ListTile(
-                        title: Text(
-                          customer.name,
-                        ),
-                        subtitle: customer.companyName.isEmpty
-                            ? null
-                            : Text(
-                                customer.companyName,
-                              ),
-                        onTap: () {
-                          onSelected(
-                            customer,
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
+            return CustomerOptionsView(
+              customers: options.toList(),
+              onSelected: onSelected,
             );
           },
         ),
@@ -3480,34 +4053,24 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                 RawAutocomplete<CatalogOption>(
                   textEditingController: row.itemController,
                   focusNode: row.focusNode,
-                  displayStringForOption: (option) => option.name,
+                  displayStringForOption: (option) =>
+                      identical(option, _noCatalogResultsOption)
+                          ? row.itemController.text
+                          : option.name,
                   optionsBuilder: (textValue) {
-                    final query = textValue.text.trim().toLowerCase();
-
-                    if (query.isEmpty) {
-                      return _catalog.take(
-                        10,
-                      );
-                    }
-
-                    return _catalog
-                        .where(
-                          (item) =>
-                              item.name.toLowerCase().contains(
-                                    query,
-                                  ) ||
-                              item.sku.toLowerCase().contains(
-                                    query,
-                                  ) ||
-                              item.sourceType.toLowerCase().contains(
-                                    query,
-                                  ),
-                        )
-                        .take(
-                          10,
-                        );
+                    final matches =
+                        searchCatalogOptions(_catalog, textValue.text)
+                            .take(10)
+                            .toList();
+                    return matches.isEmpty
+                        ? const [_noCatalogResultsOption]
+                        : matches;
                   },
                   onSelected: (product) {
+                    if (identical(product, _noCatalogResultsOption)) {
+                      return;
+                    }
+
                     setState(() {
                       row.selectedProduct = product;
 
@@ -3529,8 +4092,16 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                     return TextFormField(
                       controller: controller,
                       focusNode: focusNode,
+                      style: const TextStyle(
+                        color: Color(0xFF263746),
+                      ),
+                      cursorColor: const Color(0xFF1E78B7),
                       decoration: _cellInputDecoration().copyWith(
                         hintText: 'Select or type to search...',
+                        hintStyle: const TextStyle(
+                          color: Color(0xFF64748B),
+                        ),
+                        fillColor: Colors.white,
                       ),
                       onChanged: (value) {
                         if (row.selectedProduct != null &&
@@ -3547,70 +4118,20 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                     onSelected,
                     options,
                   ) {
-                    final list = options.toList();
-
-                    return Align(
-                      alignment: Alignment.topLeft,
-                      child: Material(
-                        elevation: 10,
-                        borderRadius: BorderRadius.circular(
-                          10,
-                        ),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            maxWidth: 450,
-                            maxHeight: 280,
-                          ),
-                          child: ListView.builder(
-                            padding: EdgeInsets.zero,
-                            shrinkWrap: true,
-                            itemCount: list.length,
-                            itemBuilder: (_, index) {
-                              final item = list[index];
-
-                              return ListTile(
-                                leading: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: item.sourceType == 'Item'
-                                        ? const Color(
-                                            0xFFE3F2FD,
-                                          )
-                                        : const Color(
-                                            0xFFFFF3E0,
-                                          ),
-                                    borderRadius: BorderRadius.circular(
-                                      10,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    item.sourceType,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ),
-                                title: Text(
-                                  item.name,
-                                ),
-                                subtitle: Text(
-                                  item.sku.isEmpty
-                                      ? 'Rate: INR ${item.rate.toStringAsFixed(2)}'
-                                      : '${item.sku} • INR ${item.rate.toStringAsFixed(2)}',
-                                ),
-                                onTap: () {
-                                  onSelected(
-                                    item,
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                      ),
+                    final availableOptions = options.toList();
+                    final showNoResults = availableOptions.length == 1 &&
+                        identical(
+                          availableOptions.single,
+                          _noCatalogResultsOption,
+                        );
+                    return CatalogOptionsView(
+                      items: showNoResults ? const [] : availableOptions,
+                      onSelected: (item) {
+                        if (!identical(item, _noCatalogResultsOption)) {
+                          onSelected(item);
+                        }
+                      },
+                      showNoResults: showNoResults,
                     );
                   },
                 ),

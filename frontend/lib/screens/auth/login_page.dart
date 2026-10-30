@@ -24,8 +24,12 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  static const String _loginApiUrl =
-      'http://localhost:3000/api/users/login';
+  static const String _apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:3000/api',
+  );
+
+  static const String _loginApiUrl = '$_apiBaseUrl/users/login';
 
   final _emailController = TextEditingController();
 

@@ -491,12 +491,15 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
   }) {
     return TextFormField(
       controller: controller,
-      style: const TextStyle(color: Colors.black),
+      style: const TextStyle(color: Colors.black, fontSize: 16),
       keyboardType: keyboardType,
       validator: validator,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.black),
+        hintStyle: const TextStyle(
+          color: Color(0xFF9AA0A6),
+          fontSize: 14,
+        ),
         filled: true,
         fillColor: const Color(0x6EFFFFFF),
         contentPadding:
