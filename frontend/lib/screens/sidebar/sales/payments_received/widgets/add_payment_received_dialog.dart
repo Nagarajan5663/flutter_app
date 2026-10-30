@@ -209,8 +209,12 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
                                   selectedInvoice = null;
                                 });
                               },
-                              popupProps:
-                                  const PopupProps.menu(showSearchBox: true),
+                              popupProps: const PopupProps.menu(
+                                showSearchBox: true,
+                                menuProps: MenuProps(
+                                  align: MenuAlign.bottomStart,
+                                ),
+                              ),
                               decoratorProps: DropDownDecoratorProps(
                                 decoration: salesFieldDecoration(
                                     hint: 'Select or type to search...'),
@@ -229,16 +233,14 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
                               compareFn: (a, b) => a.id == b.id,
                               selectedItem: selectedInvoice,
                               enabled: selectedCustomer != null,
-                              onChanged: (i) => setState(() {
-                                selectedInvoice = i;
-                                amountController.text = i == null
-                                    ? ''
-                                    : i.amountDue
-                                        .clamp(0, double.infinity)
-                                        .toStringAsFixed(2);
-                              }),
-                              popupProps:
-                                  const PopupProps.menu(showSearchBox: true),
+                              onChanged: (i) =>
+                                  setState(() => selectedInvoice = i),
+                              popupProps: const PopupProps.menu(
+                                showSearchBox: true,
+                                menuProps: MenuProps(
+                                  align: MenuAlign.bottomStart,
+                                ),
+                              ),
                               decoratorProps: DropDownDecoratorProps(
                                 decoration: salesFieldDecoration(
                                   hint: selectedCustomer == null

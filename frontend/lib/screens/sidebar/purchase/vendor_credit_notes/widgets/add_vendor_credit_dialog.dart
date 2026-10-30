@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 
 import '../../shared/glass_modal_shell.dart';
+import '../../shared/purchase_dropdown_style.dart';
 import '../../vendors/vendor_model.dart';
 import '../../vendors/vendor_repository.dart';
 import '../vendor_credit_repository.dart';
@@ -15,7 +16,8 @@ class AddVendorCreditDialog extends StatefulWidget {
 
 class _AddVendorCreditDialogState extends State<AddVendorCreditDialog> {
   final VendorRepository _vendorRepository = InMemoryVendorRepository();
-  final VendorCreditRepository _creditRepository = InMemoryVendorCreditRepository();
+  final VendorCreditRepository _creditRepository =
+      InMemoryVendorCreditRepository();
 
   final creditNoteNumberController = TextEditingController();
   final amountController = TextEditingController();
@@ -120,79 +122,96 @@ class _AddVendorCreditDialogState extends State<AddVendorCreditDialog> {
                   ),
                   const SizedBox(height: 20),
 
-                    if (_errorText != null) ...[
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF4E3E3),
-                          borderRadius: BorderRadius.circular(7),
-                        ),
-                        child: Text(_errorText!, style: const TextStyle(color: Color(0xFFAB2A2A))),
+                  if (_errorText != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF4E3E3),
+                        borderRadius: BorderRadius.circular(7),
                       ),
-                      const SizedBox(height: 16),
-                    ],
+                      child: Text(_errorText!,
+                          style: const TextStyle(color: Color(0xFFAB2A2A))),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
 
-                    // ROW 1: Vendor Name / Vendor Credit Note #
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: _labeledField(
-                            label: 'Vendor Name *',
-                            child: DropdownSearch<VendorModel>(
-                              items: (filter, infiniteScrollProps) => _vendors,
-                              itemAsString: (v) => v.vendorName,
-                              compareFn: (a, b) => a.id == b.id,
-                              selectedItem: selectedVendor,
-                              onChanged: (v) => setState(() => selectedVendor = v),
-                              popupProps: const PopupProps.menu(showSearchBox: true),
-                              decoratorProps: DropDownDecoratorProps(
-                                decoration: _fieldDecoration(hint: 'Select or type to search...'),
+                  // ROW 1: Vendor Name / Vendor Credit Note #
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _labeledField(
+                          label: 'Vendor Name *',
+                          child: DropdownSearch<VendorModel>(
+                            items: (filter, infiniteScrollProps) => _vendors,
+                            itemAsString: (v) => v.vendorName,
+                            compareFn: (a, b) => a.id == b.id,
+                            selectedItem: selectedVendor,
+                            onChanged: (v) =>
+                                setState(() => selectedVendor = v),
+                            popupProps: const PopupProps.menu(
+                              showSearchBox: true,
+                              menuProps: MenuProps(
+                                align: MenuAlign.bottomStart,
+                                backgroundColor:
+                                    PurchaseDropdownStyle.menuColor,
+                                surfaceTintColor: Colors.transparent,
+                                shape: PurchaseDropdownStyle.menuShape,
+                                elevation: 8,
                               ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _labeledField(
-                            label: 'Vendor Credit Note # *',
-                            child: _textField(controller: creditNoteNumberController, enabled: false),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-
-                    // ROW 2: Date / Amount
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: _labeledField(
-                            label: 'Date *',
-                            child: _dateField(value: date, onTap: _pickDate),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _labeledField(
-                            label: 'Amount *',
-                            child: _textField(
-                              controller: amountController,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoratorProps: DropDownDecoratorProps(
+                              decoration: _fieldDecoration(
+                                  hint: 'Select or type to search...'),
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _labeledField(
+                          label: 'Vendor Credit Note # *',
+                          child: _textField(
+                              controller: creditNoteNumberController,
+                              enabled: false),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
 
-                    _labeledField(
-                      label: 'Reason (Optional)',
-                      child: _textField(controller: reasonController, maxLines: 4),
-                    ),
-                    const SizedBox(height: 24),
+                  // ROW 2: Date / Amount
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _labeledField(
+                          label: 'Date *',
+                          child: _dateField(value: date, onTap: _pickDate),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _labeledField(
+                          label: 'Amount *',
+                          child: _textField(
+                            controller: amountController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+
+                  _labeledField(
+                    label: 'Reason (Optional)',
+                    child:
+                        _textField(controller: reasonController, maxLines: 4),
+                  ),
+                  const SizedBox(height: 24),
 
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -221,7 +240,11 @@ class _AddVendorCreditDialogState extends State<AddVendorCreditDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF3D4147))),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF3D4147))),
         const SizedBox(height: 6),
         child,
       ],
@@ -241,7 +264,8 @@ class _AddVendorCreditDialogState extends State<AddVendorCreditDialog> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
-        borderSide: BorderSide(color: GlassSurface.border(focused: true), width: 2),
+        borderSide:
+            BorderSide(color: GlassSurface.border(focused: true), width: 2),
       ),
     );
   }
@@ -280,10 +304,12 @@ class _AddVendorCreditDialogState extends State<AddVendorCreditDialog> {
                 value == null
                     ? 'dd-mm-yyyy'
                     : '${value.day.toString().padLeft(2, '0')}-${value.month.toString().padLeft(2, '0')}-${value.year}',
-                style: TextStyle(color: value == null ? Colors.grey : Colors.black),
+                style: TextStyle(
+                    color: value == null ? Colors.grey : Colors.black),
               ),
             ),
-            const Icon(Icons.calendar_today_outlined, size: 18, color: Color(0xFF888888)),
+            const Icon(Icons.calendar_today_outlined,
+                size: 18, color: Color(0xFF888888)),
           ],
         ),
       ),

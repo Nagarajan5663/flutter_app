@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../shared/glass_modal_shell.dart';
+import '../../shared/purchase_dropdown_style.dart';
 import '../vendor_model.dart';
 
 class AddVendorDialog extends StatefulWidget {
@@ -484,6 +485,9 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
         child: DropdownButton<String>(
           value: value,
           isExpanded: true,
+          dropdownColor: PurchaseDropdownStyle.menuColor,
+          borderRadius: PurchaseDropdownStyle.borderRadius,
+          menuMaxHeight: 320,
           items: items
               .map((item) => DropdownMenuItem(value: item, child: Text(item)))
               .toList(),

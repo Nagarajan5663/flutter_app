@@ -13,59 +13,46 @@ class OrganizationProfilePage extends StatefulWidget {
       _OrganizationProfilePageState();
 }
 
-class _OrganizationProfilePageState
-    extends State<OrganizationProfilePage> {
+class _OrganizationProfilePageState extends State<OrganizationProfilePage> {
   final TextEditingController organizationNameController =
       TextEditingController(text: 'test');
 
-  final TextEditingController primaryEmailController =
-      TextEditingController(
+  final TextEditingController primaryEmailController = TextEditingController(
     text: 'sureshkaniyappan27@gmail.com',
   );
 
-  final TextEditingController contactPersonController =
-      TextEditingController(
+  final TextEditingController contactPersonController = TextEditingController(
     text: 'Suresh K',
   );
 
-  final TextEditingController phoneController =
-      TextEditingController(
+  final TextEditingController phoneController = TextEditingController(
     text: '08098482620',
   );
 
-  final TextEditingController addressController =
-      TextEditingController(
+  final TextEditingController addressController = TextEditingController(
     text: '2/78, main street, putur -626111',
   );
 
-  final TextEditingController cityController =
-      TextEditingController();
+  final TextEditingController cityController = TextEditingController();
 
-  final TextEditingController stateController =
-      TextEditingController();
+  final TextEditingController stateController = TextEditingController();
 
-  final TextEditingController countryController =
-      TextEditingController();
+  final TextEditingController countryController = TextEditingController();
 
-  final TextEditingController postalCodeController =
-      TextEditingController();
+  final TextEditingController postalCodeController = TextEditingController();
 
-  final TextEditingController websiteController =
-      TextEditingController();
+  final TextEditingController websiteController = TextEditingController();
 
-  final TextEditingController gstNumberController =
-      TextEditingController();
+  final TextEditingController gstNumberController = TextEditingController();
 
-  final TextEditingController cinNumberController =
-      TextEditingController();
+  final TextEditingController cinNumberController = TextEditingController();
 
   bool gstApplicable = true;
 
   String baseCurrency = 'INR - Indian Rupee';
   String fiscalYear = 'April - March';
   String organizationLanguage = 'English';
-  String timeZone =
-      '(GMT +05:30) India Standard Time (Asia/Kolkata)';
+  String timeZone = '(GMT +05:30) India Standard Time (Asia/Kolkata)';
   String dateFormat = 'dd/MM/yyyy';
   late final TextEditingController dateFormatController;
   DateTime? selectedDate;
@@ -189,8 +176,7 @@ class _OrganizationProfilePageState
               maxWidth: 1050,
             ),
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ===================================================
                 // HEADER
@@ -222,8 +208,7 @@ class _OrganizationProfilePageState
                   padding: const EdgeInsets.all(25),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius:
-                        BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: const Color(
                         0xFFE3E7E9,
@@ -231,8 +216,7 @@ class _OrganizationProfilePageState
                     ),
                   ),
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // =============================================
                       // ORGANIZATION DETAILS
@@ -277,76 +261,57 @@ class _OrganizationProfilePageState
                             width: 78,
                             height: 65,
                             decoration: BoxDecoration(
-                              color:
-                                  const Color(0xFFF8FAFB),
-                              borderRadius:
-                                  BorderRadius.circular(
+                              color: const Color(0xFFF8FAFB),
+                              borderRadius: BorderRadius.circular(
                                 5,
                               ),
                               border: Border.all(
-                                color:
-                                    const Color(
+                                color: const Color(
                                   0xFFDDE2E5,
                                 ),
                               ),
                             ),
                             child: const Center(
                               child: Icon(
-                                Icons
-                                    .image_outlined,
+                                Icons.image_outlined,
                                 size: 28,
-                                color:
-                                    Color(
+                                color: Color(
                                   0xFF8E989E,
                                 ),
                               ),
                             ),
                           ),
-
                           const SizedBox(width: 14),
-
                           Expanded(
                             child: OutlinedButton(
                               onPressed: () {
                                 setState(() {
-                                  selectedLogoName =
-                                      'organization_logo.png';
+                                  selectedLogoName = 'organization_logo.png';
                                 });
                               },
-                              style: OutlinedButton
-                                  .styleFrom(
-                                alignment:
-                                    Alignment.centerLeft,
-                                foregroundColor:
-                                    const Color(
+                              style: OutlinedButton.styleFrom(
+                                alignment: Alignment.centerLeft,
+                                foregroundColor: const Color(
                                   0xFF4D5960,
                                 ),
-                                padding:
-                                    const EdgeInsets
-                                        .symmetric(
+                                padding: const EdgeInsets.symmetric(
                                   horizontal: 14,
                                   vertical: 15,
                                 ),
-                                side:
-                                    const BorderSide(
-                                  color:
-                                      Color(
+                                side: const BorderSide(
+                                  color: Color(
                                     0xFFDDE2E5,
                                   ),
                                 ),
-                                shape:
-                                    RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius
-                                          .circular(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
                                     4,
                                   ),
                                 ),
                               ),
                               child: Text(
                                 selectedLogoName,
-                                style:
-                                    const TextStyle(
+                                style: const TextStyle(
                                   fontSize: 12,
                                 ),
                               ),
@@ -363,16 +328,12 @@ class _OrganizationProfilePageState
 
                       _responsiveTwoFields(
                         left: _buildField(
-                          label:
-                              'Organization Name',
-                          controller:
-                              organizationNameController,
+                          label: 'Organization Name',
+                          controller: organizationNameController,
                         ),
                         right: _buildField(
-                          label:
-                              'Primary Contact Email',
-                          controller:
-                              primaryEmailController,
+                          label: 'Primary Contact Email',
+                          controller: primaryEmailController,
                         ),
                       ),
 
@@ -380,16 +341,12 @@ class _OrganizationProfilePageState
 
                       _responsiveTwoFields(
                         left: _buildField(
-                          label:
-                              'Contact Person',
-                          controller:
-                              contactPersonController,
+                          label: 'Contact Person',
+                          controller: contactPersonController,
                         ),
                         right: _buildField(
-                          label:
-                              'Phone Number',
-                          controller:
-                              phoneController,
+                          label: 'Phone Number',
+                          controller: phoneController,
                         ),
                       ),
 
@@ -419,8 +376,7 @@ class _OrganizationProfilePageState
 
                       _buildField(
                         label: 'Address',
-                        controller:
-                            addressController,
+                        controller: addressController,
                         maxLines: 3,
                       ),
 
@@ -429,13 +385,11 @@ class _OrganizationProfilePageState
                       _responsiveTwoFields(
                         left: _buildField(
                           label: 'City',
-                          controller:
-                              cityController,
+                          controller: cityController,
                         ),
                         right: _buildField(
                           label: 'State',
-                          controller:
-                              stateController,
+                          controller: stateController,
                         ),
                       ),
 
@@ -444,14 +398,11 @@ class _OrganizationProfilePageState
                       _responsiveTwoFields(
                         left: _buildField(
                           label: 'Country',
-                          controller:
-                              countryController,
+                          controller: countryController,
                         ),
                         right: _buildField(
-                          label:
-                              'Postal Code',
-                          controller:
-                              postalCodeController,
+                          label: 'Postal Code',
+                          controller: postalCodeController,
                         ),
                       ),
 
@@ -459,10 +410,8 @@ class _OrganizationProfilePageState
 
                       _buildField(
                         label: 'Website URL',
-                        hintText:
-                            'https://www.example.com',
-                        controller:
-                            websiteController,
+                        hintText: 'https://www.example.com',
+                        controller: websiteController,
                       ),
 
                       const SizedBox(height: 28),
@@ -510,11 +459,9 @@ class _OrganizationProfilePageState
 
                       if (gstApplicable) ...[
                         const SizedBox(height: 12),
-
                         _buildField(
                           label: 'GST Number',
-                          controller:
-                              gstNumberController,
+                          controller: gstNumberController,
                         ),
                       ],
 
@@ -522,8 +469,7 @@ class _OrganizationProfilePageState
 
                       _buildField(
                         label: 'CIN Number',
-                        controller:
-                            cinNumberController,
+                        controller: cinNumberController,
                       ),
 
                       const SizedBox(height: 28),
@@ -552,37 +498,29 @@ class _OrganizationProfilePageState
 
                       _responsiveTwoFields(
                         left: _buildDropdown(
-                          label:
-                              'Base Currency',
-                          value:
-                              baseCurrency,
+                          label: 'Base Currency',
+                          value: baseCurrency,
                           items: const [
                             'INR - Indian Rupee',
                             'USD - US Dollar',
                             'EUR - Euro',
                           ],
-                          onChanged:
-                              (value) {
+                          onChanged: (value) {
                             setState(() {
-                              baseCurrency =
-                                  value!;
+                              baseCurrency = value!;
                             });
                           },
                         ),
                         right: _buildDropdown(
-                          label:
-                              'Fiscal Year',
-                          value:
-                              fiscalYear,
+                          label: 'Fiscal Year',
+                          value: fiscalYear,
                           items: const [
                             'April - March',
                             'January - December',
                           ],
-                          onChanged:
-                              (value) {
+                          onChanged: (value) {
                             setState(() {
-                              fiscalYear =
-                                  value!;
+                              fiscalYear = value!;
                             });
                           },
                         ),
@@ -592,20 +530,16 @@ class _OrganizationProfilePageState
 
                       _responsiveTwoFields(
                         left: _buildDropdown(
-                          label:
-                              'Organization Language',
-                          value:
-                              organizationLanguage,
+                          label: 'Organization Language',
+                          value: organizationLanguage,
                           items: const [
                             'English',
                             'Tamil (தமிழ்)',
                             'Hindi (हिन्दी)',
                           ],
-                          onChanged:
-                              (value) {
+                          onChanged: (value) {
                             setState(() {
-                              organizationLanguage =
-                                  value!;
+                              organizationLanguage = value!;
                             });
                           },
                         ),
@@ -630,8 +564,7 @@ class _OrganizationProfilePageState
                                 fontSize: 12,
                               ),
                               decoration: _inputDecoration().copyWith(
-                                suffixIconConstraints:
-                                    const BoxConstraints(
+                                suffixIconConstraints: const BoxConstraints(
                                   minWidth: 96,
                                   minHeight: 48,
                                 ),
@@ -639,6 +572,7 @@ class _OrganizationProfilePageState
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     PopupMenuButton<String>(
+                                      position: PopupMenuPosition.under,
                                       icon: const Icon(
                                         Icons.arrow_drop_down,
                                         color: Color(0xFF454B50),
@@ -699,8 +633,7 @@ class _OrganizationProfilePageState
                         ],
                         onChanged: (value) {
                           setState(() {
-                            timeZone =
-                                value!;
+                            timeZone = value!;
                           });
                         },
                       ),
@@ -721,11 +654,9 @@ class _OrganizationProfilePageState
                       Row(
                         children: [
                           TextButton.icon(
-                            onPressed:
-                                widget.onBack,
+                            onPressed: widget.onBack,
                             icon: const Icon(
-                              Icons
-                                  .arrow_back_rounded,
+                              Icons.arrow_back_rounded,
                               size: 16,
                             ),
                             label: const Text(
@@ -735,12 +666,9 @@ class _OrganizationProfilePageState
                               foregroundColor: Colors.black,
                             ),
                           ),
-
                           const Spacer(),
-
                           ElevatedButton.icon(
-                            onPressed:
-                                _saveChanges,
+                            onPressed: _saveChanges,
                             icon: const Icon(
                               Icons.save_rounded,
                               size: 16,
@@ -748,26 +676,18 @@ class _OrganizationProfilePageState
                             label: const Text(
                               'Save Changes',
                             ),
-                            style: ElevatedButton
-                                .styleFrom(
-                              backgroundColor:
-                                  const Color(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(
                                 0xFF27A844,
                               ),
-                              foregroundColor:
-                                  Colors.white,
+                              foregroundColor: Colors.white,
                               elevation: 0,
-                              padding:
-                                  const EdgeInsets
-                                      .symmetric(
+                              padding: const EdgeInsets.symmetric(
                                 horizontal: 18,
                                 vertical: 13,
                               ),
-                              shape:
-                                  RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius
-                                        .circular(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
                                   5,
                                 ),
                               ),
@@ -795,11 +715,9 @@ class _OrganizationProfilePageState
         context,
         constraints,
       ) {
-        if (constraints.maxWidth >=
-            650) {
+        if (constraints.maxWidth >= 650) {
           return Row(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: left,
@@ -830,8 +748,7 @@ class _OrganizationProfilePageState
     int maxLines = 1,
   }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
@@ -841,9 +758,7 @@ class _OrganizationProfilePageState
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         TextFormField(
           controller: controller,
           maxLines: maxLines,
@@ -851,8 +766,7 @@ class _OrganizationProfilePageState
             color: Color(0xFF333333),
             fontSize: 12,
           ),
-          decoration:
-              _inputDecoration(
+          decoration: _inputDecoration(
             hintText: hintText,
           ),
         ),
@@ -864,12 +778,10 @@ class _OrganizationProfilePageState
     required String label,
     required String value,
     required List<String> items,
-    required ValueChanged<String?>
-        onChanged,
+    required ValueChanged<String?> onChanged,
   }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
@@ -879,9 +791,7 @@ class _OrganizationProfilePageState
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         DropdownButtonFormField<String>(
           initialValue: value,
           isExpanded: true,
@@ -894,21 +804,15 @@ class _OrganizationProfilePageState
             Icons.arrow_drop_down,
             color: Color(0xFF454B50),
           ),
-          decoration:
-              _inputDecoration(),
+          decoration: _inputDecoration(),
           items: items
               .map(
-                (item) =>
-                    DropdownMenuItem<
-                        String>(
+                (item) => DropdownMenuItem<String>(
                   value: item,
                   child: Text(
                     item,
-                    overflow:
-                        TextOverflow
-                            .ellipsis,
-                    style:
-                        const TextStyle(
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
                       color: Color(0xFF333333),
                       fontSize: 12,
                     ),
@@ -934,41 +838,32 @@ class _OrganizationProfilePageState
       filled: true,
       fillColor: Colors.white,
       isDense: true,
-      contentPadding:
-          const EdgeInsets.symmetric(
+      contentPadding: const EdgeInsets.symmetric(
         horizontal: 12,
         vertical: 13,
       ),
-      enabledBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           4,
         ),
-        borderSide:
-            const BorderSide(
+        borderSide: const BorderSide(
           color: Color(
             0xFFDDE2E5,
           ),
         ),
       ),
-      focusedBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           4,
         ),
-        borderSide:
-            const BorderSide(
+        borderSide: const BorderSide(
           color: Color(
             0xFF4C79E8,
           ),
         ),
       ),
-      border:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           4,
         ),
       ),

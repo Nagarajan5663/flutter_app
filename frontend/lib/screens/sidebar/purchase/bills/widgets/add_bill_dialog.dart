@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../../shared/glass_modal_shell.dart';
+import '../../shared/purchase_dropdown_style.dart';
 import '../../purchase_orders/purchase_order_item_model.dart';
 import '../../purchase_orders/purchase_order_model.dart';
 import '../../vendors/vendor_model.dart';
@@ -875,6 +876,14 @@ class _AddBillDialogState extends State<AddBillDialog> {
                             },
                             popupProps: const PopupProps.menu(
                               showSearchBox: true,
+                              menuProps: MenuProps(
+                                align: MenuAlign.bottomStart,
+                                backgroundColor:
+                                    PurchaseDropdownStyle.menuColor,
+                                surfaceTintColor: Colors.transparent,
+                                shape: PurchaseDropdownStyle.menuShape,
+                                elevation: 8,
+                              ),
                             ),
                             decoratorProps: DropDownDecoratorProps(
                               decoration: _fieldDecoration(
@@ -1174,6 +1183,14 @@ class _AddBillDialogState extends State<AddBillDialog> {
                                     },
                                     popupProps: const PopupProps.menu(
                                       showSearchBox: true,
+                                      menuProps: MenuProps(
+                                        align: MenuAlign.bottomStart,
+                                        backgroundColor:
+                                            PurchaseDropdownStyle.menuColor,
+                                        surfaceTintColor: Colors.transparent,
+                                        shape: PurchaseDropdownStyle.menuShape,
+                                        elevation: 8,
+                                      ),
                                     ),
                                     decoratorProps: DropDownDecoratorProps(
                                       decoration: _fieldDecoration(

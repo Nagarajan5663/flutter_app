@@ -113,7 +113,6 @@ class _OtherClaimsPageState extends State<OtherClaimsPage> {
                         color: Color(0xFF17395C),
                       ),
                     ),
-
                     ElevatedButton.icon(
                       onPressed: _openNewClaimForm,
                       icon: const Icon(
@@ -197,22 +196,17 @@ class _OtherClaimsPageState extends State<OtherClaimsPage> {
     return Column(
       children: [
         _buildTableHeader(),
-
         const Divider(
           height: 1,
           color: Color(0xFFE5E7EB),
         ),
-
         const SizedBox(height: 45),
-
         const Icon(
           Icons.assignment_outlined,
           size: 55,
           color: Color(0xFFB0B8C2),
         ),
-
         const SizedBox(height: 15),
-
         const Text(
           'No other claims found.',
           style: TextStyle(
@@ -220,7 +214,6 @@ class _OtherClaimsPageState extends State<OtherClaimsPage> {
             fontSize: 16,
           ),
         ),
-
         const SizedBox(height: 45),
       ],
     );
@@ -234,12 +227,10 @@ class _OtherClaimsPageState extends State<OtherClaimsPage> {
     return Column(
       children: [
         _buildTableHeader(),
-
         const Divider(
           height: 1,
           color: Color(0xFFE5E7EB),
         ),
-
         ..._claims.map(
           (claim) {
             return Column(
@@ -262,7 +253,6 @@ class _OtherClaimsPageState extends State<OtherClaimsPage> {
                           ),
                         ),
                       ),
-
                       Expanded(
                         flex: 2,
                         child: Text(
@@ -272,7 +262,6 @@ class _OtherClaimsPageState extends State<OtherClaimsPage> {
                           ),
                         ),
                       ),
-
                       Expanded(
                         flex: 2,
                         child: Text(
@@ -282,7 +271,6 @@ class _OtherClaimsPageState extends State<OtherClaimsPage> {
                           ),
                         ),
                       ),
-
                       Expanded(
                         flex: 2,
                         child: Text(
@@ -292,7 +280,6 @@ class _OtherClaimsPageState extends State<OtherClaimsPage> {
                           ),
                         ),
                       ),
-
                       Expanded(
                         flex: 2,
                         child: Align(
@@ -302,7 +289,6 @@ class _OtherClaimsPageState extends State<OtherClaimsPage> {
                           ),
                         ),
                       ),
-
                       Expanded(
                         child: Text(
                           'INR ${claim.total.toStringAsFixed(2)}',
@@ -312,10 +298,10 @@ class _OtherClaimsPageState extends State<OtherClaimsPage> {
                           ),
                         ),
                       ),
-
                       SizedBox(
                         width: 72,
                         child: PopupMenuButton<String>(
+                          position: PopupMenuPosition.under,
                           icon: const Icon(
                             Icons.more_vert,
                           ),
@@ -378,7 +364,6 @@ class _OtherClaimsPageState extends State<OtherClaimsPage> {
                     ],
                   ),
                 ),
-
                 const Divider(
                   height: 1,
                   color: Color(0xFFE5E7EB),
@@ -403,31 +388,25 @@ class _OtherClaimsPageState extends State<OtherClaimsPage> {
             flex: 2,
             child: _TableHeaderText('DATE'),
           ),
-
           Expanded(
             flex: 2,
             child: _TableHeaderText('CLAIM #'),
           ),
-
           Expanded(
             flex: 2,
             child: _TableHeaderText('CATEGORY'),
           ),
-
           Expanded(
             flex: 2,
             child: _TableHeaderText('PAYEE'),
           ),
-
           Expanded(
             flex: 2,
             child: _TableHeaderText('STATUS'),
           ),
-
           Expanded(
             child: _TableHeaderText('AMOUNT'),
           ),
-
           SizedBox(
             width: 72,
             child: _TableHeaderText('ACTIONS'),
@@ -603,8 +582,7 @@ class NewOtherClaimDialog extends StatefulWidget {
   });
 
   @override
-  State<NewOtherClaimDialog> createState() =>
-      _NewOtherClaimDialogState();
+  State<NewOtherClaimDialog> createState() => _NewOtherClaimDialogState();
 }
 
 class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
@@ -625,17 +603,13 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
 
   final TextEditingController payeeController = TextEditingController();
 
-  final TextEditingController referenceController =
-      TextEditingController();
+  final TextEditingController referenceController = TextEditingController();
 
-  final TextEditingController amountController =
-      TextEditingController();
+  final TextEditingController amountController = TextEditingController();
 
-  final TextEditingController remarksController =
-      TextEditingController();
+  final TextEditingController remarksController = TextEditingController();
 
-  final TextEditingController customerController =
-      TextEditingController();
+  final TextEditingController customerController = TextEditingController();
 
   // ================================================================
   // FORM VALUES
@@ -880,7 +854,6 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
                         ),
                       ),
                     ),
-
                     IconButton(
                       onPressed: () {
                         Navigator.pop(context);
@@ -921,9 +894,7 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
                             Expanded(
                               child: _buildDateField(),
                             ),
-
                             const SizedBox(width: 18),
-
                             Expanded(
                               child: _buildDropdownField(
                                 label: 'Expense Category *',
@@ -937,9 +908,7 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
                                 },
                               ),
                             ),
-
                             const SizedBox(width: 18),
-
                             Expanded(
                               child: _buildDropdownField(
                                 label: 'Payment Account *',
@@ -971,9 +940,7 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
                                 controller: claimNumberController,
                               ),
                             ),
-
                             const SizedBox(width: 18),
-
                             Expanded(
                               child: _buildSearchField(
                                 label: 'Payee (Employee/Vendor) *',
@@ -981,9 +948,7 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
                                 hint: 'Select or type to search...',
                               ),
                             ),
-
                             const SizedBox(width: 18),
-
                             Expanded(
                               child: _buildTextField(
                                 label: 'Reference #',
@@ -1011,9 +976,7 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
                             Expanded(
                               child: _buildAmountField(),
                             ),
-
                             const SizedBox(width: 18),
-
                             Expanded(
                               child: _buildDropdownField(
                                 label: 'Tax',
@@ -1022,15 +985,12 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
                                 items: taxOptions,
                                 onChanged: (value) {
                                   setState(() {
-                                    selectedTax =
-                                        value ?? '-- No Tax --';
+                                    selectedTax = value ?? '-- No Tax --';
                                   });
                                 },
                               ),
                             ),
-
                             const SizedBox(width: 18),
-
                             SizedBox(
                               width: 150,
                               child: Padding(
@@ -1041,16 +1001,13 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
                                   children: [
                                     Checkbox(
                                       value: taxInclusive,
-                                      activeColor:
-                                          const Color(0xFF1D78C9),
+                                      activeColor: const Color(0xFF1D78C9),
                                       onChanged: (value) {
                                         setState(() {
-                                          taxInclusive =
-                                              value ?? false;
+                                          taxInclusive = value ?? false;
                                         });
                                       },
                                     ),
-
                                     const Expanded(
                                       child: Text(
                                         'Tax Inclusive',
@@ -1093,16 +1050,12 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
                                 'Sub-Total',
                                 subTotal,
                               ),
-
                               const SizedBox(height: 7),
-
                               _buildTotalRow(
                                 'Tax',
                                 calculatedTax,
                               ),
-
                               const SizedBox(height: 7),
-
                               _buildTotalRow(
                                 'Total',
                                 total,
@@ -1136,7 +1089,6 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
                                 });
                               },
                             ),
-
                             const Text(
                               'Billable to Customer',
                               style: TextStyle(
@@ -1144,7 +1096,6 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
                                 fontSize: 15,
                               ),
                             ),
-
                             if (billable) ...[
                               const SizedBox(width: 28),
                               Expanded(
@@ -1217,9 +1168,7 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
                                   'Choose Files',
                                 ),
                               ),
-
                               const SizedBox(width: 10),
-
                               Text(
                                 _attachedFileName,
                                 style: const TextStyle(
@@ -1280,9 +1229,7 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
                         ),
                       ),
                     ),
-
                     const SizedBox(width: 12),
-
                     ElevatedButton(
                       onPressed: _saveClaim,
                       style: ElevatedButton.styleFrom(
@@ -1331,9 +1278,7 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         InkWell(
           onTap: _selectDate,
           child: InputDecorator(
@@ -1348,7 +1293,6 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
                     ),
                   ),
                 ),
-
                 const Icon(
                   Icons.calendar_today_outlined,
                   size: 18,
@@ -1382,9 +1326,7 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         TextFormField(
           controller: controller,
           readOnly: readOnly,
@@ -1417,9 +1359,7 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         TextFormField(
           controller: controller,
           style: const TextStyle(
@@ -1465,9 +1405,7 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         TextFormField(
           controller: amountController,
           keyboardType: const TextInputType.numberWithOptions(
@@ -1512,9 +1450,7 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         TextFormField(
           controller: customerController,
           style: const TextStyle(
@@ -1555,14 +1491,11 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         DropdownButtonFormField<String>(
           initialValue: value,
           isExpanded: true,
           dropdownColor: Colors.white,
-
           hint: Text(
             hint,
             style: const TextStyle(
@@ -1570,19 +1503,15 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
               fontSize: 14,
             ),
           ),
-
           style: const TextStyle(
             color: Colors.black,
             fontSize: 14,
           ),
-
           icon: const Icon(
             Icons.keyboard_arrow_down,
             color: Colors.black,
           ),
-
           decoration: _inputDecoration(),
-
           items: items.map(
             (item) {
               return DropdownMenuItem<String>(
@@ -1597,7 +1526,6 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
               );
             },
           ).toList(),
-
           onChanged: onChanged,
         ),
       ],
@@ -1624,14 +1552,11 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
               style: TextStyle(
                 color: const Color(0xFF444444),
                 fontSize: isBold ? 17 : 15,
-                fontWeight:
-                    isBold ? FontWeight.w700 : FontWeight.w500,
+                fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ),
-
           const SizedBox(width: 25),
-
           SizedBox(
             width: 105,
             child: Text(
@@ -1639,8 +1564,7 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
               style: TextStyle(
                 color: const Color(0xFF17395C),
                 fontSize: isBold ? 18 : 15,
-                fontWeight:
-                    isBold ? FontWeight.w800 : FontWeight.w500,
+                fontWeight: isBold ? FontWeight.w800 : FontWeight.w500,
               ),
             ),
           ),
@@ -1656,29 +1580,24 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
   InputDecoration _inputDecoration() {
     return InputDecoration(
       isDense: true,
-
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 13,
         vertical: 15,
       ),
-
       filled: true,
       fillColor: Colors.white.withValues(alpha: 0.45),
-
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
         borderSide: const BorderSide(
           color: Color(0xFFD7DCE2),
         ),
       ),
-
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
         borderSide: const BorderSide(
           color: Color(0xFFD7DCE2),
         ),
       ),
-
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
         borderSide: const BorderSide(
@@ -1686,7 +1605,6 @@ class _NewOtherClaimDialogState extends State<NewOtherClaimDialog> {
           width: 1.5,
         ),
       ),
-
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
         borderSide: const BorderSide(

@@ -21,7 +21,7 @@ class AddDeliveryChallanDialog extends StatefulWidget {
 }
 
 class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
-  final CustomerRepository _customerRepository = ApiCustomerRepository();
+  final CustomerRepository _customerRepository = InMemoryCustomerRepository();
   final InvoiceRepository _invoiceRepository = InMemoryInvoiceRepository();
   final DeliveryChallanRepository _challanRepository =
       InMemoryDeliveryChallanRepository();
@@ -50,24 +50,16 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
   }
 
   Future<void> _init() async {
-    try {
-      final customers = await _customerRepository.getCustomers();
-      final invoices = await _invoiceRepository.getInvoices();
-      final challanNumber = await _challanRepository.nextChallanNumber();
-      if (!mounted) return;
-      setState(() {
-        _customers = customers;
-        _invoices = invoices;
-        challanNumberController.text = challanNumber;
-        _isLoading = false;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _errorText = error.toString().replaceFirst('Exception: ', '');
-      });
-    }
+    final customers = await _customerRepository.getCustomers();
+    final invoices = await _invoiceRepository.getInvoices();
+    final challanNumber = await _challanRepository.nextChallanNumber();
+    if (!mounted) return;
+    setState(() {
+      _customers = customers;
+      _invoices = invoices;
+      challanNumberController.text = challanNumber;
+      _isLoading = false;
+    });
   }
 
   @override
@@ -81,9 +73,10 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
   }
 
   List<InvoiceModel> get _invoicesForSelectedCustomer {
-    final eligible = _invoices.where((i) => i.approvalStatus == 'Approved');
-    if (selectedCustomer == null) return eligible.toList();
-    return eligible.where((i) => i.customerId == selectedCustomer!.id).toList();
+    if (selectedCustomer == null) return _invoices;
+    return _invoices
+        .where((i) => i.customerId == selectedCustomer!.id)
+        .toList();
   }
 
   void _prefillFromInvoice(InvoiceModel invoice) {
@@ -101,14 +94,9 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
 
   double get _subTotal => rows.fold(0.0, (sum, row) => sum + row.amount);
 
-  Future<void> _saveChallan() async {
+  void _saveChallan() {
     if (selectedCustomer == null) {
       setState(() => _errorText = 'Please select a customer');
-      return;
-    }
-    if (selectedInvoice == null) {
-      setState(() => _errorText =
-          'Select an approved Invoice to create a Delivery Challan.');
       return;
     }
     if (challanNumberController.text.trim().isEmpty) {
@@ -143,41 +131,24 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
       items: validItems,
     );
 
-    if (selectedInvoice?.id != null) {
-      try {
-        final saved =
-            await _challanRepository.createFromInvoice(selectedInvoice!.id!);
-        if (mounted) Navigator.pop(context, saved);
-      } catch (error) {
-        if (!mounted) return;
-        setState(() {
-          _isSaving = false;
-          _errorText = error.toString().replaceFirst('Exception: ', '');
-        });
-      }
-    } else {
-      Navigator.pop(context, challan);
-    }
+    Navigator.pop(context, challan);
   }
 
   @override
   Widget build(BuildContext context) {
     return SalesGlassDialog(
       backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 1080,
-          maxHeight: MediaQuery.sizeOf(context).height - 32,
-        ),
+        constraints: const BoxConstraints(maxWidth: 800, maxHeight: 820),
         child: _isLoading
             ? const Padding(
                 padding: EdgeInsets.all(60),
                 child: Center(child: CircularProgressIndicator()),
               )
             : SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
+                padding: const EdgeInsets.fromLTRB(34, 30, 34, 28),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -186,7 +157,7 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                         const Expanded(
                           child: Text('New Delivery Challan',
                               style: TextStyle(
-                                  fontSize: 22,
+                                  fontSize: 26,
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF123456))),
                         ),
@@ -197,7 +168,7 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 20),
                     if (_errorText != null) ...[
                       Container(
                         width: double.infinity,
@@ -208,7 +179,7 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                         child: Text(_errorText!,
                             style: const TextStyle(color: Color(0xFFAB2A2A))),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 16),
                     ],
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,8 +199,12 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                                   selectedInvoice = null;
                                 });
                               },
-                              popupProps:
-                                  const PopupProps.menu(showSearchBox: true),
+                              popupProps: const PopupProps.menu(
+                                showSearchBox: true,
+                                menuProps: MenuProps(
+                                  align: MenuAlign.bottomStart,
+                                ),
+                              ),
                               decoratorProps: DropDownDecoratorProps(
                                 decoration: salesFieldDecoration(
                                     hint: 'Select or type to search...'),
@@ -245,42 +220,42 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                                 controller: challanNumberController),
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: salesLabeledField(
-                            label: 'Invoice # (optional — auto-fills items)',
-                            child: DropdownSearch<InvoiceModel>(
-                              items: (filter, infiniteScrollProps) =>
-                                  _invoicesForSelectedCustomer,
-                              itemAsString: (invoice) => invoice.invoiceNumber,
-                              compareFn: (a, b) => a.id == b.id,
-                              selectedItem: selectedInvoice,
-                              onChanged: (invoice) {
-                                setState(() {
-                                  selectedInvoice = invoice;
-                                  if (invoice != null) {
-                                    selectedCustomer ??= _customers.firstWhere(
-                                      (customer) =>
-                                          customer.id == invoice.customerId,
-                                      orElse: () => _customers.first,
-                                    );
-                                    _prefillFromInvoice(invoice);
-                                  }
-                                });
-                              },
-                              popupProps:
-                                  const PopupProps.menu(showSearchBox: true),
-                              decoratorProps: DropDownDecoratorProps(
-                                decoration: salesFieldDecoration(
-                                  hint: 'Select an invoice...',
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 18),
+                    salesLabeledField(
+                      label: 'Invoice # (optional — auto-fills items)',
+                      child: DropdownSearch<InvoiceModel>(
+                        items: (filter, infiniteScrollProps) =>
+                            _invoicesForSelectedCustomer,
+                        itemAsString: (i) => i.invoiceNumber,
+                        compareFn: (a, b) => a.id == b.id,
+                        selectedItem: selectedInvoice,
+                        onChanged: (invoice) {
+                          setState(() {
+                            selectedInvoice = invoice;
+                            if (invoice != null) {
+                              selectedCustomer ??= _customers.firstWhere(
+                                (c) => c.id == invoice.customerId,
+                                orElse: () => _customers.first,
+                              );
+                              _prefillFromInvoice(invoice);
+                            }
+                          });
+                        },
+                        popupProps: const PopupProps.menu(
+                          showSearchBox: true,
+                          menuProps: MenuProps(
+                            align: MenuAlign.bottomStart,
+                          ),
+                        ),
+                        decoratorProps: DropDownDecoratorProps(
+                          decoration: salesFieldDecoration(
+                              hint: 'Select an invoice...'),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -313,19 +288,18 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: salesLabeledField(
-                            label: 'Transportation Details',
-                            child: salesTextField(
-                              controller: transportController,
-                              hint: 'Vehicle / transporter...',
-                            ),
-                          ),
-                        ),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 18),
+                    salesLabeledField(
+                      label: 'Transportation Details',
+                      child: salesTextField(
+                        controller: transportController,
+                        hint: 'e.g., Vehicle No, Transporter Name...',
+                        maxLines: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                     SalesItemRowsEditor(
                       rows: rows,
                       onAddRow: () =>
@@ -347,7 +321,7 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                           style: const TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [

@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../utils/pdf_file_download.dart';
+import '../../shared/purchase_dropdown_style.dart';
 import '../purchase_order_model.dart';
 import '../../vendors/vendor_model.dart';
 
@@ -320,15 +321,26 @@ class _PurchaseOrderPreviewDialogState
         PopupMenuButton<String>(
           tooltip: 'Send purchase order',
           enabled: !_isBusy,
+          position: PopupMenuPosition.under,
+          color: const Color(0xFFEAF2F8),
+          surfaceTintColor: Colors.transparent,
+          shape: PurchaseDropdownStyle.menuShape,
+          elevation: 8,
           onSelected: _send,
           itemBuilder: (_) => const [
             PopupMenuItem(
               value: 'email',
-              child: Text('Send Mail'),
+              child: Text(
+                'Send Mail',
+                style: TextStyle(color: Color(0xFF123456)),
+              ),
             ),
             PopupMenuItem(
               value: 'whatsapp',
-              child: Text('Send WhatsApp'),
+              child: Text(
+                'Send WhatsApp',
+                style: TextStyle(color: Color(0xFF123456)),
+              ),
             ),
           ],
           child: _ActionButton(
@@ -339,13 +351,21 @@ class _PurchaseOrderPreviewDialogState
           ),
         ),
         PopupMenuButton<String>(
-          tooltip: 'Convert purchase order',
+          tooltip: 'Convert to Bill',
           enabled: !_isBusy,
+          position: PopupMenuPosition.under,
+          color: const Color(0xFFEAF2F8),
+          surfaceTintColor: Colors.transparent,
+          shape: PurchaseDropdownStyle.menuShape,
+          elevation: 8,
           onSelected: (_) => _convertToBill(),
           itemBuilder: (_) => const [
             PopupMenuItem(
               value: 'bill',
-              child: Text('Convert to Bill'),
+              child: Text(
+                'Convert to Bill',
+                style: TextStyle(color: Color(0xFF123456)),
+              ),
             ),
           ],
           child: _ActionButton(

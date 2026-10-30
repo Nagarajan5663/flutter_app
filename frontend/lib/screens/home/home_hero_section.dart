@@ -139,6 +139,7 @@ class HomeHeroSection extends StatelessWidget {
         SizedBox(height: 36, child: logo ?? const SizedBox(width: 1)),
         const Spacer(),
         PopupMenuButton<String>(
+          position: PopupMenuPosition.under,
           color: Colors.white,
           icon: const Icon(Icons.menu_rounded, color: ink),
           itemBuilder: (context) => const [

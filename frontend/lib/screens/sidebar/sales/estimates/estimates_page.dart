@@ -3,13 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/sales_glass_widgets.dart';
-import '../workflow_session.dart';
 
 // ============================================================
 // API
@@ -17,40 +12,6 @@ import '../workflow_session.dart';
 
 class EstimatesApi {
   static const String baseUrl = 'http://localhost:3000/api';
-
-  static Future<EstimateData> approveEstimate(int id) async {
-    final response =
-        await http.post(Uri.parse('$baseUrl/estimates/$id/approve'), headers: {
-      'Accept': 'application/json',
-      ...SalesWorkflowSession.headers,
-    });
-    final body = jsonDecode(response.body);
-    if (response.statusCode != 200 || body is! Map || body['success'] != true) {
-      throw Exception(body is Map
-          ? body['message'] ?? 'Failed to approve Estimate'
-          : 'Failed to approve Estimate');
-    }
-    return EstimateData.fromJson(
-        Map<String, dynamic>.from(body['data'] as Map));
-  }
-
-  static Future<Map<String, dynamic>> createSalesOrderFromEstimate(
-      int id) async {
-    final response = await http
-        .post(Uri.parse('$baseUrl/sales-orders/from-estimate/$id'), headers: {
-      'Accept': 'application/json',
-      ...SalesWorkflowSession.headers,
-    });
-    final body = jsonDecode(response.body);
-    if ((response.statusCode != 200 && response.statusCode != 201) ||
-        body is! Map ||
-        body['success'] != true) {
-      throw Exception(body is Map
-          ? body['message'] ?? 'Failed to create Sales Order'
-          : 'Failed to create Sales Order');
-    }
-    return Map<String, dynamic>.from(body['data'] as Map);
-  }
 
   // ==========================================================
   // GET ESTIMATES
@@ -90,27 +51,6 @@ class EstimatesApi {
         ),
       );
     }).toList();
-  }
-
-  static Future<EstimateData> getEstimate(int id) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/estimates/$id'),
-      headers: const {
-        'Accept': 'application/json',
-      },
-    );
-    final body = jsonDecode(response.body);
-    if (response.statusCode != 200 ||
-        body is! Map ||
-        body['success'] != true ||
-        body['data'] is! Map) {
-      throw Exception(body is Map
-          ? body['message'] ?? 'Failed to fetch estimate details'
-          : 'Invalid server response');
-    }
-    return EstimateData.fromJson(
-      Map<String, dynamic>.from(body['data'] as Map),
-    );
   }
 
   // ==========================================================
@@ -186,23 +126,6 @@ class EstimatesApi {
   }
 
   // ==========================================================
-  static Future<void> updateEstimate(int id, EstimateData estimate) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/estimates/$id'),
-      headers: const {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: jsonEncode(estimate.toCreateJson()),
-    );
-    final body = jsonDecode(response.body);
-    if (response.statusCode != 200 || body is! Map || body['success'] != true) {
-      throw Exception(body is Map
-          ? body['message'] ?? 'Failed to update Estimate'
-          : 'Failed to update Estimate');
-    }
-  }
-
   // UPDATE STATUS
   // ==========================================================
 
@@ -304,7 +227,6 @@ class EstimatesApi {
             name: map['vendorName']?.toString() ?? '',
             companyName: map['companyName']?.toString() ?? '',
             email: map['email']?.toString() ?? '',
-            phone: map['phone']?.toString() ?? '',
           );
         })
         .where(
@@ -318,12 +240,21 @@ class EstimatesApi {
   // ==========================================================
 
   static Future<List<CatalogOption>> getCatalog() async {
-    final responses = await Future.wait<http.Response>([
-      http.get(Uri.parse('$baseUrl/items')),
-      http.get(Uri.parse('$baseUrl/parts')),
-    ]);
-    final itemResponse = responses[0];
-    final partResponse = responses[1];
+    final itemFuture = http.get(
+      Uri.parse(
+        '$baseUrl/items',
+      ),
+    );
+
+    final partFuture = http.get(
+      Uri.parse(
+        '$baseUrl/parts',
+      ),
+    );
+
+    final itemResponse = await itemFuture;
+
+    final partResponse = await partFuture;
 
     final itemBody = jsonDecode(
       itemResponse.body,
@@ -441,8 +372,46 @@ class CustomerOption {
     required this.name,
     required this.companyName,
     required this.email,
-    required this.phone,
+    this.phone = '',
   });
+}
+
+// ============================================================
+// ITEM / PART SEARCH OPTION
+// ============================================================
+
+class CatalogOption {
+  final String sourceType;
+  final int id;
+  final String name;
+  final String sku;
+  final String description;
+  final double rate;
+
+  const CatalogOption({
+    required this.sourceType,
+    required this.id,
+    required this.name,
+    required this.sku,
+    required this.description,
+    required this.rate,
+  });
+}
+
+List<CatalogOption> searchCatalogOptions(
+  Iterable<CatalogOption> catalog,
+  String query,
+) {
+  final normalizedQuery = query.trim().toLowerCase();
+  if (normalizedQuery.isEmpty) return catalog.toList();
+
+  return catalog
+      .where(
+        (item) =>
+            item.name.toLowerCase().contains(normalizedQuery) ||
+            item.sku.toLowerCase().contains(normalizedQuery),
+      )
+      .toList();
 }
 
 class CustomerOptionsView extends StatelessWidget {
@@ -465,10 +434,7 @@ class CustomerOptionsView extends StatelessWidget {
         elevation: 10,
         borderRadius: BorderRadius.circular(10),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxHeight: 250,
-            maxWidth: 330,
-          ),
+          constraints: const BoxConstraints(maxHeight: 250, maxWidth: 330),
           child: ListView.builder(
             padding: EdgeInsets.zero,
             shrinkWrap: true,
@@ -480,17 +446,13 @@ class CustomerOptionsView extends StatelessWidget {
                 hoverColor: const Color(0xFFDCEEFF),
                 title: Text(
                   customer.name,
-                  style: const TextStyle(
-                    color: Color(0xFF172B4D),
-                  ),
+                  style: const TextStyle(color: Color(0xFF172B4D)),
                 ),
                 subtitle: customer.companyName.isEmpty
                     ? null
                     : Text(
                         customer.companyName,
-                        style: const TextStyle(
-                          color: Color(0xFF425466),
-                        ),
+                        style: const TextStyle(color: Color(0xFF425466)),
                       ),
                 onTap: () => onSelected(customer),
               );
@@ -525,19 +487,14 @@ class CatalogOptionsView extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         clipBehavior: Clip.antiAlias,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: 450,
-            maxHeight: 280,
-          ),
+          constraints: const BoxConstraints(maxWidth: 450, maxHeight: 280),
           child: showNoResults
               ? const SizedBox(
                   height: 56,
                   child: Center(
                     child: Text(
                       'No items found',
-                      style: TextStyle(
-                        color: Color(0xFF64748B),
-                      ),
+                      style: TextStyle(color: Color(0xFF64748B)),
                     ),
                   ),
                 )
@@ -545,10 +502,8 @@ class CatalogOptionsView extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   shrinkWrap: true,
                   itemCount: items.length,
-                  separatorBuilder: (_, __) => const Divider(
-                    height: 1,
-                    color: Color(0xFFE2E8F0),
-                  ),
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1, color: Color(0xFFE2E8F0)),
                   itemBuilder: (_, index) {
                     final item = items[index];
                     final isCatalogItem = item.sourceType == 'Item';
@@ -583,17 +538,13 @@ class CatalogOptionsView extends StatelessWidget {
                       ),
                       title: Text(
                         item.name,
-                        style: const TextStyle(
-                          color: Color(0xFF263746),
-                        ),
+                        style: const TextStyle(color: Color(0xFF263746)),
                       ),
                       subtitle: Text(
                         item.sku.isEmpty
-                            ? 'Rate: INR ${item.rate.toStringAsFixed(2)}'
+                            ? 'INR ${item.rate.toStringAsFixed(2)}'
                             : '${item.sku} • INR ${item.rate.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          color: Color(0xFF64748B),
-                        ),
+                        style: const TextStyle(color: Color(0xFF64748B)),
                       ),
                       onTap: () => onSelected(item),
                     );
@@ -603,28 +554,6 @@ class CatalogOptionsView extends StatelessWidget {
       ),
     );
   }
-}
-
-// ============================================================
-// ITEM / PART SEARCH OPTION
-// ============================================================
-
-class CatalogOption {
-  final String sourceType;
-  final int id;
-  final String name;
-  final String sku;
-  final String description;
-  final double rate;
-
-  const CatalogOption({
-    required this.sourceType,
-    required this.id,
-    required this.name,
-    required this.sku,
-    required this.description,
-    required this.rate,
-  });
 }
 
 // ============================================================
@@ -654,32 +583,6 @@ enum EstimateStatus {
 
       case EstimateStatus.expired:
         return 'Expired';
-    }
-  }
-
-  String get tableLabel {
-    switch (this) {
-      case EstimateStatus.accepted:
-        return 'Approved';
-      case EstimateStatus.declined:
-        return 'Rejected';
-      default:
-        return label;
-    }
-  }
-
-  static EstimateStatus? fromTableLabel(String? value) {
-    switch (value) {
-      case 'Draft':
-        return EstimateStatus.draft;
-      case 'Sent':
-        return EstimateStatus.sent;
-      case 'Approved':
-        return EstimateStatus.accepted;
-      case 'Rejected':
-        return EstimateStatus.declined;
-      default:
-        return null;
     }
   }
 
@@ -783,38 +686,6 @@ class EstimateItem {
   }
 }
 
-class _NoCatalogResultsOption extends CatalogOption {
-  const _NoCatalogResultsOption()
-      : super(
-          sourceType: '',
-          id: -1,
-          name: '',
-          sku: '',
-          description: '',
-          rate: 0,
-        );
-}
-
-const _noCatalogResultsOption = _NoCatalogResultsOption();
-
-List<CatalogOption> searchCatalogOptions(
-  Iterable<CatalogOption> catalog,
-  String query,
-) {
-  final normalizedQuery = query.trim().toLowerCase();
-  if (normalizedQuery.isEmpty) {
-    return catalog.toList();
-  }
-
-  return catalog
-      .where(
-        (item) =>
-            item.name.toLowerCase().contains(normalizedQuery) ||
-            item.sku.toLowerCase().contains(normalizedQuery),
-      )
-      .toList();
-}
-
 // ============================================================
 // ESTIMATE MODEL
 // ============================================================
@@ -829,8 +700,6 @@ class EstimateData {
   final int customerId;
 
   final String customerName;
-  final String customerEmail;
-  final String customerPhone;
 
   final String salesPerson;
 
@@ -843,11 +712,6 @@ class EstimateData {
   final double total;
 
   EstimateStatus status;
-  String approvalStatus;
-  DateTime? approvedAt;
-  int? approvedBy;
-  int? salesOrderId;
-  String? salesOrderNumber;
 
   EstimateData({
     this.id,
@@ -855,19 +719,12 @@ class EstimateData {
     required this.estimateNumber,
     required this.customerId,
     required this.customerName,
-    this.customerEmail = '',
-    this.customerPhone = '',
     required this.salesPerson,
     this.expiryDate,
     required this.items,
     required this.subTotal,
     required this.total,
     this.status = EstimateStatus.draft,
-    this.approvalStatus = 'Pending',
-    this.approvedAt,
-    this.approvedBy,
-    this.salesOrderId,
-    this.salesOrderNumber,
   });
 
   Map<String, dynamic> toCreateJson() {
@@ -917,8 +774,6 @@ class EstimateData {
           ) ??
           0,
       customerName: json['customerName']?.toString() ?? '',
-      customerEmail: json['customerEmail']?.toString() ?? '',
-      customerPhone: json['customerPhone']?.toString() ?? '',
       salesPerson: json['salesPerson']?.toString() ?? '',
       expiryDate: json['expiryDate'] == null
           ? null
@@ -943,17 +798,6 @@ class EstimateData {
       status: EstimateStatus.fromString(
         json['status']?.toString() ?? 'Draft',
       ),
-      approvalStatus: json['approvalStatus']?.toString() ?? 'Pending',
-      approvedAt: json['approvedAt'] == null
-          ? null
-          : DateTime.tryParse(json['approvedAt'].toString()),
-      approvedBy: json['approvedBy'] == null
-          ? null
-          : int.tryParse(json['approvedBy'].toString()),
-      salesOrderId: json['salesOrderId'] == null
-          ? null
-          : int.tryParse(json['salesOrderId'].toString()),
-      salesOrderNumber: json['salesOrderNumber']?.toString(),
     );
   }
 }
@@ -964,6 +808,7 @@ class EstimateData {
 
 class EstimatesPage extends StatefulWidget {
   final VoidCallback? onOpenSalesOrders;
+
   const EstimatesPage({
     super.key,
     this.onOpenSalesOrders,
@@ -973,454 +818,7 @@ class EstimatesPage extends StatefulWidget {
   State<EstimatesPage> createState() => _EstimatesPageState();
 }
 
-Future<DateTime?> _showEstimateDatePicker(
-  BuildContext context, {
-  required DateTime initialDate,
-  required DateTime firstDate,
-  required DateTime lastDate,
-}) {
-  final screenWidth = MediaQuery.sizeOf(context).width;
-  final screenHeight = MediaQuery.sizeOf(context).height;
-  final calendarScale = screenWidth >= 900 && screenHeight >= 700
-      ? 1.12
-      : screenWidth >= 600 && screenHeight >= 640
-          ? 1.05
-          : 1.0;
-
-  return showDatePicker(
-    context: context,
-    initialDate: initialDate,
-    firstDate: firstDate,
-    lastDate: lastDate,
-    cancelText: 'Cancel',
-    confirmText: 'OK',
-    useRootNavigator: true,
-    builder: (context, child) {
-      final colorScheme = Theme.of(context).colorScheme.copyWith(
-            brightness: Brightness.light,
-            primary: const Color(0xFF1E78B7),
-            onPrimary: Colors.white,
-            surface: Colors.white,
-            onSurface: const Color(0xFF202A36),
-            onSurfaceVariant: const Color(0xFF5F6B7A),
-          );
-
-      return MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: TextScaler.linear(calendarScale),
-        ),
-        child: Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: colorScheme,
-            dialogTheme: Theme.of(context).dialogTheme.copyWith(
-                  insetPadding: EdgeInsets.symmetric(
-                    horizontal: screenWidth < 360
-                        ? 4
-                        : screenWidth < 600
-                            ? 8
-                            : 24,
-                    vertical: 24,
-                  ),
-                ),
-            datePickerTheme: DatePickerThemeData(
-              backgroundColor: Colors.white,
-              headerBackgroundColor: const Color(0xFF0B1F3A),
-              headerForegroundColor: Colors.white,
-              headerHeadlineStyle: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-              ),
-              headerHelpStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-              weekdayStyle: const TextStyle(
-                color: Color(0xFF5F6B7A),
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-              dayStyle: const TextStyle(
-                color: Color(0xFF202A36),
-                fontSize: 15,
-              ),
-              dayForegroundColor: WidgetStateProperty.resolveWith<Color?>(
-                (states) => states.contains(WidgetState.selected)
-                    ? Colors.white
-                    : const Color(0xFF202A36),
-              ),
-              dayBackgroundColor: WidgetStateProperty.resolveWith<Color?>(
-                (states) => states.contains(WidgetState.selected)
-                    ? const Color(0xFF1E78B7)
-                    : null,
-              ),
-              subHeaderForegroundColor: const Color(0xFF202A36),
-              cancelButtonStyle: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF1E78B7),
-              ),
-              confirmButtonStyle: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF1E78B7),
-                textStyle: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-          ),
-          child: child!,
-        ),
-      );
-    },
-  );
-}
-
-class _EstimateFilterCalendar extends StatefulWidget {
-  const _EstimateFilterCalendar({
-    required this.selectedDate,
-    required this.firstDate,
-    required this.lastDate,
-    required this.onResult,
-  });
-
-  final DateTime? selectedDate;
-  final DateTime firstDate;
-  final DateTime lastDate;
-  final ValueChanged<DateTime?> onResult;
-
-  @override
-  State<_EstimateFilterCalendar> createState() =>
-      _EstimateFilterCalendarState();
-}
-
-class _EstimateFilterCalendarState extends State<_EstimateFilterCalendar> {
-  late DateTime _displayedMonth;
-
-  static const _weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-  @override
-  void initState() {
-    super.initState();
-    final initialDate = widget.selectedDate ?? DateTime.now();
-    _displayedMonth = DateTime(initialDate.year, initialDate.month);
-  }
-
-  DateTime get _firstOfDisplayedMonth =>
-      DateTime(_displayedMonth.year, _displayedMonth.month);
-
-  bool get _canGoPrevious => !DateTime(
-        _displayedMonth.year,
-        _displayedMonth.month,
-        0,
-      ).isBefore(_dateOnly(widget.firstDate));
-
-  bool get _canGoNext => !DateTime(
-        _displayedMonth.year,
-        _displayedMonth.month + 1,
-      ).isAfter(_dateOnly(widget.lastDate));
-
-  bool _isSelectable(DateTime date) {
-    final day = _dateOnly(date);
-    return !day.isBefore(_dateOnly(widget.firstDate)) &&
-        !day.isAfter(_dateOnly(widget.lastDate));
-  }
-
-  String _dayKey(DateTime date) =>
-      'estimate-calendar-day-${DateFormat('yyyy-MM-dd').format(date)}';
-
-  void _changeMonth(int amount) {
-    setState(() {
-      _displayedMonth =
-          DateTime(_displayedMonth.year, _displayedMonth.month + amount);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final today = _dateOnly(DateTime.now());
-    final selectedDay =
-        widget.selectedDate == null ? null : _dateOnly(widget.selectedDate!);
-    final firstGridDay = _firstOfDisplayedMonth.subtract(
-      Duration(days: _firstOfDisplayedMonth.weekday % 7),
-    );
-
-    return Padding(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  DateFormat('MMMM yyyy').format(_displayedMonth),
-                  style: const TextStyle(
-                    color: Color(0xFF263746),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              IconButton(
-                tooltip: 'Previous month',
-                onPressed: _canGoPrevious ? () => _changeMonth(-1) : null,
-                icon: const Icon(Icons.chevron_left),
-                color: const Color(0xFF425466),
-                visualDensity: VisualDensity.compact,
-              ),
-              IconButton(
-                tooltip: 'Next month',
-                onPressed: _canGoNext ? () => _changeMonth(1) : null,
-                icon: const Icon(Icons.chevron_right),
-                color: const Color(0xFF425466),
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              for (final weekday in _weekdays)
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      weekday,
-                      style: const TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          for (var week = 0; week < 6; week++)
-            Row(
-              children: [
-                for (var weekday = 0; weekday < 7; weekday++)
-                  Expanded(
-                    child: _buildDay(
-                      firstGridDay.add(
-                        Duration(days: week * 7 + weekday),
-                      ),
-                      selectedDay: selectedDay,
-                      today: today,
-                    ),
-                  ),
-              ],
-            ),
-          const Divider(height: 16, color: Color(0xFFE2E8F0)),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton(
-                onPressed: () => widget.onResult(null),
-                child: const Text('Clear'),
-              ),
-              TextButton(
-                onPressed:
-                    _isSelectable(today) ? () => widget.onResult(today) : null,
-                child: const Text('Today'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDay(
-    DateTime date, {
-    required DateTime? selectedDay,
-    required DateTime today,
-  }) {
-    final day = _dateOnly(date);
-    final isCurrentMonth = date.month == _displayedMonth.month;
-    final isSelected = selectedDay == day;
-    final isToday = today == day;
-    final isSelectable = _isSelectable(date);
-
-    return Padding(
-      padding: const EdgeInsets.all(1),
-      child: Semantics(
-        label: DateFormat('EEEE, d MMMM yyyy').format(date),
-        button: isSelectable,
-        selected: isSelected,
-        child: InkWell(
-          key: ValueKey(_dayKey(date)),
-          borderRadius: BorderRadius.circular(18),
-          onTap: isSelectable ? () => widget.onResult(day) : null,
-          child: Container(
-            height: 34,
-            decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF1E78B7) : null,
-              borderRadius: BorderRadius.circular(18),
-              border: isToday && !isSelected
-                  ? Border.all(color: const Color(0xFF1E78B7))
-                  : null,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '${date.day}',
-              style: TextStyle(
-                color: isSelected
-                    ? Colors.white
-                    : !isSelectable
-                        ? const Color(0xFFCBD5E1)
-                        : isCurrentMonth
-                            ? const Color(0xFF263746)
-                            : const Color(0xFF94A3B8),
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
-
-class _EstimateFilterDateField extends StatefulWidget {
-  const _EstimateFilterDateField({
-    required this.value,
-    required this.firstDate,
-    required this.lastDate,
-    required this.decoration,
-    required this.onChanged,
-  });
-
-  final DateTime? value;
-  final DateTime firstDate;
-  final DateTime lastDate;
-  final InputDecoration decoration;
-  final ValueChanged<DateTime?> onChanged;
-
-  @override
-  State<_EstimateFilterDateField> createState() =>
-      _EstimateFilterDateFieldState();
-}
-
-class _EstimateFilterDateFieldState extends State<_EstimateFilterDateField> {
-  final LayerLink _layerLink = LayerLink();
-  OverlayEntry? _calendarOverlay;
-  bool _alignCalendarRight = false;
-  double _calendarWidth = 340;
-
-  @override
-  void dispose() {
-    _removeCalendarOverlay();
-    super.dispose();
-  }
-
-  void _toggleCalendar() {
-    if (_calendarOverlay != null) {
-      _removeCalendarOverlay();
-      return;
-    }
-
-    final overlay = Overlay.of(context, rootOverlay: true);
-    final targetBox = context.findRenderObject()! as RenderBox;
-    final targetLeft = targetBox.localToGlobal(Offset.zero).dx;
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final targetRight = targetLeft + targetBox.size.width;
-    final desiredWidth = screenWidth < 372 ? screenWidth - 32 : 340.0;
-    final availableLeft = screenWidth - targetLeft - 8;
-    final availableRight = targetRight - 8;
-    _alignCalendarRight =
-        desiredWidth > availableLeft && availableRight > availableLeft;
-    _calendarWidth = _alignCalendarRight
-        ? desiredWidth.clamp(0, availableRight)
-        : desiredWidth.clamp(0, availableLeft);
-    _calendarOverlay = OverlayEntry(
-      builder: (overlayContext) {
-        return Stack(
-          children: [
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: _removeCalendarOverlay,
-              ),
-            ),
-            CompositedTransformFollower(
-              link: _layerLink,
-              showWhenUnlinked: false,
-              targetAnchor: _alignCalendarRight
-                  ? Alignment.bottomRight
-                  : Alignment.bottomLeft,
-              followerAnchor:
-                  _alignCalendarRight ? Alignment.topRight : Alignment.topLeft,
-              offset: const Offset(0, 6),
-              child: Material(
-                key: const ValueKey('estimate-filter-calendar'),
-                color: Colors.white,
-                surfaceTintColor: Colors.transparent,
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: const BorderSide(color: Color(0xFFE2E8F0)),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: SizedBox(
-                  width: _calendarWidth,
-                  child: _EstimateFilterCalendar(
-                    selectedDate: widget.value,
-                    firstDate: widget.firstDate,
-                    lastDate: widget.lastDate,
-                    onResult: (date) {
-                      widget.onChanged(date);
-                      _removeCalendarOverlay();
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-    overlay.insert(_calendarOverlay!);
-  }
-
-  void _removeCalendarOverlay() {
-    _calendarOverlay?.remove();
-    _calendarOverlay = null;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return CompositedTransformTarget(
-      link: _layerLink,
-      child: InkWell(
-        onTap: _toggleCalendar,
-        child: InputDecorator(
-          decoration: widget.decoration,
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  widget.value == null
-                      ? 'dd-mm-yyyy'
-                      : DateFormat('dd-MM-yyyy').format(widget.value!),
-                ),
-              ),
-              const Icon(
-                Icons.calendar_today_outlined,
-                color: Color(0xFF1F2937),
-                size: 16,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _EstimatesPageState extends State<EstimatesPage> {
-  final Set<int> _workflowBusyIds = {};
   List<EstimateData> _estimates = [];
 
   bool _isLoading = true;
@@ -1435,6 +833,7 @@ class _EstimatesPageState extends State<EstimatesPage> {
   DateTime? _dateFrom;
 
   DateTime? _dateTo;
+  bool _showFilters = false;
 
   final List<String> _statusOptions = const [
     'All',
@@ -1595,23 +994,17 @@ class _EstimatesPageState extends State<EstimatesPage> {
     }
 
     try {
-      if (status == EstimateStatus.accepted) {
-        await EstimatesApi.approveEstimate(estimate.id!);
-      } else {
-        await EstimatesApi.updateStatus(
-          estimate.id!,
-          status,
-        );
-      }
+      await EstimatesApi.updateStatus(
+        estimate.id!,
+        status,
+      );
 
       await _loadEstimates();
 
       if (!mounted) return;
 
       _showMessage(
-        status == EstimateStatus.accepted
-            ? 'Estimate approved'
-            : 'Estimate status updated',
+        'Estimate status updated',
       );
     } catch (error) {
       if (!mounted) return;
@@ -1698,73 +1091,6 @@ class _EstimatesPageState extends State<EstimatesPage> {
     }
   }
 
-  Future<void> _openEstimateEditor(EstimateData estimate,
-      {required bool clone}) async {
-    if (!clone &&
-        (estimate.approvalStatus == 'Approved' ||
-            estimate.salesOrderId != null)) {
-      _showMessage('Approved or converted Estimates cannot be edited.',
-          isError: true);
-      return;
-    }
-    try {
-      final number =
-          clone ? await EstimatesApi.getNextNumber() : estimate.estimateNumber;
-      if (!mounted) return;
-      final saved = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => NewEstimateDialog(
-          nextNumber: number,
-          sourceEstimate: estimate,
-          editMode: !clone,
-        ),
-      );
-      if (saved == true) await _loadEstimates();
-    } catch (error) {
-      if (mounted)
-        _showMessage('Unable to open Estimate: $error', isError: true);
-    }
-  }
-
-  Future<bool> _createOrOpenSalesOrder(EstimateData estimate) async {
-    if (estimate.approvalStatus != 'Approved') {
-      _showMessage('Estimate must be approved before creating a Sales Order.',
-          isError: true);
-      return false;
-    }
-    if (estimate.id == null || !_workflowBusyIds.add(estimate.id!))
-      return false;
-    setState(() {});
-    try {
-      final order =
-          await EstimatesApi.createSalesOrderFromEstimate(estimate.id!);
-      await _loadEstimates();
-      if (!mounted) return false;
-      _showMessage('Sales Order ${order['orderNumber'] ?? ''} is ready.');
-      widget.onOpenSalesOrders?.call();
-      return true;
-    } catch (error) {
-      if (mounted)
-        _showMessage(error.toString().replaceFirst('Exception: ', ''),
-            isError: true);
-      return false;
-    } finally {
-      _workflowBusyIds.remove(estimate.id);
-      if (mounted) setState(() {});
-    }
-  }
-
-  Future<void> _showEstimatePreview(EstimateData estimate) async {
-    await showDialog<void>(
-      context: context,
-      builder: (_) => _EstimatePreviewDialog(
-        estimate: estimate,
-        onConvert: _createOrOpenSalesOrder,
-      ),
-    );
-  }
-
   // ==========================================================
   // MESSAGE
   // ==========================================================
@@ -1849,6 +1175,10 @@ class _EstimatesPageState extends State<EstimatesPage> {
                 const SizedBox(
                   width: 8,
                 ),
+                SalesFilterButton(
+                  onPressed: () => setState(() => _showFilters = !_showFilters),
+                ),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: _openNewEstimateForm,
                   icon: const Icon(
@@ -1886,97 +1216,89 @@ class _EstimatesPageState extends State<EstimatesPage> {
             // FILTER
             // ==================================================
 
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(
-                16,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(
-                  0x4FFFFFFF,
-                ),
-                borderRadius: BorderRadius.circular(
+            if (_showFilters)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(
                   16,
                 ),
-                border: Border.all(
+                decoration: BoxDecoration(
                   color: const Color(
-                    0xD0FFFFFF,
+                    0x4FFFFFFF,
+                  ),
+                  borderRadius: BorderRadius.circular(
+                    16,
+                  ),
+                  border: Border.all(
+                    color: const Color(
+                      0xD0FFFFFF,
+                    ),
                   ),
                 ),
-              ),
-              child: Wrap(
-                spacing: 16,
-                runSpacing: 12,
-                crossAxisAlignment: WrapCrossAlignment.end,
-                children: [
-                  SizedBox(
-                    width: 150,
-                    child: _buildFilterDropdown(),
-                  ),
-                  SizedBox(
-                    width: 200,
-                    child: _buildCustomerFilter(),
-                  ),
-                  SizedBox(
-                    width: 170,
-                    child: _buildFilterDate(
-                      label: 'Date From:',
-                      value: _dateFrom,
-                      onChanged: (value) {
-                        setState(() {
-                          _dateFrom = value;
-                          if (value != null &&
-                              _dateTo != null &&
-                              _dateTo!.isBefore(value)) {
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 12,
+                  crossAxisAlignment: WrapCrossAlignment.end,
+                  children: [
+                    SizedBox(
+                      width: 150,
+                      child: _buildFilterDropdown(),
+                    ),
+                    SizedBox(
+                      width: 200,
+                      child: _buildCustomerFilter(),
+                    ),
+                    SizedBox(
+                      width: 170,
+                      child: _buildFilterDate(
+                        label: 'Date From:',
+                        value: _dateFrom,
+                        onChanged: (value) {
+                          setState(() {
+                            _dateFrom = value;
+                          });
+                        },
+                      ),
+                    ),
+                    SizedBox(
+                      width: 170,
+                      child: _buildFilterDate(
+                        label: 'Date To:',
+                        value: _dateTo,
+                        onChanged: (value) {
+                          setState(() {
                             _dateTo = value;
-                          }
-                        });
-                      },
-                    ),
-                  ),
-                  SizedBox(
-                    width: 170,
-                    child: _buildFilterDate(
-                      label: 'Date To:',
-                      value: _dateTo,
-                      onChanged: (value) {
-                        setState(() {
-                          _dateTo = value;
-                        });
-                      },
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {});
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(
-                        0xFF1E78B7,
-                      ),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 22,
-                        vertical: 14,
+                          });
+                        },
                       ),
                     ),
-                    child: const Text(
-                      'Filter',
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {});
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(
+                          0xFF1E78B7,
+                        ),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 22,
+                          vertical: 14,
+                        ),
+                      ),
+                      child: const Text('Apply'),
                     ),
-                  ),
-                  OutlinedButton(
-                    onPressed: _clearFilters,
-                    child: const Text(
-                      'Clear',
+                    OutlinedButton(
+                      onPressed: _clearFilters,
+                      child: const Text(
+                        'Clear',
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(
-              height: 20,
-            ),
+            if (_showFilters) const SizedBox(height: 20),
 
             if (_errorMessage != null)
               Container(
@@ -2052,7 +1374,7 @@ class _EstimatesPageState extends State<EstimatesPage> {
                 alignment: Alignment.topLeft,
                 fit: BoxFit.scaleDown,
                 child: SizedBox(
-                  width: 1100,
+                  width: 1040,
                   child: _isLoading
                       ? const SizedBox(
                           height: 350,
@@ -2098,7 +1420,6 @@ class _EstimatesPageState extends State<EstimatesPage> {
         DropdownButtonFormField<String>(
           initialValue: _statusFilter,
           isExpanded: true,
-          dropdownColor: Colors.white,
           decoration: _filterInputDecoration(),
           items: _statusOptions.map(
             (status) {
@@ -2169,14 +1490,41 @@ class _EstimatesPageState extends State<EstimatesPage> {
         const SizedBox(
           height: 6,
         ),
-        _EstimateFilterDateField(
-          value: value,
-          firstDate: label == 'Date To:' && _dateFrom != null
-              ? _dateFrom!
-              : DateTime(2000),
-          lastDate: DateTime(2100),
-          decoration: _filterInputDecoration(),
-          onChanged: onChanged,
+        InkWell(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: value ?? DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100),
+            );
+
+            if (picked != null) {
+              onChanged(picked);
+            }
+          },
+          child: InputDecorator(
+            decoration: _filterInputDecoration(),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value == null
+                        ? 'dd-mm-yyyy'
+                        : DateFormat(
+                            'dd-MM-yyyy',
+                          ).format(
+                            value,
+                          ),
+                  ),
+                ),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -2267,7 +1615,7 @@ class _EstimatesPageState extends State<EstimatesPage> {
             ),
           ),
           SizedBox(
-            width: 140,
+            width: 70,
             child: _HeaderText(
               'ACTIONS',
             ),
@@ -2332,20 +1680,7 @@ class _EstimatesPageState extends State<EstimatesPage> {
                       SizedBox(
                         width: 130,
                         child: _StatusBadge(
-                          status: estimate.approvalStatus == 'Approved'
-                              ? EstimateStatus.accepted
-                              : estimate.status == EstimateStatus.accepted
-                                  ? EstimateStatus.sent
-                                  : estimate.status,
-                          onChanged: (status) {
-                            if (status != null) {
-                              final isApproved =
-                                  estimate.approvalStatus == 'Approved';
-                              if (status != estimate.status || isApproved) {
-                                _updateStatus(estimate, status);
-                              }
-                            }
-                          },
+                          status: estimate.status,
                         ),
                       ),
                       SizedBox(
@@ -2361,83 +1696,70 @@ class _EstimatesPageState extends State<EstimatesPage> {
                         ),
                       ),
                       SizedBox(
-                        width: 140,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              tooltip: 'Preview Estimate',
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
+                        width: 70,
+                        child: PopupMenuButton<String>(
+                          position: PopupMenuPosition.under,
+                          icon: const Icon(
+                            Icons.more_vert,
+                          ),
+                          onSelected: (value) {
+                            switch (value) {
+                              case 'sent':
+                                _updateStatus(
+                                  estimate,
+                                  EstimateStatus.sent,
+                                );
+                                break;
+
+                              case 'accepted':
+                                _updateStatus(
+                                  estimate,
+                                  EstimateStatus.accepted,
+                                );
+                                break;
+
+                              case 'declined':
+                                _updateStatus(
+                                  estimate,
+                                  EstimateStatus.declined,
+                                );
+                                break;
+
+                              case 'delete':
+                                _deleteEstimate(
+                                  estimate,
+                                );
+                                break;
+                            }
+                          },
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(
+                              value: 'sent',
+                              child: Text(
+                                'Mark as Sent',
                               ),
-                              icon: const Icon(
-                                Icons.visibility_outlined,
-                                size: 18,
-                                color: Color(0xFF777777),
-                              ),
-                              onPressed: _workflowBusyIds.contains(estimate.id)
-                                  ? null
-                                  : () => _showEstimatePreview(estimate),
                             ),
-                            IconButton(
-                              tooltip: 'Edit Estimate',
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
+                            PopupMenuItem(
+                              value: 'accepted',
+                              child: Text(
+                                'Mark as Accepted',
                               ),
-                              icon: const Icon(
-                                Icons.edit_outlined,
-                                size: 18,
-                                color: Color(0xFF777777),
-                              ),
-                              onPressed: _workflowBusyIds.contains(estimate.id)
-                                  ? null
-                                  : () => _openEstimateEditor(
-                                        estimate,
-                                        clone: false,
-                                      ),
                             ),
-                            IconButton(
-                              tooltip: 'Clone Estimate',
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
+                            PopupMenuItem(
+                              value: 'declined',
+                              child: Text(
+                                'Mark as Declined',
                               ),
-                              icon: const Icon(
-                                Icons.content_copy_outlined,
-                                size: 18,
-                                color: Color(0xFF777777),
-                              ),
-                              onPressed: _workflowBusyIds.contains(estimate.id)
-                                  ? null
-                                  : () => _openEstimateEditor(
-                                        estimate,
-                                        clone: true,
-                                      ),
                             ),
-                            IconButton(
-                              tooltip: 'Delete Estimate',
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
+                            PopupMenuDivider(),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text(
+                                'Delete',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                ),
                               ),
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                size: 18,
-                                color: Color(0xFF777777),
-                              ),
-                              onPressed: _workflowBusyIds.contains(estimate.id)
-                                  ? null
-                                  : () => _deleteEstimate(estimate),
                             ),
                           ],
                         ),
@@ -2499,634 +1821,14 @@ class _EstimatesPageState extends State<EstimatesPage> {
 // NEW ESTIMATE DIALOG
 // ============================================================
 
-class _EstimatePreviewDialog extends StatefulWidget {
-  const _EstimatePreviewDialog(
-      {required this.estimate, required this.onConvert});
-
-  final EstimateData estimate;
-  final Future<bool> Function(EstimateData) onConvert;
-
-  @override
-  State<_EstimatePreviewDialog> createState() => _EstimatePreviewDialogState();
-}
-
-class _EstimatePreviewDialogState extends State<_EstimatePreviewDialog> {
-  late EstimateData _estimate = widget.estimate;
-  bool _busy = false;
-  bool _loadingDetails = false;
-  String? _detailsError;
-  Future<void>? _detailsLoadFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    if (_estimate.items.isEmpty && _estimate.id != null) {
-      _detailsLoadFuture = _loadEstimateDetails();
-    }
-  }
-
-  Future<void> _loadEstimateDetails() async {
-    final estimateId = _estimate.id;
-    if (estimateId == null) return;
-    setState(() {
-      _loadingDetails = true;
-      _detailsError = null;
-    });
-    try {
-      final detailedEstimate = await EstimatesApi.getEstimate(estimateId);
-      if (!mounted) return;
-      setState(() {
-        _estimate = detailedEstimate;
-        _loadingDetails = false;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _loadingDetails = false;
-        _detailsError = error.toString().replaceFirst('Exception: ', '');
-      });
-    }
-  }
-
-  Future<bool> _waitForEstimateDetails() async {
-    final loadFuture = _detailsLoadFuture;
-    if (loadFuture != null) await loadFuture;
-    if (_detailsError == null) return true;
-    _showLaunchError('Unable to load estimate items: $_detailsError');
-    return false;
-  }
-
-  Future<void> _downloadPdf() async {
-    final pdf = pw.Document();
-    pdf.addPage(pw.MultiPage(
-      pageFormat: PdfPageFormat.a4,
-      build: (_) => [
-        pw.Text('ESTIMATE',
-            style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold)),
-        pw.SizedBox(height: 12),
-        pw.Text('Estimate: ${_estimate.estimateNumber}'),
-        pw.Text('Customer: ${_estimate.customerName}'),
-        pw.Text('Date: ${DateFormat('dd-MM-yyyy').format(_estimate.date)}'),
-        pw.Text(
-            'Status: ${_estimate.status.tableLabel}  •  Approval: ${_estimate.approvalStatus}'),
-        pw.SizedBox(height: 18),
-        pw.Table(border: pw.TableBorder.all(), children: [
-          pw.TableRow(
-              decoration: const pw.BoxDecoration(color: PdfColors.blueGrey100),
-              children: [
-                for (final title in [
-                  'Item',
-                  'Description',
-                  'Qty',
-                  'Rate',
-                  'Amount'
-                ])
-                  pw.Padding(
-                      padding: const pw.EdgeInsets.all(6),
-                      child: pw.Text(title,
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold))),
-              ]),
-          for (final item in _estimate.items)
-            pw.TableRow(
-                children: [
-              item.itemName,
-              item.description,
-              item.qty.toString(),
-              item.rate.toStringAsFixed(2),
-              (item.qty * item.rate).toStringAsFixed(2),
-            ]
-                    .map((value) => pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text(value)))
-                    .toList()),
-        ]),
-        pw.SizedBox(height: 18),
-        pw.Align(
-            alignment: pw.Alignment.centerRight,
-            child: pw.Text('Total: INR ${_estimate.total.toStringAsFixed(2)}',
-                style: pw.TextStyle(
-                    fontSize: 16, fontWeight: pw.FontWeight.bold))),
-      ],
-    ));
-    try {
-      await Printing.sharePdf(
-          bytes: await pdf.save(), filename: '${_estimate.estimateNumber}.pdf');
-    } catch (error) {
-      if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Unable to create PDF: $error')));
-    }
-  }
-
-  String _estimateShareMessage() {
-    final money = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: 'INR ',
-      decimalDigits: 2,
-    );
-    final buffer = StringBuffer()
-      ..writeln('ESTIMATE')
-      ..writeln('Estimate: ${_estimate.estimateNumber}')
-      ..writeln('Customer: ${_estimate.customerName}')
-      ..writeln('Date: ${DateFormat('dd MMM yyyy').format(_estimate.date)}');
-
-    if (_estimate.expiryDate != null) {
-      buffer.writeln(
-        'Expiry Date: ${DateFormat('dd MMM yyyy').format(_estimate.expiryDate!)}',
-      );
-    }
-    if (_estimate.salesPerson.isNotEmpty) {
-      buffer.writeln('Sales Person: ${_estimate.salesPerson}');
-    }
-    if (_estimate.salesOrderNumber?.isNotEmpty ?? false) {
-      buffer.writeln('Sales Order: ${_estimate.salesOrderNumber}');
-    }
-    buffer
-      ..writeln('Status: ${_estimate.status.tableLabel}')
-      ..writeln('Approval: ${_estimate.approvalStatus}')
-      ..writeln()
-      ..writeln('ITEMS');
-
-    if (_estimate.items.isEmpty) {
-      buffer.writeln('No line items.');
-    } else {
-      for (var index = 0; index < _estimate.items.length; index++) {
-        final item = _estimate.items[index];
-        buffer
-          ..writeln('${index + 1}. ${item.itemName}')
-          ..writeln(
-              '   Description: ${item.description.isEmpty ? '-' : item.description}')
-          ..writeln('   Quantity: ${item.qty.toStringAsFixed(2)}')
-          ..writeln('   Rate: ${money.format(item.rate)}')
-          ..writeln('   Amount: ${money.format(item.amount)}');
-      }
-    }
-
-    buffer
-      ..writeln()
-      ..writeln('Subtotal: ${money.format(_estimate.subTotal)}')
-      ..writeln('Total: ${money.format(_estimate.total)}');
-    return buffer.toString().trimRight();
-  }
-
-  Future<void> _sendEmail() async {
-    if (!await _waitForEstimateDetails()) return;
-    if (_estimate.customerEmail.trim().isEmpty) {
-      _showLaunchError('This customer does not have an email address.');
-      return;
-    }
-    final uri = Uri(
-        scheme: 'mailto',
-        path: _estimate.customerEmail.trim(),
-        queryParameters: {
-          'subject': 'Estimate ${_estimate.estimateNumber}',
-          'body': _estimateShareMessage(),
-        });
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication))
-      _showLaunchError('Email app could not be opened.');
-  }
-
-  Future<void> _sendWhatsApp() async {
-    if (!await _waitForEstimateDetails()) return;
-    final phone = _estimate.customerPhone.replaceAll(RegExp(r'\D'), '');
-    if (phone.isEmpty) {
-      _showLaunchError('This customer does not have a phone number.');
-      return;
-    }
-    final message = _estimateShareMessage();
-    final encoded = Uri.encodeComponent(message);
-    final whatsappUrl = Uri.parse('https://wa.me/$phone?text=$encoded');
-    final alternateUrl =
-        Uri.parse('https://api.whatsapp.com/send?phone=$phone&text=$encoded');
-
-    if (!await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication)) {
-      if (!await launchUrl(alternateUrl,
-          mode: LaunchMode.externalApplication)) {
-        _showLaunchError('WhatsApp could not be opened.');
-      }
-    }
-  }
-
-  void _showLaunchError(String message) {
-    if (mounted)
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final screenSize = MediaQuery.sizeOf(context);
-    final previewWidth = (screenSize.width * .9).clamp(0.0, 900.0).toDouble();
-    final previewHeight =
-        (screenSize.height - 32).clamp(260.0, 760.0).toDouble();
-    final currency =
-        NumberFormat.currency(locale: 'en_IN', symbol: 'INR', decimalDigits: 2);
-    return Dialog(
-      insetPadding: const EdgeInsets.all(12),
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: SizedBox(
-        width: previewWidth,
-        height: previewHeight,
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(22, 18, 10, 18),
-            child: LayoutBuilder(builder: (context, constraints) {
-              final customer = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(_estimate.customerName,
-                      style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black)),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${_estimate.estimateNumber} | ${DateFormat('M/d/yyyy').format(_estimate.date)}',
-                    style: const TextStyle(fontSize: 14, color: Colors.black),
-                  ),
-                ],
-              );
-              final actions = Row(mainAxisSize: MainAxisSize.min, children: [
-                OutlinedButton.icon(
-                  onPressed: _busy ? null : _downloadPdf,
-                  icon: const Icon(Icons.download_outlined,
-                      size: 18, color: Colors.black),
-                  label: const Text('Download PDF'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.black,
-                    disabledForegroundColor: Colors.black,
-                    backgroundColor: const Color(0xFFE3E3E3),
-                    side: BorderSide.none,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                PopupMenuButton<String>(
-                  enabled: !_busy,
-                  tooltip: 'Send document',
-                  onSelected: (value) async {
-                    if (value == 'email') {
-                      await _sendEmail();
-                    } else if (value == 'whatsapp') {
-                      await _sendWhatsApp();
-                    }
-                  },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(
-                      value: 'email',
-                      child: Row(
-                        children: [
-                          Icon(Icons.mail_outline, size: 18),
-                          SizedBox(width: 8),
-                          Text('Mail'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'whatsapp',
-                      child: Row(
-                        children: [
-                          Icon(Icons.chat_bubble_outline, size: 18),
-                          SizedBox(width: 8),
-                          Text('WhatsApp'),
-                        ],
-                      ),
-                    ),
-                  ],
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE3E3E3),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.send_outlined,
-                            size: 18, color: Colors.black),
-                        SizedBox(width: 6),
-                        Text('Send', style: TextStyle(color: Colors.black)),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (_estimate.approvalStatus == 'Approved')
-                  PopupMenuButton<String>(
-                    enabled: !_busy,
-                    onSelected: (_) async {
-                      final navigator = Navigator.of(context);
-                      setState(() => _busy = true);
-                      final converted = await widget.onConvert(_estimate);
-                      if (!mounted) return;
-                      if (converted) navigator.pop();
-                      if (!converted) setState(() => _busy = false);
-                    },
-                    itemBuilder: (_) => [
-                      PopupMenuItem(
-                        value: 'convert',
-                        child: Text(
-                          _estimate.salesOrderId == null
-                              ? 'Sales Order'
-                              : 'Open Sales Order ${_estimate.salesOrderNumber ?? ''}',
-                          style: const TextStyle(color: Colors.black),
-                        ),
-                      ),
-                    ],
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 11),
-                      decoration: BoxDecoration(
-                          color: const Color(0xFF3498DB),
-                          borderRadius: BorderRadius.circular(6)),
-                      child:
-                          const Row(mainAxisSize: MainAxisSize.min, children: [
-                        Text('Convert As',
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.w600)),
-                        SizedBox(width: 6),
-                        Icon(Icons.keyboard_arrow_down,
-                            color: Colors.black, size: 20),
-                      ]),
-                    ),
-                  ),
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: null,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.black,
-                    disabledForegroundColor: Colors.black,
-                    backgroundColor: const Color(0xFF899597),
-                    side: BorderSide.none,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                  ),
-                  child: const Text('Void'),
-                ),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  tooltip: 'Close',
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, color: Colors.black),
-                ),
-              ]);
-              if (constraints.maxWidth < 760) {
-                return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      customer,
-                      const SizedBox(height: 8),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: actions,
-                      ),
-                    ]);
-              }
-              if (constraints.maxWidth < 930) {
-                return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      customer,
-                      const SizedBox(height: 8),
-                      Align(
-                          alignment: Alignment.centerRight,
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: actions,
-                          )),
-                    ]);
-              }
-              return Row(children: [
-                Expanded(child: customer),
-                actions,
-              ]);
-            }),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-              child: LayoutBuilder(builder: (context, constraints) {
-                final lineItems = Column(children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 14),
-                    color: const Color(0xFFF5F6F7),
-                    child: const Row(children: [
-                      Expanded(
-                          flex: 3,
-                          child: Text('Item & Description',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.black))),
-                      Expanded(
-                          flex: 1,
-                          child: Text('Qty',
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.black))),
-                      Expanded(
-                          flex: 2,
-                          child: Text('Rate',
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.black))),
-                      Expanded(
-                          flex: 2,
-                          child: Text('Amount',
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.black))),
-                    ]),
-                  ),
-                  Expanded(
-                    child: _loadingDetails
-                        ? const Center(child: CircularProgressIndicator())
-                        : _detailsError != null
-                            ? Center(
-                                child: Text(
-                                  'Unable to load estimate items: $_detailsError',
-                                  style: const TextStyle(color: Colors.black),
-                                  textAlign: TextAlign.center,
-                                ),
-                              )
-                            : _estimate.items.isEmpty
-                                ? const Center(
-                                    child: Text(
-                                      'No estimate items found.',
-                                      style: TextStyle(color: Colors.black),
-                                    ),
-                                  )
-                                : ListView(
-                                    children: _estimate.items
-                                        .map((item) => Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 12,
-                                                      vertical: 12),
-                                              decoration: const BoxDecoration(
-                                                  border: Border(
-                                                      bottom: BorderSide(
-                                                          color: Color(
-                                                              0xFFE0E0E0)))),
-                                              child: Row(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Expanded(
-                                                        flex: 3,
-                                                        child: Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            children: [
-                                                              Text(
-                                                                  item.itemName,
-                                                                  style: const TextStyle(
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w700,
-                                                                      color: Colors
-                                                                          .black)),
-                                                              if (item
-                                                                  .description
-                                                                  .isNotEmpty) ...[
-                                                                const SizedBox(
-                                                                    height: 3),
-                                                                Text(
-                                                                    item
-                                                                        .description,
-                                                                    style: const TextStyle(
-                                                                        color: Colors
-                                                                            .black)),
-                                                              ],
-                                                            ])),
-                                                    Expanded(
-                                                        flex: 1,
-                                                        child: Text(
-                                                            item.qty
-                                                                .toStringAsFixed(
-                                                                    2),
-                                                            textAlign:
-                                                                TextAlign.right,
-                                                            style: const TextStyle(
-                                                                color: Colors
-                                                                    .black))),
-                                                    Expanded(
-                                                        flex: 2,
-                                                        child: Text(
-                                                            currency.format(
-                                                                item.rate),
-                                                            textAlign:
-                                                                TextAlign.right,
-                                                            style: const TextStyle(
-                                                                color: Colors
-                                                                    .black))),
-                                                    Expanded(
-                                                        flex: 2,
-                                                        child: Text(
-                                                            currency.format(
-                                                                item.qty *
-                                                                    item.rate),
-                                                            textAlign:
-                                                                TextAlign.right,
-                                                            style: const TextStyle(
-                                                                color: Colors
-                                                                    .black))),
-                                                  ]),
-                                            ))
-                                        .toList(),
-                                  ),
-                  ),
-                ]);
-                final summary = Padding(
-                  padding: const EdgeInsets.only(left: 16),
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Summary',
-                            style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.black)),
-                        const SizedBox(height: 8),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Sub Total',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black)),
-                              Text(currency.format(_estimate.total),
-                                  style: const TextStyle(color: Colors.black)),
-                            ]),
-                        const SizedBox(height: 12),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Total',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.black)),
-                              Text(currency.format(_estimate.total),
-                                  style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.black)),
-                            ]),
-                      ]),
-                );
-                if (constraints.maxWidth < 700) {
-                  return Column(children: [
-                    Expanded(child: lineItems),
-                    const SizedBox(height: 14),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: constraints.maxHeight * .35,
-                      ),
-                      child: SingleChildScrollView(child: summary),
-                    ),
-                  ]);
-                }
-                return Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(flex: 65, child: lineItems),
-                      const VerticalDivider(width: 1, color: Color(0xFFE0E0E0)),
-                      Expanded(
-                        flex: 35,
-                        child: SingleChildScrollView(child: summary),
-                      ),
-                    ]);
-              }),
-            ),
-          ),
-        ]),
-      ),
-    );
-  }
-}
-
 class NewEstimateDialog extends StatefulWidget {
   final String nextNumber;
-  final EstimateData? sourceEstimate;
-  final bool editMode;
   final int? initialCustomerId;
   final String? initialCustomerName;
 
   const NewEstimateDialog({
     super.key,
     required this.nextNumber,
-    this.sourceEstimate,
-    this.editMode = false,
     this.initialCustomerId,
     this.initialCustomerName,
   });
@@ -3140,9 +1842,7 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
 
   late final TextEditingController estimateNumberController =
       TextEditingController(
-    text: widget.editMode
-        ? widget.sourceEstimate?.estimateNumber
-        : widget.nextNumber,
+    text: widget.nextNumber,
   );
 
   final TextEditingController customerController = TextEditingController();
@@ -3210,12 +1910,9 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
     });
 
     try {
-      final referenceData = await Future.wait<Object>([
-        EstimatesApi.getCustomers(),
-        EstimatesApi.getCatalog(),
-      ]);
-      final customers = referenceData[0] as List<CustomerOption>;
-      final catalog = referenceData[1] as List<CatalogOption>;
+      final customers = await EstimatesApi.getCustomers();
+
+      final catalog = await EstimatesApi.getCatalog();
 
       if (!mounted) return;
 
@@ -3224,9 +1921,26 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
 
         _catalog = catalog;
 
+        final initialCustomerId = widget.initialCustomerId;
+        if (initialCustomerId != null) {
+          for (final customer in customers) {
+            if (customer.id == initialCustomerId) {
+              _selectedCustomer = customer;
+              break;
+            }
+          }
+          _selectedCustomer ??= CustomerOption(
+            id: initialCustomerId,
+            name: widget.initialCustomerName ?? '',
+            companyName: '',
+            email: '',
+          );
+        }
+        customerController.text =
+            _selectedCustomer?.name ?? widget.initialCustomerName ?? '';
+
         _isLoadingData = false;
       });
-      _populateSourceEstimate();
     } catch (error) {
       if (!mounted) return;
 
@@ -3236,60 +1950,6 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
         _loadingError = error.toString();
       });
     }
-  }
-
-  void _populateSourceEstimate() {
-    final source = widget.sourceEstimate;
-    if (source == null) {
-      setState(() {
-        final matchingCustomers = _customers
-            .where((customer) => customer.id == widget.initialCustomerId)
-            .toList();
-        _selectedCustomer =
-            matchingCustomers.isEmpty ? null : matchingCustomers.first;
-        customerController.text =
-            _selectedCustomer?.name ?? widget.initialCustomerName ?? '';
-      });
-      return;
-    }
-    final matchingCustomers =
-        _customers.where((c) => c.id == source.customerId).toList();
-    _selectedCustomer =
-        matchingCustomers.isEmpty ? null : matchingCustomers.first;
-    customerController.text = _selectedCustomer?.name ?? source.customerName;
-    salesPersonController.text = source.salesPerson;
-    selectedDate = source.date;
-    expiryDate = source.expiryDate;
-    for (final row in _itemRows) {
-      row.dispose();
-    }
-    _itemRows.clear();
-    for (final item in source.items) {
-      final productId = item.sourceType == 'Part' ? item.partId : item.itemId;
-      final row = _ItemRow();
-      final matchingProducts = _catalog
-          .where((p) => p.sourceType == item.sourceType && p.id == productId)
-          .toList();
-      row.selectedProduct = matchingProducts.isNotEmpty
-          ? matchingProducts.first
-          : (productId == null
-              ? null
-              : CatalogOption(
-                  sourceType: item.sourceType,
-                  id: productId,
-                  name: item.itemName,
-                  sku: '',
-                  description: item.description,
-                  rate: item.rate,
-                ));
-      row.itemController.text = item.itemName;
-      row.descriptionController.text = item.description;
-      row.qtyController.text = item.qty.toString();
-      row.rateController.text = item.rate.toStringAsFixed(2);
-      _itemRows.add(row);
-    }
-    if (_itemRows.isEmpty) _itemRows.add(_ItemRow());
-    if (mounted) setState(() {});
   }
 
   // ==========================================================
@@ -3343,8 +2003,8 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
   // ==========================================================
 
   Future<void> _selectDate() async {
-    final picked = await _showEstimateDatePicker(
-      context,
+    final picked = await showDatePicker(
+      context: context,
       initialDate: selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
@@ -3358,8 +2018,8 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
   }
 
   Future<void> _selectExpiryDate() async {
-    final picked = await _showEstimateDatePicker(
-      context,
+    final picked = await showDatePicker(
+      context: context,
       initialDate: expiryDate ?? selectedDate,
       firstDate: selectedDate,
       lastDate: DateTime(2100),
@@ -3474,11 +2134,9 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
         total: total,
       );
 
-      if (widget.editMode && widget.sourceEstimate?.id != null) {
-        await EstimatesApi.updateEstimate(widget.sourceEstimate!.id!, estimate);
-      } else {
-        await EstimatesApi.createEstimate(estimate);
-      }
+      await EstimatesApi.createEstimate(
+        estimate,
+      );
 
       if (!mounted) return;
 
@@ -3527,8 +2185,8 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
       backgroundColor: Colors.transparent,
       child: ConstrainedBox(
         constraints: const BoxConstraints(
-          maxWidth: 960,
-          maxHeight: 720,
+          maxWidth: 1180,
+          maxHeight: 760,
         ),
         child: Container(
           decoration: BoxDecoration(
@@ -3554,13 +2212,9 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                 ),
                 child: Row(
                   children: [
-                    Expanded(
+                    const Expanded(
                       child: Text(
-                        widget.editMode
-                            ? 'Edit Estimate'
-                            : widget.sourceEstimate == null
-                                ? 'New Estimate'
-                                : 'Clone Estimate',
+                        'New Estimate',
                         style: TextStyle(
                           color: Color(
                             0xFF17395C,
@@ -3769,9 +2423,8 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                               ),
                               ..._itemRows.map(
                                 (row) {
-                                  return KeyedSubtree(
-                                    key: ObjectKey(row),
-                                    child: _buildItemRow(row),
+                                  return _buildItemRow(
+                                    row,
                                   );
                                 },
                               ),
@@ -4000,7 +2653,6 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                 hintStyle: const TextStyle(
                   color: Color(0xFF757575),
                 ),
-                fillColor: Colors.white,
               ),
               onChanged: (value) {
                 if (_selectedCustomer != null &&
@@ -4022,9 +2674,46 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
             onSelected,
             options,
           ) {
-            return CustomerOptionsView(
-              customers: options.toList(),
-              onSelected: onSelected,
+            final list = options.toList();
+
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 10,
+                borderRadius: BorderRadius.circular(
+                  10,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxHeight: 250,
+                    maxWidth: 330,
+                  ),
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    itemCount: list.length,
+                    itemBuilder: (_, index) {
+                      final customer = list[index];
+
+                      return ListTile(
+                        title: Text(
+                          customer.name,
+                        ),
+                        subtitle: customer.companyName.isEmpty
+                            ? null
+                            : Text(
+                                customer.companyName,
+                              ),
+                        onTap: () {
+                          onSelected(
+                            customer,
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ),
             );
           },
         ),
@@ -4053,24 +2742,34 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                 RawAutocomplete<CatalogOption>(
                   textEditingController: row.itemController,
                   focusNode: row.focusNode,
-                  displayStringForOption: (option) =>
-                      identical(option, _noCatalogResultsOption)
-                          ? row.itemController.text
-                          : option.name,
+                  displayStringForOption: (option) => option.name,
                   optionsBuilder: (textValue) {
-                    final matches =
-                        searchCatalogOptions(_catalog, textValue.text)
-                            .take(10)
-                            .toList();
-                    return matches.isEmpty
-                        ? const [_noCatalogResultsOption]
-                        : matches;
-                  },
-                  onSelected: (product) {
-                    if (identical(product, _noCatalogResultsOption)) {
-                      return;
+                    final query = textValue.text.trim().toLowerCase();
+
+                    if (query.isEmpty) {
+                      return _catalog.take(
+                        10,
+                      );
                     }
 
+                    return _catalog
+                        .where(
+                          (item) =>
+                              item.name.toLowerCase().contains(
+                                    query,
+                                  ) ||
+                              item.sku.toLowerCase().contains(
+                                    query,
+                                  ) ||
+                              item.sourceType.toLowerCase().contains(
+                                    query,
+                                  ),
+                        )
+                        .take(
+                          10,
+                        );
+                  },
+                  onSelected: (product) {
                     setState(() {
                       row.selectedProduct = product;
 
@@ -4092,16 +2791,12 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                     return TextFormField(
                       controller: controller,
                       focusNode: focusNode,
+                      cursorColor: const Color(0xFF1E78B7),
                       style: const TextStyle(
                         color: Color(0xFF263746),
                       ),
-                      cursorColor: const Color(0xFF1E78B7),
                       decoration: _cellInputDecoration().copyWith(
                         hintText: 'Select or type to search...',
-                        hintStyle: const TextStyle(
-                          color: Color(0xFF64748B),
-                        ),
-                        fillColor: Colors.white,
                       ),
                       onChanged: (value) {
                         if (row.selectedProduct != null &&
@@ -4118,20 +2813,70 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                     onSelected,
                     options,
                   ) {
-                    final availableOptions = options.toList();
-                    final showNoResults = availableOptions.length == 1 &&
-                        identical(
-                          availableOptions.single,
-                          _noCatalogResultsOption,
-                        );
-                    return CatalogOptionsView(
-                      items: showNoResults ? const [] : availableOptions,
-                      onSelected: (item) {
-                        if (!identical(item, _noCatalogResultsOption)) {
-                          onSelected(item);
-                        }
-                      },
-                      showNoResults: showNoResults,
+                    final list = options.toList();
+
+                    return Align(
+                      alignment: Alignment.topLeft,
+                      child: Material(
+                        elevation: 10,
+                        borderRadius: BorderRadius.circular(
+                          10,
+                        ),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth: 450,
+                            maxHeight: 280,
+                          ),
+                          child: ListView.builder(
+                            padding: EdgeInsets.zero,
+                            shrinkWrap: true,
+                            itemCount: list.length,
+                            itemBuilder: (_, index) {
+                              final item = list[index];
+
+                              return ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: item.sourceType == 'Item'
+                                        ? const Color(
+                                            0xFFE3F2FD,
+                                          )
+                                        : const Color(
+                                            0xFFFFF3E0,
+                                          ),
+                                    borderRadius: BorderRadius.circular(
+                                      10,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    item.sourceType,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                                title: Text(
+                                  item.name,
+                                ),
+                                subtitle: Text(
+                                  item.sku.isEmpty
+                                      ? 'Rate: INR ${item.rate.toStringAsFixed(2)}'
+                                      : '${item.sku} • INR ${item.rate.toStringAsFixed(2)}',
+                                ),
+                                onTap: () {
+                                  onSelected(
+                                    item,
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -4409,9 +3154,7 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
     return InputDecoration(
       isDense: true,
       filled: true,
-      fillColor: const Color(
-        0xFFF8FAFB,
-      ),
+      fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 16,
         vertical: 16,
@@ -4449,8 +3192,9 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
     return InputDecoration(
       isDense: true,
       filled: true,
-      fillColor: const Color(
-        0xFFF8FAFB,
+      fillColor: Colors.white,
+      hintStyle: const TextStyle(
+        color: Color(0xFF64748B),
       ),
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 14,
@@ -4575,11 +3319,9 @@ class _HeaderText extends StatelessWidget {
 
 class _StatusBadge extends StatelessWidget {
   final EstimateStatus status;
-  final ValueChanged<EstimateStatus?> onChanged;
 
   const _StatusBadge({
     required this.status,
-    required this.onChanged,
   });
 
   Color get backgroundColor {
@@ -4644,47 +3386,25 @@ class _StatusBadge extends StatelessWidget {
   Widget build(
     BuildContext context,
   ) {
-    if (status == EstimateStatus.expired) {
-      return Align(
-        alignment: Alignment.centerLeft,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-              color: backgroundColor, borderRadius: BorderRadius.circular(20)),
-          child: Text(status.label,
-              style: TextStyle(
-                  color: textColor, fontSize: 12, fontWeight: FontWeight.w700)),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 6,
         ),
-      );
-    }
-
-    return Tooltip(
-      message: 'Document status only. Workflow approval is separate.',
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Container(
-          padding: const EdgeInsets.only(left: 10, right: 4),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(
-              20,
-            ),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(
+            20,
           ),
-          child: DropdownButton<String>(
-            value: status.tableLabel,
-            isDense: true,
-            dropdownColor: Colors.white,
-            underline: const SizedBox.shrink(),
-            icon: Icon(Icons.keyboard_arrow_down, size: 18, color: textColor),
-            style: TextStyle(
-                color: textColor, fontSize: 12, fontWeight: FontWeight.w700),
-            borderRadius: BorderRadius.circular(10),
-            items: const ['Draft', 'Sent', 'Approved', 'Rejected']
-                .map((value) =>
-                    DropdownMenuItem(value: value, child: Text(value)))
-                .toList(),
-            onChanged: (value) =>
-                onChanged(EstimateStatus.fromTableLabel(value)),
+        ),
+        child: Text(
+          status.label,
+          style: TextStyle(
+            color: textColor,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),

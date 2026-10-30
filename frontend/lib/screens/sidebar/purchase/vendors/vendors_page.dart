@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../shared/glass_modal_shell.dart';
+import '../shared/purchase_action_menu.dart';
+import '../shared/purchase_dropdown_style.dart';
+import '../bills/bill_model.dart';
+import '../bills/bill_repository.dart';
+import '../bills/widgets/add_bill_dialog.dart';
 import 'vendor_filter.dart';
 import 'vendor_model.dart';
 import 'vendor_repository.dart';
@@ -18,6 +23,7 @@ class VendorsPage extends StatefulWidget {
 
 class _VendorsPageState extends State<VendorsPage> {
   final VendorRepository _repository = ApiVendorRepository();
+  final BillRepository _billRepository = ApiBillRepository();
 
   List<VendorModel> _vendors = [];
   bool _isLoading = true;
@@ -27,7 +33,7 @@ class _VendorsPageState extends State<VendorsPage> {
   final countryController = TextEditingController();
 
   String statusFilter = 'All';
-  bool _isStatusFocused = false;
+  bool _showFilters = false;
 
   @override
   void initState() {
@@ -142,6 +148,35 @@ class _VendorsPageState extends State<VendorsPage> {
     );
   }
 
+  Future<void> _openNewBill(VendorModel vendor) async {
+    final draft = await showDialog<BillModelDraft>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AddBillDialog(initialVendor: vendor),
+    );
+    if (!mounted || draft == null) return;
+
+    final bill = BillModel(
+      billNumber: draft.billNumber,
+      vendorInvoiceNumber: draft.vendorInvoiceNumber,
+      invoiceAttachmentPath: draft.invoiceAttachmentPath,
+      vendorId: draft.vendorId,
+      vendorName: draft.vendorName,
+      purchaseOrderId: draft.purchaseOrderId,
+      purchaseOrderNumber: draft.purchaseOrderNumber,
+      billDate: draft.billDate,
+      dueDate: draft.dueDate,
+      items: draft.items,
+      taxAmount: draft.taxAmount,
+    );
+
+    await _billRepository.addBill(bill);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Bill created successfully')),
+    );
+  }
+
   Future<void> _showVendor(VendorModel vendor) {
     return showDialog<void>(
       context: context,
@@ -197,280 +232,298 @@ class _VendorsPageState extends State<VendorsPage> {
                   ),
                 ),
                 GlassButton(
+                  onPressed: () => setState(() => _showFilters = !_showFilters),
+                  icon: Icons.filter_alt_outlined,
+                  label: 'Filter',
+                ),
+                const SizedBox(width: 12),
+                GlassButton(
                   onPressed: _openAddVendor,
                   icon: Icons.add,
                   label: 'New Vendor',
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            GlassPanel(
-              padding: const EdgeInsets.all(20),
-              child: Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                crossAxisAlignment: WrapCrossAlignment.end,
-                children: [
-                  _filterField(
-                    label: 'Status',
-                    child: Container(
-                      width: 160,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FA),
-                        borderRadius: BorderRadius.circular(7),
-                        border: Border.all(
-                          color: _isStatusFocused
-                              ? const Color(0xFF9CCFEA)
-                              : const Color(0xFFD9DEE5),
-                          width: _isStatusFocused ? 1.25 : 1,
+            if (_showFilters) ...[
+              const SizedBox(height: 20),
+              GlassPanel(
+                padding: const EdgeInsets.all(20),
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  crossAxisAlignment: WrapCrossAlignment.end,
+                  children: [
+                    _filterField(
+                      label: 'Status',
+                      child: Container(
+                        width: 160,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8F9FA),
+                          borderRadius: BorderRadius.circular(7),
+                          border: Border.all(color: const Color(0xFFD9DEE5)),
                         ),
-                      ),
-                      child: Focus(
-                        canRequestFocus: false,
-                        onFocusChange: (hasFocus) {
-                          if (_isStatusFocused != hasFocus) {
-                            setState(() => _isStatusFocused = hasFocus);
-                          }
-                        },
-                        child: Theme(
-                          data: Theme.of(context).copyWith(
-                            hoverColor: const Color(0xFFF1F3F5),
-                          ),
-                          child: PopupMenuButton<String>(
-                            padding: EdgeInsets.zero,
-                            position: PopupMenuPosition.under,
-                            color: Colors.white,
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            constraints: const BoxConstraints.tightFor(
-                              width: 144,
-                            ),
-                            onSelected: (value) {
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: statusFilter,
+                            isExpanded: true,
+                            dropdownColor: PurchaseDropdownStyle.menuColor,
+                            borderRadius: PurchaseDropdownStyle.borderRadius,
+                            menuMaxHeight: 320,
+                            items: const [
+                              DropdownMenuItem(
+                                  value: 'All', child: Text('All')),
+                              DropdownMenuItem(
+                                  value: 'Active', child: Text('Active')),
+                              DropdownMenuItem(
+                                  value: 'Inactive', child: Text('Inactive')),
+                            ],
+                            onChanged: (value) {
+                              if (value == null) return;
                               setState(() => statusFilter = value);
                             },
-                            itemBuilder: (context) => [
-                              for (final value in ['All', 'Active', 'Inactive'])
-                                PopupMenuItem<String>(
-                                  value: value,
-                                  height: 38,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                  ),
-                                  child: Text(
-                                    value,
-                                    style: const TextStyle(
-                                      color: Color(0xFF102A43),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                            child: SizedBox(
-                              width: 136,
-                              height: 40,
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    statusFilter,
-                                    style: const TextStyle(
-                                      color: Color(0xFF102A43),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.keyboard_arrow_down,
-                                    color: Color(0xFF102A43),
-                                    size: 20,
-                                  ),
-                                ],
-                              ),
-                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  _filterField(
-                    label: 'City',
-                    child: SizedBox(
-                        width: 160, child: _filterTextField(cityController)),
-                  ),
-                  _filterField(
-                    label: 'State',
-                    child: SizedBox(
-                        width: 160, child: _filterTextField(stateController)),
-                  ),
-                  _filterField(
-                    label: 'Country',
-                    child: SizedBox(
-                        width: 160, child: _filterTextField(countryController)),
-                  ),
-                  GlassButton(
-                    onPressed: _loadVendors,
-                    icon: Icons.filter_alt_outlined,
-                    label: 'Filter',
-                  ),
-                  GlassButton(
-                    onPressed: _clearFilters,
-                    icon: Icons.refresh,
-                    label: 'Clear',
-                    primary: false,
-                  ),
-                ],
+                    _filterField(
+                      label: 'City',
+                      child: SizedBox(
+                          width: 160, child: _filterTextField(cityController)),
+                    ),
+                    _filterField(
+                      label: 'State',
+                      child: SizedBox(
+                          width: 160, child: _filterTextField(stateController)),
+                    ),
+                    _filterField(
+                      label: 'Country',
+                      child: SizedBox(
+                          width: 160,
+                          child: _filterTextField(countryController)),
+                    ),
+                    GlassButton(
+                      onPressed: _loadVendors,
+                      icon: Icons.filter_alt_outlined,
+                      label: 'Apply',
+                    ),
+                    GlassButton(
+                      onPressed: _clearFilters,
+                      icon: Icons.refresh,
+                      label: 'Clear',
+                      primary: false,
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
             const SizedBox(height: 20),
-            GlassPanel(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  width: 950,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 950,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 18),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.35),
-                          borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(14)),
-                        ),
-                        child: const Row(
-                          children: [
-                            Expanded(
-                                flex: 2, child: _HeaderText('VENDOR NAME')),
-                            Expanded(
-                                flex: 2, child: _HeaderText('COMPANY NAME')),
-                            Expanded(flex: 3, child: _HeaderText('EMAIL')),
-                            Expanded(flex: 2, child: _HeaderText('PHONE')),
-                            Expanded(flex: 2, child: _HeaderText('STATUS')),
-                            Expanded(flex: 2, child: _HeaderText('ACTIONS')),
-                          ],
-                        ),
-                      ),
-                      const Divider(height: 1, color: Color(0xFFD9DEE5)),
-                      if (_isLoading)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 30),
-                          child: Center(child: CircularProgressIndicator()),
-                        )
-                      else if (_vendors.isEmpty)
-                        Container(
-                          width: 950,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 24),
-                          child: const Text(
-                            'No vendors found. Click "+ New Vendor" to add one!',
-                            style: TextStyle(
-                                fontSize: 16, color: Color(0xFF42474D)),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final tableWidth =
+                    constraints.maxWidth < 950 ? 950.0 : constraints.maxWidth;
+
+                return GlassPanel(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: tableWidth,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: tableWidth,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 18),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.35),
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(14)),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: _headerCell('VENDOR NAME'),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: _headerCell('COMPANY NAME'),
+                                ),
+                                Expanded(
+                                  flex: 4,
+                                  child: _headerCell('EMAIL'),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: _headerCell('PHONE'),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: _headerCell('STATUS'),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: Center(
+                                    child: _HeaderText('ACTIONS'),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        )
-                      else
-                        ..._vendors.map((vendor) {
-                          return Column(
-                            children: [
-                              Container(
-                                width: 950,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 18, vertical: 16),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                        flex: 2,
-                                        child: Text(vendor.vendorName)),
-                                    Expanded(
-                                        flex: 2,
-                                        child: Text(vendor.companyName)),
-                                    Expanded(
-                                        flex: 3, child: Text(vendor.email)),
-                                    Expanded(
-                                        flex: 2, child: Text(vendor.phone)),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 10, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: vendor.status == 'Active'
-                                                ? const Color(0xFFE3F6E8)
-                                                : const Color(0xFFF4E3E3),
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                          ),
-                                          child: Text(
-                                            vendor.status,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: vendor.status == 'Active'
-                                                  ? const Color(0xFF1E7B34)
-                                                  : const Color(0xFFAB2A2A),
+                          const Divider(height: 1, color: Color(0xFFD9DEE5)),
+                          if (_isLoading)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 30),
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                          else if (_vendors.isEmpty)
+                            Container(
+                              width: tableWidth,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 18, vertical: 24),
+                              child: const Text(
+                                'No vendors found. Click "+ New Vendor" to add one!',
+                                style: TextStyle(
+                                    fontSize: 16, color: Color(0xFF42474D)),
+                              ),
+                            )
+                          else
+                            ..._vendors.map((vendor) {
+                              return Column(
+                                children: [
+                                  Container(
+                                    width: tableWidth,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 18, vertical: 16),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          flex: 2,
+                                          child: _valueCell(vendor.vendorName),
+                                        ),
+                                        Expanded(
+                                          flex: 2,
+                                          child: _valueCell(vendor.companyName),
+                                        ),
+                                        Expanded(
+                                          flex: 4,
+                                          child: _valueCell(vendor.email),
+                                        ),
+                                        Expanded(
+                                          flex: 2,
+                                          child: _valueCell(vendor.phone),
+                                        ),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                                right: 12),
+                                            child: Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 10,
+                                                        vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: vendor.status ==
+                                                          'Active'
+                                                      ? const Color(0xFFE3F6E8)
+                                                      : const Color(0xFFF4E3E3),
+                                                  borderRadius:
+                                                      BorderRadius.circular(20),
+                                                ),
+                                                child: Text(
+                                                  vendor.status,
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: vendor.status ==
+                                                            'Active'
+                                                        ? const Color(
+                                                            0xFF1E7B34)
+                                                        : const Color(
+                                                            0xFFAB2A2A),
+                                                  ),
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
+                                        Expanded(
+                                          flex: 1,
+                                          child: Align(
+                                            alignment: Alignment.center,
+                                            child: PurchaseActionMenu(
+                                              actions: [
+                                                PurchaseActionMenuItem(
+                                                  label: 'View vendor',
+                                                  icon:
+                                                      Icons.visibility_outlined,
+                                                  onPressed: () =>
+                                                      _runVendorAction(
+                                                    'view',
+                                                    () => _showVendor(vendor),
+                                                  ),
+                                                ),
+                                                PurchaseActionMenuItem(
+                                                  label: 'Edit vendor',
+                                                  icon: Icons.edit_outlined,
+                                                  onPressed: () =>
+                                                      _runVendorAction(
+                                                    'edit',
+                                                    () => _editVendor(vendor),
+                                                  ),
+                                                ),
+                                                PurchaseActionMenuItem(
+                                                  label: 'Duplicate vendor',
+                                                  icon: Icons.content_copy,
+                                                  onPressed: () =>
+                                                      _runVendorAction(
+                                                    'duplicate',
+                                                    () => _duplicateVendor(
+                                                        vendor),
+                                                  ),
+                                                ),
+                                                PurchaseActionMenuItem(
+                                                  label: 'New bill',
+                                                  icon: Icons
+                                                      .receipt_long_outlined,
+                                                  onPressed: () =>
+                                                      _runVendorAction(
+                                                    'create bill',
+                                                    () => _openNewBill(vendor),
+                                                  ),
+                                                ),
+                                                PurchaseActionMenuItem(
+                                                  label: 'Delete vendor',
+                                                  icon: Icons.delete_outline,
+                                                  destructive: true,
+                                                  onPressed: () =>
+                                                      _runVendorAction(
+                                                    'delete',
+                                                    () => _deleteVendor(vendor),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          _actionButton(
-                                            icon: Icons.visibility_outlined,
-                                            tooltip: 'View vendor',
-                                            onPressed: () => _runVendorAction(
-                                              'view',
-                                              () => _showVendor(vendor),
-                                            ),
-                                          ),
-                                          _actionButton(
-                                            icon: Icons.edit_outlined,
-                                            tooltip: 'Edit vendor',
-                                            onPressed: () => _runVendorAction(
-                                              'edit',
-                                              () => _editVendor(vendor),
-                                            ),
-                                          ),
-                                          _actionButton(
-                                            icon: Icons.content_copy,
-                                            tooltip: 'Duplicate vendor',
-                                            onPressed: () => _runVendorAction(
-                                              'duplicate',
-                                              () => _duplicateVendor(vendor),
-                                            ),
-                                          ),
-                                          _actionButton(
-                                            icon: Icons.delete_outline,
-                                            tooltip: 'Delete vendor',
-                                            onPressed: () => _runVendorAction(
-                                              'delete',
-                                              () => _deleteVendor(vendor),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Divider(
-                                  height: 1, color: Color(0xFFEDEFF2)),
-                            ],
-                          );
-                        }),
-                    ],
+                                  ),
+                                  const Divider(
+                                      height: 1, color: Color(0xFFEDEFF2)),
+                                ],
+                              );
+                            }),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ],
         ),
@@ -478,20 +531,22 @@ class _VendorsPageState extends State<VendorsPage> {
     );
   }
 
-  Widget _actionButton({
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onPressed,
-  }) {
-    return IconButton(
-      onPressed: onPressed,
-      icon: Icon(icon, color: const Color(0xFF777777), size: 20),
-      tooltip: tooltip,
-      padding: EdgeInsets.zero,
-      visualDensity: VisualDensity.compact,
-      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-    );
-  }
+  Widget _headerCell(String label) => Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: _HeaderText(label),
+      );
+
+  Widget _valueCell(String value) => Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: Tooltip(
+          message: value,
+          child: Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      );
 
   Widget _filterField({required String label, required Widget child}) {
     return SizedBox(

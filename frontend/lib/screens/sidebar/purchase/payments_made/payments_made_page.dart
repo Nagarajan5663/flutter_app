@@ -8,6 +8,8 @@ import '../../../../utils/pdf_file_download.dart';
 import '../bills/bill_model.dart';
 import '../bills/bill_repository.dart';
 import '../shared/glass_modal_shell.dart';
+import '../shared/purchase_action_menu.dart';
+import '../shared/purchase_dropdown_style.dart';
 import 'payment_made_model.dart';
 import 'payment_made_repository.dart';
 
@@ -29,6 +31,7 @@ class _PaymentsMadePageState extends State<PaymentsMadePage> {
   DateTime? _dateFrom;
   DateTime? _dateTo;
   bool _isLoading = true;
+  bool _showFilters = false;
   String? _error;
 
   @override
@@ -96,7 +99,8 @@ class _PaymentsMadePageState extends State<PaymentsMadePage> {
       if (!mounted) return;
       _showMessage('Payment recorded successfully');
     } catch (error) {
-      if (mounted) _showMessage('Unable to record payment: $error', error: true);
+      if (mounted)
+        _showMessage('Unable to record payment: $error', error: true);
     }
   }
 
@@ -140,7 +144,8 @@ class _PaymentsMadePageState extends State<PaymentsMadePage> {
       await _loadData();
       if (mounted) _showMessage('Payment updated successfully');
     } catch (error) {
-      if (mounted) _showMessage('Unable to update payment: $error', error: true);
+      if (mounted)
+        _showMessage('Unable to update payment: $error', error: true);
     }
   }
 
@@ -169,7 +174,8 @@ class _PaymentsMadePageState extends State<PaymentsMadePage> {
       await _loadData();
       if (mounted) _showMessage('Payment deleted successfully');
     } catch (error) {
-      if (mounted) _showMessage('Unable to delete payment: $error', error: true);
+      if (mounted)
+        _showMessage('Unable to delete payment: $error', error: true);
     }
   }
 
@@ -369,74 +375,82 @@ class _PaymentsMadePageState extends State<PaymentsMadePage> {
                   ),
                 ),
                 GlassButton(
+                  onPressed: () => setState(() => _showFilters = !_showFilters),
+                  icon: Icons.filter_alt_outlined,
+                  label: 'Filter',
+                ),
+                const SizedBox(width: 12),
+                GlassButton(
                   onPressed: _newPayment,
                   icon: Icons.add,
                   label: 'New Payment',
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            GlassPanel(
-              padding: const EdgeInsets.all(20),
-              child: Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                crossAxisAlignment: WrapCrossAlignment.end,
-                children: [
-                  _filterField(
-                    'Vendor Name',
-                    SizedBox(
-                      width: 185,
-                      child: _filterTextField(
-                        _vendorController,
-                        'Vendor name...',
+            if (_showFilters) ...[
+              const SizedBox(height: 20),
+              GlassPanel(
+                padding: const EdgeInsets.all(20),
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  crossAxisAlignment: WrapCrossAlignment.end,
+                  children: [
+                    _filterField(
+                      'Vendor Name',
+                      SizedBox(
+                        width: 185,
+                        child: _filterTextField(
+                          _vendorController,
+                          'Vendor name...',
+                        ),
                       ),
                     ),
-                  ),
-                  _filterField(
-                    'Bill #',
-                    SizedBox(
-                      width: 185,
-                      child: _filterTextField(
-                        _billController,
-                        'Bill number...',
+                    _filterField(
+                      'Bill #',
+                      SizedBox(
+                        width: 185,
+                        child: _filterTextField(
+                          _billController,
+                          'Bill number...',
+                        ),
                       ),
                     ),
-                  ),
-                  _filterField(
-                    'Date From',
-                    SizedBox(
-                      width: 155,
-                      child: _dateField(
-                        _dateFrom,
-                        (date) => _dateFrom = date,
+                    _filterField(
+                      'Date From',
+                      SizedBox(
+                        width: 155,
+                        child: _dateField(
+                          _dateFrom,
+                          (date) => _dateFrom = date,
+                        ),
                       ),
                     ),
-                  ),
-                  _filterField(
-                    'Date To',
-                    SizedBox(
-                      width: 155,
-                      child: _dateField(
-                        _dateTo,
-                        (date) => _dateTo = date,
+                    _filterField(
+                      'Date To',
+                      SizedBox(
+                        width: 155,
+                        child: _dateField(
+                          _dateTo,
+                          (date) => _dateTo = date,
+                        ),
                       ),
                     ),
-                  ),
-                  GlassButton(
-                    onPressed: _loadData,
-                    icon: Icons.filter_alt_outlined,
-                    label: 'Filter',
-                  ),
-                  GlassButton(
-                    onPressed: _clearFilters,
-                    icon: Icons.clear,
-                    label: 'Clear',
-                    primary: false,
-                  ),
-                ],
+                    GlassButton(
+                      onPressed: _loadData,
+                      icon: Icons.filter_alt_outlined,
+                      label: 'Apply',
+                    ),
+                    GlassButton(
+                      onPressed: _clearFilters,
+                      icon: Icons.clear,
+                      label: 'Clear',
+                      primary: false,
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
             const SizedBox(height: 20),
             GlassPanel(
               padding: const EdgeInsets.all(20),
@@ -448,6 +462,9 @@ class _PaymentsMadePageState extends State<PaymentsMadePage> {
                       const SizedBox(width: 10),
                       DropdownButton<int>(
                         value: 25,
+                        dropdownColor: PurchaseDropdownStyle.menuColor,
+                        borderRadius: PurchaseDropdownStyle.borderRadius,
+                        menuMaxHeight: 320,
                         items: const [25, 50, 100]
                             .map(
                               (size) => DropdownMenuItem(
@@ -520,25 +537,31 @@ class _PaymentsMadePageState extends State<PaymentsMadePage> {
                                       ),
                                     ),
                                     DataCell(
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          _action(
-                                            Icons.visibility_outlined,
-                                            'View payment',
-                                            () => _showPayment(payment),
-                                          ),
-                                          _action(
-                                            Icons.edit_outlined,
-                                            'Edit payment',
-                                            () => _editPayment(payment),
-                                          ),
-                                          _action(
-                                            Icons.delete_outline,
-                                            'Delete payment',
-                                            () => _deletePayment(payment),
-                                          ),
-                                        ],
+                                      Align(
+                                        alignment: Alignment.center,
+                                        child: PurchaseActionMenu(
+                                          actions: [
+                                            PurchaseActionMenuItem(
+                                              label: 'View payment',
+                                              icon: Icons.visibility_outlined,
+                                              onPressed: () =>
+                                                  _showPayment(payment),
+                                            ),
+                                            PurchaseActionMenuItem(
+                                              label: 'Edit payment',
+                                              icon: Icons.edit_outlined,
+                                              onPressed: () =>
+                                                  _editPayment(payment),
+                                            ),
+                                            PurchaseActionMenuItem(
+                                              label: 'Delete payment',
+                                              icon: Icons.delete_outline,
+                                              destructive: true,
+                                              onPressed: () =>
+                                                  _deletePayment(payment),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -606,7 +629,9 @@ class _PaymentsMadePageState extends State<PaymentsMadePage> {
             suffixIcon: Icon(Icons.calendar_month_outlined, size: 18),
           ),
           child: Text(
-            value == null ? 'dd-mm-yyyy' : DateFormat('dd-MM-yyyy').format(value),
+            value == null
+                ? 'dd-mm-yyyy'
+                : DateFormat('dd-MM-yyyy').format(value),
           ),
         ),
       );
@@ -614,14 +639,6 @@ class _PaymentsMadePageState extends State<PaymentsMadePage> {
   Widget _pageButton(String label, {required bool enabled}) => OutlinedButton(
         onPressed: enabled ? () {} : null,
         child: Text(label),
-      );
-
-  Widget _action(IconData icon, String tooltip, VoidCallback onPressed) =>
-      IconButton(
-        onPressed: onPressed,
-        tooltip: tooltip,
-        visualDensity: VisualDensity.compact,
-        icon: Icon(icon, color: const Color(0xFF7A8490), size: 20),
       );
 }
 
@@ -670,7 +687,8 @@ class _PaymentFormDialogState extends State<_PaymentFormDialog> {
   );
   late final _reference =
       TextEditingController(text: widget.payment?.reference ?? '');
-  late final _paidBy = TextEditingController(text: widget.payment?.paidBy ?? '');
+  late final _paidBy =
+      TextEditingController(text: widget.payment?.paidBy ?? '');
   late final _notes = TextEditingController(text: widget.payment?.notes ?? '');
   late DateTime _date = widget.payment?.date ?? DateTime.now();
   late String _mode = widget.payment?.mode ?? 'Bank Transfer';
