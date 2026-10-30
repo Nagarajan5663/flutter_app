@@ -113,7 +113,6 @@ class _InvestmentPageState extends State<InvestmentPage> {
                         color: Color(0xFF17395C),
                       ),
                     ),
-
                     ElevatedButton.icon(
                       onPressed: _openNewInvestmentForm,
                       icon: const Icon(
@@ -197,22 +196,17 @@ class _InvestmentPageState extends State<InvestmentPage> {
     return Column(
       children: [
         _buildTableHeader(),
-
         const Divider(
           height: 1,
           color: Color(0xFFE5E7EB),
         ),
-
         const SizedBox(height: 45),
-
         const Icon(
           Icons.trending_up,
           size: 55,
           color: Color(0xFFB0B8C2),
         ),
-
         const SizedBox(height: 15),
-
         const Text(
           'No investments found.',
           style: TextStyle(
@@ -220,7 +214,6 @@ class _InvestmentPageState extends State<InvestmentPage> {
             fontSize: 16,
           ),
         ),
-
         const SizedBox(height: 45),
       ],
     );
@@ -234,12 +227,10 @@ class _InvestmentPageState extends State<InvestmentPage> {
     return Column(
       children: [
         _buildTableHeader(),
-
         const Divider(
           height: 1,
           color: Color(0xFFE5E7EB),
         ),
-
         ..._investments.map(
           (investment) {
             return Column(
@@ -262,7 +253,6 @@ class _InvestmentPageState extends State<InvestmentPage> {
                           ),
                         ),
                       ),
-
                       Expanded(
                         flex: 2,
                         child: Text(
@@ -272,7 +262,6 @@ class _InvestmentPageState extends State<InvestmentPage> {
                           ),
                         ),
                       ),
-
                       Expanded(
                         flex: 2,
                         child: Text(
@@ -282,19 +271,15 @@ class _InvestmentPageState extends State<InvestmentPage> {
                           ),
                         ),
                       ),
-
                       Expanded(
                         flex: 2,
                         child: Text(
-                          investment.payer.isEmpty
-                              ? '-'
-                              : investment.payer,
+                          investment.payer.isEmpty ? '-' : investment.payer,
                           style: const TextStyle(
                             color: Colors.black,
                           ),
                         ),
                       ),
-
                       Expanded(
                         flex: 2,
                         child: Align(
@@ -304,7 +289,6 @@ class _InvestmentPageState extends State<InvestmentPage> {
                           ),
                         ),
                       ),
-
                       Expanded(
                         child: Text(
                           'INR ${investment.total.toStringAsFixed(2)}',
@@ -314,10 +298,10 @@ class _InvestmentPageState extends State<InvestmentPage> {
                           ),
                         ),
                       ),
-
                       SizedBox(
                         width: 72,
                         child: PopupMenuButton<String>(
+                          position: PopupMenuPosition.under,
                           icon: const Icon(
                             Icons.more_vert,
                           ),
@@ -380,7 +364,6 @@ class _InvestmentPageState extends State<InvestmentPage> {
                     ],
                   ),
                 ),
-
                 const Divider(
                   height: 1,
                   color: Color(0xFFE5E7EB),
@@ -405,31 +388,25 @@ class _InvestmentPageState extends State<InvestmentPage> {
             flex: 2,
             child: _TableHeaderText('DATE'),
           ),
-
           Expanded(
             flex: 2,
             child: _TableHeaderText('INVESTMENT #'),
           ),
-
           Expanded(
             flex: 2,
             child: _TableHeaderText('CATEGORY'),
           ),
-
           Expanded(
             flex: 2,
             child: _TableHeaderText('PAYER'),
           ),
-
           Expanded(
             flex: 2,
             child: _TableHeaderText('STATUS'),
           ),
-
           Expanded(
             child: _TableHeaderText('AMOUNT'),
           ),
-
           SizedBox(
             width: 72,
             child: _TableHeaderText('ACTIONS'),
@@ -594,8 +571,7 @@ class NewInvestmentDialog extends StatefulWidget {
   });
 
   @override
-  State<NewInvestmentDialog> createState() =>
-      _NewInvestmentDialogState();
+  State<NewInvestmentDialog> createState() => _NewInvestmentDialogState();
 }
 
 class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
@@ -616,14 +592,11 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
 
   final TextEditingController payerController = TextEditingController();
 
-  final TextEditingController referenceController =
-      TextEditingController();
+  final TextEditingController referenceController = TextEditingController();
 
-  final TextEditingController amountController =
-      TextEditingController();
+  final TextEditingController amountController = TextEditingController();
 
-  final TextEditingController remarksController =
-      TextEditingController();
+  final TextEditingController remarksController = TextEditingController();
 
   // ================================================================
   // FORM VALUES
@@ -860,7 +833,6 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
                         ),
                       ),
                     ),
-
                     IconButton(
                       onPressed: () {
                         Navigator.pop(context);
@@ -901,9 +873,7 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
                             Expanded(
                               child: _buildDateField(),
                             ),
-
                             const SizedBox(width: 18),
-
                             Expanded(
                               child: _buildDropdownField(
                                 label: 'Investment Category *',
@@ -917,9 +887,7 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
                                 },
                               ),
                             ),
-
                             const SizedBox(width: 18),
-
                             Expanded(
                               child: _buildDropdownField(
                                 label: 'Deposited To Account *',
@@ -951,9 +919,7 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
                                 controller: investmentNumberController,
                               ),
                             ),
-
                             const SizedBox(width: 18),
-
                             Expanded(
                               child: _buildSearchField(
                                 label: 'Payer (Customer)',
@@ -961,9 +927,7 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
                                 hint: 'Select or type to search...',
                               ),
                             ),
-
                             const SizedBox(width: 18),
-
                             Expanded(
                               child: _buildTextField(
                                 label: 'Reference #',
@@ -991,9 +955,7 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
                             Expanded(
                               child: _buildAmountField(),
                             ),
-
                             const SizedBox(width: 18),
-
                             Expanded(
                               child: _buildDropdownField(
                                 label: 'Tax',
@@ -1002,15 +964,12 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
                                 items: taxOptions,
                                 onChanged: (value) {
                                   setState(() {
-                                    selectedTax =
-                                        value ?? '-- No Tax --';
+                                    selectedTax = value ?? '-- No Tax --';
                                   });
                                 },
                               ),
                             ),
-
                             const SizedBox(width: 18),
-
                             SizedBox(
                               width: 150,
                               child: Padding(
@@ -1021,16 +980,13 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
                                   children: [
                                     Checkbox(
                                       value: taxInclusive,
-                                      activeColor:
-                                          const Color(0xFF1D78C9),
+                                      activeColor: const Color(0xFF1D78C9),
                                       onChanged: (value) {
                                         setState(() {
-                                          taxInclusive =
-                                              value ?? false;
+                                          taxInclusive = value ?? false;
                                         });
                                       },
                                     ),
-
                                     const Expanded(
                                       child: Text(
                                         'Tax Inclusive',
@@ -1073,16 +1029,12 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
                                 'Sub-Total',
                                 subTotal,
                               ),
-
                               const SizedBox(height: 7),
-
                               _buildTotalRow(
                                 'Tax',
                                 calculatedTax,
                               ),
-
                               const SizedBox(height: 7),
-
                               _buildTotalRow(
                                 'Total',
                                 total,
@@ -1155,9 +1107,7 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
                                   'Choose Files',
                                 ),
                               ),
-
                               const SizedBox(width: 10),
-
                               Text(
                                 _attachedFileName,
                                 style: const TextStyle(
@@ -1218,9 +1168,7 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
                         ),
                       ),
                     ),
-
                     const SizedBox(width: 12),
-
                     ElevatedButton(
                       onPressed: _saveInvestment,
                       style: ElevatedButton.styleFrom(
@@ -1269,9 +1217,7 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         InkWell(
           onTap: _selectDate,
           child: InputDecorator(
@@ -1286,7 +1232,6 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
                     ),
                   ),
                 ),
-
                 const Icon(
                   Icons.calendar_today_outlined,
                   size: 18,
@@ -1320,9 +1265,7 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         TextFormField(
           controller: controller,
           readOnly: readOnly,
@@ -1355,9 +1298,7 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         TextFormField(
           controller: controller,
           style: const TextStyle(
@@ -1397,9 +1338,7 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         TextFormField(
           controller: amountController,
           keyboardType: const TextInputType.numberWithOptions(
@@ -1450,14 +1389,11 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         DropdownButtonFormField<String>(
           initialValue: value,
           isExpanded: true,
           dropdownColor: Colors.white,
-
           hint: Text(
             hint,
             style: const TextStyle(
@@ -1465,19 +1401,15 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
               fontSize: 14,
             ),
           ),
-
           style: const TextStyle(
             color: Colors.black,
             fontSize: 14,
           ),
-
           icon: const Icon(
             Icons.keyboard_arrow_down,
             color: Colors.black,
           ),
-
           decoration: _inputDecoration(),
-
           items: items.map(
             (item) {
               return DropdownMenuItem<String>(
@@ -1492,7 +1424,6 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
               );
             },
           ).toList(),
-
           onChanged: onChanged,
         ),
       ],
@@ -1519,14 +1450,11 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
               style: TextStyle(
                 color: const Color(0xFF444444),
                 fontSize: isBold ? 17 : 15,
-                fontWeight:
-                    isBold ? FontWeight.w700 : FontWeight.w500,
+                fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ),
-
           const SizedBox(width: 25),
-
           SizedBox(
             width: 105,
             child: Text(
@@ -1534,8 +1462,7 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
               style: TextStyle(
                 color: const Color(0xFF17395C),
                 fontSize: isBold ? 18 : 15,
-                fontWeight:
-                    isBold ? FontWeight.w800 : FontWeight.w500,
+                fontWeight: isBold ? FontWeight.w800 : FontWeight.w500,
               ),
             ),
           ),
@@ -1551,29 +1478,24 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
   InputDecoration _inputDecoration() {
     return InputDecoration(
       isDense: true,
-
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 13,
         vertical: 15,
       ),
-
       filled: true,
       fillColor: Colors.white.withValues(alpha: 0.45),
-
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
         borderSide: const BorderSide(
           color: Color(0xFFD7DCE2),
         ),
       ),
-
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
         borderSide: const BorderSide(
           color: Color(0xFFD7DCE2),
         ),
       ),
-
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
         borderSide: const BorderSide(
@@ -1581,7 +1503,6 @@ class _NewInvestmentDialogState extends State<NewInvestmentDialog> {
           width: 1.5,
         ),
       ),
-
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
         borderSide: const BorderSide(

@@ -11,15 +11,13 @@ import '../widgets/sales_glass_widgets.dart';
 // ============================================================
 
 class EstimatesApi {
-  static const String baseUrl =
-      'http://localhost:3000/api';
+  static const String baseUrl = 'http://localhost:3000/api';
 
   // ==========================================================
   // GET ESTIMATES
   // ==========================================================
 
-  static Future<List<EstimateData>>
-      getEstimates() async {
+  static Future<List<EstimateData>> getEstimates() async {
     final response = await http.get(
       Uri.parse(
         '$baseUrl/estimates',
@@ -29,8 +27,7 @@ class EstimatesApi {
       },
     );
 
-    final body =
-        jsonDecode(response.body);
+    final body = jsonDecode(response.body);
 
     if (body is! Map<String, dynamic>) {
       throw Exception(
@@ -38,18 +35,14 @@ class EstimatesApi {
       );
     }
 
-    if (response.statusCode != 200 ||
-        body['success'] != true) {
+    if (response.statusCode != 200 || body['success'] != true) {
       throw Exception(
-        body['message'] ??
-            'Failed to fetch estimates',
+        body['message'] ?? 'Failed to fetch estimates',
       );
     }
 
     final List<dynamic> data =
-        body['data'] is List
-            ? body['data']
-            : <dynamic>[];
+        body['data'] is List ? body['data'] : <dynamic>[];
 
     return data.map((item) {
       return EstimateData.fromJson(
@@ -64,8 +57,7 @@ class EstimatesApi {
   // NEXT NUMBER
   // ==========================================================
 
-  static Future<String>
-      getNextNumber() async {
+  static Future<String> getNextNumber() async {
     final response = await http.get(
       Uri.parse(
         '$baseUrl/estimates/next-number',
@@ -75,8 +67,7 @@ class EstimatesApi {
       },
     );
 
-    final body =
-        jsonDecode(response.body);
+    final body = jsonDecode(response.body);
 
     if (body is! Map<String, dynamic>) {
       throw Exception(
@@ -84,26 +75,20 @@ class EstimatesApi {
       );
     }
 
-    if (response.statusCode != 200 ||
-        body['success'] != true) {
+    if (response.statusCode != 200 || body['success'] != true) {
       throw Exception(
-        body['message'] ??
-            'Failed to generate estimate number',
+        body['message'] ?? 'Failed to generate estimate number',
       );
     }
 
-    return body['data']
-            ?['estimateNumber']
-            ?.toString() ??
-        'EST-1';
+    return body['data']?['estimateNumber']?.toString() ?? 'EST-1';
   }
 
   // ==========================================================
   // CREATE ESTIMATE
   // ==========================================================
 
-  static Future<EstimateData>
-      createEstimate(
+  static Future<EstimateData> createEstimate(
     EstimateData estimate,
   ) async {
     final response = await http.post(
@@ -111,18 +96,15 @@ class EstimatesApi {
         '$baseUrl/estimates',
       ),
       headers: const {
-        'Content-Type':
-            'application/json',
-        'Accept':
-            'application/json',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: jsonEncode(
         estimate.toCreateJson(),
       ),
     );
 
-    final body =
-        jsonDecode(response.body);
+    final body = jsonDecode(response.body);
 
     if (body is! Map<String, dynamic>) {
       throw Exception(
@@ -130,11 +112,9 @@ class EstimatesApi {
       );
     }
 
-    if (response.statusCode != 201 ||
-        body['success'] != true) {
+    if (response.statusCode != 201 || body['success'] != true) {
       throw Exception(
-        body['message'] ??
-            'Failed to save estimate',
+        body['message'] ?? 'Failed to save estimate',
       );
     }
 
@@ -158,26 +138,22 @@ class EstimatesApi {
         '$baseUrl/estimates/$id/status',
       ),
       headers: const {
-        'Content-Type':
-            'application/json',
-        'Accept':
-            'application/json',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: jsonEncode({
         'status': status.label,
       }),
     );
 
-    final body =
-        jsonDecode(response.body);
+    final body = jsonDecode(response.body);
 
     if (body is! Map<String, dynamic> ||
         response.statusCode != 200 ||
         body['success'] != true) {
       throw Exception(
         body is Map
-            ? body['message'] ??
-                'Failed to update status'
+            ? body['message'] ?? 'Failed to update status'
             : 'Failed to update status',
       );
     }
@@ -190,8 +166,7 @@ class EstimatesApi {
   static Future<void> deleteEstimate(
     int id,
   ) async {
-    final response =
-        await http.delete(
+    final response = await http.delete(
       Uri.parse(
         '$baseUrl/estimates/$id',
       ),
@@ -200,16 +175,14 @@ class EstimatesApi {
       },
     );
 
-    final body =
-        jsonDecode(response.body);
+    final body = jsonDecode(response.body);
 
     if (body is! Map<String, dynamic> ||
         response.statusCode != 200 ||
         body['success'] != true) {
       throw Exception(
         body is Map
-            ? body['message'] ??
-                'Failed to delete estimate'
+            ? body['message'] ?? 'Failed to delete estimate'
             : 'Failed to delete estimate',
       );
     }
@@ -219,68 +192,54 @@ class EstimatesApi {
   // CUSTOMERS
   // ==========================================================
 
-  static Future<List<CustomerOption>>
-      getCustomers() async {
+  static Future<List<CustomerOption>> getCustomers() async {
     final response = await http.get(
       Uri.parse(
         '$baseUrl/customers',
       ),
     );
 
-    final body =
-        jsonDecode(response.body);
+    final body = jsonDecode(response.body);
 
     if (body is! Map<String, dynamic> ||
         response.statusCode != 200 ||
         body['success'] != true) {
       throw Exception(
         body is Map
-            ? body['message'] ??
-                'Failed to fetch customers'
+            ? body['message'] ?? 'Failed to fetch customers'
             : 'Failed to fetch customers',
       );
     }
 
-    final List<dynamic> data =
-        body['data'] ?? [];
+    final List<dynamic> data = body['data'] ?? [];
 
-    return data.map((item) {
-      final map =
-          Map<String, dynamic>.from(
-        item as Map,
-      );
+    return data
+        .map((item) {
+          final map = Map<String, dynamic>.from(
+            item as Map,
+          );
 
-      return CustomerOption(
-        id: int.tryParse(
-              map['id'].toString(),
-            ) ??
-            0,
-        name:
-            map['vendorName']
-                    ?.toString() ??
-                '',
-        companyName:
-            map['companyName']
-                    ?.toString() ??
-                '',
-        email:
-            map['email']
-                    ?.toString() ??
-                '',
-      );
-    }).where(
-      (customer) =>
-          customer.id > 0 &&
-          customer.name.isNotEmpty,
-    ).toList();
+          return CustomerOption(
+            id: int.tryParse(
+                  map['id'].toString(),
+                ) ??
+                0,
+            name: map['vendorName']?.toString() ?? '',
+            companyName: map['companyName']?.toString() ?? '',
+            email: map['email']?.toString() ?? '',
+          );
+        })
+        .where(
+          (customer) => customer.id > 0 && customer.name.isNotEmpty,
+        )
+        .toList();
   }
 
   // ==========================================================
   // ITEMS + PARTS
   // ==========================================================
 
-  static Future<List<CatalogOption>>
-      getCatalog() async {
+  static Future<List<CatalogOption>> getCatalog() async {
     final itemFuture = http.get(
       Uri.parse(
         '$baseUrl/items',
@@ -293,19 +252,15 @@ class EstimatesApi {
       ),
     );
 
-    final itemResponse =
-        await itemFuture;
+    final itemResponse = await itemFuture;
 
-    final partResponse =
-        await partFuture;
+    final partResponse = await partFuture;
 
-    final itemBody =
-        jsonDecode(
+    final itemBody = jsonDecode(
       itemResponse.body,
     );
 
-    final partBody =
-        jsonDecode(
+    final partBody = jsonDecode(
       partResponse.body,
     );
 
@@ -314,8 +269,7 @@ class EstimatesApi {
         itemBody['success'] != true) {
       throw Exception(
         itemBody is Map
-            ? itemBody['message'] ??
-                'Failed to fetch items'
+            ? itemBody['message'] ?? 'Failed to fetch items'
             : 'Failed to fetch items',
       );
     }
@@ -325,21 +279,17 @@ class EstimatesApi {
         partBody['success'] != true) {
       throw Exception(
         partBody is Map
-            ? partBody['message'] ??
-                'Failed to fetch parts'
+            ? partBody['message'] ?? 'Failed to fetch parts'
             : 'Failed to fetch parts',
       );
     }
 
-    final List<CatalogOption>
-        catalog = [];
+    final List<CatalogOption> catalog = [];
 
-    final List<dynamic> items =
-        itemBody['data'] ?? [];
+    final List<dynamic> items = itemBody['data'] ?? [];
 
     for (final raw in items) {
-      final item =
-          Map<String, dynamic>.from(
+      final item = Map<String, dynamic>.from(
         raw as Map,
       );
 
@@ -352,37 +302,25 @@ class EstimatesApi {
               ) ??
               0,
 
-          name:
-              item['name']
-                      ?.toString() ??
-                  '',
+          name: item['name']?.toString() ?? '',
 
-          sku:
-              item['sku']
-                      ?.toString() ??
-                  '',
+          sku: item['sku']?.toString() ?? '',
 
-          description:
-              item['description']
-                      ?.toString() ??
-                  '',
+          description: item['description']?.toString() ?? '',
 
           // Items use Sales Price
           rate: double.tryParse(
-                item['sales_price']
-                    .toString(),
+                item['sales_price'].toString(),
               ) ??
               0,
         ),
       );
     }
 
-    final List<dynamic> parts =
-        partBody['data'] ?? [];
+    final List<dynamic> parts = partBody['data'] ?? [];
 
     for (final raw in parts) {
-      final part =
-          Map<String, dynamic>.from(
+      final part = Map<String, dynamic>.from(
         raw as Map,
       );
 
@@ -395,25 +333,15 @@ class EstimatesApi {
               ) ??
               0,
 
-          name:
-              part['name']
-                      ?.toString() ??
-                  '',
+          name: part['name']?.toString() ?? '',
 
-          sku:
-              part['sku']
-                      ?.toString() ??
-                  '',
+          sku: part['sku']?.toString() ?? '',
 
-          description:
-              part['description']
-                      ?.toString() ??
-                  '',
+          description: part['description']?.toString() ?? '',
 
           // Parts currently only have Purchase Price
           rate: double.tryParse(
-                part['purchase_price']
-                    .toString(),
+                part['purchase_price'].toString(),
               ) ??
               0,
         ),
@@ -421,9 +349,7 @@ class EstimatesApi {
     }
 
     catalog.removeWhere(
-      (product) =>
-          product.id <= 0 ||
-          product.name.isEmpty,
+      (product) => product.id <= 0 || product.name.isEmpty,
     );
 
     return catalog;
@@ -551,34 +477,18 @@ class EstimateItem {
     required this.rate,
   });
 
-  double get amount =>
-      qty * rate;
+  double get amount => qty * rate;
 
   Map<String, dynamic> toJson() {
     return {
-      'sourceType':
-          sourceType,
-
-      'itemId':
-          itemId,
-
-      'partId':
-          partId,
-
-      'itemName':
-          itemName,
-
-      'description':
-          description,
-
-      'qty':
-          qty,
-
-      'rate':
-          rate,
-
-      'amount':
-          amount,
+      'sourceType': sourceType,
+      'itemId': itemId,
+      'partId': partId,
+      'itemName': itemName,
+      'description': description,
+      'qty': qty,
+      'rate': rate,
+      'amount': amount,
     };
   }
 
@@ -591,41 +501,23 @@ class EstimateItem {
           : int.tryParse(
               json['id'].toString(),
             ),
-
-      sourceType:
-          json['sourceType']
-                  ?.toString() ??
-              'Item',
-
+      sourceType: json['sourceType']?.toString() ?? 'Item',
       itemId: json['itemId'] == null
           ? null
           : int.tryParse(
-              json['itemId']
-                  .toString(),
+              json['itemId'].toString(),
             ),
-
       partId: json['partId'] == null
           ? null
           : int.tryParse(
-              json['partId']
-                  .toString(),
+              json['partId'].toString(),
             ),
-
-      itemName:
-          json['itemName']
-                  ?.toString() ??
-              '',
-
-      description:
-          json['description']
-                  ?.toString() ??
-              '',
-
+      itemName: json['itemName']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
       qty: double.tryParse(
             json['qty'].toString(),
           ) ??
           0,
-
       rate: double.tryParse(
             json['rate'].toString(),
           ) ??
@@ -672,49 +564,31 @@ class EstimateData {
     required this.items,
     required this.subTotal,
     required this.total,
-    this.status =
-        EstimateStatus.draft,
+    this.status = EstimateStatus.draft,
   });
 
-  Map<String, dynamic>
-      toCreateJson() {
+  Map<String, dynamic> toCreateJson() {
     return {
-      'estimateNumber':
-          estimateNumber,
-
-      'customerId':
-          customerId,
-
-      'salesPerson':
-          salesPerson,
-
-      'date':
-          DateFormat(
+      'estimateNumber': estimateNumber,
+      'customerId': customerId,
+      'salesPerson': salesPerson,
+      'date': DateFormat(
         'yyyy-MM-dd',
       ).format(date),
-
-      'expiryDate':
-          expiryDate == null
-              ? null
-              : DateFormat(
-                  'yyyy-MM-dd',
-                ).format(
-                  expiryDate!,
-                ),
-
-      'items':
-          items
-              .map(
-                (item) =>
-                    item.toJson(),
-              )
-              .toList(),
-
-      'subTotal':
-          subTotal,
-
-      'total':
-          total,
+      'expiryDate': expiryDate == null
+          ? null
+          : DateFormat(
+              'yyyy-MM-dd',
+            ).format(
+              expiryDate!,
+            ),
+      'items': items
+          .map(
+            (item) => item.toJson(),
+          )
+          .toList(),
+      'subTotal': subTotal,
+      'total': total,
     };
   }
 
@@ -722,9 +596,7 @@ class EstimateData {
     Map<String, dynamic> json,
   ) {
     final List<dynamic> rawItems =
-        json['items'] is List
-            ? json['items']
-            : <dynamic>[];
+        json['items'] is List ? json['items'] : <dynamic>[];
 
     return EstimateData(
       id: json['id'] == null
@@ -732,75 +604,39 @@ class EstimateData {
           : int.tryParse(
               json['id'].toString(),
             ),
-
       date: DateTime.tryParse(
-            json['date']
-                    ?.toString() ??
-                '',
+            json['date']?.toString() ?? '',
           ) ??
           DateTime.now(),
-
-      estimateNumber:
-          json['estimateNumber']
-                  ?.toString() ??
-              '',
-
-      customerId:
-          int.tryParse(
-            json['customerId']
-                    ?.toString() ??
-                '0',
+      estimateNumber: json['estimateNumber']?.toString() ?? '',
+      customerId: int.tryParse(
+            json['customerId']?.toString() ?? '0',
           ) ??
           0,
-
-      customerName:
-          json['customerName']
-                  ?.toString() ??
-              '',
-
-      salesPerson:
-          json['salesPerson']
-                  ?.toString() ??
-              '',
-
-      expiryDate:
-          json['expiryDate'] == null
-              ? null
-              : DateTime.tryParse(
-                  json['expiryDate']
-                      .toString(),
-                ),
-
-      items:
-          rawItems.map((item) {
+      customerName: json['customerName']?.toString() ?? '',
+      salesPerson: json['salesPerson']?.toString() ?? '',
+      expiryDate: json['expiryDate'] == null
+          ? null
+          : DateTime.tryParse(
+              json['expiryDate'].toString(),
+            ),
+      items: rawItems.map((item) {
         return EstimateItem.fromJson(
           Map<String, dynamic>.from(
             item as Map,
           ),
         );
       }).toList(),
-
-      subTotal:
-          double.tryParse(
-            json['subTotal']
-                    ?.toString() ??
-                '0',
+      subTotal: double.tryParse(
+            json['subTotal']?.toString() ?? '0',
           ) ??
           0,
-
-      total:
-          double.tryParse(
-            json['total']
-                    ?.toString() ??
-                '0',
+      total: double.tryParse(
+            json['total']?.toString() ?? '0',
           ) ??
           0,
-
-      status:
-          EstimateStatus.fromString(
-        json['status']
-                ?.toString() ??
-            'Draft',
+      status: EstimateStatus.fromString(
+        json['status']?.toString() ?? 'Draft',
       ),
     );
   }
@@ -810,20 +646,16 @@ class EstimateData {
 // ESTIMATES PAGE
 // ============================================================
 
-class EstimatesPage
-    extends StatefulWidget {
+class EstimatesPage extends StatefulWidget {
   const EstimatesPage({
     super.key,
   });
 
   @override
-  State<EstimatesPage>
-      createState() =>
-          _EstimatesPageState();
+  State<EstimatesPage> createState() => _EstimatesPageState();
 }
 
-class _EstimatesPageState
-    extends State<EstimatesPage> {
+class _EstimatesPageState extends State<EstimatesPage> {
   List<EstimateData> _estimates = [];
 
   bool _isLoading = true;
@@ -832,16 +664,15 @@ class _EstimatesPageState
 
   String _statusFilter = 'All';
 
-  final TextEditingController
-      _customerFilterController =
+  final TextEditingController _customerFilterController =
       TextEditingController();
 
   DateTime? _dateFrom;
 
   DateTime? _dateTo;
+  bool _showFilters = false;
 
-  final List<String>
-      _statusOptions = const [
+  final List<String> _statusOptions = const [
     'All',
     'Draft',
     'Sent',
@@ -863,8 +694,7 @@ class _EstimatesPageState
 
   @override
   void dispose() {
-    _customerFilterController
-        .dispose();
+    _customerFilterController.dispose();
 
     super.dispose();
   }
@@ -873,51 +703,36 @@ class _EstimatesPageState
   // FILTER
   // ==========================================================
 
-  List<EstimateData>
-      get _filteredEstimates {
+  List<EstimateData> get _filteredEstimates {
     return _estimates.where(
       (estimate) {
-        if (
-          _statusFilter != 'All' &&
-          estimate.status.label !=
-              _statusFilter
-        ) {
+        if (_statusFilter != 'All' && estimate.status.label != _statusFilter) {
           return false;
         }
 
         final customerQuery =
-            _customerFilterController
-                .text
-                .trim()
-                .toLowerCase();
+            _customerFilterController.text.trim().toLowerCase();
 
-        if (
-          customerQuery.isNotEmpty &&
-          !estimate.customerName
-              .toLowerCase()
-              .contains(
-                customerQuery,
-              )
-        ) {
+        if (customerQuery.isNotEmpty &&
+            !estimate.customerName.toLowerCase().contains(
+                  customerQuery,
+                )) {
           return false;
         }
 
-        if (
-          _dateFrom != null &&
-          estimate.date.isBefore(
-            DateTime(
-              _dateFrom!.year,
-              _dateFrom!.month,
-              _dateFrom!.day,
-            ),
-          )
-        ) {
+        if (_dateFrom != null &&
+            estimate.date.isBefore(
+              DateTime(
+                _dateFrom!.year,
+                _dateFrom!.month,
+                _dateFrom!.day,
+              ),
+            )) {
           return false;
         }
 
         if (_dateTo != null) {
-          final endDate =
-              DateTime(
+          final endDate = DateTime(
             _dateTo!.year,
             _dateTo!.month,
             _dateTo!.day,
@@ -926,11 +741,9 @@ class _EstimatesPageState
             59,
           );
 
-          if (
-            estimate.date.isAfter(
-              endDate,
-            )
-          ) {
+          if (estimate.date.isAfter(
+            endDate,
+          )) {
             return false;
           }
         }
@@ -944,17 +757,14 @@ class _EstimatesPageState
   // LOAD
   // ==========================================================
 
-  Future<void>
-      _loadEstimates() async {
+  Future<void> _loadEstimates() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final estimates =
-          await EstimatesApi
-              .getEstimates();
+      final estimates = await EstimatesApi.getEstimates();
 
       if (!mounted) return;
 
@@ -967,8 +777,7 @@ class _EstimatesPageState
 
       setState(() {
         _isLoading = false;
-        _errorMessage =
-            error.toString();
+        _errorMessage = error.toString();
       });
     }
   }
@@ -977,30 +786,21 @@ class _EstimatesPageState
   // NEW ESTIMATE
   // ==========================================================
 
-  Future<void>
-      _openNewEstimateForm() async {
+  Future<void> _openNewEstimateForm() async {
     try {
-      final nextNumber =
-          await EstimatesApi
-              .getNextNumber();
+      final nextNumber = await EstimatesApi.getNextNumber();
 
       if (!mounted) return;
 
-      final bool? saved =
-          await showDialog<bool>(
+      final bool? saved = await showDialog<bool>(
         context: context,
-
-        barrierColor:
-            const Color(
+        barrierColor: const Color(
           0x9A12202C,
         ),
-
         barrierDismissible: false,
-
         builder: (_) {
           return NewEstimateDialog(
-            nextNumber:
-                nextNumber,
+            nextNumber: nextNumber,
           );
         },
       );
@@ -1031,8 +831,7 @@ class _EstimatesPageState
     }
 
     try {
-      await EstimatesApi
-          .updateStatus(
+      await EstimatesApi.updateStatus(
         estimate.id!,
         status,
       );
@@ -1065,19 +864,16 @@ class _EstimatesPageState
       return;
     }
 
-    final confirmed =
-        await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text(
             'Delete Estimate',
           ),
-
           content: Text(
             'Delete ${estimate.estimateNumber}?',
           ),
-
           actions: [
             TextButton(
               onPressed: () {
@@ -1086,10 +882,8 @@ class _EstimatesPageState
                   false,
                 );
               },
-              child:
-                  const Text('Cancel'),
+              child: const Text('Cancel'),
             ),
-
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(
@@ -1097,18 +891,11 @@ class _EstimatesPageState
                   true,
                 );
               },
-
-              style:
-                  ElevatedButton
-                      .styleFrom(
-                backgroundColor:
-                    Colors.red,
-                foregroundColor:
-                    Colors.white,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
               ),
-
-              child:
-                  const Text('Delete'),
+              child: const Text('Delete'),
             ),
           ],
         );
@@ -1120,8 +907,7 @@ class _EstimatesPageState
     }
 
     try {
-      await EstimatesApi
-          .deleteEstimate(
+      await EstimatesApi.deleteEstimate(
         estimate.id!,
       );
 
@@ -1150,19 +936,16 @@ class _EstimatesPageState
     String message, {
     bool isError = false,
   }) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-
-        backgroundColor:
-            isError
-                ? const Color(
-                    0xFFAB2A2A,
-                  )
-                : const Color(
-                    0xFF1E7B34,
-                  ),
+        backgroundColor: isError
+            ? const Color(
+                0xFFAB2A2A,
+              )
+            : const Color(
+                0xFF1E7B34,
+              ),
       ),
     );
   }
@@ -1175,8 +958,7 @@ class _EstimatesPageState
     setState(() {
       _statusFilter = 'All';
 
-      _customerFilterController
-          .clear();
+      _customerFilterController.clear();
 
       _dateFrom = null;
       _dateTo = null;
@@ -1191,18 +973,13 @@ class _EstimatesPageState
   Widget build(
     BuildContext context,
   ) {
-    final estimates =
-        _filteredEstimates;
+    final estimates = _filteredEstimates;
 
     return SalesGlassPageFrame(
       child: SingleChildScrollView(
-        padding:
-            const EdgeInsets.all(30),
-
+        padding: const EdgeInsets.all(30),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ==================================================
             // HEADER
@@ -1213,82 +990,53 @@ class _EstimatesPageState
                 const Expanded(
                   child: Text(
                     'Estimates',
-
                     style: TextStyle(
                       fontSize: 32,
-
-                      fontWeight:
-                          FontWeight.w800,
-
-                      color:
-                          Color(
+                      fontWeight: FontWeight.w800,
+                      color: Color(
                         0xFF17395C,
                       ),
                     ),
                   ),
                 ),
-
                 IconButton(
-                  onPressed:
-                      _isLoading
-                          ? null
-                          : _loadEstimates,
-
-                  tooltip:
-                      'Refresh Estimates',
-
+                  onPressed: _isLoading ? null : _loadEstimates,
+                  tooltip: 'Refresh Estimates',
                   icon: const Icon(
                     Icons.refresh,
-
-                    color:
-                        Color(
+                    color: Color(
                       0xFF17395C,
                     ),
                   ),
                 ),
-
                 const SizedBox(
                   width: 8,
                 ),
-
+                SalesFilterButton(
+                  onPressed: () => setState(() => _showFilters = !_showFilters),
+                ),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
-                  onPressed:
-                      _openNewEstimateForm,
-
+                  onPressed: _openNewEstimateForm,
                   icon: const Icon(
                     Icons.add,
                     size: 20,
                   ),
-
                   label: const Text(
                     'New Estimate',
                   ),
-
-                  style:
-                      ElevatedButton
-                          .styleFrom(
-                    backgroundColor:
-                        const Color(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(
                       0xFF17395C,
                     ),
-
-                    foregroundColor:
-                        Colors.white,
-
+                    foregroundColor: Colors.white,
                     elevation: 0,
-
-                    padding:
-                        const EdgeInsets
-                            .symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 20,
                       vertical: 17,
                     ),
-
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius
-                              .circular(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
                         6,
                       ),
                     ),
@@ -1305,137 +1053,81 @@ class _EstimatesPageState
             // FILTER
             // ==================================================
 
-            Container(
-              width:
-                  double.infinity,
-
-              padding:
-                  const EdgeInsets.all(
+            if (_showFilters)
+              Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(
                 16,
               ),
-
-              decoration:
-                  BoxDecoration(
-                color:
-                    const Color(
+              decoration: BoxDecoration(
+                color: const Color(
                   0x4FFFFFFF,
                 ),
-
-                borderRadius:
-                    BorderRadius
-                        .circular(
+                borderRadius: BorderRadius.circular(
                   16,
                 ),
-
                 border: Border.all(
-                  color:
-                      const Color(
+                  color: const Color(
                     0xD0FFFFFF,
                   ),
                 ),
               ),
-
               child: Wrap(
                 spacing: 16,
                 runSpacing: 12,
-
-                crossAxisAlignment:
-                    WrapCrossAlignment
-                        .end,
-
+                crossAxisAlignment: WrapCrossAlignment.end,
                 children: [
                   SizedBox(
                     width: 150,
-
-                    child:
-                        _buildFilterDropdown(),
+                    child: _buildFilterDropdown(),
                   ),
-
                   SizedBox(
                     width: 200,
-
-                    child:
-                        _buildCustomerFilter(),
+                    child: _buildCustomerFilter(),
                   ),
-
                   SizedBox(
                     width: 170,
-
-                    child:
-                        _buildFilterDate(
-                      label:
-                          'Date From:',
-
-                      value:
-                          _dateFrom,
-
-                      onChanged:
-                          (value) {
+                    child: _buildFilterDate(
+                      label: 'Date From:',
+                      value: _dateFrom,
+                      onChanged: (value) {
                         setState(() {
-                          _dateFrom =
-                              value;
+                          _dateFrom = value;
                         });
                       },
                     ),
                   ),
-
                   SizedBox(
                     width: 170,
-
-                    child:
-                        _buildFilterDate(
-                      label:
-                          'Date To:',
-
-                      value:
-                          _dateTo,
-
-                      onChanged:
-                          (value) {
+                    child: _buildFilterDate(
+                      label: 'Date To:',
+                      value: _dateTo,
+                      onChanged: (value) {
                         setState(() {
-                          _dateTo =
-                              value;
+                          _dateTo = value;
                         });
                       },
                     ),
                   ),
-
                   ElevatedButton(
                     onPressed: () {
                       setState(() {});
                     },
-
-                    style:
-                        ElevatedButton
-                            .styleFrom(
-                      backgroundColor:
-                          const Color(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(
                         0xFF1E78B7,
                       ),
-
-                      foregroundColor:
-                          Colors.white,
-
-                      padding:
-                          const EdgeInsets
-                              .symmetric(
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 22,
                         vertical: 14,
                       ),
                     ),
-
-                    child:
-                        const Text(
-                      'Filter',
-                    ),
+                    child: const Text('Apply'),
                   ),
-
                   OutlinedButton(
-                    onPressed:
-                        _clearFilters,
-
-                    child:
-                        const Text(
+                    onPressed: _clearFilters,
+                    child: const Text(
                       'Clear',
                     ),
                   ),
@@ -1443,77 +1135,49 @@ class _EstimatesPageState
               ),
             ),
 
-            const SizedBox(
-              height: 20,
-            ),
+            if (_showFilters) const SizedBox(height: 20),
 
             if (_errorMessage != null)
               Container(
-                width:
-                    double.infinity,
-
-                margin:
-                    const EdgeInsets
-                        .only(
+                width: double.infinity,
+                margin: const EdgeInsets.only(
                   bottom: 16,
                 ),
-
-                padding:
-                    const EdgeInsets
-                        .all(
+                padding: const EdgeInsets.all(
                   16,
                 ),
-
-                decoration:
-                    BoxDecoration(
-                  color:
-                      const Color(
+                decoration: BoxDecoration(
+                  color: const Color(
                     0xFFFFECEC,
                   ),
-
-                  borderRadius:
-                      BorderRadius
-                          .circular(
+                  borderRadius: BorderRadius.circular(
                     10,
                   ),
                 ),
-
                 child: Row(
                   children: [
                     const Icon(
-                      Icons
-                          .error_outline,
-
-                      color:
-                          Color(
+                      Icons.error_outline,
+                      color: Color(
                         0xFFAB2A2A,
                       ),
                     ),
-
                     const SizedBox(
                       width: 10,
                     ),
-
                     Expanded(
                       child: Text(
                         _errorMessage!,
-
-                        style:
-                            const TextStyle(
-                          color:
-                              Color(
+                        style: const TextStyle(
+                          color: Color(
                             0xFFAB2A2A,
                           ),
                         ),
                       ),
                     ),
-
                     TextButton(
-                      onPressed:
-                          _loadEstimates,
-
-                      child:
-                          const Text(
+                      onPressed: _loadEstimates,
+                      child: const Text(
                         'Retry',
                       ),
                     ),
@@ -1526,53 +1190,36 @@ class _EstimatesPageState
             // ==================================================
 
             Container(
-              width:
-                  double.infinity,
-
-              constraints:
-                  const BoxConstraints(
+              width: double.infinity,
+              constraints: const BoxConstraints(
                 minHeight: 350,
               ),
-
-              decoration:
-                  BoxDecoration(
-                color:
-                    const Color(
+              decoration: BoxDecoration(
+                color: const Color(
                   0x4FFFFFFF,
                 ),
-
-                borderRadius:
-                    BorderRadius
-                        .circular(
+                borderRadius: BorderRadius.circular(
                   16,
                 ),
-
                 border: Border.all(
-                  color:
-                      const Color(
+                  color: const Color(
                     0xD0FFFFFF,
                   ),
                 ),
               ),
-
               child: FittedBox(
                 alignment: Alignment.topLeft,
                 fit: BoxFit.scaleDown,
                 child: SizedBox(
                   width: 1040,
-
                   child: _isLoading
                       ? const SizedBox(
                           height: 350,
-
-                          child:
-                              Center(
-                            child:
-                                CircularProgressIndicator(),
+                          child: Center(
+                            child: CircularProgressIndicator(),
                           ),
                         )
-                      : estimates
-                              .isEmpty
+                      : estimates.isEmpty
                           ? _buildEmptyTable()
                           : _buildEstimateTable(
                               estimates,
@@ -1592,58 +1239,36 @@ class _EstimatesPageState
 
   Widget _buildFilterDropdown() {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Status:',
-
           style: TextStyle(
             fontSize: 13,
-
-            fontWeight:
-                FontWeight.w600,
-
-            color:
-                Color(
+            fontWeight: FontWeight.w600,
+            color: Color(
               0xFF444444,
             ),
           ),
         ),
-
         const SizedBox(
           height: 6,
         ),
-
-        DropdownButtonFormField<
-            String>(
-          initialValue:
-              _statusFilter,
-
+        DropdownButtonFormField<String>(
+          initialValue: _statusFilter,
           isExpanded: true,
-
-          decoration:
-              _filterInputDecoration(),
-
-          items:
-              _statusOptions.map(
+          decoration: _filterInputDecoration(),
+          items: _statusOptions.map(
             (status) {
-              return DropdownMenuItem<
-                  String>(
+              return DropdownMenuItem<String>(
                 value: status,
-
-                child:
-                    Text(status),
+                child: Text(status),
               );
             },
           ).toList(),
-
-          onChanged:
-              (value) {
+          onChanged: (value) {
             setState(() {
-              _statusFilter =
-                  value ?? 'All';
+              _statusFilter = value ?? 'All';
             });
           },
         ),
@@ -1653,43 +1278,28 @@ class _EstimatesPageState
 
   Widget _buildCustomerFilter() {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Customer Name:',
-
           style: TextStyle(
             fontSize: 13,
-
-            fontWeight:
-                FontWeight.w600,
-
-            color:
-                Color(
+            fontWeight: FontWeight.w600,
+            color: Color(
               0xFF444444,
             ),
           ),
         ),
-
         const SizedBox(
           height: 6,
         ),
-
         TextField(
-          controller:
-              _customerFilterController,
-
+          controller: _customerFilterController,
           onChanged: (_) {
             setState(() {});
           },
-
-          decoration:
-              _filterInputDecoration()
-                  .copyWith(
-            hintText:
-                'Customer name...',
+          decoration: _filterInputDecoration().copyWith(
+            hintText: 'Customer name...',
           ),
         ),
       ],
@@ -1698,65 +1308,40 @@ class _EstimatesPageState
 
   Widget _buildFilterDate({
     required String label,
-
     required DateTime? value,
-
-    required ValueChanged<
-            DateTime?>
-        onChanged,
+    required ValueChanged<DateTime?> onChanged,
   }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-
-          style:
-              const TextStyle(
+          style: const TextStyle(
             fontSize: 13,
-
-            fontWeight:
-                FontWeight.w600,
-
-            color:
-                Color(
+            fontWeight: FontWeight.w600,
+            color: Color(
               0xFF444444,
             ),
           ),
         ),
-
         const SizedBox(
           height: 6,
         ),
-
         InkWell(
           onTap: () async {
-            final picked =
-                await showDatePicker(
+            final picked = await showDatePicker(
               context: context,
-
-              initialDate:
-                  value ??
-                      DateTime.now(),
-
-              firstDate:
-                  DateTime(2000),
-
-              lastDate:
-                  DateTime(2100),
+              initialDate: value ?? DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100),
             );
 
             if (picked != null) {
               onChanged(picked);
             }
           },
-
           child: InputDecorator(
-            decoration:
-                _filterInputDecoration(),
-
+            decoration: _filterInputDecoration(),
             child: Row(
               children: [
                 Expanded(
@@ -1770,11 +1355,8 @@ class _EstimatesPageState
                           ),
                   ),
                 ),
-
                 const Icon(
-                  Icons
-                      .calendar_today_outlined,
-
+                  Icons.calendar_today_outlined,
                   size: 16,
                 ),
               ],
@@ -1793,44 +1375,31 @@ class _EstimatesPageState
     return Column(
       children: [
         _buildTableHeader(),
-
         const Divider(
           height: 1,
         ),
-
         const SizedBox(
           height: 60,
         ),
-
         const Icon(
-          Icons
-              .request_quote_outlined,
-
+          Icons.request_quote_outlined,
           size: 55,
-
-          color:
-              Color(
+          color: Color(
             0xFFB0B8C2,
           ),
         ),
-
         const SizedBox(
           height: 15,
         ),
-
         const Text(
           'No estimates found. Click "+ New Estimate" to add one!',
-
           style: TextStyle(
-            color:
-                Color(
+            color: Color(
               0xFF777777,
             ),
-
             fontSize: 16,
           ),
         ),
-
         const SizedBox(
           height: 60,
         ),
@@ -1840,73 +1409,51 @@ class _EstimatesPageState
 
   Widget _buildTableHeader() {
     return const Padding(
-      padding:
-          EdgeInsets.symmetric(
+      padding: EdgeInsets.symmetric(
         horizontal: 20,
         vertical: 20,
       ),
-
       child: Row(
         children: [
           SizedBox(
             width: 120,
-
-            child:
-                _HeaderText(
+            child: _HeaderText(
               'DATE',
             ),
           ),
-
           SizedBox(
             width: 130,
-
-            child:
-                _HeaderText(
+            child: _HeaderText(
               'ESTIMATE #',
             ),
           ),
-
           SizedBox(
             width: 220,
-
-            child:
-                _HeaderText(
+            child: _HeaderText(
               'CUSTOMER NAME',
             ),
           ),
-
           SizedBox(
             width: 170,
-
-            child:
-                _HeaderText(
+            child: _HeaderText(
               'SALES PERSON',
             ),
           ),
-
           SizedBox(
             width: 130,
-
-            child:
-                _HeaderText(
+            child: _HeaderText(
               'STATUS',
             ),
           ),
-
           SizedBox(
             width: 150,
-
-            child:
-                _HeaderText(
+            child: _HeaderText(
               'AMOUNT',
             ),
           ),
-
           SizedBox(
             width: 70,
-
-            child:
-                _HeaderText(
+            child: _HeaderText(
               'ACTIONS',
             ),
           ),
@@ -1921,28 +1468,22 @@ class _EstimatesPageState
     return Column(
       children: [
         _buildTableHeader(),
-
         const Divider(
           height: 1,
         ),
-
         ...estimates.map(
           (estimate) {
             return Column(
               children: [
                 Padding(
-                  padding:
-                      const EdgeInsets
-                          .symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 17,
                   ),
-
                   child: Row(
                     children: [
                       SizedBox(
                         width: 120,
-
                         child: Text(
                           DateFormat(
                             'dd-MM-yyyy',
@@ -1951,112 +1492,73 @@ class _EstimatesPageState
                           ),
                         ),
                       ),
-
                       SizedBox(
                         width: 130,
-
                         child: Text(
-                          estimate
-                              .estimateNumber,
+                          estimate.estimateNumber,
                         ),
                       ),
-
                       SizedBox(
                         width: 220,
-
                         child: Text(
-                          estimate
-                              .customerName,
-
-                          overflow:
-                              TextOverflow
-                                  .ellipsis,
+                          estimate.customerName,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-
                       SizedBox(
                         width: 170,
-
                         child: Text(
-                          estimate
-                                  .salesPerson
-                                  .isEmpty
+                          estimate.salesPerson.isEmpty
                               ? '-'
-                              : estimate
-                                  .salesPerson,
-
-                          overflow:
-                              TextOverflow
-                                  .ellipsis,
+                              : estimate.salesPerson,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-
                       SizedBox(
                         width: 130,
-
-                        child:
-                            _StatusBadge(
-                          status:
-                              estimate.status,
+                        child: _StatusBadge(
+                          status: estimate.status,
                         ),
                       ),
-
                       SizedBox(
                         width: 150,
-
                         child: Text(
                           'INR ${estimate.total.toStringAsFixed(2)}',
-
-                          style:
-                              const TextStyle(
-                            color:
-                                Color(
+                          style: const TextStyle(
+                            color: Color(
                               0xFF17395C,
                             ),
-
-                            fontWeight:
-                                FontWeight
-                                    .w700,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
-
                       SizedBox(
                         width: 70,
-
-                        child:
-                            PopupMenuButton<
-                                String>(
-                          icon:
-                              const Icon(
-                            Icons
-                                .more_vert,
+                        child: PopupMenuButton<String>(
+                          position: PopupMenuPosition.under,
+                          icon: const Icon(
+                            Icons.more_vert,
                           ),
-
-                          onSelected:
-                              (value) {
+                          onSelected: (value) {
                             switch (value) {
                               case 'sent':
                                 _updateStatus(
                                   estimate,
-                                  EstimateStatus
-                                      .sent,
+                                  EstimateStatus.sent,
                                 );
                                 break;
 
                               case 'accepted':
                                 _updateStatus(
                                   estimate,
-                                  EstimateStatus
-                                      .accepted,
+                                  EstimateStatus.accepted,
                                 );
                                 break;
 
                               case 'declined':
                                 _updateStatus(
                                   estimate,
-                                  EstimateStatus
-                                      .declined,
+                                  EstimateStatus.declined,
                                 );
                                 break;
 
@@ -2067,50 +1569,32 @@ class _EstimatesPageState
                                 break;
                             }
                           },
-
-                          itemBuilder:
-                              (_) =>
-                                  const [
+                          itemBuilder: (_) => const [
                             PopupMenuItem(
-                              value:
-                                  'sent',
-
+                              value: 'sent',
                               child: Text(
                                 'Mark as Sent',
                               ),
                             ),
-
                             PopupMenuItem(
-                              value:
-                                  'accepted',
-
+                              value: 'accepted',
                               child: Text(
                                 'Mark as Accepted',
                               ),
                             ),
-
                             PopupMenuItem(
-                              value:
-                                  'declined',
-
+                              value: 'declined',
                               child: Text(
                                 'Mark as Declined',
                               ),
                             ),
-
                             PopupMenuDivider(),
-
                             PopupMenuItem(
-                              value:
-                                  'delete',
-
+                              value: 'delete',
                               child: Text(
                                 'Delete',
-
-                                style:
-                                    TextStyle(
-                                  color:
-                                      Colors.red,
+                                style: TextStyle(
+                                  color: Colors.red,
                                 ),
                               ),
                             ),
@@ -2120,7 +1604,6 @@ class _EstimatesPageState
                     ],
                   ),
                 ),
-
                 const Divider(
                   height: 1,
                 ),
@@ -2136,52 +1619,33 @@ class _EstimatesPageState
   // DECORATION
   // ==========================================================
 
-  InputDecoration
-      _filterInputDecoration() {
+  InputDecoration _filterInputDecoration() {
     return InputDecoration(
       isDense: true,
-
       filled: true,
-
-      fillColor:
-          const Color(
+      fillColor: const Color(
         0x7AFFFFFF,
       ),
-
-      contentPadding:
-          const EdgeInsets
-              .symmetric(
+      contentPadding: const EdgeInsets.symmetric(
         horizontal: 12,
         vertical: 13,
       ),
-
-      border:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           6,
         ),
-
-        borderSide:
-            const BorderSide(
-          color:
-              Color(
+        borderSide: const BorderSide(
+          color: Color(
             0xFFD7DCE2,
           ),
         ),
       ),
-
-      enabledBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           6,
         ),
-
-        borderSide:
-            const BorderSide(
-          color:
-              Color(
+        borderSide: const BorderSide(
+          color: Color(
             0xFFD7DCE2,
           ),
         ),
@@ -2194,63 +1658,43 @@ class _EstimatesPageState
 // NEW ESTIMATE DIALOG
 // ============================================================
 
-class NewEstimateDialog
-    extends StatefulWidget {
+class NewEstimateDialog extends StatefulWidget {
   final String nextNumber;
 
   const NewEstimateDialog({
     super.key,
-
     required this.nextNumber,
   });
 
   @override
-  State<NewEstimateDialog>
-      createState() =>
-          _NewEstimateDialogState();
+  State<NewEstimateDialog> createState() => _NewEstimateDialogState();
 }
 
-class _NewEstimateDialogState
-    extends State<
-        NewEstimateDialog> {
-  final GlobalKey<FormState>
-      _formKey =
-      GlobalKey<FormState>();
+class _NewEstimateDialogState extends State<NewEstimateDialog> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  late final TextEditingController
-      estimateNumberController =
+  late final TextEditingController estimateNumberController =
       TextEditingController(
     text: widget.nextNumber,
   );
 
-  final TextEditingController
-      customerController =
-      TextEditingController();
+  final TextEditingController customerController = TextEditingController();
 
-  final FocusNode
-      customerFocusNode =
-      FocusNode();
+  final FocusNode customerFocusNode = FocusNode();
 
-  final TextEditingController
-      salesPersonController =
-      TextEditingController();
+  final TextEditingController salesPersonController = TextEditingController();
 
-  CustomerOption?
-      _selectedCustomer;
+  CustomerOption? _selectedCustomer;
 
-  List<CustomerOption>
-      _customers = [];
+  List<CustomerOption> _customers = [];
 
-  List<CatalogOption>
-      _catalog = [];
+  List<CatalogOption> _catalog = [];
 
-  final List<_ItemRow>
-      _itemRows = [
+  final List<_ItemRow> _itemRows = [
     _ItemRow(),
   ];
 
-  DateTime selectedDate =
-      DateTime.now();
+  DateTime selectedDate = DateTime.now();
 
   DateTime? expiryDate;
 
@@ -2273,20 +1717,15 @@ class _NewEstimateDialogState
 
   @override
   void dispose() {
-    estimateNumberController
-        .dispose();
+    estimateNumberController.dispose();
 
-    customerController
-        .dispose();
+    customerController.dispose();
 
-    customerFocusNode
-        .dispose();
+    customerFocusNode.dispose();
 
-    salesPersonController
-        .dispose();
+    salesPersonController.dispose();
 
-    for (final row
-        in _itemRows) {
+    for (final row in _itemRows) {
       row.dispose();
     }
 
@@ -2297,27 +1736,20 @@ class _NewEstimateDialogState
   // LOAD CUSTOMERS + PRODUCTS
   // ==========================================================
 
-  Future<void>
-      _loadReferenceData() async {
+  Future<void> _loadReferenceData() async {
     setState(() {
       _isLoadingData = true;
       _loadingError = null;
     });
 
     try {
-      final customerFuture =
-          EstimatesApi
-              .getCustomers();
+      final customerFuture = EstimatesApi.getCustomers();
 
-      final catalogFuture =
-          EstimatesApi
-              .getCatalog();
+      final catalogFuture = EstimatesApi.getCatalog();
 
-      final customers =
-          await customerFuture;
+      final customers = await customerFuture;
 
-      final catalog =
-          await catalogFuture;
+      final catalog = await catalogFuture;
 
       if (!mounted) return;
 
@@ -2334,8 +1766,7 @@ class _NewEstimateDialogState
       setState(() {
         _isLoadingData = false;
 
-        _loadingError =
-            error.toString();
+        _loadingError = error.toString();
       });
     }
   }
@@ -2347,16 +1778,14 @@ class _NewEstimateDialogState
   double get subTotal {
     double value = 0;
 
-    for (final row
-        in _itemRows) {
+    for (final row in _itemRows) {
       value += row.amount;
     }
 
     return value;
   }
 
-  double get total =>
-      subTotal;
+  double get total => subTotal;
 
   // ==========================================================
   // ROWS
@@ -2392,51 +1821,32 @@ class _NewEstimateDialogState
   // DATE
   // ==========================================================
 
-  Future<void>
-      _selectDate() async {
-    final picked =
-        await showDatePicker(
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
       context: context,
-
-      initialDate:
-          selectedDate,
-
-      firstDate:
-          DateTime(2000),
-
-      lastDate:
-          DateTime(2100),
+      initialDate: selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
     );
 
     if (picked != null) {
       setState(() {
-        selectedDate =
-            picked;
+        selectedDate = picked;
       });
     }
   }
 
-  Future<void>
-      _selectExpiryDate() async {
-    final picked =
-        await showDatePicker(
+  Future<void> _selectExpiryDate() async {
+    final picked = await showDatePicker(
       context: context,
-
-      initialDate:
-          expiryDate ??
-              selectedDate,
-
-      firstDate:
-          selectedDate,
-
-      lastDate:
-          DateTime(2100),
+      initialDate: expiryDate ?? selectedDate,
+      firstDate: selectedDate,
+      lastDate: DateTime(2100),
     );
 
     if (picked != null) {
       setState(() {
-        expiryDate =
-            picked;
+        expiryDate = picked;
       });
     }
   }
@@ -2445,21 +1855,16 @@ class _NewEstimateDialogState
   // SAVE
   // ==========================================================
 
-  Future<void>
-      _saveEstimate() async {
+  Future<void> _saveEstimate() async {
     if (_isSaving) {
       return;
     }
 
-    if (
-      !_formKey.currentState!
-          .validate()
-    ) {
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    if (_selectedCustomer ==
-        null) {
+    if (_selectedCustomer == null) {
       _showMessage(
         'Please select a customer from the saved customer list.',
       );
@@ -2467,24 +1872,14 @@ class _NewEstimateDialogState
       return;
     }
 
-    final List<EstimateItem>
-        items = [];
+    final List<EstimateItem> items = [];
 
-    for (final row
-        in _itemRows) {
-      if (
-        row.itemController
-            .text
-            .trim()
-            .isEmpty
-      ) {
+    for (final row in _itemRows) {
+      if (row.itemController.text.trim().isEmpty) {
         continue;
       }
 
-      if (
-        row.selectedProduct ==
-        null
-      ) {
+      if (row.selectedProduct == null) {
         _showMessage(
           'Please select an Item or Part from the saved list.',
         );
@@ -2492,19 +1887,13 @@ class _NewEstimateDialogState
         return;
       }
 
-      final qty =
-          double.tryParse(
-            row.qtyController
-                .text
-                .trim(),
+      final qty = double.tryParse(
+            row.qtyController.text.trim(),
           ) ??
           0;
 
-      final rate =
-          double.tryParse(
-            row.rateController
-                .text
-                .trim(),
+      final rate = double.tryParse(
+            row.rateController.text.trim(),
           ) ??
           0;
 
@@ -2524,36 +1913,16 @@ class _NewEstimateDialogState
         return;
       }
 
-      final product =
-          row.selectedProduct!;
+      final product = row.selectedProduct!;
 
       items.add(
         EstimateItem(
-          sourceType:
-              product.sourceType,
-
-          itemId:
-              product.sourceType ==
-                      'Item'
-                  ? product.id
-                  : null,
-
-          partId:
-              product.sourceType ==
-                      'Part'
-                  ? product.id
-                  : null,
-
-          itemName:
-              product.name,
-
-          description:
-              row.descriptionController
-                  .text
-                  .trim(),
-
+          sourceType: product.sourceType,
+          itemId: product.sourceType == 'Item' ? product.id : null,
+          partId: product.sourceType == 'Part' ? product.id : null,
+          itemName: product.name,
+          description: row.descriptionController.text.trim(),
           qty: qty,
-
           rate: rate,
         ),
       );
@@ -2572,41 +1941,19 @@ class _NewEstimateDialogState
     });
 
     try {
-      final estimate =
-          EstimateData(
-        date:
-            selectedDate,
-
-        estimateNumber:
-            estimateNumberController
-                .text
-                .trim(),
-
-        customerId:
-            _selectedCustomer!.id,
-
-        customerName:
-            _selectedCustomer!.name,
-
-        salesPerson:
-            salesPersonController
-                .text
-                .trim(),
-
-        expiryDate:
-            expiryDate,
-
+      final estimate = EstimateData(
+        date: selectedDate,
+        estimateNumber: estimateNumberController.text.trim(),
+        customerId: _selectedCustomer!.id,
+        customerName: _selectedCustomer!.name,
+        salesPerson: salesPersonController.text.trim(),
+        expiryDate: expiryDate,
         items: items,
-
-        subTotal:
-            subTotal,
-
-        total:
-            total,
+        subTotal: subTotal,
+        total: total,
       );
 
-      await EstimatesApi
-          .createEstimate(
+      await EstimatesApi.createEstimate(
         estimate,
       );
 
@@ -2632,15 +1979,12 @@ class _NewEstimateDialogState
   void _showMessage(
     String message,
   ) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           message,
         ),
-
-        backgroundColor:
-            const Color(
+        backgroundColor: const Color(
           0xFFAB2A2A,
         ),
       ),
@@ -2656,34 +2000,22 @@ class _NewEstimateDialogState
     BuildContext context,
   ) {
     return SalesGlassDialog(
-      insetPadding:
-          const EdgeInsets.all(12),
-
-      backgroundColor:
-          Colors.transparent,
-
+      insetPadding: const EdgeInsets.all(12),
+      backgroundColor: Colors.transparent,
       child: ConstrainedBox(
-        constraints:
-            const BoxConstraints(
+        constraints: const BoxConstraints(
           maxWidth: 1180,
-
           maxHeight: 760,
         ),
-
         child: Container(
-          decoration:
-              BoxDecoration(
-            color:
-                const Color(
+          decoration: BoxDecoration(
+            color: const Color(
               0xFFE6EAED,
             ),
-
-            borderRadius:
-                BorderRadius.circular(
+            borderRadius: BorderRadius.circular(
               16,
             ),
           ),
-
           child: Column(
             children: [
               // ================================================
@@ -2691,57 +2023,39 @@ class _NewEstimateDialogState
               // ================================================
 
               Padding(
-                padding:
-                    const EdgeInsets
-                        .fromLTRB(
+                padding: const EdgeInsets.fromLTRB(
                   22,
                   16,
                   12,
                   16,
                 ),
-
                 child: Row(
                   children: [
                     const Expanded(
                       child: Text(
                         'New Estimate',
-
-                        style:
-                            TextStyle(
-                          color:
-                              Color(
+                        style: TextStyle(
+                          color: Color(
                             0xFF17395C,
                           ),
-
-                          fontSize:
-                              26,
-
-                          fontWeight:
-                              FontWeight
-                                  .w800,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ),
-
                     IconButton(
-                      onPressed:
-                          _isSaving
-                              ? null
-                              : () {
-                                  Navigator.pop(
-                                    context,
-                                  );
-                                },
-
-                      icon:
-                          const Icon(
+                      onPressed: _isSaving
+                          ? null
+                          : () {
+                              Navigator.pop(
+                                context,
+                              );
+                            },
+                      icon: const Icon(
                         Icons.close,
-
-                        color:
-                            Color(
+                        color: Color(
                           0xFF777777,
                         ),
-
                         size: 28,
                       ),
                     ),
@@ -2753,40 +2067,27 @@ class _NewEstimateDialogState
                 height: 1,
               ),
 
-              if (_isLoadingData)
-                const LinearProgressIndicator(),
+              if (_isLoadingData) const LinearProgressIndicator(),
 
               if (_loadingError != null)
                 Container(
-                  width:
-                      double.infinity,
-
-                  padding:
-                      const EdgeInsets
-                          .all(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(
                     12,
                   ),
-
                   child: Row(
                     children: [
                       Expanded(
                         child: Text(
                           _loadingError!,
-
-                          style:
-                              const TextStyle(
-                            color:
-                                Colors.red,
+                          style: const TextStyle(
+                            color: Colors.red,
                           ),
                         ),
                       ),
-
                       TextButton(
-                        onPressed:
-                            _loadReferenceData,
-
-                        child:
-                            const Text(
+                        onPressed: _loadReferenceData,
+                        child: const Text(
                           'Retry',
                         ),
                       ),
@@ -2801,84 +2102,50 @@ class _NewEstimateDialogState
               Expanded(
                 child: Form(
                   key: _formKey,
-
-                  child:
-                      SingleChildScrollView(
-                    padding:
-                        const EdgeInsets
-                            .all(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(
                       22,
                     ),
-
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment
-                              .start,
-
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // ======================================
                         // TOP FIELDS
                         // ======================================
 
                         Row(
-                          crossAxisAlignment:
-                              CrossAxisAlignment
-                                  .start,
-
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
-                              child:
-                                  _buildCustomerSearch(),
+                              child: _buildCustomerSearch(),
                             ),
-
                             const SizedBox(
                               width: 18,
                             ),
-
                             Expanded(
-                              child:
-                                  _buildTextField(
-                                label:
-                                    'Estimate # *',
-
-                                controller:
-                                    estimateNumberController,
-
-                                readOnly:
-                                    true,
+                              child: _buildTextField(
+                                label: 'Estimate # *',
+                                controller: estimateNumberController,
+                                readOnly: true,
                               ),
                             ),
-
                             const SizedBox(
                               width: 18,
                             ),
-
                             Expanded(
-                              child:
-                                  _buildTextField(
-                                label:
-                                    'Sales Person Name',
-
-                                controller:
-                                    salesPersonController,
+                              child: _buildTextField(
+                                label: 'Sales Person Name',
+                                controller: salesPersonController,
                               ),
                             ),
-
                             const SizedBox(
                               width: 18,
                             ),
-
                             Expanded(
-                              child:
-                                  _buildDateField(
-                                label:
-                                    'Date *',
-
-                                value:
-                                    selectedDate,
-
-                                onTap:
-                                    _selectDate,
+                              child: _buildDateField(
+                                label: 'Date *',
+                                value: selectedDate,
+                                onTap: _selectDate,
                               ),
                             ),
                           ],
@@ -2890,17 +2157,10 @@ class _NewEstimateDialogState
 
                         SizedBox(
                           width: 330,
-
-                          child:
-                              _buildOptionalDateField(
-                            label:
-                                'Expiry Date',
-
-                            value:
-                                expiryDate,
-
-                            onTap:
-                                _selectExpiryDate,
+                          child: _buildOptionalDateField(
+                            label: 'Expiry Date',
+                            value: expiryDate,
+                            onTap: _selectExpiryDate,
                           ),
                         ),
 
@@ -2913,126 +2173,73 @@ class _NewEstimateDialogState
                         // ======================================
 
                         Container(
-                          decoration:
-                              BoxDecoration(
-                            border:
-                                Border.all(
-                              color:
-                                  const Color(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: const Color(
                                 0xFFFFFFFF,
                               ),
                             ),
-
-                            borderRadius:
-                                BorderRadius
-                                    .circular(
+                            borderRadius: BorderRadius.circular(
                               8,
                             ),
                           ),
-
                           child: Column(
                             children: [
                               Container(
-                                padding:
-                                    const EdgeInsets
-                                        .symmetric(
-                                  horizontal:
-                                      18,
-
-                                  vertical:
-                                      16,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 16,
                                 ),
-
-                                decoration:
-                                    const BoxDecoration(
-                                  color:
-                                      Color(
+                                decoration: const BoxDecoration(
+                                  color: Color(
                                     0xFFF7F8FA,
                                   ),
                                 ),
-
-                                child:
-                                    const Row(
+                                child: const Row(
                                   children: [
                                     Expanded(
-                                      flex:
-                                          5,
-
-                                      child:
-                                          Text(
+                                      flex: 5,
+                                      child: Text(
                                         'Item Details',
-
-                                        style:
-                                            TextStyle(
-                                          fontSize:
-                                              16,
-
-                                          fontWeight:
-                                              FontWeight
-                                                  .w700,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
                                     ),
-
                                     SizedBox(
-                                      width:
-                                          100,
-
-                                      child:
-                                          Text(
+                                      width: 100,
+                                      child: Text(
                                         'Qty',
-
-                                        style:
-                                            TextStyle(
-                                          fontWeight:
-                                              FontWeight
-                                                  .w700,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
                                     ),
-
                                     SizedBox(
-                                      width:
-                                          140,
-
-                                      child:
-                                          Text(
+                                      width: 140,
+                                      child: Text(
                                         'Rate',
-
-                                        style:
-                                            TextStyle(
-                                          fontWeight:
-                                              FontWeight
-                                                  .w700,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
                                     ),
-
                                     SizedBox(
-                                      width:
-                                          150,
-
-                                      child:
-                                          Text(
+                                      width: 150,
+                                      child: Text(
                                         'Amount',
-
-                                        style:
-                                            TextStyle(
-                                          fontWeight:
-                                              FontWeight
-                                                  .w700,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
                                     ),
-
                                     SizedBox(
-                                      width:
-                                          55,
+                                      width: 55,
                                     ),
                                   ],
                                 ),
                               ),
-
                               ..._itemRows.map(
                                 (row) {
                                   return _buildItemRow(
@@ -3049,40 +2256,21 @@ class _NewEstimateDialogState
                         ),
 
                         ElevatedButton.icon(
-                          onPressed:
-                              _isLoadingData
-                                  ? null
-                                  : _addRow,
-
-                          icon:
-                              const Icon(
+                          onPressed: _isLoadingData ? null : _addRow,
+                          icon: const Icon(
                             Icons.add,
                           ),
-
-                          label:
-                              const Text(
+                          label: const Text(
                             'Add Row',
                           ),
-
-                          style:
-                              ElevatedButton
-                                  .styleFrom(
-                            backgroundColor:
-                                const Color(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(
                               0xFF1E78B7,
                             ),
-
-                            foregroundColor:
-                                Colors.white,
-
-                            padding:
-                                const EdgeInsets
-                                    .symmetric(
-                              horizontal:
-                                  20,
-
-                              vertical:
-                                  14,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 14,
                             ),
                           ),
                         ),
@@ -3096,32 +2284,22 @@ class _NewEstimateDialogState
                         // ======================================
 
                         Align(
-                          alignment:
-                              Alignment
-                                  .centerRight,
-
+                          alignment: Alignment.centerRight,
                           child: SizedBox(
                             width: 390,
-
                             child: Column(
                               children: [
                                 _buildTotalRow(
                                   'Sub Total',
-
                                   subTotal,
                                 ),
-
                                 const SizedBox(
                                   height: 15,
                                 ),
-
                                 _buildTotalRow(
                                   'Total',
-
                                   total,
-
-                                  isBold:
-                                      true,
+                                  isBold: true,
                                 ),
                               ],
                             ),
@@ -3138,140 +2316,78 @@ class _NewEstimateDialogState
               // ================================================
 
               Container(
-                width:
-                    double.infinity,
-
-                padding:
-                    const EdgeInsets
-                        .symmetric(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
                   horizontal: 22,
-
                   vertical: 16,
                 ),
-
-                decoration:
-                    const BoxDecoration(
-                  color:
-                      Color(
+                decoration: const BoxDecoration(
+                  color: Color(
                     0xFFF8F8FA,
                   ),
-
                   border: Border(
-                    top:
-                        BorderSide(
-                      color:
-                          Color(
+                    top: BorderSide(
+                      color: Color(
                         0xFFE0E0E0,
                       ),
                     ),
                   ),
                 ),
-
                 child: Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment
-                          .end,
-
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     ElevatedButton(
-                      onPressed:
-                          _isSaving
-                              ? null
-                              : () {
-                                  Navigator.pop(
-                                    context,
-                                  );
-                                },
-
-                      style:
-                          ElevatedButton
-                              .styleFrom(
-                        backgroundColor:
-                            const Color(
+                      onPressed: _isSaving
+                          ? null
+                          : () {
+                              Navigator.pop(
+                                context,
+                              );
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(
                           0xFF747B82,
                         ),
-
-                        foregroundColor:
-                            Colors.white,
-
-                        padding:
-                            const EdgeInsets
-                                .symmetric(
-                          horizontal:
-                              30,
-
-                          vertical:
-                              14,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 30,
+                          vertical: 14,
                         ),
                       ),
-
-                      child:
-                          const Text(
+                      child: const Text(
                         'Cancel',
                       ),
                     ),
-
                     const SizedBox(
                       width: 16,
                     ),
-
                     ElevatedButton(
                       onPressed:
-                          _isSaving ||
-                                  _isLoadingData
-                              ? null
-                              : _saveEstimate,
-
-                      style:
-                          ElevatedButton
-                              .styleFrom(
-                        backgroundColor:
-                            const Color(
+                          _isSaving || _isLoadingData ? null : _saveEstimate,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(
                           0xFF1E78B7,
                         ),
-
-                        foregroundColor:
-                            Colors.white,
-
-                        padding:
-                            const EdgeInsets
-                                .symmetric(
-                          horizontal:
-                              30,
-
-                          vertical:
-                              14,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 30,
+                          vertical: 14,
                         ),
                       ),
-
                       child: _isSaving
                           ? const SizedBox(
-                              width:
-                                  20,
-
-                              height:
-                                  20,
-
-                              child:
-                                  CircularProgressIndicator(
-                                strokeWidth:
-                                    2,
-
-                                color:
-                                    Colors.white,
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
                               ),
                             )
                           : const Text(
                               'Save Estimate',
-
-                              style:
-                                  TextStyle(
-                                fontSize:
-                                    16,
-
-                                fontWeight:
-                                    FontWeight
-                                        .w600,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                     ),
@@ -3291,88 +2407,54 @@ class _NewEstimateDialogState
 
   Widget _buildCustomerSearch() {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Customer Name *',
-
           style: TextStyle(
             fontSize: 15,
-
-            fontWeight:
-                FontWeight.w500,
-
-            color:
-                Color(
+            fontWeight: FontWeight.w500,
+            color: Color(
               0xFF444444,
             ),
           ),
         ),
-
         const SizedBox(
           height: 8,
         ),
-
-        RawAutocomplete<
-            CustomerOption>(
-          textEditingController:
-              customerController,
-
-          focusNode:
-              customerFocusNode,
-
-          displayStringForOption:
-              (customer) =>
-                  customer.name,
-
-          optionsBuilder:
-              (textValue) {
-            final query =
-                textValue.text
-                    .trim()
-                    .toLowerCase();
+        RawAutocomplete<CustomerOption>(
+          textEditingController: customerController,
+          focusNode: customerFocusNode,
+          displayStringForOption: (customer) => customer.name,
+          optionsBuilder: (textValue) {
+            final query = textValue.text.trim().toLowerCase();
 
             if (query.isEmpty) {
-              return _customers
-                  .take(8);
+              return _customers.take(8);
             }
 
             return _customers
                 .where(
                   (customer) =>
-                      customer.name
-                              .toLowerCase()
-                              .contains(
-                                query,
-                              ) ||
-                          customer
-                              .companyName
-                              .toLowerCase()
-                              .contains(
-                                query,
-                              ) ||
-                          customer.email
-                              .toLowerCase()
-                              .contains(
-                                query,
-                              ),
+                      customer.name.toLowerCase().contains(
+                            query,
+                          ) ||
+                      customer.companyName.toLowerCase().contains(
+                            query,
+                          ) ||
+                      customer.email.toLowerCase().contains(
+                            query,
+                          ),
                 )
                 .take(8);
           },
-
-          onSelected:
-              (customer) {
+          onSelected: (customer) {
             setState(() {
-              _selectedCustomer =
-                  customer;
+              _selectedCustomer = customer;
 
-              customerController.text =
-                  customer.name;
+              customerController.text = customer.name;
             });
           },
-
           fieldViewBuilder: (
             context,
             controller,
@@ -3380,47 +2462,22 @@ class _NewEstimateDialogState
             onSubmitted,
           ) {
             return TextFormField(
-              controller:
-                  controller,
-
-              focusNode:
-                  focusNode,
-
-              style:
-                  const TextStyle(
-                color:
-                    Colors.black,
+              controller: controller,
+              focusNode: focusNode,
+              style: const TextStyle(
+                color: Colors.black,
               ),
-
-              decoration:
-                  _inputDecoration()
-                      .copyWith(
-                hintText:
-                    'Select or type to search...',
+              decoration: _inputDecoration().copyWith(
+                hintText: 'Select or type to search...',
               ),
-
-              onChanged:
-                  (value) {
-                if (
-                  _selectedCustomer !=
-                          null &&
-                      value.trim() !=
-                          _selectedCustomer!
-                              .name
-                ) {
-                  _selectedCustomer =
-                      null;
+              onChanged: (value) {
+                if (_selectedCustomer != null &&
+                    value.trim() != _selectedCustomer!.name) {
+                  _selectedCustomer = null;
                 }
               },
-
-              validator:
-                  (value) {
-                if (
-                  value == null ||
-                  value
-                      .trim()
-                      .isEmpty
-                ) {
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
                   return 'Required';
                 }
 
@@ -3428,71 +2485,41 @@ class _NewEstimateDialogState
               },
             );
           },
-
           optionsViewBuilder: (
             context,
             onSelected,
             options,
           ) {
-            final list =
-                options.toList();
+            final list = options.toList();
 
             return Align(
-              alignment:
-                  Alignment.topLeft,
-
+              alignment: Alignment.topLeft,
               child: Material(
                 elevation: 10,
-
-                borderRadius:
-                    BorderRadius
-                        .circular(
+                borderRadius: BorderRadius.circular(
                   10,
                 ),
-
-                child:
-                    ConstrainedBox(
-                  constraints:
-                      const BoxConstraints(
-                    maxHeight:
-                        250,
-
-                    maxWidth:
-                        330,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxHeight: 250,
+                    maxWidth: 330,
                   ),
-
-                  child:
-                      ListView.builder(
-                    padding:
-                        EdgeInsets.zero,
-
-                    shrinkWrap:
-                        true,
-
-                    itemCount:
-                        list.length,
-
-                    itemBuilder:
-                        (_, index) {
-                      final customer =
-                          list[index];
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    itemCount: list.length,
+                    itemBuilder: (_, index) {
+                      final customer = list[index];
 
                       return ListTile(
                         title: Text(
-                          customer
-                              .name,
+                          customer.name,
                         ),
-
-                        subtitle:
-                            customer
-                                    .companyName
-                                    .isEmpty
-                                ? null
-                                : Text(
-                                    customer
-                                        .companyName,
-                                  ),
-
+                        subtitle: customer.companyName.isEmpty
+                            ? null
+                            : Text(
+                                customer.companyName,
+                              ),
                         onTap: () {
                           onSelected(
                             customer,
@@ -3518,95 +2545,59 @@ class _NewEstimateDialogState
     _ItemRow row,
   ) {
     return Padding(
-      padding:
-          const EdgeInsets.all(
+      padding: const EdgeInsets.all(
         14,
       ),
-
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             flex: 5,
-
             child: Column(
               children: [
-                RawAutocomplete<
-                    CatalogOption>(
-                  textEditingController:
-                      row.itemController,
+                RawAutocomplete<CatalogOption>(
+                  textEditingController: row.itemController,
+                  focusNode: row.focusNode,
+                  displayStringForOption: (option) => option.name,
+                  optionsBuilder: (textValue) {
+                    final query = textValue.text.trim().toLowerCase();
 
-                  focusNode:
-                      row.focusNode,
-
-                  displayStringForOption:
-                      (option) =>
-                          option.name,
-
-                  optionsBuilder:
-                      (textValue) {
-                    final query =
-                        textValue
-                            .text
-                            .trim()
-                            .toLowerCase();
-
-                    if (
-                      query.isEmpty
-                    ) {
-                      return _catalog
-                          .take(
-                            10,
-                          );
+                    if (query.isEmpty) {
+                      return _catalog.take(
+                        10,
+                      );
                     }
 
                     return _catalog
                         .where(
                           (item) =>
-                              item.name
-                                      .toLowerCase()
-                                      .contains(
-                                        query,
-                                      ) ||
-                                  item.sku
-                                      .toLowerCase()
-                                      .contains(
-                                        query,
-                                      ) ||
-                                  item.sourceType
-                                      .toLowerCase()
-                                      .contains(
-                                        query,
-                                      ),
+                              item.name.toLowerCase().contains(
+                                    query,
+                                  ) ||
+                              item.sku.toLowerCase().contains(
+                                    query,
+                                  ) ||
+                              item.sourceType.toLowerCase().contains(
+                                    query,
+                                  ),
                         )
                         .take(
                           10,
                         );
                   },
-
-                  onSelected:
-                      (product) {
+                  onSelected: (product) {
                     setState(() {
-                      row.selectedProduct =
-                          product;
+                      row.selectedProduct = product;
 
-                      row.itemController.text =
-                          product.name;
+                      row.itemController.text = product.name;
 
-                      row.descriptionController
-                              .text =
-                          product.description;
+                      row.descriptionController.text = product.description;
 
-                      row.rateController.text =
-                          product.rate
-                              .toStringAsFixed(
-                            2,
-                          );
+                      row.rateController.text = product.rate.toStringAsFixed(
+                        2,
+                      );
                     });
                   },
-
                   fieldViewBuilder: (
                     context,
                     controller,
@@ -3614,146 +2605,81 @@ class _NewEstimateDialogState
                     onSubmitted,
                   ) {
                     return TextFormField(
-                      controller:
-                          controller,
-
-                      focusNode:
-                          focusNode,
-
-                      decoration:
-                          _cellInputDecoration()
-                              .copyWith(
-                        hintText:
-                            'Select or type to search...',
+                      controller: controller,
+                      focusNode: focusNode,
+                      decoration: _cellInputDecoration().copyWith(
+                        hintText: 'Select or type to search...',
                       ),
-
-                      onChanged:
-                          (value) {
-                        if (
-                          row.selectedProduct !=
-                                  null &&
-                              value.trim() !=
-                                  row.selectedProduct!
-                                      .name
-                        ) {
-                          row.selectedProduct =
-                              null;
+                      onChanged: (value) {
+                        if (row.selectedProduct != null &&
+                            value.trim() != row.selectedProduct!.name) {
+                          row.selectedProduct = null;
 
                           setState(() {});
                         }
                       },
                     );
                   },
-
                   optionsViewBuilder: (
                     context,
                     onSelected,
                     options,
                   ) {
-                    final list =
-                        options
-                            .toList();
+                    final list = options.toList();
 
                     return Align(
-                      alignment:
-                          Alignment
-                              .topLeft,
-
+                      alignment: Alignment.topLeft,
                       child: Material(
                         elevation: 10,
-
-                        borderRadius:
-                            BorderRadius
-                                .circular(
+                        borderRadius: BorderRadius.circular(
                           10,
                         ),
-
-                        child:
-                            ConstrainedBox(
-                          constraints:
-                              const BoxConstraints(
-                            maxWidth:
-                                450,
-
-                            maxHeight:
-                                280,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth: 450,
+                            maxHeight: 280,
                           ),
-
-                          child:
-                              ListView.builder(
-                            padding:
-                                EdgeInsets.zero,
-
-                            shrinkWrap:
-                                true,
-
-                            itemCount:
-                                list.length,
-
-                            itemBuilder:
-                                (_, index) {
-                              final item =
-                                  list[index];
+                          child: ListView.builder(
+                            padding: EdgeInsets.zero,
+                            shrinkWrap: true,
+                            itemCount: list.length,
+                            itemBuilder: (_, index) {
+                              final item = list[index];
 
                               return ListTile(
-                                leading:
-                                    Container(
-                                  padding:
-                                      const EdgeInsets
-                                          .symmetric(
-                                    horizontal:
-                                        8,
-
-                                    vertical:
-                                        4,
+                                leading: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
                                   ),
-
-                                  decoration:
-                                      BoxDecoration(
-                                    color:
-                                        item.sourceType ==
-                                                'Item'
-                                            ? const Color(
-                                                0xFFE3F2FD,
-                                              )
-                                            : const Color(
-                                                0xFFFFF3E0,
-                                              ),
-
-                                    borderRadius:
-                                        BorderRadius
-                                            .circular(
+                                  decoration: BoxDecoration(
+                                    color: item.sourceType == 'Item'
+                                        ? const Color(
+                                            0xFFE3F2FD,
+                                          )
+                                        : const Color(
+                                            0xFFFFF3E0,
+                                          ),
+                                    borderRadius: BorderRadius.circular(
                                       10,
                                     ),
                                   ),
-
-                                  child:
-                                      Text(
+                                  child: Text(
                                     item.sourceType,
-
-                                    style:
-                                        const TextStyle(
-                                      fontSize:
-                                          11,
+                                    style: const TextStyle(
+                                      fontSize: 11,
                                     ),
                                   ),
                                 ),
-
-                                title:
-                                    Text(
+                                title: Text(
                                   item.name,
                                 ),
-
-                                subtitle:
-                                    Text(
-                                  item.sku
-                                          .isEmpty
+                                subtitle: Text(
+                                  item.sku.isEmpty
                                       ? 'Rate: INR ${item.rate.toStringAsFixed(2)}'
                                       : '${item.sku} • INR ${item.rate.toStringAsFixed(2)}',
                                 ),
-
-                                onTap:
-                                    () {
+                                onTap: () {
                                   onSelected(
                                     item,
                                   );
@@ -3766,142 +2692,91 @@ class _NewEstimateDialogState
                     );
                   },
                 ),
-
                 const SizedBox(
                   height: 8,
                 ),
-
                 TextFormField(
-                  controller:
-                      row.descriptionController,
-
+                  controller: row.descriptionController,
                   minLines: 1,
-
                   maxLines: 2,
-
-                  decoration:
-                      _cellInputDecoration()
-                          .copyWith(
-                    hintText:
-                        'Description',
+                  decoration: _cellInputDecoration().copyWith(
+                    hintText: 'Description',
                   ),
                 ),
               ],
             ),
           ),
-
           const SizedBox(
             width: 12,
           ),
-
           SizedBox(
             width: 100,
-
             child: TextFormField(
-              controller:
-                  row.qtyController,
-
-              keyboardType:
-                  const TextInputType
-                      .numberWithOptions(
+              controller: row.qtyController,
+              keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-
               onChanged: (_) {
                 setState(() {});
               },
-
-              decoration:
-                  _cellInputDecoration(),
+              decoration: _cellInputDecoration(),
             ),
           ),
-
           const SizedBox(
             width: 12,
           ),
-
           SizedBox(
             width: 140,
-
             child: TextFormField(
-              controller:
-                  row.rateController,
-
-              keyboardType:
-                  const TextInputType
-                      .numberWithOptions(
+              controller: row.rateController,
+              keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-
               onChanged: (_) {
                 setState(() {});
               },
-
-              decoration:
-                  _cellInputDecoration(),
+              decoration: _cellInputDecoration(),
             ),
           ),
-
           const SizedBox(
             width: 12,
           ),
-
           SizedBox(
             width: 150,
-
             child: Container(
-              padding:
-                  const EdgeInsets
-                      .symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: 14,
-
                 vertical: 14,
               ),
-
-              decoration:
-                  BoxDecoration(
-                color:
-                    const Color(
+              decoration: BoxDecoration(
+                color: const Color(
                   0xFFF5F6F7,
                 ),
-
-                borderRadius:
-                    BorderRadius
-                        .circular(
+                borderRadius: BorderRadius.circular(
                   8,
                 ),
-
-                border:
-                    Border.all(
-                  color:
-                      const Color(
+                border: Border.all(
+                  color: const Color(
                     0xFFD7DCE2,
                   ),
                 ),
               ),
-
               child: Text(
                 'INR ${row.amount.toStringAsFixed(2)}',
               ),
             ),
           ),
-
           SizedBox(
             width: 55,
-
             child: IconButton(
               onPressed: () {
                 _removeRow(
                   row,
                 );
               },
-
-              icon:
-                  const Icon(
+              icon: const Icon(
                 Icons.close,
-
-                color:
-                    Colors.redAccent,
+                color: Colors.redAccent,
               ),
             ),
           ),
@@ -3916,63 +2791,38 @@ class _NewEstimateDialogState
 
   Widget _buildTextField({
     required String label,
-
-    required TextEditingController
-        controller,
-
+    required TextEditingController controller,
     bool readOnly = false,
   }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-
-          style:
-              const TextStyle(
+          style: const TextStyle(
             fontSize: 15,
-
-            fontWeight:
-                FontWeight.w500,
-
-            color:
-                Color(
+            fontWeight: FontWeight.w500,
+            color: Color(
               0xFF444444,
             ),
           ),
         ),
-
         const SizedBox(
           height: 8,
         ),
-
         TextFormField(
-          controller:
-              controller,
+          controller: controller,
+          readOnly: readOnly,
+          decoration: _inputDecoration(),
+          validator: label.contains('*')
+              ? (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Required';
+                  }
 
-          readOnly:
-              readOnly,
-
-          decoration:
-              _inputDecoration(),
-
-          validator:
-              label.contains('*')
-                  ? (value) {
-                      if (
-                        value == null ||
-                        value
-                            .trim()
-                            .isEmpty
-                      ) {
-                        return 'Required';
-                      }
-
-                      return null;
-                    }
-                  : null,
+                  return null;
+                }
+              : null,
         ),
       ],
     );
@@ -3980,45 +2830,29 @@ class _NewEstimateDialogState
 
   Widget _buildDateField({
     required String label,
-
     required DateTime value,
-
-    required VoidCallback
-        onTap,
+    required VoidCallback onTap,
   }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-
-          style:
-              const TextStyle(
+          style: const TextStyle(
             fontSize: 15,
-
-            fontWeight:
-                FontWeight.w500,
-
-            color:
-                Color(
+            fontWeight: FontWeight.w500,
+            color: Color(
               0xFF444444,
             ),
           ),
         ),
-
         const SizedBox(
           height: 8,
         ),
-
         InkWell(
           onTap: onTap,
-
           child: InputDecorator(
-            decoration:
-                _inputDecoration(),
-
+            decoration: _inputDecoration(),
             child: Row(
               children: [
                 Expanded(
@@ -4030,11 +2864,8 @@ class _NewEstimateDialogState
                     ),
                   ),
                 ),
-
                 const Icon(
-                  Icons
-                      .calendar_today_outlined,
-
+                  Icons.calendar_today_outlined,
                   size: 19,
                 ),
               ],
@@ -4045,48 +2876,31 @@ class _NewEstimateDialogState
     );
   }
 
-  Widget
-      _buildOptionalDateField({
+  Widget _buildOptionalDateField({
     required String label,
-
     required DateTime? value,
-
-    required VoidCallback
-        onTap,
+    required VoidCallback onTap,
   }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-
-          style:
-              const TextStyle(
+          style: const TextStyle(
             fontSize: 15,
-
-            fontWeight:
-                FontWeight.w500,
-
-            color:
-                Color(
+            fontWeight: FontWeight.w500,
+            color: Color(
               0xFF444444,
             ),
           ),
         ),
-
         const SizedBox(
           height: 8,
         ),
-
         InkWell(
           onTap: onTap,
-
           child: InputDecorator(
-            decoration:
-                _inputDecoration(),
-
+            decoration: _inputDecoration(),
             child: Row(
               children: [
                 Expanded(
@@ -4098,23 +2912,17 @@ class _NewEstimateDialogState
                           ).format(
                             value,
                           ),
-
-                    style:
-                        TextStyle(
-                      color:
-                          value == null
-                              ? const Color(
-                                  0xFF9AA3AD,
-                                )
-                              : Colors.black,
+                    style: TextStyle(
+                      color: value == null
+                          ? const Color(
+                              0xFF9AA3AD,
+                            )
+                          : Colors.black,
                     ),
                   ),
                 ),
-
                 const Icon(
-                  Icons
-                      .calendar_today_outlined,
-
+                  Icons.calendar_today_outlined,
                   size: 19,
                 ),
               ],
@@ -4131,49 +2939,21 @@ class _NewEstimateDialogState
     bool isBold = false,
   }) {
     return Row(
-      mainAxisAlignment:
-          MainAxisAlignment
-              .spaceBetween,
-
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
-
-          style:
-              TextStyle(
-            fontSize:
-                isBold
-                    ? 20
-                    : 17,
-
-            fontWeight:
-                isBold
-                    ? FontWeight
-                        .w700
-                    : FontWeight
-                        .w500,
+          style: TextStyle(
+            fontSize: isBold ? 20 : 17,
+            fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
-
         Text(
           'INR ${value.toStringAsFixed(2)}',
-
-          style:
-              TextStyle(
-            fontSize:
-                isBold
-                    ? 22
-                    : 17,
-
-            fontWeight:
-                isBold
-                    ? FontWeight
-                        .w800
-                    : FontWeight
-                        .w500,
-
-            color:
-                const Color(
+          style: TextStyle(
+            fontSize: isBold ? 22 : 17,
+            fontWeight: isBold ? FontWeight.w800 : FontWeight.w500,
+            color: const Color(
               0xFF17395C,
             ),
           ),
@@ -4182,125 +2962,78 @@ class _NewEstimateDialogState
     );
   }
 
-  InputDecoration
-      _inputDecoration() {
+  InputDecoration _inputDecoration() {
     return InputDecoration(
       isDense: true,
-
       filled: true,
-
-      fillColor:
-          const Color(
+      fillColor: const Color(
         0xFFF8FAFB,
       ),
-
-      contentPadding:
-          const EdgeInsets
-              .symmetric(
+      contentPadding: const EdgeInsets.symmetric(
         horizontal: 16,
-
         vertical: 16,
       ),
-
-      border:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           10,
         ),
       ),
-
-      enabledBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           10,
         ),
-
-        borderSide:
-            const BorderSide(
-          color:
-              Color(
+        borderSide: const BorderSide(
+          color: Color(
             0xFFD7DCE2,
           ),
         ),
       ),
-
-      focusedBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           10,
         ),
-
-        borderSide:
-            const BorderSide(
-          color:
-              Color(
+        borderSide: const BorderSide(
+          color: Color(
             0xFF1E78B7,
           ),
-
           width: 1.5,
         ),
       ),
     );
   }
 
-  InputDecoration
-      _cellInputDecoration() {
+  InputDecoration _cellInputDecoration() {
     return InputDecoration(
       isDense: true,
-
       filled: true,
-
-      fillColor:
-          const Color(
+      fillColor: const Color(
         0xFFF8FAFB,
       ),
-
-      contentPadding:
-          const EdgeInsets
-              .symmetric(
+      contentPadding: const EdgeInsets.symmetric(
         horizontal: 14,
-
         vertical: 14,
       ),
-
-      border:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           8,
         ),
       ),
-
-      enabledBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           8,
         ),
-
-        borderSide:
-            const BorderSide(
-          color:
-              Color(
+        borderSide: const BorderSide(
+          color: Color(
             0xFFD7DCE2,
           ),
         ),
       ),
-
-      focusedBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
           8,
         ),
-
-        borderSide:
-            const BorderSide(
-          color:
-              Color(
+        borderSide: const BorderSide(
+          color: Color(
             0xFF1E78B7,
           ),
         ),
@@ -4316,38 +3049,27 @@ class _NewEstimateDialogState
 class _ItemRow {
   CatalogOption? selectedProduct;
 
-  final TextEditingController
-      itemController =
-      TextEditingController();
+  final TextEditingController itemController = TextEditingController();
 
-  final FocusNode focusNode =
-      FocusNode();
+  final FocusNode focusNode = FocusNode();
 
-  final TextEditingController
-      descriptionController =
-      TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
 
-  final TextEditingController
-      qtyController =
-      TextEditingController(
+  final TextEditingController qtyController = TextEditingController(
     text: '1',
   );
 
-  final TextEditingController
-      rateController =
-      TextEditingController(
+  final TextEditingController rateController = TextEditingController(
     text: '0.00',
   );
 
   double get amount {
-    final qty =
-        double.tryParse(
+    final qty = double.tryParse(
           qtyController.text.trim(),
         ) ??
         0;
 
-    final rate =
-        double.tryParse(
+    final rate = double.tryParse(
           rateController.text.trim(),
         ) ??
         0;
@@ -4360,13 +3082,11 @@ class _ItemRow {
 
     itemController.clear();
 
-    descriptionController
-        .clear();
+    descriptionController.clear();
 
     qtyController.text = '1';
 
-    rateController.text =
-        '0.00';
+    rateController.text = '0.00';
   }
 
   void dispose() {
@@ -4374,8 +3094,7 @@ class _ItemRow {
 
     focusNode.dispose();
 
-    descriptionController
-        .dispose();
+    descriptionController.dispose();
 
     qtyController.dispose();
 
@@ -4387,8 +3106,7 @@ class _ItemRow {
 // SMALL UI WIDGETS
 // ============================================================
 
-class _HeaderText
-    extends StatelessWidget {
+class _HeaderText extends StatelessWidget {
   final String text;
 
   const _HeaderText(
@@ -4401,16 +3119,10 @@ class _HeaderText
   ) {
     return Text(
       text,
-
-      style:
-          const TextStyle(
+      style: const TextStyle(
         fontSize: 13,
-
-        fontWeight:
-            FontWeight.w700,
-
-        color:
-            Color(
+        fontWeight: FontWeight.w700,
+        color: Color(
           0xFF555555,
         ),
       ),
@@ -4418,8 +3130,7 @@ class _HeaderText
   }
 }
 
-class _StatusBadge
-    extends StatelessWidget {
+class _StatusBadge extends StatelessWidget {
   final EstimateStatus status;
 
   const _StatusBadge({
@@ -4489,41 +3200,24 @@ class _StatusBadge
     BuildContext context,
   ) {
     return Align(
-      alignment:
-          Alignment.centerLeft,
-
+      alignment: Alignment.centerLeft,
       child: Container(
-        padding:
-            const EdgeInsets
-                .symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: 12,
-
           vertical: 6,
         ),
-
-        decoration:
-            BoxDecoration(
-          color:
-              backgroundColor,
-
-          borderRadius:
-              BorderRadius.circular(
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(
             20,
           ),
         ),
-
         child: Text(
           status.label,
-
-          style:
-              TextStyle(
-            color:
-                textColor,
-
+          style: TextStyle(
+            color: textColor,
             fontSize: 12,
-
-            fontWeight:
-                FontWeight.w700,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),

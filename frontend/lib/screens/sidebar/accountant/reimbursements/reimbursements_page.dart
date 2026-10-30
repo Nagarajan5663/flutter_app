@@ -12,8 +12,7 @@ class ReimbursementsPage extends StatefulWidget {
   });
 
   @override
-  State<ReimbursementsPage> createState() =>
-      _ReimbursementsPageState();
+  State<ReimbursementsPage> createState() => _ReimbursementsPageState();
 }
 
 class _ReimbursementsPageState extends State<ReimbursementsPage> {
@@ -114,7 +113,6 @@ class _ReimbursementsPageState extends State<ReimbursementsPage> {
                         color: Color(0xFF17395C),
                       ),
                     ),
-
                     ElevatedButton.icon(
                       onPressed: _openNewReimbursementForm,
                       icon: const Icon(
@@ -184,22 +182,17 @@ class _ReimbursementsPageState extends State<ReimbursementsPage> {
     return Column(
       children: [
         _buildTableHeader(),
-
         const Divider(
           height: 1,
           color: Color(0xFFE5E7EB),
         ),
-
         const SizedBox(height: 45),
-
         const Icon(
           Icons.currency_exchange,
           size: 55,
           color: Color(0xFFB0B8C2),
         ),
-
         const SizedBox(height: 15),
-
         const Text(
           'No reimbursements found.',
           style: TextStyle(
@@ -207,7 +200,6 @@ class _ReimbursementsPageState extends State<ReimbursementsPage> {
             fontSize: 16,
           ),
         ),
-
         const SizedBox(height: 45),
       ],
     );
@@ -221,12 +213,10 @@ class _ReimbursementsPageState extends State<ReimbursementsPage> {
     return Column(
       children: [
         _buildTableHeader(),
-
         const Divider(
           height: 1,
           color: Color(0xFFE5E7EB),
         ),
-
         ..._reimbursements.map(
           (reimbursement) {
             return Column(
@@ -239,7 +229,6 @@ class _ReimbursementsPageState extends State<ReimbursementsPage> {
                   child: Row(
                     children: [
                       _buildActionsMenu(reimbursement),
-
                       Expanded(
                         flex: 2,
                         child: Text(
@@ -253,7 +242,6 @@ class _ReimbursementsPageState extends State<ReimbursementsPage> {
                           ),
                         ),
                       ),
-
                       Expanded(
                         flex: 2,
                         child: Text(
@@ -265,7 +253,6 @@ class _ReimbursementsPageState extends State<ReimbursementsPage> {
                           ),
                         ),
                       ),
-
                       Expanded(
                         flex: 2,
                         child: Text(
@@ -277,7 +264,6 @@ class _ReimbursementsPageState extends State<ReimbursementsPage> {
                           ),
                         ),
                       ),
-
                       Expanded(
                         flex: 2,
                         child: Text(
@@ -289,7 +275,6 @@ class _ReimbursementsPageState extends State<ReimbursementsPage> {
                           ),
                         ),
                       ),
-
                       Expanded(
                         flex: 2,
                         child: Align(
@@ -299,7 +284,6 @@ class _ReimbursementsPageState extends State<ReimbursementsPage> {
                           ),
                         ),
                       ),
-
                       Expanded(
                         child: Text(
                           'INR ${reimbursement.total.toStringAsFixed(2)}',
@@ -311,11 +295,9 @@ class _ReimbursementsPageState extends State<ReimbursementsPage> {
                           ),
                         ),
                       ),
-
                     ],
                   ),
                 ),
-
                 const Divider(
                   height: 1,
                   color: Color(0xFFE5E7EB),
@@ -332,6 +314,7 @@ class _ReimbursementsPageState extends State<ReimbursementsPage> {
     return SizedBox(
       width: 44,
       child: PopupMenuButton<String>(
+        position: PopupMenuPosition.under,
         padding: EdgeInsets.zero,
         icon: const Icon(Icons.more_vert),
         onSelected: (value) {
@@ -399,36 +382,29 @@ class _ReimbursementsPageState extends State<ReimbursementsPage> {
             width: 44,
             child: _TableHeaderText('ACTIONS'),
           ),
-
           Expanded(
             flex: 2,
             child: _TableHeaderText('DATE'),
           ),
-
           Expanded(
             flex: 2,
             child: _TableHeaderText('REIMBURSEMENT #'),
           ),
-
           Expanded(
             flex: 2,
             child: _TableHeaderText('CATEGORY'),
           ),
-
           Expanded(
             flex: 2,
             child: _TableHeaderText('CLAIMANT'),
           ),
-
           Expanded(
             flex: 2,
             child: _TableHeaderText('STATUS'),
           ),
-
           Expanded(
             child: _TableHeaderText('AMOUNT'),
           ),
-
         ],
       ),
     );
@@ -602,12 +578,10 @@ class NewReimbursementDialog extends StatefulWidget {
   });
 
   @override
-  State<NewReimbursementDialog> createState() =>
-      _NewReimbursementDialogState();
+  State<NewReimbursementDialog> createState() => _NewReimbursementDialogState();
 }
 
-class _NewReimbursementDialogState
-    extends State<NewReimbursementDialog> {
+class _NewReimbursementDialogState extends State<NewReimbursementDialog> {
   // ================================================================
   // FORM KEY
   // ================================================================
@@ -623,20 +597,15 @@ class _NewReimbursementDialogState
     text: widget.nextNumber,
   );
 
-  final TextEditingController claimantController =
-      TextEditingController();
+  final TextEditingController claimantController = TextEditingController();
 
-  final TextEditingController referenceController =
-      TextEditingController();
+  final TextEditingController referenceController = TextEditingController();
 
-  final TextEditingController amountController =
-      TextEditingController();
+  final TextEditingController amountController = TextEditingController();
 
-  final TextEditingController remarksController =
-      TextEditingController();
+  final TextEditingController remarksController = TextEditingController();
 
-  final TextEditingController customerController =
-      TextEditingController();
+  final TextEditingController customerController = TextEditingController();
 
   // ================================================================
   // FORM VALUES
@@ -883,7 +852,6 @@ class _NewReimbursementDialogState
                         ),
                       ),
                     ),
-
                     IconButton(
                       onPressed: () {
                         Navigator.pop(context);
@@ -924,9 +892,7 @@ class _NewReimbursementDialogState
                             Expanded(
                               child: _buildDateField(),
                             ),
-
                             const SizedBox(width: 18),
-
                             Expanded(
                               child: _buildDropdownField(
                                 label: 'Expense Category *',
@@ -940,9 +906,7 @@ class _NewReimbursementDialogState
                                 },
                               ),
                             ),
-
                             const SizedBox(width: 18),
-
                             Expanded(
                               child: _buildDropdownField(
                                 label: 'Claimant Account *',
@@ -974,9 +938,7 @@ class _NewReimbursementDialogState
                                 controller: reimbursementNumberController,
                               ),
                             ),
-
                             const SizedBox(width: 18),
-
                             Expanded(
                               child: _buildSearchField(
                                 label: 'Claimant (Employee/Vendor) *',
@@ -984,9 +946,7 @@ class _NewReimbursementDialogState
                                 hint: 'Select or type to search...',
                               ),
                             ),
-
                             const SizedBox(width: 18),
-
                             Expanded(
                               child: _buildTextField(
                                 label: 'Reference #',
@@ -1014,9 +974,7 @@ class _NewReimbursementDialogState
                             Expanded(
                               child: _buildAmountField(),
                             ),
-
                             const SizedBox(width: 18),
-
                             Expanded(
                               child: _buildDropdownField(
                                 label: 'Tax',
@@ -1025,15 +983,12 @@ class _NewReimbursementDialogState
                                 items: taxOptions,
                                 onChanged: (value) {
                                   setState(() {
-                                    selectedTax =
-                                        value ?? '-- No Tax --';
+                                    selectedTax = value ?? '-- No Tax --';
                                   });
                                 },
                               ),
                             ),
-
                             const SizedBox(width: 18),
-
                             SizedBox(
                               width: 150,
                               child: Padding(
@@ -1044,16 +999,13 @@ class _NewReimbursementDialogState
                                   children: [
                                     Checkbox(
                                       value: taxInclusive,
-                                      activeColor:
-                                          const Color(0xFF1D78C9),
+                                      activeColor: const Color(0xFF1D78C9),
                                       onChanged: (value) {
                                         setState(() {
-                                          taxInclusive =
-                                              value ?? false;
+                                          taxInclusive = value ?? false;
                                         });
                                       },
                                     ),
-
                                     const Expanded(
                                       child: Text(
                                         'Tax Inclusive',
@@ -1096,16 +1048,12 @@ class _NewReimbursementDialogState
                                 'Sub-Total',
                                 subTotal,
                               ),
-
                               const SizedBox(height: 7),
-
                               _buildTotalRow(
                                 'Tax',
                                 calculatedTax,
                               ),
-
                               const SizedBox(height: 7),
-
                               _buildTotalRow(
                                 'Total',
                                 total,
@@ -1139,7 +1087,6 @@ class _NewReimbursementDialogState
                                 });
                               },
                             ),
-
                             const Text(
                               'Billable to Customer',
                               style: TextStyle(
@@ -1147,7 +1094,6 @@ class _NewReimbursementDialogState
                                 fontSize: 15,
                               ),
                             ),
-
                             if (billable) ...[
                               const SizedBox(width: 28),
                               Expanded(
@@ -1220,9 +1166,7 @@ class _NewReimbursementDialogState
                                   'Choose Files',
                                 ),
                               ),
-
                               const SizedBox(width: 10),
-
                               Text(
                                 _attachedFileName,
                                 style: const TextStyle(
@@ -1283,9 +1227,7 @@ class _NewReimbursementDialogState
                         ),
                       ),
                     ),
-
                     const SizedBox(width: 12),
-
                     ElevatedButton(
                       onPressed: _saveReimbursement,
                       style: ElevatedButton.styleFrom(
@@ -1334,9 +1276,7 @@ class _NewReimbursementDialogState
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         InkWell(
           onTap: _selectDate,
           child: InputDecorator(
@@ -1351,7 +1291,6 @@ class _NewReimbursementDialogState
                     ),
                   ),
                 ),
-
                 const Icon(
                   Icons.calendar_today_outlined,
                   size: 18,
@@ -1385,9 +1324,7 @@ class _NewReimbursementDialogState
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         TextFormField(
           controller: controller,
           readOnly: readOnly,
@@ -1420,9 +1357,7 @@ class _NewReimbursementDialogState
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         TextFormField(
           controller: controller,
           style: const TextStyle(
@@ -1468,9 +1403,7 @@ class _NewReimbursementDialogState
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         TextFormField(
           controller: amountController,
           keyboardType: const TextInputType.numberWithOptions(
@@ -1515,9 +1448,7 @@ class _NewReimbursementDialogState
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         TextFormField(
           controller: customerController,
           style: const TextStyle(
@@ -1558,14 +1489,11 @@ class _NewReimbursementDialogState
             fontWeight: FontWeight.w500,
           ),
         ),
-
         const SizedBox(height: 8),
-
         DropdownButtonFormField<String>(
           initialValue: value,
           isExpanded: true,
           dropdownColor: Colors.white,
-
           hint: Text(
             hint,
             style: const TextStyle(
@@ -1573,19 +1501,15 @@ class _NewReimbursementDialogState
               fontSize: 14,
             ),
           ),
-
           style: const TextStyle(
             color: Colors.black,
             fontSize: 14,
           ),
-
           icon: const Icon(
             Icons.keyboard_arrow_down,
             color: Colors.black,
           ),
-
           decoration: _inputDecoration(),
-
           items: items.map(
             (item) {
               return DropdownMenuItem<String>(
@@ -1600,7 +1524,6 @@ class _NewReimbursementDialogState
               );
             },
           ).toList(),
-
           onChanged: onChanged,
         ),
       ],
@@ -1627,14 +1550,11 @@ class _NewReimbursementDialogState
               style: TextStyle(
                 color: const Color(0xFF444444),
                 fontSize: isBold ? 17 : 15,
-                fontWeight:
-                    isBold ? FontWeight.w700 : FontWeight.w500,
+                fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ),
-
           const SizedBox(width: 25),
-
           SizedBox(
             width: 105,
             child: Text(
@@ -1642,8 +1562,7 @@ class _NewReimbursementDialogState
               style: TextStyle(
                 color: const Color(0xFF17395C),
                 fontSize: isBold ? 18 : 15,
-                fontWeight:
-                    isBold ? FontWeight.w800 : FontWeight.w500,
+                fontWeight: isBold ? FontWeight.w800 : FontWeight.w500,
               ),
             ),
           ),
@@ -1659,29 +1578,24 @@ class _NewReimbursementDialogState
   InputDecoration _inputDecoration() {
     return InputDecoration(
       isDense: true,
-
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 13,
         vertical: 15,
       ),
-
       filled: true,
       fillColor: Colors.white.withValues(alpha: 0.45),
-
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
         borderSide: const BorderSide(
           color: Color(0xFFD7DCE2),
         ),
       ),
-
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
         borderSide: const BorderSide(
           color: Color(0xFFD7DCE2),
         ),
       ),
-
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
         borderSide: const BorderSide(
@@ -1689,7 +1603,6 @@ class _NewReimbursementDialogState
           width: 1.5,
         ),
       ),
-
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
         borderSide: const BorderSide(

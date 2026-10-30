@@ -24,6 +24,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
   final customerController = TextEditingController();
   DateTime? dateFrom;
   DateTime? dateTo;
+  bool _showFilters = false;
 
   String statusFilter = 'All';
   final statusOptions = const ['All', 'Unpaid', 'Partially Paid', 'Paid'];
@@ -121,6 +122,10 @@ class _InvoicesPageState extends State<InvoicesPage> {
                   child: Text('Invoices',
                       style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF123456))),
                 ),
+                SalesFilterButton(
+                  onPressed: () => setState(() => _showFilters = !_showFilters),
+                ),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: _openAddInvoice,
                   icon: const Icon(Icons.add, size: 20),
@@ -136,7 +141,8 @@ class _InvoicesPageState extends State<InvoicesPage> {
             ),
             const SizedBox(height: 20),
 
-            Container(
+            if (_showFilters)
+              Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -226,7 +232,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
                     ),
-                    child: const Text('Filter'),
+                    child: const Text('Apply'),
                   ),
                   ElevatedButton(
                     onPressed: _clearFilters,
@@ -241,7 +247,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            if (_showFilters) const SizedBox(height: 20),
 
             Container(
               width: double.infinity,

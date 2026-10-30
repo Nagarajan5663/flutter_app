@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../shared/glass_modal_shell.dart';
+import '../shared/purchase_action_menu.dart';
 import '../bills/bill_filter.dart';
 import '../bills/bill_model.dart';
 import '../bills/bill_repository.dart';
@@ -193,6 +194,99 @@ class _VendorDetailsPageState extends State<VendorDetailsPage> {
     } catch (error) {
       _showActionError('create purchase order', error);
     }
+  }
+
+  Future<void> _viewBill(BillModel bill) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Bill ${bill.billNumber}'),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Vendor: ${bill.vendorName}'),
+              Text('Bill date: ${_formatTransactionDate(bill.billDate)}'),
+              if (bill.dueDate != null)
+                Text('Due date: ${_formatTransactionDate(bill.dueDate!)}'),
+              Text('Status: ${bill.status}'),
+              Text('Total: ${_formatAmount(bill.total)}'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _editBill(BillModel bill) async {
+    if (bill.isVoided) {
+      _showActionError(
+          'edit bill', StateError('Voided bills cannot be edited'));
+      return;
+    }
+
+    final draft = await showDialog<BillModelDraft>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AddBillDialog(initialBill: bill),
+    );
+    if (!mounted || draft == null) return;
+
+    final updated = BillModel(
+      id: bill.id,
+      billNumber: draft.billNumber,
+      vendorInvoiceNumber: draft.vendorInvoiceNumber,
+      invoiceAttachmentPath: draft.invoiceAttachmentPath,
+      vendorId: draft.vendorId,
+      vendorName: draft.vendorName,
+      purchaseOrderId: draft.purchaseOrderId,
+      purchaseOrderNumber: draft.purchaseOrderNumber,
+      billDate: draft.billDate,
+      dueDate: draft.dueDate,
+      items: draft.items,
+      taxAmount: draft.taxAmount,
+    );
+
+    await _billRepository.updateBill(updated);
+    _refresh();
+  }
+
+  Future<void> _deleteBill(BillModel bill) async {
+    if (bill.id == null || bill.id!.isEmpty) {
+      throw StateError('Cannot delete a bill without an ID.');
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete bill?'),
+        content:
+            Text('Are you sure you want to delete bill ${bill.billNumber}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete',
+                style: TextStyle(color: Color(0xFFAB2A2A))),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    await _billRepository.deleteBill(bill.id!);
+    _refresh();
   }
 
   Future<void> _openNewBill() async {
@@ -804,7 +898,13 @@ class _VendorDetailsPageState extends State<VendorDetailsPage> {
               const SizedBox(height: 20),
               _transactionSection(
                 title: 'Bills',
-                headers: const ['Date', 'Bill Number', 'Amount', 'Status'],
+                headers: const [
+                  'Date',
+                  'Bill Number',
+                  'Amount',
+                  'Status',
+                  'Actions',
+                ],
                 rows: transactions.bills
                     .map(
                       (bill) => [
@@ -813,6 +913,40 @@ class _VendorDetailsPageState extends State<VendorDetailsPage> {
                         _formatAmount(bill.total),
                         bill.status,
                       ],
+                    )
+                    .toList(),
+                rowActions: transactions.bills
+                    .map(
+                      (bill) => PurchaseActionMenu(
+                        actions: [
+                          PurchaseActionMenuItem(
+                            label: 'View bill',
+                            icon: Icons.visibility_outlined,
+                            onPressed: () => _runBillAction(
+                              'view bill',
+                              () => _viewBill(bill),
+                            ),
+                          ),
+                          PurchaseActionMenuItem(
+                            label: 'Edit bill',
+                            icon: Icons.edit_outlined,
+                            enabled: !bill.isVoided,
+                            onPressed: () => _runBillAction(
+                              'edit bill',
+                              () => _editBill(bill),
+                            ),
+                          ),
+                          PurchaseActionMenuItem(
+                            label: 'Delete bill',
+                            icon: Icons.delete_outline,
+                            destructive: true,
+                            onPressed: () => _runBillAction(
+                              'delete bill',
+                              () => _deleteBill(bill),
+                            ),
+                          ),
+                        ],
+                      ),
                     )
                     .toList(),
                 emptyMessage: 'No bills found.',
@@ -843,11 +977,23 @@ class _VendorDetailsPageState extends State<VendorDetailsPage> {
     );
   }
 
+  Future<void> _runBillAction(
+    String action,
+    Future<void> Function() run,
+  ) async {
+    try {
+      await run();
+    } catch (error) {
+      _showActionError(action, error);
+    }
+  }
+
   Widget _transactionSection({
     required String title,
     required List<String> headers,
     required List<List<String>> rows,
     required String emptyMessage,
+    List<Widget> rowActions = const [],
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -904,8 +1050,8 @@ class _VendorDetailsPageState extends State<VendorDetailsPage> {
                   ),
                 )
               else
-                ...rows.map(
-                  (row) => Column(
+                for (var index = 0; index < rows.length; index++)
+                  Column(
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(
@@ -913,28 +1059,29 @@ class _VendorDetailsPageState extends State<VendorDetailsPage> {
                           vertical: 12,
                         ),
                         child: Row(
-                          children: row
-                              .map(
-                                (value) => Expanded(
-                                  child: Text(
-                                    value,
-                                    style: const TextStyle(
-                                      color: Color(0xFF252A31),
-                                    ),
+                          children: [
+                            ...rows[index].map(
+                              (value) => Expanded(
+                                child: Text(
+                                  value,
+                                  style: const TextStyle(
+                                    color: Color(0xFF252A31),
                                   ),
                                 ),
-                              )
-                              .toList(),
+                              ),
+                            ),
+                            if (rowActions.isNotEmpty)
+                              Expanded(child: rowActions[index]),
+                          ],
                         ),
                       ),
-                      if (row != rows.last)
+                      if (index != rows.length - 1)
                         const Divider(
                           height: 1,
                           color: Color(0xFFEDEFF2),
                         ),
                     ],
                   ),
-                ),
             ],
           ),
         ),

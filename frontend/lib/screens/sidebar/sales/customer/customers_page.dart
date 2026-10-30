@@ -42,6 +42,7 @@ class _CustomersPageState extends State<CustomersPage> {
   final countryController = TextEditingController();
 
   String statusFilter = 'All';
+  bool _showFilters = false;
 
   // ============================================================
   // INIT
@@ -301,6 +302,10 @@ class _CustomersPageState extends State<CustomersPage> {
                 ),
 
                 const SizedBox(width: 8),
+                SalesFilterButton(
+                  onPressed: () => setState(() => _showFilters = !_showFilters),
+                ),
+                const SizedBox(width: 8),
 
                 // Add Customer
                 ElevatedButton.icon(
@@ -335,7 +340,8 @@ class _CustomersPageState extends State<CustomersPage> {
             // FILTER SECTION
             // ==================================================
 
-            Container(
+            if (_showFilters)
+              Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -454,9 +460,7 @@ class _CustomersPageState extends State<CustomersPage> {
                       Icons.filter_alt,
                       size: 18,
                     ),
-                    label: const Text(
-                      'Filter',
-                    ),
+                    label: const Text('Apply'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(
                         0xFF2E7DD1,
@@ -506,7 +510,7 @@ class _CustomersPageState extends State<CustomersPage> {
               ),
             ),
 
-            const SizedBox(height: 20),
+            if (_showFilters) const SizedBox(height: 20),
 
             // ==================================================
             // ERROR MESSAGE

@@ -24,6 +24,7 @@ class _DeliveryChallansPageState extends State<DeliveryChallansPage> {
   final customerController = TextEditingController();
   DateTime? dateFrom;
   DateTime? dateTo;
+  bool _showFilters = false;
 
   @override
   void initState() {
@@ -94,6 +95,10 @@ class _DeliveryChallansPageState extends State<DeliveryChallansPage> {
                   child: Text('Delivery Challans',
                       style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF123456))),
                 ),
+                SalesFilterButton(
+                  onPressed: () => setState(() => _showFilters = !_showFilters),
+                ),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: _openAddChallan,
                   icon: const Icon(Icons.add, size: 20),
@@ -109,7 +114,8 @@ class _DeliveryChallansPageState extends State<DeliveryChallansPage> {
             ),
             const SizedBox(height: 20),
 
-            Container(
+            if (_showFilters)
+              Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -171,7 +177,7 @@ class _DeliveryChallansPageState extends State<DeliveryChallansPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
                     ),
-                    child: const Text('Filter'),
+                    child: const Text('Apply'),
                   ),
                   ElevatedButton(
                     onPressed: _clearFilters,
@@ -186,7 +192,7 @@ class _DeliveryChallansPageState extends State<DeliveryChallansPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            if (_showFilters) const SizedBox(height: 20),
 
             Container(
               width: double.infinity,

@@ -16,13 +16,15 @@ class AddDeliveryChallanDialog extends StatefulWidget {
   const AddDeliveryChallanDialog({super.key});
 
   @override
-  State<AddDeliveryChallanDialog> createState() => _AddDeliveryChallanDialogState();
+  State<AddDeliveryChallanDialog> createState() =>
+      _AddDeliveryChallanDialogState();
 }
 
 class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
   final CustomerRepository _customerRepository = InMemoryCustomerRepository();
   final InvoiceRepository _invoiceRepository = InMemoryInvoiceRepository();
-  final DeliveryChallanRepository _challanRepository = InMemoryDeliveryChallanRepository();
+  final DeliveryChallanRepository _challanRepository =
+      InMemoryDeliveryChallanRepository();
 
   final challanNumberController = TextEditingController();
   final transportController = TextEditingController();
@@ -72,7 +74,9 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
 
   List<InvoiceModel> get _invoicesForSelectedCustomer {
     if (selectedCustomer == null) return _invoices;
-    return _invoices.where((i) => i.customerId == selectedCustomer!.id).toList();
+    return _invoices
+        .where((i) => i.customerId == selectedCustomer!.id)
+        .toList();
   }
 
   void _prefillFromInvoice(InvoiceModel invoice) {
@@ -100,7 +104,11 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
       return;
     }
 
-    final validItems = rows.map((r) => r.toModelOrNull()).where((i) => i != null).map((i) => i!).toList();
+    final validItems = rows
+        .map((r) => r.toModelOrNull())
+        .where((i) => i != null)
+        .map((i) => i!)
+        .toList();
     if (validItems.isEmpty) {
       setState(() => _errorText = 'Please add at least one item');
       return;
@@ -148,27 +156,31 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                       children: [
                         const Expanded(
                           child: Text('New Delivery Challan',
-                              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF123456))),
+                              style: TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF123456))),
                         ),
                         IconButton(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close, color: Color(0xFFAAAAAA), size: 25),
+                          icon: const Icon(Icons.close,
+                              color: Color(0xFFAAAAAA), size: 25),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
-
                     if (_errorText != null) ...[
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
-                        decoration:
-                            BoxDecoration(color: const Color(0xFFF4E3E3), borderRadius: BorderRadius.circular(7)),
-                        child: Text(_errorText!, style: const TextStyle(color: Color(0xFFAB2A2A))),
+                        decoration: BoxDecoration(
+                            color: const Color(0xFFF4E3E3),
+                            borderRadius: BorderRadius.circular(7)),
+                        child: Text(_errorText!,
+                            style: const TextStyle(color: Color(0xFFAB2A2A))),
                       ),
                       const SizedBox(height: 16),
                     ],
-
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -176,7 +188,8 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                           child: salesLabeledField(
                             label: 'Customer Name *',
                             child: DropdownSearch<CustomerModel>(
-                              items: (filter, infiniteScrollProps) => _customers,
+                              items: (filter, infiniteScrollProps) =>
+                                  _customers,
                               itemAsString: (c) => c.customerName,
                               compareFn: (a, b) => a.id == b.id,
                               selectedItem: selectedCustomer,
@@ -186,9 +199,15 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                                   selectedInvoice = null;
                                 });
                               },
-                              popupProps: const PopupProps.menu(showSearchBox: true),
+                              popupProps: const PopupProps.menu(
+                                showSearchBox: true,
+                                menuProps: MenuProps(
+                                  align: MenuAlign.bottomStart,
+                                ),
+                              ),
                               decoratorProps: DropDownDecoratorProps(
-                                decoration: salesFieldDecoration(hint: 'Select or type to search...'),
+                                decoration: salesFieldDecoration(
+                                    hint: 'Select or type to search...'),
                               ),
                             ),
                           ),
@@ -197,17 +216,18 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                         Expanded(
                           child: salesLabeledField(
                             label: 'Challan # *',
-                            child: salesTextField(controller: challanNumberController),
+                            child: salesTextField(
+                                controller: challanNumberController),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 18),
-
                     salesLabeledField(
                       label: 'Invoice # (optional — auto-fills items)',
                       child: DropdownSearch<InvoiceModel>(
-                        items: (filter, infiniteScrollProps) => _invoicesForSelectedCustomer,
+                        items: (filter, infiniteScrollProps) =>
+                            _invoicesForSelectedCustomer,
                         itemAsString: (i) => i.invoiceNumber,
                         compareFn: (a, b) => a.id == b.id,
                         selectedItem: selectedInvoice,
@@ -223,14 +243,19 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                             }
                           });
                         },
-                        popupProps: const PopupProps.menu(showSearchBox: true),
+                        popupProps: const PopupProps.menu(
+                          showSearchBox: true,
+                          menuProps: MenuProps(
+                            align: MenuAlign.bottomStart,
+                          ),
+                        ),
                         decoratorProps: DropDownDecoratorProps(
-                          decoration: salesFieldDecoration(hint: 'Select an invoice...'),
+                          decoration: salesFieldDecoration(
+                              hint: 'Select an invoice...'),
                         ),
                       ),
                     ),
                     const SizedBox(height: 18),
-
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -242,7 +267,8 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                               onTap: () => pickSalesDate(
                                 context: context,
                                 initial: challanDate,
-                                onPicked: (d) => setState(() => challanDate = d),
+                                onPicked: (d) =>
+                                    setState(() => challanDate = d),
                               ),
                             ),
                           ),
@@ -256,7 +282,8 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                               onTap: () => pickSalesDate(
                                 context: context,
                                 initial: deliveryDate ?? DateTime.now(),
-                                onPicked: (d) => setState(() => deliveryDate = d),
+                                onPicked: (d) =>
+                                    setState(() => deliveryDate = d),
                               ),
                             ),
                           ),
@@ -264,7 +291,6 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                       ],
                     ),
                     const SizedBox(height: 18),
-
                     salesLabeledField(
                       label: 'Transportation Details',
                       child: salesTextField(
@@ -274,10 +300,10 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                       ),
                     ),
                     const SizedBox(height: 24),
-
                     SalesItemRowsEditor(
                       rows: rows,
-                      onAddRow: () => setState(() => rows.add(SalesItemRowControllers())),
+                      onAddRow: () =>
+                          setState(() => rows.add(SalesItemRowControllers())),
                       onRemoveRow: (index) {
                         if (rows.length == 1) return;
                         setState(() {
@@ -288,14 +314,14 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                       onRowChanged: () => setState(() {}),
                     ),
                     const SizedBox(height: 10),
-
                     Align(
                       alignment: Alignment.centerRight,
-                      child: Text('Sub Total: INR ${_subTotal.toStringAsFixed(2)}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      child: Text(
+                          'Sub Total: INR ${_subTotal.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                     const SizedBox(height: 24),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -306,8 +332,10 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF6C757D),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(7)),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -318,8 +346,10 @@ class _AddDeliveryChallanDialogState extends State<AddDeliveryChallanDialog> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF123456),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(7)),
                           ),
                         ),
                       ],

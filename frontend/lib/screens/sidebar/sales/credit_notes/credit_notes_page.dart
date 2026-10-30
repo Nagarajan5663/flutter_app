@@ -30,6 +30,7 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
       TextEditingController();
   DateTime? _dateFrom;
   DateTime? _dateTo;
+  bool _showFilters = false;
 
   final List<String> _statusOptions = [
     'All',
@@ -137,7 +138,6 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
               ),
             ),
           ),
-
           Positioned(
             right: -250,
             top: -100,
@@ -150,7 +150,6 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
               ),
             ),
           ),
-
           SingleChildScrollView(
             padding: const EdgeInsets.all(30),
             child: Column(
@@ -171,28 +170,33 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                         color: Color(0xFF17395C),
                       ),
                     ),
-
-                    ElevatedButton.icon(
-                      onPressed: _openNewCreditNoteForm,
-                      icon: const Icon(
-                        Icons.add,
-                        size: 20,
-                      ),
-                      label: const Text(
-                        'New Credit Note',
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF17395C),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 17,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SalesFilterButton(
+                          onPressed: () => setState(
+                            () => _showFilters = !_showFilters,
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
+                        const SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          onPressed: _openNewCreditNoteForm,
+                          icon: const Icon(Icons.add, size: 20),
+                          label: const Text('New Credit Note'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF17395C),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 17,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
@@ -203,7 +207,8 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                 // FILTER BAR
                 // ===================================================
 
-                Container(
+                if (_showFilters)
+                  Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -222,12 +227,10 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                         width: 150,
                         child: _buildFilterDropdown(),
                       ),
-
                       SizedBox(
                         width: 200,
                         child: _buildFilterTextField(),
                       ),
-
                       SizedBox(
                         width: 170,
                         child: _buildFilterDateField(
@@ -240,7 +243,6 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                           },
                         ),
                       ),
-
                       SizedBox(
                         width: 170,
                         child: _buildFilterDateField(
@@ -253,7 +255,6 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                           },
                         ),
                       ),
-
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -273,11 +274,9 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                                 borderRadius: BorderRadius.circular(11),
                               ),
                             ),
-                            child: const Text('Filter'),
+                            child: const Text('Apply'),
                           ),
-
                           const SizedBox(width: 10),
-
                           OutlinedButton(
                             onPressed: _clearFilters,
                             style: OutlinedButton.styleFrom(
@@ -301,7 +300,7 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                if (_showFilters) const SizedBox(height: 20),
 
                 // ===================================================
                 // TABLE CARD
@@ -537,24 +536,18 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
     return Column(
       children: [
         _buildTableHeader(),
-
         const Divider(height: 1, color: Color(0xFFE5E7EB)),
-
         const SizedBox(height: 45),
-
         const Icon(
           Icons.receipt_long_outlined,
           size: 55,
           color: Color(0xFFB0B8C2),
         ),
-
         const SizedBox(height: 15),
-
         const Text(
           'No credit notes found. Click "+ New Credit Note" to add one!',
           style: TextStyle(color: Color(0xFF777777), fontSize: 16),
         ),
-
         const SizedBox(height: 45),
       ],
     );
@@ -568,9 +561,7 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
     return Column(
       children: [
         _buildTableHeader(),
-
         const Divider(height: 1, color: Color(0xFFE5E7EB)),
-
         ...creditNotes.map(
           (note) {
             return Column(
@@ -589,7 +580,6 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                           style: const TextStyle(color: Colors.black),
                         ),
                       ),
-
                       SizedBox(
                         width: _colCreditNoteNumber,
                         child: Text(
@@ -597,7 +587,6 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                           style: const TextStyle(color: Colors.black),
                         ),
                       ),
-
                       SizedBox(
                         width: _colCustomer,
                         child: Text(
@@ -606,7 +595,6 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                           style: const TextStyle(color: Colors.black),
                         ),
                       ),
-
                       SizedBox(
                         width: _colStatus,
                         child: Align(
@@ -614,7 +602,6 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                           child: _StatusBadge(status: note.status),
                         ),
                       ),
-
                       SizedBox(
                         width: _colAmount,
                         child: Text(
@@ -625,7 +612,6 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                           ),
                         ),
                       ),
-
                       SizedBox(
                         width: _colAmountRemaining,
                         child: Text(
@@ -633,10 +619,10 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                           style: const TextStyle(color: Colors.black),
                         ),
                       ),
-
                       SizedBox(
                         width: _colActions,
                         child: PopupMenuButton<String>(
+                          position: PopupMenuPosition.under,
                           icon: const Icon(Icons.more_vert),
                           onSelected: (value) {
                             switch (value) {
@@ -684,7 +670,6 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                     ],
                   ),
                 ),
-
                 const Divider(height: 1, color: Color(0xFFE5E7EB)),
               ],
             );
@@ -965,9 +950,7 @@ class _NewCreditNoteDialogState extends State<NewCreditNoteDialog> {
                   ],
                 ),
               ),
-
               const Divider(height: 1, color: Color(0xFFE0E0E0)),
-
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Form(
@@ -994,9 +977,7 @@ class _NewCreditNoteDialogState extends State<NewCreditNoteDialog> {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 16),
-
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -1013,9 +994,7 @@ class _NewCreditNoteDialogState extends State<NewCreditNoteDialog> {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 16),
-
                       const Text(
                         'Reason (Optional)',
                         style: TextStyle(
@@ -1024,9 +1003,7 @@ class _NewCreditNoteDialogState extends State<NewCreditNoteDialog> {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-
                       const SizedBox(height: 8),
-
                       TextFormField(
                         controller: reasonController,
                         maxLines: 3,
@@ -1037,7 +1014,6 @@ class _NewCreditNoteDialogState extends State<NewCreditNoteDialog> {
                   ),
                 ),
               ),
-
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(

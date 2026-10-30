@@ -111,7 +111,11 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
       return;
     }
 
-    final validItems = rows.map((r) => r.toModelOrNull()).where((i) => i != null).map((i) => i!).toList();
+    final validItems = rows
+        .map((r) => r.toModelOrNull())
+        .where((i) => i != null)
+        .map((i) => i!)
+        .toList();
     if (validItems.isEmpty) {
       setState(() => _errorText = 'Please add at least one item');
       return;
@@ -160,27 +164,31 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
                       children: [
                         const Expanded(
                           child: Text('New Invoice',
-                              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF123456))),
+                              style: TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF123456))),
                         ),
                         IconButton(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close, color: Color(0xFFAAAAAA), size: 25),
+                          icon: const Icon(Icons.close,
+                              color: Color(0xFFAAAAAA), size: 25),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
-
                     if (_errorText != null) ...[
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
-                        decoration:
-                            BoxDecoration(color: const Color(0xFFF4E3E3), borderRadius: BorderRadius.circular(7)),
-                        child: Text(_errorText!, style: const TextStyle(color: Color(0xFFAB2A2A))),
+                        decoration: BoxDecoration(
+                            color: const Color(0xFFF4E3E3),
+                            borderRadius: BorderRadius.circular(7)),
+                        child: Text(_errorText!,
+                            style: const TextStyle(color: Color(0xFFAB2A2A))),
                       ),
                       const SizedBox(height: 16),
                     ],
-
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -188,7 +196,8 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
                           child: salesLabeledField(
                             label: 'Customer Name *',
                             child: DropdownSearch<CustomerModel>(
-                              items: (filter, infiniteScrollProps) => _customers,
+                              items: (filter, infiniteScrollProps) =>
+                                  _customers,
                               itemAsString: (c) => c.customerName,
                               compareFn: (a, b) => a.id == b.id,
                               selectedItem: selectedCustomer,
@@ -198,9 +207,15 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
                                   selectedOrder = null;
                                 });
                               },
-                              popupProps: const PopupProps.menu(showSearchBox: true),
+                              popupProps: const PopupProps.menu(
+                                showSearchBox: true,
+                                menuProps: MenuProps(
+                                  align: MenuAlign.bottomStart,
+                                ),
+                              ),
                               decoratorProps: DropDownDecoratorProps(
-                                decoration: salesFieldDecoration(hint: 'Select or type to search...'),
+                                decoration: salesFieldDecoration(
+                                    hint: 'Select or type to search...'),
                               ),
                             ),
                           ),
@@ -209,17 +224,18 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
                         Expanded(
                           child: salesLabeledField(
                             label: 'Invoice # *',
-                            child: salesTextField(controller: invoiceNumberController),
+                            child: salesTextField(
+                                controller: invoiceNumberController),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 18),
-
                     salesLabeledField(
                       label: 'Sales Order # (optional — auto-fills items)',
                       child: DropdownSearch<SalesOrderModel>(
-                        items: (filter, infiniteScrollProps) => _ordersForSelectedCustomer,
+                        items: (filter, infiniteScrollProps) =>
+                            _ordersForSelectedCustomer,
                         itemAsString: (o) => o.soNumber,
                         compareFn: (a, b) => a.id == b.id,
                         selectedItem: selectedOrder,
@@ -235,14 +251,19 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
                             }
                           });
                         },
-                        popupProps: const PopupProps.menu(showSearchBox: true),
+                        popupProps: const PopupProps.menu(
+                          showSearchBox: true,
+                          menuProps: MenuProps(
+                            align: MenuAlign.bottomStart,
+                          ),
+                        ),
                         decoratorProps: DropDownDecoratorProps(
-                          decoration: salesFieldDecoration(hint: 'Select a sales order...'),
+                          decoration: salesFieldDecoration(
+                              hint: 'Select a sales order...'),
                         ),
                       ),
                     ),
                     const SizedBox(height: 18),
-
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -276,7 +297,6 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
                       ],
                     ),
                     const SizedBox(height: 18),
-
                     salesLabeledField(
                       label: 'Credit Terms',
                       child: Container(
@@ -291,7 +311,10 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
                             value: creditTerms,
                             isExpanded: true,
                             style: const TextStyle(color: Colors.black),
-                            items: creditTermsOptions.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                            items: creditTermsOptions
+                                .map((t) =>
+                                    DropdownMenuItem(value: t, child: Text(t)))
+                                .toList(),
                             onChanged: (value) {
                               if (value == null) return;
                               setState(() => creditTerms = value);
@@ -301,10 +324,10 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
                       ),
                     ),
                     const SizedBox(height: 24),
-
                     SalesItemRowsEditor(
                       rows: rows,
-                      onAddRow: () => setState(() => rows.add(SalesItemRowControllers())),
+                      onAddRow: () =>
+                          setState(() => rows.add(SalesItemRowControllers())),
                       onRemoveRow: (index) {
                         if (rows.length == 1) return;
                         setState(() {
@@ -315,13 +338,13 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
                       onRowChanged: () => setState(() {}),
                     ),
                     const SizedBox(height: 16),
-
                     Align(
                       alignment: Alignment.centerRight,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('Sub Total: INR ${_subTotal.toStringAsFixed(2)}'),
+                          Text(
+                              'Sub Total: INR ${_subTotal.toStringAsFixed(2)}'),
                           const SizedBox(height: 8),
                           Row(
                             mainAxisSize: MainAxisSize.min,
@@ -332,7 +355,9 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
                                 child: TextField(
                                   controller: taxController,
                                   style: const TextStyle(color: Colors.black),
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                          decimal: true),
                                   textAlign: TextAlign.right,
                                   onChanged: (_) => setState(() {}),
                                   decoration: salesFieldDecoration(),
@@ -342,12 +367,12 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
                           ),
                           const SizedBox(height: 8),
                           Text('Total: INR ${_total.toStringAsFixed(2)}',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16)),
                         ],
                       ),
                     ),
                     const SizedBox(height: 24),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -358,8 +383,10 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF6C757D),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(7)),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -370,8 +397,10 @@ class _AddInvoiceDialogState extends State<AddInvoiceDialog> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF123456),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(7)),
                           ),
                         ),
                       ],
