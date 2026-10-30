@@ -1,8 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_app/screens/sidebar/sales/estimates/estimates_page.dart';
+import 'package:intl/intl.dart';
 
 void main() {
+  test('Estimate payload preserves selected date values', () {
+    final estimate = EstimateData(
+      date: DateTime(2026, 10, 22),
+      estimateNumber: 'EST-42',
+      customerId: 1,
+      customerName: 'Test Customer',
+      salesPerson: '',
+      expiryDate: DateTime(2026, 11, 22),
+      items: const [],
+      subTotal: 0,
+      total: 0,
+    );
+
+    final payload = estimate.toCreateJson();
+    expect(payload['date'], '2026-10-22');
+    expect(payload['expiryDate'], '2026-11-22');
+  });
+
   testWidgets('Item options are searchable and readable in both themes',
       (tester) async {
     const monitor = CatalogOption(
@@ -273,20 +292,91 @@ void main() {
     expect(find.text('Second item'), findsNothing);
     expect(find.text('INR 37.50'), findsNWidgets(3));
 
+    final calendarIcons = tester.widgetList<Icon>(
+      find.byIcon(Icons.calendar_today_outlined),
+    );
+    expect(calendarIcons, hasLength(2));
+    for (final icon in calendarIcons) {
+      expect(icon.color, const Color(0xFF1F2937));
+      expect(icon.size, 16);
+    }
+
+    final newCalendar = find.byKey(
+      const ValueKey('estimate-new-calendar'),
+    );
     await tester
         .ensureVisible(find.byIcon(Icons.calendar_today_outlined).first);
     await tester.tap(find.byIcon(Icons.calendar_today_outlined).first);
     await tester.pumpAndSettle();
-    expect(find.byType(DatePickerDialog), findsOneWidget);
-    await tester.tap(find.text('Cancel').last);
+    expect(newCalendar, findsOneWidget);
+    final calendarRect = tester.getRect(newCalendar);
+    expect(calendarRect.left, greaterThanOrEqualTo(0));
+    expect(calendarRect.right, lessThanOrEqualTo(1400));
+    expect(calendarRect.top, greaterThanOrEqualTo(0));
+    expect(calendarRect.bottom, lessThanOrEqualTo(1000));
+    final dateField = find
+        .ancestor(
+          of: find.byIcon(Icons.calendar_today_outlined).first,
+          matching: find.byType(InkWell),
+        )
+        .first;
+    expect(
+      calendarRect.top,
+      closeTo(tester.getRect(dateField).bottom + 6, 1),
+    );
+
+    final previousMonth =
+        DateTime(DateTime.now().year, DateTime.now().month - 1);
+    await tester.tap(find.byTooltip('Previous month'));
     await tester.pumpAndSettle();
+    final selectedDate = DateTime(previousMonth.year, previousMonth.month, 15);
+    await tester.tap(
+      find.byKey(
+        ValueKey(
+          'estimate-new-calendar-day-${DateFormat('yyyy-MM-dd').format(selectedDate)}',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(newCalendar, findsNothing);
+    expect(find.text(DateFormat('dd-MM-yyyy').format(selectedDate)),
+        findsOneWidget);
+
+    await tester.tap(find.text(DateFormat('dd-MM-yyyy').format(selectedDate)));
+    await tester.pumpAndSettle();
+    expect(newCalendar, findsOneWidget);
+    await tester.tap(
+      find.descendant(of: newCalendar, matching: find.text('Clear')),
+    );
+    await tester.pumpAndSettle();
+    expect(newCalendar, findsNothing);
+    final today = DateTime.now();
+    expect(find.text(DateFormat('dd-MM-yyyy').format(today)), findsOneWidget);
 
     await tester.ensureVisible(find.byIcon(Icons.calendar_today_outlined).last);
     await tester.tap(find.byIcon(Icons.calendar_today_outlined).last);
     await tester.pumpAndSettle();
-    expect(find.byType(DatePickerDialog), findsOneWidget);
-    await tester.tap(find.text('Cancel').last);
+    expect(newCalendar, findsOneWidget);
+    await tester.tap(
+      find.descendant(of: newCalendar, matching: find.text('Clear')),
+    );
     await tester.pumpAndSettle();
+    expect(find.text('dd-mm-yyyy'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.calendar_today_outlined).last);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(of: newCalendar, matching: find.text('Today')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text(DateFormat('dd-MM-yyyy').format(today)), findsNWidgets(2));
+
+    await tester.tap(find.byIcon(Icons.calendar_today_outlined).last);
+    await tester.pumpAndSettle();
+    expect(newCalendar, findsOneWidget);
+    await tester.tapAt(const Offset(4, 4));
+    await tester.pumpAndSettle();
+    expect(newCalendar, findsNothing);
 
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();

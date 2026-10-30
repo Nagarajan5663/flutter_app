@@ -670,15 +670,13 @@ class _BillsPageState extends State<BillsPage> {
                         horizontal: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(
-                          0xFFF8F9FA,
-                        ),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(
                           7,
                         ),
                         border: Border.all(
                           color: const Color(
-                            0xFFD9DEE5,
+                            0xFFD1D5DB,
                           ),
                         ),
                       ),
@@ -686,14 +684,30 @@ class _BillsPageState extends State<BillsPage> {
                         child: DropdownButton<String>(
                           value: statusFilter,
                           isExpanded: true,
+                          dropdownColor: Colors.white,
+                          iconEnabledColor: const Color(0xFF1F2937),
+                          style: const TextStyle(
+                            color: Color(0xFF111827),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                           items: statusOptions.map(
                             (
                               String status,
                             ) {
                               return DropdownMenuItem<String>(
                                 value: status,
-                                child: Text(
-                                  status,
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  child: Text(
+                                    status,
+                                    style: const TextStyle(
+                                      color: Color(0xFF1F2937),
+                                    ),
+                                  ),
                                 ),
                               );
                             },
@@ -993,13 +1007,15 @@ class _BillsPageState extends State<BillsPage> {
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               IconButton(
-                                                onPressed: () => _previewBill(bill),
+                                                onPressed: () =>
+                                                    _previewBill(bill),
                                                 tooltip: 'View bill',
                                                 padding: EdgeInsets.zero,
                                                 visualDensity:
                                                     VisualDensity.compact,
                                                 constraints:
-                                                    const BoxConstraints.tightFor(
+                                                    const BoxConstraints
+                                                        .tightFor(
                                                   width: 30,
                                                   height: 30,
                                                 ),
@@ -1018,7 +1034,8 @@ class _BillsPageState extends State<BillsPage> {
                                                 visualDensity:
                                                     VisualDensity.compact,
                                                 constraints:
-                                                    const BoxConstraints.tightFor(
+                                                    const BoxConstraints
+                                                        .tightFor(
                                                   width: 30,
                                                   height: 30,
                                                 ),
@@ -1029,13 +1046,15 @@ class _BillsPageState extends State<BillsPage> {
                                                 ),
                                               ),
                                               IconButton(
-                                                onPressed: () => _deleteBill(bill),
+                                                onPressed: () =>
+                                                    _deleteBill(bill),
                                                 tooltip: 'Delete bill',
                                                 padding: EdgeInsets.zero,
                                                 visualDensity:
                                                     VisualDensity.compact,
                                                 constraints:
-                                                    const BoxConstraints.tightFor(
+                                                    const BoxConstraints
+                                                        .tightFor(
                                                   width: 30,
                                                   height: 30,
                                                 ),
@@ -1087,9 +1106,7 @@ class _BillsPageState extends State<BillsPage> {
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Color(
-              0xFF5B5B5B,
-            ),
+            color: Color(0xFF1F2937),
           ),
         ),
         const SizedBox(
@@ -1110,12 +1127,17 @@ class _BillsPageState extends State<BillsPage> {
   ) {
     return TextField(
       controller: controller,
+      style: const TextStyle(
+        color: Color(0xFF111827),
+        fontSize: 14,
+      ),
       decoration: InputDecoration(
         hintText: hint,
-        filled: true,
-        fillColor: const Color(
-          0xFFF8F9FA,
+        hintStyle: const TextStyle(
+          color: Color(0xFF6B7280),
         ),
+        filled: true,
+        fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 12,
@@ -1130,9 +1152,7 @@ class _BillsPageState extends State<BillsPage> {
             7,
           ),
           borderSide: const BorderSide(
-            color: Color(
-              0xFFD9DEE5,
-            ),
+            color: Color(0xFFD1D5DB),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -1140,9 +1160,7 @@ class _BillsPageState extends State<BillsPage> {
             7,
           ),
           borderSide: const BorderSide(
-            color: Color(
-              0xFF123456,
-            ),
+            color: Color(0xFF60A5FA),
             width: 2,
           ),
         ),
@@ -1171,15 +1189,13 @@ class _BillsPageState extends State<BillsPage> {
           horizontal: 12,
         ),
         decoration: BoxDecoration(
-          color: const Color(
-            0xFFF8F9FA,
-          ),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(
             7,
           ),
           border: Border.all(
             color: const Color(
-              0xFFD9DEE5,
+              0xFFD1D5DB,
             ),
           ),
         ),
@@ -1193,7 +1209,9 @@ class _BillsPageState extends State<BillsPage> {
                         value,
                       ),
                 style: TextStyle(
-                  color: value == null ? Colors.grey : Colors.black,
+                  color: value == null
+                      ? const Color(0xFF6B7280)
+                      : const Color(0xFF111827),
                   fontSize: 14,
                 ),
               ),
@@ -1202,7 +1220,7 @@ class _BillsPageState extends State<BillsPage> {
               Icons.calendar_today_outlined,
               size: 16,
               color: Color(
-                0xFF888888,
+                0xFF1F2937,
               ),
             ),
           ],

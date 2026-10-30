@@ -71,6 +71,17 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
       );
 
   Future<void> _loadOrders() async {
+    if (dateFrom != null && dateTo != null && dateTo!.isBefore(dateFrom!)) {
+      final corrected = dateFrom!;
+      setState(() => dateTo = corrected);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Date To cannot be earlier than Date From')),
+        );
+      }
+    }
+
     setState(() => _isLoading = true);
     final result = await _repository.getPurchaseOrders(filter: _currentFilter);
     if (!mounted) return;
@@ -320,18 +331,73 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
   }
 
   Future<void> _pickDate(
-      DateTime? initial, ValueChanged<DateTime> onPicked) async {
+    DateTime? initial,
+    ValueChanged<DateTime?> onPicked,
+  ) async {
     final picked = await showDatePicker(
       context: context,
       initialDate: initial ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
-    if (picked != null) onPicked(picked);
+    onPicked(picked);
+  }
+
+  Future<void> _openDateMenu({
+    required DateTime? currentValue,
+    required ValueChanged<DateTime?> onPicked,
+    required bool isDarkMode,
+    required BuildContext anchorContext,
+  }) async {
+    final renderBox = anchorContext.findRenderObject() as RenderBox?;
+    final overlay = Navigator.of(anchorContext)
+        .overlay
+        ?.context
+        .findRenderObject() as RenderBox?;
+    if (renderBox == null || overlay == null) {
+      await _pickDate(currentValue, onPicked);
+      return;
+    }
+
+    final rect = Rect.fromPoints(
+      renderBox.localToGlobal(Offset.zero, ancestor: overlay),
+      renderBox.localToGlobal(renderBox.size.bottomRight(Offset.zero),
+          ancestor: overlay),
+    );
+
+    await showMenu<DateTime?>(
+      context: anchorContext,
+      position: RelativeRect.fromRect(rect, Offset.zero & overlay.size),
+      color: Colors.transparent,
+      constraints: const BoxConstraints(maxWidth: 320),
+      items: [
+        _CalendarPopupMenuEntry(
+          initialDate: currentValue,
+          isDarkMode: isDarkMode,
+          onPicked: onPicked,
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final labelTextColor = isDarkMode ? Colors.white : const Color(0xFF1F2937);
+    final fieldFillColor = isDarkMode
+        ? const Color(0xFF111827).withOpacity(0.82)
+        : Colors.white;
+    final fieldBorderColor =
+        isDarkMode ? const Color(0xFF475569) : const Color(0xFFD9DEE5);
+    final placeholderColor =
+        isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF6B7280);
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF1F2937);
+    final menuBackgroundColor =
+        isDarkMode ? const Color(0xFF111827) : Colors.white;
+    final selectedOptionBackground = const Color(0xFFEAF3FF);
+    final hoverOptionBackground =
+        isDarkMode ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6);
+
     return GlassPageBackground(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -369,58 +435,146 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                 children: [
                   _filterField(
                     label: 'Status',
+                    labelColor: labelTextColor,
                     child: Container(
                       width: 150,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FA),
+                        color: fieldFillColor,
                         borderRadius: BorderRadius.circular(7),
-                        border: Border.all(color: const Color(0xFFD9DEE5)),
+                        border: Border.all(color: fieldBorderColor),
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: statusFilter,
-                          isExpanded: true,
-                          items: statusOptions
-                              .map((s) =>
-                                  DropdownMenuItem(value: s, child: Text(s)))
-                              .toList(),
-                          onChanged: (value) {
-                            if (value == null) return;
-                            setState(() => statusFilter = value);
-                          },
+                      child: Theme(
+                        data: Theme.of(context).copyWith(
+                          dropdownMenuTheme: DropdownMenuThemeData(
+                            menuStyle: MenuStyle(
+                              backgroundColor:
+                                  WidgetStatePropertyAll(menuBackgroundColor),
+                            ),
+                          ),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: statusFilter,
+                            isExpanded: true,
+                            dropdownColor: menuBackgroundColor,
+                            iconEnabledColor: textColor,
+                            iconDisabledColor: placeholderColor,
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            items: statusOptions
+                                .map(
+                                  (status) => DropdownMenuItem<String>(
+                                    value: status,
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: status == statusFilter
+                                            ? selectedOptionBackground
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        status,
+                                        style: TextStyle(
+                                          color: status == statusFilter
+                                              ? const Color(0xFF1F2937)
+                                              : textColor,
+                                          fontWeight: status == statusFilter
+                                              ? FontWeight.w700
+                                              : FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              if (value == null) return;
+                              setState(() => statusFilter = value);
+                            },
+                          ),
                         ),
                       ),
                     ),
                   ),
                   _filterField(
                     label: 'Vendor Name',
+                    labelColor: labelTextColor,
                     child: SizedBox(
                         width: 170,
                         child: _filterTextField(
-                            vendorController, 'Vendor name...')),
+                            vendorController, 'Vendor name...',
+                            textColor: textColor,
+                            placeholderColor: placeholderColor,
+                            fillColor: fieldFillColor,
+                            borderColor: fieldBorderColor,
+                            focusedBorderColor: isDarkMode
+                                ? const Color(0xFF93C5FD)
+                                : const Color(0xFF123456))),
                   ),
                   _filterField(
                     label: 'Reference #',
+                    labelColor: labelTextColor,
                     child: SizedBox(
                         width: 150,
                         child: _filterTextField(
-                            referenceController, 'Reference...')),
+                            referenceController, 'Reference...',
+                            textColor: textColor,
+                            placeholderColor: placeholderColor,
+                            fillColor: fieldFillColor,
+                            borderColor: fieldBorderColor,
+                            focusedBorderColor: isDarkMode
+                                ? const Color(0xFF93C5FD)
+                                : const Color(0xFF123456))),
                   ),
                   _filterField(
                     label: 'Date From',
+                    labelColor: labelTextColor,
                     child: SizedBox(
                       width: 150,
                       child: _filterDateField(
-                          dateFrom, (d) => setState(() => dateFrom = d)),
+                        dateFrom,
+                        (d) => setState(() => dateFrom = d),
+                        isDarkMode: isDarkMode,
+                        textColor: textColor,
+                        placeholderColor: placeholderColor,
+                        fillColor: fieldFillColor,
+                        borderColor: fieldBorderColor,
+                        onOpen: () => _openDateMenu(
+                          currentValue: dateFrom,
+                          onPicked: (d) => setState(() => dateFrom = d),
+                          isDarkMode: isDarkMode,
+                          anchorContext: context,
+                        ),
+                      ),
                     ),
                   ),
                   _filterField(
                     label: 'Date To',
+                    labelColor: labelTextColor,
                     child: SizedBox(
                       width: 150,
                       child: _filterDateField(
-                          dateTo, (d) => setState(() => dateTo = d)),
+                        dateTo,
+                        (d) => setState(() => dateTo = d),
+                        isDarkMode: isDarkMode,
+                        textColor: textColor,
+                        placeholderColor: placeholderColor,
+                        fillColor: fieldFillColor,
+                        borderColor: fieldBorderColor,
+                        onOpen: () => _openDateMenu(
+                          currentValue: dateTo,
+                          onPicked: (d) => setState(() => dateTo = d),
+                          isDarkMode: isDarkMode,
+                          anchorContext: context,
+                        ),
+                      ),
                     ),
                   ),
                   GlassButton(
@@ -527,15 +681,18 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                                               alignment: Alignment.centerLeft,
                                               child: Container(
                                                 decoration: BoxDecoration(
-                                                  color: const Color(0xFFE7EEF6),
+                                                  color:
+                                                      const Color(0xFFE7EEF6),
                                                   borderRadius:
                                                       BorderRadius.circular(20),
                                                 ),
                                                 child: Padding(
                                                   padding: const EdgeInsets
                                                       .symmetric(horizontal: 8),
-                                                  child: DropdownButtonHideUnderline(
-                                                    child: DropdownButton<String>(
+                                                  child:
+                                                      DropdownButtonHideUnderline(
+                                                    child:
+                                                        DropdownButton<String>(
                                                       value: order.status,
                                                       isDense: true,
                                                       icon: const Icon(
@@ -572,10 +729,10 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                                                             ),
                                                           )
                                                           .toList(),
-                                                      onChanged:
-                                                          order.status ==
+                                                      onChanged: order.status ==
                                                                   'Cancelled' ||
-                                                              order.id == null ||
+                                                              order.id ==
+                                                                  null ||
                                                               _updatingStatusIds
                                                                   .contains(
                                                                 order.id,
@@ -719,53 +876,80 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
     );
   }
 
-  Widget _filterField({required String label, required Widget child}) {
+  Widget _filterField({
+    required String label,
+    required Color labelColor,
+    required Widget child,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF5B5B5B))),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: labelColor,
+          ),
+        ),
         const SizedBox(height: 6),
         child,
       ],
     );
   }
 
-  Widget _filterTextField(TextEditingController controller, String hint) {
+  Widget _filterTextField(
+    TextEditingController controller,
+    String hint, {
+    required Color textColor,
+    required Color placeholderColor,
+    required Color fillColor,
+    required Color borderColor,
+    required Color focusedBorderColor,
+  }) {
     return TextField(
       controller: controller,
+      style: TextStyle(color: textColor),
+      cursorColor: textColor,
       decoration: InputDecoration(
         hintText: hint,
+        hintStyle: TextStyle(color: placeholderColor),
         filled: true,
-        fillColor: const Color(0xFFF8F9FA),
+        fillColor: fillColor,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(7)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(7),
-          borderSide: const BorderSide(color: Color(0xFFD9DEE5)),
+          borderSide: BorderSide(color: borderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(7),
-          borderSide: const BorderSide(color: Color(0xFF123456), width: 2),
+          borderSide: BorderSide(color: focusedBorderColor, width: 2),
         ),
       ),
     );
   }
 
-  Widget _filterDateField(DateTime? value, ValueChanged<DateTime> onPicked) {
+  Widget _filterDateField(
+    DateTime? value,
+    ValueChanged<DateTime?> onPicked, {
+    required bool isDarkMode,
+    required Color textColor,
+    required Color placeholderColor,
+    required Color fillColor,
+    required Color borderColor,
+    required VoidCallback onOpen,
+  }) {
     return GestureDetector(
-      onTap: () => _pickDate(value, onPicked),
+      onTap: onOpen,
       child: Container(
         height: 46,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F9FA),
+          color: fillColor,
           borderRadius: BorderRadius.circular(7),
-          border: Border.all(color: const Color(0xFFD9DEE5)),
+          border: Border.all(color: borderColor),
         ),
         child: Row(
           children: [
@@ -775,16 +959,279 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                     ? 'dd-mm-yyyy'
                     : '${value.day.toString().padLeft(2, '0')}-${value.month.toString().padLeft(2, '0')}-${value.year}',
                 style: TextStyle(
-                    color: value == null ? Colors.grey : Colors.black,
-                    fontSize: 14),
+                  color: value == null ? placeholderColor : textColor,
+                  fontSize: 14,
+                ),
               ),
             ),
-            const Icon(Icons.calendar_today_outlined,
-                size: 16, color: Color(0xFF888888)),
+            GestureDetector(
+              onTap: onOpen,
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Icon(
+                  Icons.calendar_today_outlined,
+                  size: 16,
+                  color: const Color(0xFF1F2937),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+}
+
+class _CalendarPopupMenuEntry extends PopupMenuEntry<DateTime?> {
+  final DateTime? initialDate;
+  final bool isDarkMode;
+  final ValueChanged<DateTime?> onPicked;
+
+  const _CalendarPopupMenuEntry({
+    required this.initialDate,
+    required this.isDarkMode,
+    required this.onPicked,
+  });
+
+  @override
+  State<_CalendarPopupMenuEntry> createState() =>
+      _CalendarPopupMenuEntryState();
+
+  @override
+  double get height => 360;
+
+  @override
+  bool represents(DateTime? value) => value == initialDate;
+}
+
+class _CalendarPopupMenuEntryState extends State<_CalendarPopupMenuEntry> {
+  late DateTime _viewMonth;
+  DateTime? _selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _selectedDate = widget.initialDate ?? now;
+    _viewMonth = DateTime(
+        _selectedDate?.year ?? now.year, _selectedDate?.month ?? now.month, 1);
+  }
+
+  void _goToMonth(int delta) {
+    setState(() {
+      _viewMonth = DateTime(_viewMonth.year, _viewMonth.month + delta, 1);
+    });
+  }
+
+  void _selectDate(DateTime day) {
+    setState(() {
+      _selectedDate = DateTime(day.year, day.month, day.day);
+      _viewMonth = DateTime(day.year, day.month, 1);
+    });
+    widget.onPicked(_selectedDate);
+    Navigator.of(context).pop(_selectedDate);
+  }
+
+  void _selectToday() {
+    final today = DateTime.now();
+    widget.onPicked(today);
+    Navigator.of(context).pop(today);
+  }
+
+  void _clearSelection() {
+    widget.onPicked(null);
+    Navigator.of(context).pop(null);
+  }
+
+  List<DateTime> _buildDaysInMonth() {
+    final firstDayOfMonth = DateTime(_viewMonth.year, _viewMonth.month, 1);
+    final firstWeekday = firstDayOfMonth.weekday % 7;
+    final start = firstDayOfMonth.subtract(Duration(days: firstWeekday));
+    return List.generate(42, (index) => start.add(Duration(days: index)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final backgroundColor =
+        widget.isDarkMode ? const Color(0xFF111827) : Colors.white;
+    final panelBorder =
+        widget.isDarkMode ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
+    final textColor =
+        widget.isDarkMode ? Colors.white : const Color(0xFF1F2937);
+    final mutedText =
+        widget.isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF6B7280);
+    final adjacentText =
+        widget.isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFFB0B7C3);
+    final selectedFill = const Color(0xFF2F80ED);
+    final selectedText = Colors.white;
+
+    final days = _buildDaysInMonth();
+
+    return Container(
+      width: 300,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: panelBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => _goToMonth(-1),
+                icon: Icon(Icons.chevron_left, color: textColor, size: 20),
+                splashRadius: 18,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '${_monthName(_viewMonth.month)} ${_viewMonth.year}',
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () => _goToMonth(1),
+                icon: Icon(Icons.chevron_right, color: textColor, size: 20),
+                splashRadius: 18,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: List.generate(7, (index) {
+              final weekday =
+                  ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][index];
+              return Expanded(
+                child: Center(
+                  child: Text(
+                    weekday,
+                    style: TextStyle(
+                      color: mutedText,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 8),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              childAspectRatio: 1.1,
+            ),
+            itemCount: days.length,
+            itemBuilder: (context, index) {
+              final day = days[index];
+              final isCurrentMonth = day.month == _viewMonth.month;
+              final isSelected = _selectedDate != null &&
+                  day.year == _selectedDate!.year &&
+                  day.month == _selectedDate!.month &&
+                  day.day == _selectedDate!.day;
+              final isToday = DateTime.now().year == day.year &&
+                  DateTime.now().month == day.month &&
+                  DateTime.now().day == day.day;
+
+              return InkWell(
+                onTap: () => _selectDate(day),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  alignment: Alignment.center,
+                  margin: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: isSelected ? selectedFill : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: isToday && !isSelected
+                        ? Border.all(color: const Color(0xFF93C5FD), width: 1)
+                        : null,
+                  ),
+                  child: Text(
+                    '${day.day}',
+                    style: TextStyle(
+                      color: isSelected
+                          ? selectedText
+                          : isCurrentMonth
+                              ? textColor
+                              : adjacentText,
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const Divider(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: _clearSelection,
+                child: Text(
+                  'Clear',
+                  style:
+                      TextStyle(color: textColor, fontWeight: FontWeight.w600),
+                ),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: _selectToday,
+                child: Text(
+                  'Today',
+                  style: TextStyle(
+                    color: widget.isDarkMode
+                        ? Colors.white
+                        : const Color(0xFF1F2937),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _monthName(int month) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+    return months[month - 1];
   }
 }
 

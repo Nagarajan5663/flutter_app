@@ -973,118 +973,20 @@ class EstimatesPage extends StatefulWidget {
   State<EstimatesPage> createState() => _EstimatesPageState();
 }
 
-Future<DateTime?> _showEstimateDatePicker(
-  BuildContext context, {
-  required DateTime initialDate,
-  required DateTime firstDate,
-  required DateTime lastDate,
-}) {
-  final screenWidth = MediaQuery.sizeOf(context).width;
-  final screenHeight = MediaQuery.sizeOf(context).height;
-  final calendarScale = screenWidth >= 900 && screenHeight >= 700
-      ? 1.12
-      : screenWidth >= 600 && screenHeight >= 640
-          ? 1.05
-          : 1.0;
-
-  return showDatePicker(
-    context: context,
-    initialDate: initialDate,
-    firstDate: firstDate,
-    lastDate: lastDate,
-    cancelText: 'Cancel',
-    confirmText: 'OK',
-    useRootNavigator: true,
-    builder: (context, child) {
-      final colorScheme = Theme.of(context).colorScheme.copyWith(
-            brightness: Brightness.light,
-            primary: const Color(0xFF1E78B7),
-            onPrimary: Colors.white,
-            surface: Colors.white,
-            onSurface: const Color(0xFF202A36),
-            onSurfaceVariant: const Color(0xFF5F6B7A),
-          );
-
-      return MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: TextScaler.linear(calendarScale),
-        ),
-        child: Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: colorScheme,
-            dialogTheme: Theme.of(context).dialogTheme.copyWith(
-                  insetPadding: EdgeInsets.symmetric(
-                    horizontal: screenWidth < 360
-                        ? 4
-                        : screenWidth < 600
-                            ? 8
-                            : 24,
-                    vertical: 24,
-                  ),
-                ),
-            datePickerTheme: DatePickerThemeData(
-              backgroundColor: Colors.white,
-              headerBackgroundColor: const Color(0xFF0B1F3A),
-              headerForegroundColor: Colors.white,
-              headerHeadlineStyle: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-              ),
-              headerHelpStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-              weekdayStyle: const TextStyle(
-                color: Color(0xFF5F6B7A),
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-              dayStyle: const TextStyle(
-                color: Color(0xFF202A36),
-                fontSize: 15,
-              ),
-              dayForegroundColor: WidgetStateProperty.resolveWith<Color?>(
-                (states) => states.contains(WidgetState.selected)
-                    ? Colors.white
-                    : const Color(0xFF202A36),
-              ),
-              dayBackgroundColor: WidgetStateProperty.resolveWith<Color?>(
-                (states) => states.contains(WidgetState.selected)
-                    ? const Color(0xFF1E78B7)
-                    : null,
-              ),
-              subHeaderForegroundColor: const Color(0xFF202A36),
-              cancelButtonStyle: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF1E78B7),
-              ),
-              confirmButtonStyle: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF1E78B7),
-                textStyle: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-          ),
-          child: child!,
-        ),
-      );
-    },
-  );
-}
-
 class _EstimateFilterCalendar extends StatefulWidget {
   const _EstimateFilterCalendar({
     required this.selectedDate,
     required this.firstDate,
     required this.lastDate,
     required this.onResult,
+    this.dayKeyPrefix = 'estimate-calendar',
   });
 
   final DateTime? selectedDate;
   final DateTime firstDate;
   final DateTime lastDate;
   final ValueChanged<DateTime?> onResult;
+  final String dayKeyPrefix;
 
   @override
   State<_EstimateFilterCalendar> createState() =>
@@ -1124,7 +1026,7 @@ class _EstimateFilterCalendarState extends State<_EstimateFilterCalendar> {
   }
 
   String _dayKey(DateTime date) =>
-      'estimate-calendar-day-${DateFormat('yyyy-MM-dd').format(date)}';
+      '${widget.dayKeyPrefix}-day-${DateFormat('yyyy-MM-dd').format(date)}';
 
   void _changeMonth(int amount) {
     setState(() {
@@ -1373,6 +1275,173 @@ class _EstimateFilterDateFieldState extends State<_EstimateFilterDateField> {
                       widget.onChanged(date);
                       _removeCalendarOverlay();
                     },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    overlay.insert(_calendarOverlay!);
+  }
+
+  void _removeCalendarOverlay() {
+    _calendarOverlay?.remove();
+    _calendarOverlay = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: InkWell(
+        onTap: _toggleCalendar,
+        child: InputDecorator(
+          decoration: widget.decoration,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.value == null
+                      ? 'dd-mm-yyyy'
+                      : DateFormat('dd-MM-yyyy').format(widget.value!),
+                  style: widget.value == null
+                      ? const TextStyle(color: Color(0xFF9AA3AD))
+                      : null,
+                ),
+              ),
+              const Icon(
+                Icons.calendar_today_outlined,
+                color: Color(0xFF1F2937),
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NewEstimateCalendarField extends StatefulWidget {
+  const _NewEstimateCalendarField({
+    required this.value,
+    required this.firstDate,
+    required this.lastDate,
+    required this.decoration,
+    required this.onChanged,
+  });
+
+  final DateTime? value;
+  final DateTime firstDate;
+  final DateTime lastDate;
+  final InputDecoration decoration;
+  final ValueChanged<DateTime?> onChanged;
+
+  @override
+  State<_NewEstimateCalendarField> createState() =>
+      _NewEstimateCalendarFieldState();
+}
+
+class _NewEstimateCalendarFieldState extends State<_NewEstimateCalendarField> {
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _calendarOverlay;
+  bool _alignCalendarRight = false;
+  bool _placeCalendarAbove = false;
+  double _calendarWidth = 340;
+  double _calendarMaxHeight = 380;
+
+  @override
+  void dispose() {
+    _removeCalendarOverlay();
+    super.dispose();
+  }
+
+  void _toggleCalendar() {
+    if (_calendarOverlay != null) {
+      _removeCalendarOverlay();
+      return;
+    }
+
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final targetBox = context.findRenderObject()! as RenderBox;
+    final targetTop = targetBox.localToGlobal(Offset.zero).dy;
+    final targetBottom = targetTop + targetBox.size.height;
+    final screenSize = MediaQuery.sizeOf(context);
+    const desiredHeight = 380.0;
+    final availableBelow = screenSize.height - targetBottom - 8;
+    final availableAbove = targetTop - 8;
+    _placeCalendarAbove =
+        availableBelow < desiredHeight && availableAbove > availableBelow;
+    _calendarMaxHeight = (_placeCalendarAbove ? availableAbove : availableBelow)
+        .clamp(120.0, screenSize.height - 16);
+
+    final targetLeft = targetBox.localToGlobal(Offset.zero).dx;
+    final targetRight = targetLeft + targetBox.size.width;
+    final desiredWidth = screenSize.width < 372 ? screenSize.width - 32 : 340.0;
+    final availableLeft = screenSize.width - targetLeft - 8;
+    final availableRight = targetRight - 8;
+    _alignCalendarRight =
+        desiredWidth > availableLeft && availableRight > availableLeft;
+    _calendarWidth = _alignCalendarRight
+        ? desiredWidth.clamp(0, availableRight)
+        : desiredWidth.clamp(0, availableLeft);
+
+    _calendarOverlay = OverlayEntry(
+      builder: (overlayContext) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _removeCalendarOverlay,
+              ),
+            ),
+            CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              targetAnchor: _placeCalendarAbove
+                  ? (_alignCalendarRight
+                      ? Alignment.topRight
+                      : Alignment.topLeft)
+                  : (_alignCalendarRight
+                      ? Alignment.bottomRight
+                      : Alignment.bottomLeft),
+              followerAnchor: _placeCalendarAbove
+                  ? (_alignCalendarRight
+                      ? Alignment.bottomRight
+                      : Alignment.bottomLeft)
+                  : (_alignCalendarRight
+                      ? Alignment.topRight
+                      : Alignment.topLeft),
+              offset: Offset(0, _placeCalendarAbove ? -6 : 6),
+              child: Material(
+                key: const ValueKey('estimate-new-calendar'),
+                color: Colors.white,
+                surfaceTintColor: Colors.transparent,
+                elevation: 8,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: SizedBox(
+                  width: _calendarWidth,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: _calendarMaxHeight),
+                    child: SingleChildScrollView(
+                      child: _EstimateFilterCalendar(
+                        selectedDate: widget.value,
+                        firstDate: widget.firstDate,
+                        lastDate: widget.lastDate,
+                        dayKeyPrefix: 'estimate-new-calendar',
+                        onResult: (date) {
+                          widget.onChanged(date);
+                          _removeCalendarOverlay();
+                        },
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -3342,36 +3411,6 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
   // DATE
   // ==========================================================
 
-  Future<void> _selectDate() async {
-    final picked = await _showEstimateDatePicker(
-      context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-
-    if (picked != null) {
-      setState(() {
-        selectedDate = picked;
-      });
-    }
-  }
-
-  Future<void> _selectExpiryDate() async {
-    final picked = await _showEstimateDatePicker(
-      context,
-      initialDate: expiryDate ?? selectedDate,
-      firstDate: selectedDate,
-      lastDate: DateTime(2100),
-    );
-
-    if (picked != null) {
-      setState(() {
-        expiryDate = picked;
-      });
-    }
-  }
-
   // ==========================================================
   // SAVE
   // ==========================================================
@@ -3672,7 +3711,11 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                               child: _buildDateField(
                                 label: 'Date *',
                                 value: selectedDate,
-                                onTap: _selectDate,
+                                onChanged: (date) {
+                                  setState(() {
+                                    selectedDate = date ?? DateTime.now();
+                                  });
+                                },
                               ),
                             ),
                           ],
@@ -3687,7 +3730,11 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                           child: _buildOptionalDateField(
                             label: 'Expiry Date',
                             value: expiryDate,
-                            onTap: _selectExpiryDate,
+                            onChanged: (date) {
+                              setState(() {
+                                expiryDate = date;
+                              });
+                            },
                           ),
                         ),
 
@@ -4274,7 +4321,7 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
   Widget _buildDateField({
     required String label,
     required DateTime value,
-    required VoidCallback onTap,
+    required ValueChanged<DateTime?> onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -4292,28 +4339,12 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
         const SizedBox(
           height: 8,
         ),
-        InkWell(
-          onTap: onTap,
-          child: InputDecorator(
-            decoration: _inputDecoration(),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    DateFormat(
-                      'dd-MM-yyyy',
-                    ).format(
-                      value,
-                    ),
-                  ),
-                ),
-                const Icon(
-                  Icons.calendar_today_outlined,
-                  size: 19,
-                ),
-              ],
-            ),
-          ),
+        _NewEstimateCalendarField(
+          value: value,
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+          decoration: _inputDecoration(),
+          onChanged: onChanged,
         ),
       ],
     );
@@ -4322,7 +4353,7 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
   Widget _buildOptionalDateField({
     required String label,
     required DateTime? value,
-    required VoidCallback onTap,
+    required ValueChanged<DateTime?> onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -4340,37 +4371,12 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
         const SizedBox(
           height: 8,
         ),
-        InkWell(
-          onTap: onTap,
-          child: InputDecorator(
-            decoration: _inputDecoration(),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    value == null
-                        ? 'dd-mm-yyyy'
-                        : DateFormat(
-                            'dd-MM-yyyy',
-                          ).format(
-                            value,
-                          ),
-                    style: TextStyle(
-                      color: value == null
-                          ? const Color(
-                              0xFF9AA3AD,
-                            )
-                          : Colors.black,
-                    ),
-                  ),
-                ),
-                const Icon(
-                  Icons.calendar_today_outlined,
-                  size: 19,
-                ),
-              ],
-            ),
-          ),
+        _NewEstimateCalendarField(
+          value: value,
+          firstDate: selectedDate,
+          lastDate: DateTime(2100),
+          decoration: _inputDecoration(),
+          onChanged: onChanged,
         ),
       ],
     );

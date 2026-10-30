@@ -142,6 +142,17 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    const labelTextColor = Color(0xFF1F2937);
+    const bodyTextColor = Color(0xFF111827);
+    const secondaryTextColor = Color(0xFF3D4147);
+    const placeholderTextColor = Color(0xFF6B7280);
+    const fieldFillColor = Colors.white;
+    const fieldBorderColor = Color(0xFFD1D5DB);
+    const focusedBorderColor = Color(0xFF93C5FD);
+    const fieldErrorColor = Color(0xFFB91C1C);
+    const menuBackgroundColor = Colors.white;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return GlassModalShell(
       maxWidth: 700,
       maxHeight: 780,
@@ -165,17 +176,31 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
               _twoColumnRow(
                 left: _fieldBlock(
                   label: 'Vendor Type',
+                  labelColor: labelTextColor,
                   child: _buildDropdown(
                     value: vendorType,
                     items: const ['Business', 'Individual'],
                     onChanged: (v) => setState(() => vendorType = v),
+                    textColor: bodyTextColor,
+                    placeholderColor: placeholderTextColor,
+                    backgroundColor: fieldFillColor,
+                    borderColor: fieldBorderColor,
+                    focusedBorderColor: focusedBorderColor,
+                    menuBackgroundColor: menuBackgroundColor,
                   ),
                 ),
                 right: _fieldBlock(
                   label: 'Company Name',
+                  labelColor: labelTextColor,
                   child: _buildTextField(
                     controller: companyNameController,
                     hint: 'e.g., ACME Corp',
+                    textColor: bodyTextColor,
+                    placeholderColor: placeholderTextColor,
+                    fillColor: fieldFillColor,
+                    borderColor: fieldBorderColor,
+                    focusedBorderColor: focusedBorderColor,
+                    errorColor: fieldErrorColor,
                   ),
                 ),
               ),
@@ -185,17 +210,31 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
               _twoColumnRow(
                 left: _fieldBlock(
                   label: 'Salutation',
+                  labelColor: labelTextColor,
                   child: _buildDropdown(
                     value: salutation,
                     items: const ['Mr.', 'Mrs.', 'Ms.', 'Dr.'],
                     onChanged: (v) => setState(() => salutation = v),
+                    textColor: bodyTextColor,
+                    placeholderColor: placeholderTextColor,
+                    backgroundColor: fieldFillColor,
+                    borderColor: fieldBorderColor,
+                    focusedBorderColor: focusedBorderColor,
+                    menuBackgroundColor: menuBackgroundColor,
                   ),
                 ),
                 right: _fieldBlock(
                   label: 'First Name',
+                  labelColor: labelTextColor,
                   child: _buildTextField(
                     controller: firstNameController,
                     hint: 'e.g., John',
+                    textColor: bodyTextColor,
+                    placeholderColor: placeholderTextColor,
+                    fillColor: fieldFillColor,
+                    borderColor: fieldBorderColor,
+                    focusedBorderColor: focusedBorderColor,
+                    errorColor: fieldErrorColor,
                   ),
                 ),
               ),
@@ -205,16 +244,30 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
               _twoColumnRow(
                 left: _fieldBlock(
                   label: 'Last Name',
+                  labelColor: labelTextColor,
                   child: _buildTextField(
                     controller: lastNameController,
                     hint: 'e.g., Doe',
+                    textColor: bodyTextColor,
+                    placeholderColor: placeholderTextColor,
+                    fillColor: fieldFillColor,
+                    borderColor: fieldBorderColor,
+                    focusedBorderColor: focusedBorderColor,
+                    errorColor: fieldErrorColor,
                   ),
                 ),
                 right: _fieldBlock(
                   label: 'Display Name *',
+                  labelColor: labelTextColor,
                   child: _buildTextField(
                     controller: displayNameController,
                     hint: 'e.g., John Doe',
+                    textColor: bodyTextColor,
+                    placeholderColor: placeholderTextColor,
+                    fillColor: fieldFillColor,
+                    borderColor: fieldBorderColor,
+                    focusedBorderColor: focusedBorderColor,
+                    errorColor: fieldErrorColor,
                     validator: (v) => (v == null || v.trim().isEmpty)
                         ? 'Please enter display name'
                         : null,
@@ -227,10 +280,17 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
               _twoColumnRow(
                 left: _fieldBlock(
                   label: 'Email',
+                  labelColor: labelTextColor,
                   child: _buildTextField(
                     controller: emailController,
                     hint: 'e.g., john.d@acmecorp.com',
                     keyboardType: TextInputType.emailAddress,
+                    textColor: bodyTextColor,
+                    placeholderColor: placeholderTextColor,
+                    fillColor: fieldFillColor,
+                    borderColor: fieldBorderColor,
+                    focusedBorderColor: focusedBorderColor,
+                    errorColor: fieldErrorColor,
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) return null;
                       if (!v.contains('@')) return 'Enter a valid email';
@@ -240,10 +300,17 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
                 ),
                 right: _fieldBlock(
                   label: 'Phone',
+                  labelColor: labelTextColor,
                   child: _buildTextField(
                     controller: phoneController,
                     hint: 'e.g., +1-555-123-4567',
                     keyboardType: TextInputType.phone,
+                    textColor: bodyTextColor,
+                    placeholderColor: placeholderTextColor,
+                    fillColor: fieldFillColor,
+                    borderColor: fieldBorderColor,
+                    focusedBorderColor: focusedBorderColor,
+                    errorColor: fieldErrorColor,
                   ),
                 ),
               ),
@@ -252,9 +319,16 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
               // Website
               _fieldBlock(
                 label: 'Website',
+                labelColor: labelTextColor,
                 child: _buildTextField(
                   controller: websiteController,
                   hint: 'e.g., https://www.acmecorp.com',
+                  textColor: bodyTextColor,
+                  placeholderColor: placeholderTextColor,
+                  fillColor: fieldFillColor,
+                  borderColor: fieldBorderColor,
+                  focusedBorderColor: focusedBorderColor,
+                  errorColor: fieldErrorColor,
                 ),
               ),
               const SizedBox(height: 18),
@@ -262,38 +336,72 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
               // GST Applicable
               _fieldBlock(
                 label: 'GST Applicable',
+                labelColor: labelTextColor,
                 child: _buildDropdown(
                   value: gstApplicable,
                   items: const ['Yes', 'No'],
                   onChanged: (v) => setState(() => gstApplicable = v),
+                  textColor: bodyTextColor,
+                  placeholderColor: placeholderTextColor,
+                  backgroundColor: fieldFillColor,
+                  borderColor: fieldBorderColor,
+                  focusedBorderColor: focusedBorderColor,
+                  menuBackgroundColor: menuBackgroundColor,
                 ),
               ),
               const SizedBox(height: 26),
 
-              const Text(
+              Text(
                 'Billing Address',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF123456),
+                  color: labelTextColor,
                 ),
               ),
               const SizedBox(height: 14),
 
               _fieldBlock(
                 label: 'Street',
-                child: _buildTextField(controller: billingStreetController),
+                labelColor: labelTextColor,
+                child: _buildTextField(
+                  controller: billingStreetController,
+                  textColor: bodyTextColor,
+                  placeholderColor: placeholderTextColor,
+                  fillColor: fieldFillColor,
+                  borderColor: fieldBorderColor,
+                  focusedBorderColor: focusedBorderColor,
+                  errorColor: fieldErrorColor,
+                ),
               ),
               const SizedBox(height: 18),
 
               _twoColumnRow(
                 left: _fieldBlock(
                   label: 'City',
-                  child: _buildTextField(controller: billingCityController),
+                  labelColor: labelTextColor,
+                  child: _buildTextField(
+                    controller: billingCityController,
+                    textColor: bodyTextColor,
+                    placeholderColor: placeholderTextColor,
+                    fillColor: fieldFillColor,
+                    borderColor: fieldBorderColor,
+                    focusedBorderColor: focusedBorderColor,
+                    errorColor: fieldErrorColor,
+                  ),
                 ),
                 right: _fieldBlock(
                   label: 'State',
-                  child: _buildTextField(controller: billingStateController),
+                  labelColor: labelTextColor,
+                  child: _buildTextField(
+                    controller: billingStateController,
+                    textColor: bodyTextColor,
+                    placeholderColor: placeholderTextColor,
+                    fillColor: fieldFillColor,
+                    borderColor: fieldBorderColor,
+                    focusedBorderColor: focusedBorderColor,
+                    errorColor: fieldErrorColor,
+                  ),
                 ),
               ),
               const SizedBox(height: 18),
@@ -301,21 +409,39 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
               _twoColumnRow(
                 left: _fieldBlock(
                   label: 'Zip Code',
-                  child: _buildTextField(controller: billingZipController),
+                  labelColor: labelTextColor,
+                  child: _buildTextField(
+                    controller: billingZipController,
+                    textColor: bodyTextColor,
+                    placeholderColor: placeholderTextColor,
+                    fillColor: fieldFillColor,
+                    borderColor: fieldBorderColor,
+                    focusedBorderColor: focusedBorderColor,
+                    errorColor: fieldErrorColor,
+                  ),
                 ),
                 right: _fieldBlock(
                   label: 'Country',
-                  child: _buildTextField(controller: billingCountryController),
+                  labelColor: labelTextColor,
+                  child: _buildTextField(
+                    controller: billingCountryController,
+                    textColor: bodyTextColor,
+                    placeholderColor: placeholderTextColor,
+                    fillColor: fieldFillColor,
+                    borderColor: fieldBorderColor,
+                    focusedBorderColor: focusedBorderColor,
+                    errorColor: fieldErrorColor,
+                  ),
                 ),
               ),
               const SizedBox(height: 26),
 
-              const Text(
+              Text(
                 'Shipping Address',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF123456),
+                  color: labelTextColor,
                 ),
               ),
               const SizedBox(height: 10),
@@ -324,13 +450,25 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
                 children: [
                   Checkbox(
                     value: shippingSameAsBilling,
-                    activeColor: const Color(0xFF123456),
+                    activeColor:
+                        isDarkMode ? Colors.white : const Color(0xFF123456),
+                    checkColor: isDarkMode ? const Color(0xFF111827) : null,
+                    fillColor: WidgetStateProperty.resolveWith<Color>((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return isDarkMode
+                            ? Colors.white
+                            : const Color(0xFF123456);
+                      }
+                      return isDarkMode
+                          ? const Color(0xFF1F2937)
+                          : Colors.white;
+                    }),
                     onChanged: (v) =>
                         setState(() => shippingSameAsBilling = v ?? false),
                   ),
-                  const Text(
+                  Text(
                     'Shipping address is same as billing address',
-                    style: TextStyle(fontSize: 15, color: Color(0xFF3D4147)),
+                    style: TextStyle(fontSize: 15, color: secondaryTextColor),
                   ),
                 ],
               ),
@@ -339,29 +477,73 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
                 const SizedBox(height: 8),
                 _fieldBlock(
                   label: 'Street',
-                  child: _buildTextField(controller: shippingStreetController),
+                  labelColor: labelTextColor,
+                  child: _buildTextField(
+                    controller: shippingStreetController,
+                    textColor: bodyTextColor,
+                    placeholderColor: placeholderTextColor,
+                    fillColor: fieldFillColor,
+                    borderColor: fieldBorderColor,
+                    focusedBorderColor: focusedBorderColor,
+                    errorColor: fieldErrorColor,
+                  ),
                 ),
                 const SizedBox(height: 18),
                 _twoColumnRow(
                   left: _fieldBlock(
                     label: 'City',
-                    child: _buildTextField(controller: shippingCityController),
+                    labelColor: labelTextColor,
+                    child: _buildTextField(
+                      controller: shippingCityController,
+                      textColor: bodyTextColor,
+                      placeholderColor: placeholderTextColor,
+                      fillColor: fieldFillColor,
+                      borderColor: fieldBorderColor,
+                      focusedBorderColor: focusedBorderColor,
+                      errorColor: fieldErrorColor,
+                    ),
                   ),
                   right: _fieldBlock(
                     label: 'State',
-                    child: _buildTextField(controller: shippingStateController),
+                    labelColor: labelTextColor,
+                    child: _buildTextField(
+                      controller: shippingStateController,
+                      textColor: bodyTextColor,
+                      placeholderColor: placeholderTextColor,
+                      fillColor: fieldFillColor,
+                      borderColor: fieldBorderColor,
+                      focusedBorderColor: focusedBorderColor,
+                      errorColor: fieldErrorColor,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
                 _twoColumnRow(
                   left: _fieldBlock(
                     label: 'Zip Code',
-                    child: _buildTextField(controller: shippingZipController),
+                    labelColor: labelTextColor,
+                    child: _buildTextField(
+                      controller: shippingZipController,
+                      textColor: bodyTextColor,
+                      placeholderColor: placeholderTextColor,
+                      fillColor: fieldFillColor,
+                      borderColor: fieldBorderColor,
+                      focusedBorderColor: focusedBorderColor,
+                      errorColor: fieldErrorColor,
+                    ),
                   ),
                   right: _fieldBlock(
                     label: 'Country',
-                    child:
-                        _buildTextField(controller: shippingCountryController),
+                    labelColor: labelTextColor,
+                    child: _buildTextField(
+                      controller: shippingCountryController,
+                      textColor: bodyTextColor,
+                      placeholderColor: placeholderTextColor,
+                      fillColor: fieldFillColor,
+                      borderColor: fieldBorderColor,
+                      focusedBorderColor: focusedBorderColor,
+                      errorColor: fieldErrorColor,
+                    ),
                   ),
                 ),
               ],
@@ -369,10 +551,17 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
 
               _fieldBlock(
                 label: 'Status',
+                labelColor: labelTextColor,
                 child: _buildDropdown(
                   value: status,
                   items: const ['Active', 'Inactive'],
                   onChanged: (v) => setState(() => status = v),
+                  textColor: bodyTextColor,
+                  placeholderColor: placeholderTextColor,
+                  backgroundColor: fieldFillColor,
+                  borderColor: fieldBorderColor,
+                  focusedBorderColor: focusedBorderColor,
+                  menuBackgroundColor: menuBackgroundColor,
                 ),
               ),
               const SizedBox(height: 28),
@@ -414,25 +603,29 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
     );
   }
 
-  Widget _fieldBlock({required String label, required Widget child}) {
+  Widget _fieldBlock({
+    required String label,
+    required Color labelColor,
+    required Widget child,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel(label),
+        _buildLabel(label, labelColor),
         child,
       ],
     );
   }
 
-  Widget _buildLabel(String text) {
+  Widget _buildLabel(String text, Color color) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF3D4147),
+          color: color,
         ),
       ),
     );
@@ -443,27 +636,36 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
     String? hint,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
+    required Color textColor,
+    required Color placeholderColor,
+    required Color fillColor,
+    required Color borderColor,
+    required Color focusedBorderColor,
+    required Color errorColor,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       validator: validator,
+      style: TextStyle(color: textColor),
+      cursorColor: textColor,
       decoration: InputDecoration(
         hintText: hint,
+        hintStyle: TextStyle(color: placeholderColor),
         filled: true,
-        fillColor: GlassSurface.fill(),
+        fillColor: fillColor,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(7)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(7),
-          borderSide: BorderSide(color: GlassSurface.border()),
+          borderSide: BorderSide(color: borderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(7),
-          borderSide:
-              BorderSide(color: GlassSurface.border(focused: true), width: 2),
+          borderSide: BorderSide(color: focusedBorderColor, width: 2),
         ),
+        errorStyle: TextStyle(color: errorColor, fontWeight: FontWeight.w500),
       ),
     );
   }
@@ -472,20 +674,42 @@ class _AddVendorDialogState extends State<AddVendorDialog> {
     required String value,
     required List<String> items,
     required ValueChanged<String> onChanged,
+    required Color textColor,
+    required Color placeholderColor,
+    required Color backgroundColor,
+    required Color borderColor,
+    required Color focusedBorderColor,
+    required Color menuBackgroundColor,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: GlassSurface.fill(),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(7),
-        border: Border.all(color: GlassSurface.border()),
+        border: Border.all(color: borderColor),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
           isExpanded: true,
+          dropdownColor: menuBackgroundColor,
+          iconEnabledColor: textColor,
+          iconDisabledColor: placeholderColor,
+          style: TextStyle(color: textColor, fontSize: 15),
           items: items
-              .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+              .map((item) => DropdownMenuItem(
+                    value: item,
+                    child: Text(
+                      item,
+                      style: TextStyle(color: textColor),
+                    ),
+                  ))
+              .toList(),
+          selectedItemBuilder: (context) => items
+              .map((item) => Text(
+                    item,
+                    style: TextStyle(color: textColor),
+                  ))
               .toList(),
           onChanged: (v) {
             if (v == null) return;

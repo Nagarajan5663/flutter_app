@@ -135,6 +135,10 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
 
   VendorModel? selectedVendor;
 
+  final GlobalKey _dateFieldKey = GlobalKey();
+  final GlobalKey _deliveryDateFieldKey = GlobalKey();
+  final GlobalKey _dueDateFieldKey = GlobalKey();
+
   DateTime date = DateTime.now();
 
   DateTime? deliveryExpectedDate;
@@ -541,19 +545,46 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
 
   Future<void> _pickDate({
     required DateTime? initial,
-    required ValueChanged<DateTime> onPicked,
+    required ValueChanged<DateTime?> onPicked,
+    required GlobalKey anchorKey,
+    bool allowClear = true,
   }) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: initial ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+    final BuildContext? anchorContext = anchorKey.currentContext;
+    if (anchorContext == null) {
+      final fallback = initial ?? DateTime.now();
+      onPicked(fallback);
+      return;
+    }
+
+    final RenderBox renderBox = anchorContext.findRenderObject() as RenderBox;
+    final RenderBox overlayBox = Navigator.of(anchorContext)
+        .overlay!
+        .context
+        .findRenderObject() as RenderBox;
+    final rect = Rect.fromPoints(
+      renderBox.localToGlobal(Offset.zero, ancestor: overlayBox),
+      renderBox.localToGlobal(
+        renderBox.size.bottomRight(Offset.zero),
+        ancestor: overlayBox,
+      ),
     );
 
-    if (picked != null) {
-      onPicked(
-        picked,
-      );
+    final selected = await showMenu<DateTime?>(
+      context: anchorContext,
+      position: RelativeRect.fromRect(rect, Offset.zero & overlayBox.size),
+      color: Colors.transparent,
+      constraints: const BoxConstraints(maxWidth: 320),
+      items: [
+        _DatePickerPopupEntry(
+          initialDate: initial ?? DateTime.now(),
+          allowClear: allowClear,
+          onPicked: onPicked,
+        ),
+      ],
+    );
+
+    if (selected != null) {
+      onPicked(selected);
     }
   }
 
@@ -902,8 +933,9 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
                                 focusColor: Color(0xFFF1F3F5),
                                 splashColor: Colors.transparent,
                               ),
-                              itemBuilder: (context, vendor, isDisabled,
-                                      isSelected) => SizedBox(
+                              itemBuilder:
+                                  (context, vendor, isDisabled, isSelected) =>
+                                      SizedBox(
                                 height: 40,
                                 width: double.infinity,
                                 child: Align(
@@ -926,7 +958,8 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
                                   ),
                                 ),
                               ),
-                              emptyBuilder: (context, searchEntry) => const Padding(
+                              emptyBuilder: (context, searchEntry) =>
+                                  const Padding(
                                 padding: EdgeInsets.all(16),
                                 child: Text(
                                   'No vendors found',
@@ -974,15 +1007,16 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
                         child: _labeledField(
                           label: 'Date *',
                           child: _dateField(
+                            key: _dateFieldKey,
                             value: date,
                             onTap: () {
                               _pickDate(
                                 initial: date,
-                                onPicked: (
-                                  DateTime value,
-                                ) {
+                                anchorKey: _dateFieldKey,
+                                allowClear: false,
+                                onPicked: (DateTime? value) {
                                   setState(() {
-                                    date = value;
+                                    date = value ?? DateTime.now();
                                   });
                                 },
                               );
@@ -997,13 +1031,14 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
                         child: _labeledField(
                           label: 'Delivery Expected Date',
                           child: _dateField(
+                            key: _deliveryDateFieldKey,
                             value: deliveryExpectedDate,
                             onTap: () {
                               _pickDate(
                                 initial: deliveryExpectedDate ?? date,
-                                onPicked: (
-                                  DateTime value,
-                                ) {
+                                anchorKey: _deliveryDateFieldKey,
+                                allowClear: true,
+                                onPicked: (DateTime? value) {
                                   setState(() {
                                     deliveryExpectedDate = value;
                                   });
@@ -1086,13 +1121,14 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
                         child: _labeledField(
                           label: 'Due Date',
                           child: _dateField(
+                            key: _dueDateFieldKey,
                             value: dueDate,
                             onTap: () {
                               _pickDate(
                                 initial: dueDate ?? date,
-                                onPicked: (
-                                  DateTime value,
-                                ) {
+                                anchorKey: _dueDateFieldKey,
+                                allowClear: true,
+                                onPicked: (DateTime? value) {
                                   setState(() {
                                     dueDate = value;
                                   });
@@ -1277,12 +1313,151 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
                                         );
                                       });
                                     },
-                                    popupProps: const PopupProps.menu(
+                                    popupProps: PopupProps.menu(
                                       showSearchBox: true,
+                                      searchDelay: Duration.zero,
+                                      disableFilter: true,
+                                      constraints: const BoxConstraints(
+                                        maxHeight: 320,
+                                      ),
+                                      menuProps: const MenuProps(
+                                        backgroundColor: Colors.white,
+                                        elevation: 4,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(7),
+                                          ),
+                                        ),
+                                      ),
+                                      searchFieldProps: const TextFieldProps(
+                                        style: TextStyle(
+                                          color: Color(0xFF111827),
+                                        ),
+                                        decoration: InputDecoration(
+                                          hintText: 'Search items or parts...',
+                                          hintStyle: TextStyle(
+                                            color: Color(0xFF6B7280),
+                                          ),
+                                          prefixIcon: Icon(
+                                            Icons.search,
+                                            size: 20,
+                                            color: Color(0xFF6B7280),
+                                          ),
+                                          filled: true,
+                                          fillColor: Colors.white,
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 10,
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                              Radius.circular(7),
+                                            ),
+                                            borderSide: BorderSide(
+                                              color: Color(0xFFD1D5DB),
+                                            ),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                              Radius.circular(7),
+                                            ),
+                                            borderSide: BorderSide(
+                                              color: Color(0xFFD1D5DB),
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                              Radius.circular(7),
+                                            ),
+                                            borderSide: BorderSide(
+                                              color: Color(0xFF60A5FA),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      itemClickProps: const ClickProps(
+                                        hoverColor: Color(0xFFE5E7EB),
+                                        focusColor: Color(0xFFE5E7EB),
+                                        splashColor: Colors.transparent,
+                                      ),
+                                      itemBuilder: (
+                                        context,
+                                        product,
+                                        isDisabled,
+                                        isSelected,
+                                      ) =>
+                                          Container(
+                                        height: 42,
+                                        width: double.infinity,
+                                        color: isSelected
+                                            ? const Color(0xFFEAF3FF)
+                                            : Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                        ),
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          '${product.name} [${product.sourceType}]${product.sku.isEmpty ? '' : ' • ${product.sku}'}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: isSelected
+                                                ? const Color(0xFF1F2937)
+                                                : const Color(0xFF1F2937),
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                      emptyBuilder: (context, searchEntry) =>
+                                          const Padding(
+                                        padding: EdgeInsets.all(16),
+                                        child: Text(
+                                          'No items found',
+                                          style: TextStyle(
+                                            color: Color(0xFF1F2937),
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                     decoratorProps: DropDownDecoratorProps(
-                                      decoration: _fieldDecoration(
-                                        hint: 'Select Item or Part...',
+                                      decoration: InputDecoration(
+                                        hintText: 'Select Item or Part...',
+                                        hintStyle: const TextStyle(
+                                          color: Color(0xFF6B7280),
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.white,
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 15,
+                                        ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            7,
+                                          ),
+                                          borderSide: const BorderSide(
+                                            color: Color(0xFFD1D5DB),
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            7,
+                                          ),
+                                          borderSide: const BorderSide(
+                                            color: Color(0xFFD1D5DB),
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            7,
+                                          ),
+                                          borderSide: const BorderSide(
+                                            color: Color(0xFF60A5FA),
+                                            width: 2,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1591,10 +1766,12 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
   // ==========================================================
 
   Widget _dateField({
+    Key? key,
     required DateTime? value,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
+      key: key,
       onTap: onTap,
       child: Container(
         height: 50,
@@ -1618,19 +1795,272 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
                     ? 'dd-mm-yyyy'
                     : '${value.day.toString().padLeft(2, '0')}-${value.month.toString().padLeft(2, '0')}-${value.year}',
                 style: TextStyle(
-                  color: value == null ? Colors.grey : Colors.black,
+                  color: value == null ? Colors.grey : const Color(0xFF1F2937),
                 ),
               ),
             ),
-            const Icon(
-              Icons.calendar_today_outlined,
-              size: 18,
-              color: Color(
-                0xFF888888,
+            GestureDetector(
+              onTap: onTap,
+              behavior: HitTestBehavior.opaque,
+              child: const Padding(
+                padding: EdgeInsets.only(left: 8),
+                child: Icon(
+                  Icons.calendar_today_outlined,
+                  size: 16,
+                  color: Color(0xFF1F2937),
+                ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _DatePickerPopupEntry extends PopupMenuEntry<DateTime?> {
+  final DateTime initialDate;
+  final bool allowClear;
+  final ValueChanged<DateTime?> onPicked;
+
+  const _DatePickerPopupEntry({
+    required this.initialDate,
+    required this.allowClear,
+    required this.onPicked,
+  });
+
+  @override
+  State<_DatePickerPopupEntry> createState() => _DatePickerPopupEntryState();
+
+  @override
+  double get height => 340;
+
+  @override
+  bool represents(DateTime? value) => false;
+}
+
+class _DatePickerPopupEntryState extends State<_DatePickerPopupEntry> {
+  late DateTime _displayMonth;
+  DateTime? _selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = widget.initialDate;
+    _displayMonth = DateTime(
+      _selectedDate?.year ?? DateTime.now().year,
+      _selectedDate?.month ?? DateTime.now().month,
+      1,
+    );
+  }
+
+  void _goToMonth(int delta) {
+    setState(() {
+      _displayMonth =
+          DateTime(_displayMonth.year, _displayMonth.month + delta, 1);
+    });
+  }
+
+  void _selectDate(DateTime date) {
+    setState(() {
+      _selectedDate = date;
+      _displayMonth = DateTime(date.year, date.month, 1);
+    });
+    widget.onPicked(date);
+    Navigator.of(context).pop(date);
+  }
+
+  void _selectToday() {
+    final today = DateTime.now();
+    widget.onPicked(today);
+    Navigator.of(context).pop(today);
+  }
+
+  void _clearDate() {
+    widget.onPicked(null);
+    Navigator.of(context).pop(null);
+  }
+
+  List<DateTime> _buildMonthGrid() {
+    final firstDayOfMonth =
+        DateTime(_displayMonth.year, _displayMonth.month, 1);
+    final firstWeekday = firstDayOfMonth.weekday % 7;
+    final start = firstDayOfMonth.subtract(Duration(days: firstWeekday));
+    return List.generate(42, (index) => start.add(Duration(days: index)));
+  }
+
+  String _monthLabel(int month) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return months[month - 1];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final days = _buildMonthGrid();
+    final now = DateTime.now();
+    final backgroundColor = Colors.white;
+    final borderColor = const Color(0xFFE5E7EB);
+    final textColor = const Color(0xFF1F2937);
+    final mutedText = const Color(0xFF6B7280);
+    final adjacentText = const Color(0xFFB0B7C3);
+    final selectedColor = const Color(0xFF2F80ED);
+
+    return Container(
+      width: 300,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.10),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => _goToMonth(-1),
+                icon: const Icon(Icons.chevron_left,
+                    color: Color(0xFF1F2937), size: 20),
+                splashRadius: 18,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '${_monthLabel(_displayMonth.month)} ${_displayMonth.year}',
+                    style: const TextStyle(
+                      color: Color(0xFF1F2937),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () => _goToMonth(1),
+                icon: const Icon(Icons.chevron_right,
+                    color: Color(0xFF1F2937), size: 20),
+                splashRadius: 18,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                .map(
+                  (weekday) => Expanded(
+                    child: Center(
+                      child: Text(
+                        weekday,
+                        style: TextStyle(
+                          color: mutedText,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(height: 6),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              childAspectRatio: 1.05,
+            ),
+            itemCount: days.length,
+            itemBuilder: (context, index) {
+              final day = days[index];
+              final isCurrentMonth = day.month == _displayMonth.month;
+              final isSelected = _selectedDate != null &&
+                  day.year == _selectedDate!.year &&
+                  day.month == _selectedDate!.month &&
+                  day.day == _selectedDate!.day;
+              final isToday = now.year == day.year &&
+                  now.month == day.month &&
+                  now.day == day.day;
+
+              return InkWell(
+                onTap: () => _selectDate(day),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  alignment: Alignment.center,
+                  margin: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: isSelected ? selectedColor : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: isToday && !isSelected
+                        ? Border.all(color: const Color(0xFF93C5FD), width: 1)
+                        : null,
+                  ),
+                  child: Text(
+                    '${day.day}',
+                    style: TextStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : isCurrentMonth
+                              ? textColor
+                              : adjacentText,
+                      fontSize: 12,
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const Divider(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (widget.allowClear)
+                TextButton(
+                  onPressed: _clearDate,
+                  child: const Text(
+                    'Clear',
+                    style: TextStyle(
+                        color: Color(0xFF1F2937), fontWeight: FontWeight.w600),
+                  ),
+                ),
+              TextButton(
+                onPressed: _selectToday,
+                child: const Text(
+                  'Today',
+                  style: TextStyle(
+                      color: Color(0xFF1F2937), fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

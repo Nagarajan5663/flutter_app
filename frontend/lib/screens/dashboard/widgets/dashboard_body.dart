@@ -275,7 +275,6 @@ class _DashboardBodyState extends State<DashboardBody> {
                         ),
                         selectedItemBuilder: (context) {
                           return _dateRangeOptions.map((option) {
-                            final isSelected = option == _selectedDateRange;
                             final displayText = option == 'Custom Selection' &&
                                     _customRangeLabel != null
                                 ? _customRangeLabel!
@@ -285,12 +284,6 @@ class _DashboardBodyState extends State<DashboardBody> {
                               alignment: Alignment.centerLeft,
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 4),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? const Color(0xFFE5E7EB)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
                               child: Text(
                                 displayText,
                                 overflow: TextOverflow.ellipsis,
@@ -303,19 +296,12 @@ class _DashboardBodyState extends State<DashboardBody> {
                           }).toList();
                         },
                         items: _dateRangeOptions.map((option) {
-                          final isSelected = option == _selectedDateRange;
                           return DropdownMenuItem<String>(
                             value: option,
                             child: Container(
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? const Color(0xFFE5E7EB)
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
                               child: Text(
                                 option,
                                 style: const TextStyle(
