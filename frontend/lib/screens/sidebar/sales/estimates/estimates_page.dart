@@ -365,12 +365,14 @@ class CustomerOption {
   final String name;
   final String companyName;
   final String email;
+  final String phone;
 
   const CustomerOption({
     required this.id,
     required this.name,
     required this.companyName,
     required this.email,
+    this.phone = '',
   });
 }
 
@@ -394,6 +396,164 @@ class CatalogOption {
     required this.description,
     required this.rate,
   });
+}
+
+List<CatalogOption> searchCatalogOptions(
+  Iterable<CatalogOption> catalog,
+  String query,
+) {
+  final normalizedQuery = query.trim().toLowerCase();
+  if (normalizedQuery.isEmpty) return catalog.toList();
+
+  return catalog
+      .where(
+        (item) =>
+            item.name.toLowerCase().contains(normalizedQuery) ||
+            item.sku.toLowerCase().contains(normalizedQuery),
+      )
+      .toList();
+}
+
+class CustomerOptionsView extends StatelessWidget {
+  const CustomerOptionsView({
+    super.key,
+    required this.customers,
+    required this.onSelected,
+  });
+
+  final List<CustomerOption> customers;
+  final ValueChanged<CustomerOption> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Material(
+        color: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 10,
+        borderRadius: BorderRadius.circular(10),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 250, maxWidth: 330),
+          child: ListView.builder(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            itemCount: customers.length,
+            itemBuilder: (_, index) {
+              final customer = customers[index];
+              return ListTile(
+                tileColor: Colors.white,
+                hoverColor: const Color(0xFFDCEEFF),
+                title: Text(
+                  customer.name,
+                  style: const TextStyle(color: Color(0xFF172B4D)),
+                ),
+                subtitle: customer.companyName.isEmpty
+                    ? null
+                    : Text(
+                        customer.companyName,
+                        style: const TextStyle(color: Color(0xFF425466)),
+                      ),
+                onTap: () => onSelected(customer),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class CatalogOptionsView extends StatelessWidget {
+  const CatalogOptionsView({
+    super.key,
+    required this.items,
+    required this.onSelected,
+    this.showNoResults = false,
+  });
+
+  final List<CatalogOption> items;
+  final ValueChanged<CatalogOption> onSelected;
+  final bool showNoResults;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Material(
+        color: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 10,
+        borderRadius: BorderRadius.circular(10),
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 450, maxHeight: 280),
+          child: showNoResults
+              ? const SizedBox(
+                  height: 56,
+                  child: Center(
+                    child: Text(
+                      'No items found',
+                      style: TextStyle(color: Color(0xFF64748B)),
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  itemBuilder: (_, index) {
+                    final item = items[index];
+                    final isCatalogItem = item.sourceType == 'Item';
+                    return ListTile(
+                      tileColor: Colors.white,
+                      hoverColor: const Color(0xFFF1F5F9),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      leading: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isCatalogItem
+                              ? const Color(0xFFE3F2FD)
+                              : const Color(0xFFFFF3E0),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          item.sourceType,
+                          style: TextStyle(
+                            color: isCatalogItem
+                                ? const Color(0xFF1565C0)
+                                : const Color(0xFF7A4B00),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        item.name,
+                        style: const TextStyle(color: Color(0xFF263746)),
+                      ),
+                      subtitle: Text(
+                        item.sku.isEmpty
+                            ? 'INR ${item.rate.toStringAsFixed(2)}'
+                            : '${item.sku} • INR ${item.rate.toStringAsFixed(2)}',
+                        style: const TextStyle(color: Color(0xFF64748B)),
+                      ),
+                      onTap: () => onSelected(item),
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
+  }
 }
 
 // ============================================================
@@ -647,8 +807,11 @@ class EstimateData {
 // ============================================================
 
 class EstimatesPage extends StatefulWidget {
+  final VoidCallback? onOpenSalesOrders;
+
   const EstimatesPage({
     super.key,
+    this.onOpenSalesOrders,
   });
 
   @override
@@ -1055,85 +1218,85 @@ class _EstimatesPageState extends State<EstimatesPage> {
 
             if (_showFilters)
               Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(
-                16,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(
-                  0x4FFFFFFF,
-                ),
-                borderRadius: BorderRadius.circular(
+                width: double.infinity,
+                padding: const EdgeInsets.all(
                   16,
                 ),
-                border: Border.all(
+                decoration: BoxDecoration(
                   color: const Color(
-                    0xD0FFFFFF,
+                    0x4FFFFFFF,
+                  ),
+                  borderRadius: BorderRadius.circular(
+                    16,
+                  ),
+                  border: Border.all(
+                    color: const Color(
+                      0xD0FFFFFF,
+                    ),
                   ),
                 ),
-              ),
-              child: Wrap(
-                spacing: 16,
-                runSpacing: 12,
-                crossAxisAlignment: WrapCrossAlignment.end,
-                children: [
-                  SizedBox(
-                    width: 150,
-                    child: _buildFilterDropdown(),
-                  ),
-                  SizedBox(
-                    width: 200,
-                    child: _buildCustomerFilter(),
-                  ),
-                  SizedBox(
-                    width: 170,
-                    child: _buildFilterDate(
-                      label: 'Date From:',
-                      value: _dateFrom,
-                      onChanged: (value) {
-                        setState(() {
-                          _dateFrom = value;
-                        });
-                      },
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 12,
+                  crossAxisAlignment: WrapCrossAlignment.end,
+                  children: [
+                    SizedBox(
+                      width: 150,
+                      child: _buildFilterDropdown(),
                     ),
-                  ),
-                  SizedBox(
-                    width: 170,
-                    child: _buildFilterDate(
-                      label: 'Date To:',
-                      value: _dateTo,
-                      onChanged: (value) {
-                        setState(() {
-                          _dateTo = value;
-                        });
-                      },
+                    SizedBox(
+                      width: 200,
+                      child: _buildCustomerFilter(),
                     ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {});
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(
-                        0xFF1E78B7,
-                      ),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 22,
-                        vertical: 14,
+                    SizedBox(
+                      width: 170,
+                      child: _buildFilterDate(
+                        label: 'Date From:',
+                        value: _dateFrom,
+                        onChanged: (value) {
+                          setState(() {
+                            _dateFrom = value;
+                          });
+                        },
                       ),
                     ),
-                    child: const Text('Apply'),
-                  ),
-                  OutlinedButton(
-                    onPressed: _clearFilters,
-                    child: const Text(
-                      'Clear',
+                    SizedBox(
+                      width: 170,
+                      child: _buildFilterDate(
+                        label: 'Date To:',
+                        value: _dateTo,
+                        onChanged: (value) {
+                          setState(() {
+                            _dateTo = value;
+                          });
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {});
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(
+                          0xFF1E78B7,
+                        ),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 22,
+                          vertical: 14,
+                        ),
+                      ),
+                      child: const Text('Apply'),
+                    ),
+                    OutlinedButton(
+                      onPressed: _clearFilters,
+                      child: const Text(
+                        'Clear',
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
             if (_showFilters) const SizedBox(height: 20),
 
@@ -1660,10 +1823,14 @@ class _EstimatesPageState extends State<EstimatesPage> {
 
 class NewEstimateDialog extends StatefulWidget {
   final String nextNumber;
+  final int? initialCustomerId;
+  final String? initialCustomerName;
 
   const NewEstimateDialog({
     super.key,
     required this.nextNumber,
+    this.initialCustomerId,
+    this.initialCustomerName,
   });
 
   @override
@@ -1743,13 +1910,9 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
     });
 
     try {
-      final customerFuture = EstimatesApi.getCustomers();
+      final customers = await EstimatesApi.getCustomers();
 
-      final catalogFuture = EstimatesApi.getCatalog();
-
-      final customers = await customerFuture;
-
-      final catalog = await catalogFuture;
+      final catalog = await EstimatesApi.getCatalog();
 
       if (!mounted) return;
 
@@ -1757,6 +1920,24 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
         _customers = customers;
 
         _catalog = catalog;
+
+        final initialCustomerId = widget.initialCustomerId;
+        if (initialCustomerId != null) {
+          for (final customer in customers) {
+            if (customer.id == initialCustomerId) {
+              _selectedCustomer = customer;
+              break;
+            }
+          }
+          _selectedCustomer ??= CustomerOption(
+            id: initialCustomerId,
+            name: widget.initialCustomerName ?? '',
+            companyName: '',
+            email: '',
+          );
+        }
+        customerController.text =
+            _selectedCustomer?.name ?? widget.initialCustomerName ?? '';
 
         _isLoadingData = false;
       });
@@ -2469,6 +2650,9 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
               ),
               decoration: _inputDecoration().copyWith(
                 hintText: 'Select or type to search...',
+                hintStyle: const TextStyle(
+                  color: Color(0xFF757575),
+                ),
               ),
               onChanged: (value) {
                 if (_selectedCustomer != null &&
@@ -2607,6 +2791,10 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
                     return TextFormField(
                       controller: controller,
                       focusNode: focusNode,
+                      cursorColor: const Color(0xFF1E78B7),
+                      style: const TextStyle(
+                        color: Color(0xFF263746),
+                      ),
                       decoration: _cellInputDecoration().copyWith(
                         hintText: 'Select or type to search...',
                       ),
@@ -2966,9 +3154,7 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
     return InputDecoration(
       isDense: true,
       filled: true,
-      fillColor: const Color(
-        0xFFF8FAFB,
-      ),
+      fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 16,
         vertical: 16,
@@ -3006,8 +3192,9 @@ class _NewEstimateDialogState extends State<NewEstimateDialog> {
     return InputDecoration(
       isDense: true,
       filled: true,
-      fillColor: const Color(
-        0xFFF8FAFB,
+      fillColor: Colors.white,
+      hintStyle: const TextStyle(
+        color: Color(0xFF64748B),
       ),
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 14,

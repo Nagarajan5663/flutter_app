@@ -6,6 +6,7 @@ dotenv.config({
   path: path.join(__dirname, '..', '.env'),
 });
 
+
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT || 3306),
@@ -39,4 +40,5 @@ async function testConnection() {
 }
 
 testConnection();
+
 module.exports = pool;

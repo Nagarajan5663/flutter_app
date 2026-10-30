@@ -350,7 +350,6 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                       ],
                     ),
                   ),
-
                   if (_renderCollapsed) ...[
                     const SizedBox(height: 4),
                     Image.asset(
@@ -360,7 +359,6 @@ class _DashboardNavBarState extends State<DashboardNavBar> {
                       fit: BoxFit.contain,
                     ),
                   ],
-
                   if (!_renderCollapsed) ...[
                     const SizedBox(height: 16),
                     _buildSectionLabel(

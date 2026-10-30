@@ -12,7 +12,9 @@ import '../payment_received_model.dart';
 import '../payment_received_repository.dart';
 
 class AddPaymentReceivedDialog extends StatefulWidget {
-  const AddPaymentReceivedDialog({super.key});
+  const AddPaymentReceivedDialog({super.key, this.initialInvoice});
+
+  final InvoiceModel? initialInvoice;
 
   @override
   State<AddPaymentReceivedDialog> createState() =>
@@ -65,6 +67,27 @@ class _AddPaymentReceivedDialogState extends State<AddPaymentReceivedDialog> {
       _customers = customers;
       _invoices = invoices;
       paymentNumberController.text = paymentNumber;
+      final invoiceId = widget.initialInvoice?.id;
+      if (invoiceId != null) {
+        for (final customer in customers) {
+          if (customer.id == widget.initialInvoice!.customerId) {
+            selectedCustomer = customer;
+            break;
+          }
+        }
+        for (final invoice in invoices) {
+          if (invoice.id == invoiceId) {
+            selectedInvoice = invoice;
+            break;
+          }
+        }
+        selectedInvoice ??= widget.initialInvoice;
+        if (selectedInvoice != null) {
+          amountController.text = selectedInvoice!.amountDue
+              .clamp(0, double.infinity)
+              .toStringAsFixed(2);
+        }
+      }
       _isLoading = false;
     });
   }

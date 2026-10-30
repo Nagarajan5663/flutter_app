@@ -1,4 +1,6 @@
 import 'sales_order_model.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 abstract class SalesOrderRepository {
   Future<List<SalesOrderModel>> getSalesOrders();
@@ -10,26 +12,20 @@ class InMemorySalesOrderRepository implements SalesOrderRepository {
   static final InMemorySalesOrderRepository instance = InMemorySalesOrderRepository._internal();
   factory InMemorySalesOrderRepository() => instance;
 
-  final List<SalesOrderModel> _orders = [];
-  int _nextId = 1;
+  static const String _baseUrl = 'http://localhost:3000/api';
 
   @override
   Future<List<SalesOrderModel>> getSalesOrders() async {
-    await Future<void>.delayed(const Duration(milliseconds: 100));
-    return List<SalesOrderModel>.from(_orders);
+    final response = await http.get(Uri.parse('$_baseUrl/sales-orders'), headers: const {'Accept': 'application/json'});
+    final body = jsonDecode(response.body);
+    if (response.statusCode != 200 || body is! Map<String, dynamic> || body['success'] != true) {
+      throw Exception(body is Map ? body['message'] ?? 'Failed to fetch Sales Orders' : 'Failed to fetch Sales Orders');
+    }
+    return (body['data'] as List? ?? []).map((e) => SalesOrderModel.fromJson(Map<String, dynamic>.from(e as Map))).toList();
   }
 
   @override
   Future<SalesOrderModel> addSalesOrder(SalesOrderModel order) async {
-    final saved = SalesOrderModel(
-      id: (_nextId++).toString(),
-      soNumber: order.soNumber,
-      customerId: order.customerId,
-      customerName: order.customerName,
-      orderDate: order.orderDate,
-      items: order.items,
-    );
-    _orders.add(saved);
-    return saved;
+    throw UnsupportedError('Sales Orders must be created through the approved document workflow.');
   }
 }

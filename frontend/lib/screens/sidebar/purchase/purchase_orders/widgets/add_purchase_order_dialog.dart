@@ -99,11 +99,19 @@ class AddPurchaseOrderDialog extends StatefulWidget {
     this.initialVendor,
     this.initialOrder,
     this.isDuplicate = false,
+    this.initialSalesOrderId,
+    this.initialSalesOrderNumber,
+    this.initialSalesOrderDate,
+    this.initialItems,
   });
 
   final VendorModel? initialVendor;
   final PurchaseOrderModel? initialOrder;
   final bool isDuplicate;
+  final int? initialSalesOrderId;
+  final String? initialSalesOrderNumber;
+  final DateTime? initialSalesOrderDate;
+  final List<Map<String, dynamic>>? initialItems;
 
   @override
   State<AddPurchaseOrderDialog> createState() => _AddPurchaseOrderDialogState();
@@ -199,6 +207,8 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
 
       setState(() {
         _vendors = vendors;
+        _catalog = catalog;
+
         final initialOrder = widget.initialOrder;
         final vendorId = initialOrder?.vendorId ?? widget.initialVendor?.id;
         selectedVendor = vendorId == null
@@ -207,11 +217,17 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
                 ? vendors.firstWhere((vendor) => vendor.id == vendorId)
                 : null;
 
-        _catalog = catalog;
+        if (widget.initialSalesOrderDate != null) {
+          date = widget.initialSalesOrderDate!;
+        }
+        if (widget.initialSalesOrderNumber != null) {
+          referenceNumberController.text = widget.initialSalesOrderNumber!;
+        }
 
         poNumberController.text = initialOrder != null && !widget.isDuplicate
             ? initialOrder.poNumber
             : nextPoNumber ?? '';
+
         if (initialOrder != null) {
           referenceNumberController.text = initialOrder.referenceNumber;
           date = initialOrder.date;
@@ -234,7 +250,42 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
             row.rateController.text = item.rate.toStringAsFixed(2);
             rows.add(row);
           }
-          if (rows.isEmpty) rows.add(_ItemRow());
+        } else if (widget.initialItems != null &&
+            widget.initialItems!.isNotEmpty) {
+          rows.clear();
+          for (final item in widget.initialItems!) {
+            final itemName = item['itemName']?.toString() ?? '';
+            final sourceType = item['sourceType']?.toString();
+            final itemId = item['itemId'] == null
+                ? null
+                : int.tryParse(item['itemId'].toString());
+            final partId = item['partId'] == null
+                ? null
+                : int.tryParse(item['partId'].toString());
+            final row = _ItemRow();
+            final match = _matchCatalogOption(
+              itemName: itemName,
+              sourceType: sourceType,
+              itemId: itemId,
+              partId: partId,
+            );
+            if (match != null) {
+              row.selectedProduct = match;
+              row.descriptionController.text =
+                  item['description']?.toString() ?? match.description;
+              final parsedQty = double.tryParse(item['qty']?.toString() ?? '');
+              row.qtyController.text = (parsedQty ?? 1).toString();
+              final parsedRate =
+                  double.tryParse(item['rate']?.toString() ?? '');
+              final rateValue = parsedRate ?? match.purchasePrice;
+              row.rateController.text = rateValue.toStringAsFixed(2);
+            }
+            rows.add(row);
+          }
+        }
+
+        if (rows.isEmpty) {
+          rows.add(_ItemRow());
         }
 
         _isLoading = false;
@@ -250,6 +301,33 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
         _errorText = 'Unable to load purchase order data: $error';
       });
     }
+  }
+
+  _CatalogOption? _matchCatalogOption({
+    required String itemName,
+    String? sourceType,
+    int? itemId,
+    int? partId,
+  }) {
+    for (final option in _catalog) {
+      if (sourceType != null && option.sourceType != sourceType) {
+        continue;
+      }
+      if (itemId != null &&
+          option.id == itemId &&
+          option.sourceType == 'Item') {
+        return option;
+      }
+      if (partId != null &&
+          option.id == partId &&
+          option.sourceType == 'Part') {
+        return option;
+      }
+      if (option.name.trim().toLowerCase() == itemName.trim().toLowerCase()) {
+        return option;
+      }
+    }
+    return null;
   }
 
   _CatalogOption? _findCatalogOption(String name, double rate) {
@@ -593,6 +671,8 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
     final PurchaseOrderModel order = PurchaseOrderModel(
       id: widget.isDuplicate ? null : widget.initialOrder?.id,
       poNumber: poNumberController.text.trim(),
+      salesOrderId: widget.initialSalesOrderId?.toString(),
+      salesOrderNumber: widget.initialSalesOrderNumber,
       vendorId: selectedVendor!.id!,
       vendorName: selectedVendor!.vendorName,
       date: date,
@@ -1143,7 +1223,7 @@ class _AddPurchaseOrderDialogState extends State<AddPurchaseOrderDialog> {
                                 );
                               });
                             },
-                            popupProps: const PopupProps.menu(
+                            popupProps: PopupProps.menu(
                               showSearchBox: true,
                               menuProps: MenuProps(
                                 align: MenuAlign.bottomStart,

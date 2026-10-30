@@ -26,6 +26,18 @@ Leave the watch command running. New or saved `.sql` files are executed against 
 
 This project is a starting point for a Flutter application.
 
+The login screen and dashboard payment and bill APIs use
+`http://localhost:3000/api` by default for local development. The Node.js
+backend must be running on port 3000 when using that default.
+For a deployed Flutter build, set `API_BASE_URL` to the production API base
+URL, including `/api` (for example,
+`flutter build web --dart-define=API_BASE_URL=https://api.example.com/api`).
+
+In development, the backend allows browser requests from `localhost`,
+`127.0.0.1`, and `[::1]` origins. In production, set `CORS_ORIGINS` in the
+backend environment to a comma-separated list of exact frontend origins, for
+example `https://app.example.com`. Do not include API paths in these origins.
+
 A few resources to get you started if this is your first Flutter project:
 
 - [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)

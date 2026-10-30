@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../config/db');
+const { sendEmail } = require('../utils/email');
 
 const router = express.Router();
 
@@ -46,6 +47,165 @@ function mapCustomer(row) {
 
     status: row.status ?? 'Active',
   };
+}
+
+function isValidDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[character]);
+}
+
+async function buildCustomerStatement(customerId, startDate, endDate) {
+  const [customers] = await db.query(
+    `
+    SELECT id, display_name, email, billing_street, billing_city,
+      billing_state, billing_zip, billing_country
+    FROM customers
+    WHERE id = ?
+    LIMIT 1
+    `,
+    [customerId]
+  );
+  if (customers.length === 0) {
+    const error = new Error('Customer not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const [invoices] = await db.query(
+    `
+    SELECT DATE_FORMAT(invoice_date, '%Y-%m-%d') AS date,
+      invoice_number AS documentNumber,
+      total AS charges, 0 AS credits
+    FROM invoices
+    WHERE customer_id = ? AND invoice_date <= ?
+    `,
+    [customerId, endDate]
+  );
+
+  let payments = [];
+  try {
+    [payments] = await db.query(
+      `
+      SELECT DATE_FORMAT(payment.payment_date, '%Y-%m-%d') AS date,
+        invoice.invoice_number AS documentNumber,
+        0 AS charges, payment.amount_received AS credits
+      FROM payment_received AS payment
+      INNER JOIN invoices AS invoice ON invoice.id = payment.invoice_id
+      WHERE payment.customer_id = ? AND payment.payment_date <= ?
+      `,
+      [customerId, endDate]
+    );
+  } catch (error) {
+    if (error.code !== 'ER_NO_SUCH_TABLE') throw error;
+  }
+
+  const transactions = [
+    ...invoices.map((row) => ({
+      ...row,
+      type: 'Invoice',
+      charges: Number(row.charges),
+      credits: 0,
+    })),
+    ...payments.map((row) => ({
+      ...row,
+      type: 'Payment',
+      charges: 0,
+      credits: Number(row.credits),
+    })),
+  ].sort((left, right) =>
+    String(left.date).localeCompare(String(right.date)) ||
+    left.type.localeCompare(right.type) ||
+    String(left.documentNumber).localeCompare(String(right.documentNumber))
+  );
+
+  const openingBalance = transactions
+    .filter((row) => String(row.date).slice(0, 10) < startDate)
+    .reduce((balance, row) => balance + row.charges - row.credits, 0);
+  const periodTransactions = transactions.filter((row) => {
+    const date = String(row.date).slice(0, 10);
+    return date >= startDate && date <= endDate;
+  });
+
+  let balance = openingBalance;
+  let totalCharges = 0;
+  let totalCredits = 0;
+  const rows = periodTransactions.map((row) => {
+    totalCharges += row.charges;
+    totalCredits += row.credits;
+    balance += row.charges - row.credits;
+    return {
+      date: String(row.date).slice(0, 10),
+      type: row.type,
+      documentNumber: row.documentNumber,
+      charges: row.charges,
+      credits: row.credits,
+      balance,
+    };
+  });
+
+  return {
+    customer: {
+      name: customers[0].display_name,
+      email: customers[0].email || '',
+      address: [
+        customers[0].billing_street,
+        [customers[0].billing_city, customers[0].billing_state,
+          customers[0].billing_zip].filter(Boolean).join(', '),
+        customers[0].billing_country,
+      ].filter(Boolean),
+    },
+    startDate,
+    endDate,
+    openingBalance,
+    totalCharges,
+    totalCredits,
+    closingBalance: balance,
+    rows,
+  };
+}
+
+function statementEmailHtml(statement) {
+  const money = (amount) => `INR ${Number(amount).toFixed(2)}`;
+  const rows = statement.rows.map((row) => `
+    <tr>
+      <td>${escapeHtml(row.date)}</td>
+      <td>${escapeHtml(row.type)}</td>
+      <td>${escapeHtml(row.documentNumber)}</td>
+      <td style="text-align:right">${row.charges ? money(row.charges) : '-'}</td>
+      <td style="text-align:right">${row.credits ? money(row.credits) : '-'}</td>
+      <td style="text-align:right">${money(row.balance)}</td>
+    </tr>
+  `).join('');
+  return `
+    <h2>Customer Statement</h2>
+    <p><strong>Statement For:</strong> ${escapeHtml(statement.customer.name)}<br>
+      ${statement.customer.address.map(escapeHtml).join('<br>')}<br>
+      ${escapeHtml(statement.customer.email)}</p>
+    <p><strong>Statement Period:</strong> ${escapeHtml(statement.startDate)} to ${escapeHtml(statement.endDate)}</p>
+    <table style="border-collapse:collapse;width:100%" border="1" cellpadding="8">
+      <thead><tr><th>Date</th><th>Type</th><th>Document #</th><th>Charges (Dr)</th><th>Credits (Cr)</th><th>Balance</th></tr></thead>
+      <tbody>
+        <tr><td colspan="5"><strong>Opening Balance</strong></td><td>${money(statement.openingBalance)}</td></tr>
+        ${rows}
+        <tr><td colspan="3"><strong>Period Totals</strong></td><td>${money(statement.totalCharges)}</td><td>${money(statement.totalCredits)}</td><td></td></tr>
+        <tr><td colspan="5"><strong>Closing Balance</strong></td><td>${money(statement.closingBalance)}</td></tr>
+      </tbody>
+    </table>
+    <p>This is an automatically generated Customer Statement.</p>
+  `;
 }
 
 // ============================================================
@@ -196,6 +356,310 @@ router.get('/:id', async (req, res) => {
       message:
         'Failed to fetch customer',
       error: error.message,
+    });
+  }
+});
+
+// ============================================================
+// CUSTOMER INTERNAL COMMENTS
+// ============================================================
+
+router.get('/:id/comments', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [customerRows] = await db.query(
+      'SELECT id FROM customers WHERE id = ? LIMIT 1',
+      [id]
+    );
+
+    if (customerRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Customer not found',
+      });
+    }
+
+    const [rows] = await db.query(
+      `
+      SELECT id, comment, created_at
+      FROM customer_comments
+      WHERE customer_id = ?
+      ORDER BY created_at DESC, id DESC
+      `,
+      [id]
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: rows.map((row) => ({
+        id: row.id,
+        comment: row.comment,
+        createdAt: row.created_at,
+      })),
+    });
+  } catch (error) {
+    console.error('Get customer comments error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch customer comments',
+      error: error.message,
+    });
+  }
+});
+
+router.post('/:id/comments', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const comment =
+      typeof req.body.comment === 'string' ? req.body.comment.trim() : '';
+
+    if (!comment) {
+      return res.status(400).json({
+        success: false,
+        message: 'Comment cannot be empty',
+      });
+    }
+
+    if (comment.length > 10000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Comment cannot exceed 10000 characters',
+      });
+    }
+
+    const [customerRows] = await db.query(
+      'SELECT id FROM customers WHERE id = ? LIMIT 1',
+      [id]
+    );
+
+    if (customerRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Customer not found',
+      });
+    }
+
+    const [result] = await db.query(
+      `
+      INSERT INTO customer_comments (customer_id, comment)
+      VALUES (?, ?)
+      `,
+      [id, comment]
+    );
+
+    const [rows] = await db.query(
+      `
+      SELECT id, comment, created_at
+      FROM customer_comments
+      WHERE id = ?
+      LIMIT 1
+      `,
+      [result.insertId]
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'Customer comment saved successfully',
+      data: {
+        id: rows[0].id,
+        comment: rows[0].comment,
+        createdAt: rows[0].created_at,
+      },
+    });
+  } catch (error) {
+    console.error('Save customer comment error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to save customer comment',
+      error: error.message,
+    });
+  }
+});
+
+router.get('/:id/transactions', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [customerRows] = await db.query(
+      'SELECT id FROM customers WHERE id = ? LIMIT 1',
+      [id]
+    );
+
+    if (customerRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Customer not found',
+      });
+    }
+
+    const [estimates] = await db.query(
+      `
+      SELECT
+        DATE_FORMAT(estimate_date, '%Y-%m-%d') AS date,
+        estimate_number AS number,
+        total AS amount,
+        status
+      FROM estimates
+      WHERE customer_id = ?
+      ORDER BY estimate_date DESC, id DESC
+      `,
+      [id]
+    );
+
+    const [salesOrders] = await db.query(
+      `
+      SELECT
+        DATE_FORMAT(so.order_date, '%Y-%m-%d') AS date,
+        so.so_number AS number,
+        so.total AS amount,
+        CASE WHEN invoice.id IS NOT NULL THEN 'Invoiced' ELSE so.status END AS status
+      FROM sales_orders AS so
+      LEFT JOIN invoices AS invoice ON invoice.sales_order_id = so.id
+      WHERE so.customer_id = ?
+      ORDER BY so.order_date DESC, so.id DESC
+      `,
+      [id]
+    );
+
+    const [invoices] = await db.query(
+      `
+      SELECT
+        DATE_FORMAT(invoice_date, '%Y-%m-%d') AS date,
+        invoice_number AS number,
+        total AS amount,
+        CASE
+          WHEN amount_paid <= 0 THEN 'Unpaid'
+          WHEN amount_paid >= total THEN 'Paid'
+          ELSE 'Partially Paid'
+        END AS status
+      FROM invoices
+      WHERE customer_id = ?
+      ORDER BY invoice_date DESC, id DESC
+      `,
+      [id]
+    );
+
+    let payments = [];
+    let paymentsAvailable = true;
+    try {
+      [payments] = await db.query(
+        `
+        SELECT
+          DATE_FORMAT(payment.payment_date, '%Y-%m-%d') AS date,
+          invoice.invoice_number AS invoiceNumber,
+          payment.utr_reference AS utrReference,
+          payment.amount_received AS amount
+        FROM payment_received AS payment
+        INNER JOIN invoices AS invoice ON invoice.id = payment.invoice_id
+        WHERE payment.customer_id = ?
+        ORDER BY payment.payment_date DESC, payment.id DESC
+        `,
+        [id]
+      );
+    } catch (error) {
+      if (error.code !== 'ER_NO_SUCH_TABLE') {
+        throw error;
+      }
+      paymentsAvailable = false;
+      console.warn(
+        'Customer payment transactions are unavailable: payment_received table is missing.'
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: { estimates, salesOrders, invoices, payments, paymentsAvailable },
+    });
+  } catch (error) {
+    console.error('Get customer transactions error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch customer transactions',
+      error: error.message,
+    });
+  }
+});
+
+router.get('/:id/statement', async (req, res) => {
+  const { startDate, endDate } = req.query;
+  if (
+    !isValidDate(startDate) ||
+    !isValidDate(endDate) ||
+    startDate > endDate
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: 'A valid start date and end date are required.',
+    });
+  }
+
+  try {
+    const statement = await buildCustomerStatement(
+      req.params.id,
+      startDate,
+      endDate
+    );
+    return res.status(200).json({ success: true, data: statement });
+  } catch (error) {
+    console.error('Get customer statement error:', error);
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Failed to generate customer statement.',
+    });
+  }
+});
+
+router.post('/:id/statement/email', async (req, res) => {
+  const { startDate, endDate, recipientEmail, subject } = req.body;
+  if (
+    !isValidDate(startDate) ||
+    !isValidDate(endDate) ||
+    startDate > endDate
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: 'A valid start date and end date are required.',
+    });
+  }
+  if (
+    typeof recipientEmail !== 'string' ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail.trim())
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: 'A valid recipient email is required.',
+    });
+  }
+  if (typeof subject !== 'string' || !subject.trim() || subject.length > 200) {
+    return res.status(400).json({
+      success: false,
+      message: 'A subject between 1 and 200 characters is required.',
+    });
+  }
+
+  try {
+    const statement = await buildCustomerStatement(
+      req.params.id,
+      startDate,
+      endDate
+    );
+    await sendEmail(
+      recipientEmail.trim(),
+      subject.trim(),
+      statementEmailHtml(statement)
+    );
+    return res.status(200).json({
+      success: true,
+      message: 'Customer statement email sent successfully.',
+    });
+  } catch (error) {
+    console.error('Send customer statement email error:', error);
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Failed to send customer statement email.',
     });
   }
 });

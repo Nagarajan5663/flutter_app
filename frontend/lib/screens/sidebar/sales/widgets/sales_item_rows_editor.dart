@@ -8,12 +8,18 @@ class SalesItemRowControllers {
   final descriptionController = TextEditingController();
   final quantityController = TextEditingController(text: '1');
   final rateController = TextEditingController(text: '0');
+  String sourceType = 'Item';
+  String? itemId;
+  String? partId;
 
   double get quantity => double.tryParse(quantityController.text) ?? 0;
   double get rate => double.tryParse(rateController.text) ?? 0;
   double get amount => quantity * rate;
 
   void fillFrom(SalesLineItemModel item) {
+    sourceType = item.sourceType;
+    itemId = item.itemId;
+    partId = item.partId;
     itemNameController.text = item.itemName;
     descriptionController.text = item.description;
     quantityController.text = item.quantity.toString();
@@ -21,8 +27,12 @@ class SalesItemRowControllers {
   }
 
   SalesLineItemModel? toModelOrNull() {
-    if (itemNameController.text.trim().isEmpty || quantity <= 0 || rate < 0) return null;
+    if (itemNameController.text.trim().isEmpty || quantity <= 0 || rate < 0)
+      return null;
     return SalesLineItemModel(
+      itemId: itemId,
+      partId: partId,
+      sourceType: sourceType,
       itemName: itemNameController.text.trim(),
       description: descriptionController.text.trim(),
       quantity: quantity,
@@ -58,7 +68,8 @@ class SalesItemRowsEditor extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Items', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const Text('Items',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         ...rows.asMap().entries.map((entry) {
           final index = entry.key;
@@ -83,7 +94,8 @@ class SalesItemRowsEditor extends StatelessWidget {
                   child: TextField(
                     controller: row.quantityController,
                     style: const TextStyle(color: Colors.black),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     onChanged: (_) => onRowChanged(),
                     decoration: salesFieldDecoration(hint: 'Qty'),
                   ),
@@ -94,7 +106,8 @@ class SalesItemRowsEditor extends StatelessWidget {
                   child: TextField(
                     controller: row.rateController,
                     style: const TextStyle(color: Colors.black),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     onChanged: (_) => onRowChanged(),
                     decoration: salesFieldDecoration(hint: 'Rate'),
                   ),

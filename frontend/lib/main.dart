@@ -17,6 +17,7 @@ class CodexiaApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'Arial',
+        fontFamilyFallback: const ['NotoSans'],
         scaffoldBackgroundColor: CodexiaColors.navy,
         colorScheme: ColorScheme.fromSeed(
           seedColor: CodexiaColors.gold,

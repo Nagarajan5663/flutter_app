@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 import 'customer_filter.dart';
 import 'customer_model.dart';
@@ -18,6 +19,33 @@ abstract class CustomerRepository {
     CustomerModel customer,
   );
 
+  Future<CustomerModel> updateCustomer(
+    CustomerModel customer,
+  );
+
+  Future<List<CustomerComment>> getCustomerComments(String customerId);
+
+  Future<CustomerComment> addCustomerComment(
+    String customerId,
+    String comment,
+  );
+
+  Future<CustomerTransactions> getCustomerTransactions(String customerId);
+
+  Future<CustomerStatement> getCustomerStatement(
+    String customerId,
+    DateTime startDate,
+    DateTime endDate,
+  );
+
+  Future<void> sendCustomerStatementEmail({
+    required String customerId,
+    required DateTime startDate,
+    required DateTime endDate,
+    required String recipientEmail,
+    required String subject,
+  });
+
   Future<void> deleteCustomer(
     String id,
   );
@@ -27,10 +55,177 @@ abstract class CustomerRepository {
 // REAL API CUSTOMER REPOSITORY
 // ============================================================
 
-class ApiCustomerRepository
-    implements CustomerRepository {
-  static const String baseUrl =
-      'http://localhost:3000/api';
+class ApiCustomerRepository implements CustomerRepository {
+  static const String baseUrl = 'http://localhost:3000/api';
+
+  @override
+  Future<List<CustomerComment>> getCustomerComments(String customerId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/customers/$customerId/comments'),
+        headers: const {'Accept': 'application/json'},
+      );
+      final dynamic body = jsonDecode(response.body);
+
+      if (body is! Map<String, dynamic> ||
+          response.statusCode != 200 ||
+          body['success'] != true ||
+          body['data'] is! List) {
+        throw Exception(
+          body is Map
+              ? body['message'] ?? 'Failed to fetch customer comments'
+              : 'Invalid response from server',
+        );
+      }
+
+      return (body['data'] as List)
+          .map(
+            (item) => CustomerComment.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .toList();
+    } catch (error) {
+      throw Exception('Unable to load customer comments: $error');
+    }
+  }
+
+  @override
+  Future<CustomerComment> addCustomerComment(
+    String customerId,
+    String comment,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/customers/$customerId/comments'),
+        headers: const {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({'comment': comment}),
+      );
+      final dynamic body = jsonDecode(response.body);
+
+      if (body is! Map<String, dynamic> ||
+          response.statusCode != 201 ||
+          body['success'] != true ||
+          body['data'] is! Map) {
+        throw Exception(
+          body is Map
+              ? body['message'] ?? 'Failed to save customer comment'
+              : 'Invalid response from server',
+        );
+      }
+
+      return CustomerComment.fromJson(
+        Map<String, dynamic>.from(body['data'] as Map),
+      );
+    } catch (error) {
+      throw Exception('Unable to save customer comment: $error');
+    }
+  }
+
+  @override
+  Future<CustomerTransactions> getCustomerTransactions(
+    String customerId,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/customers/$customerId/transactions'),
+        headers: const {'Accept': 'application/json'},
+      );
+      final dynamic body = jsonDecode(response.body);
+
+      if (body is! Map<String, dynamic> ||
+          response.statusCode != 200 ||
+          body['success'] != true ||
+          body['data'] is! Map) {
+        throw Exception(
+          body is Map
+              ? body['message'] ?? 'Failed to fetch customer transactions'
+              : 'Invalid response from server',
+        );
+      }
+
+      return CustomerTransactions.fromJson(
+        Map<String, dynamic>.from(body['data'] as Map),
+      );
+    } catch (error) {
+      throw Exception('Unable to load customer transactions: $error');
+    }
+  }
+
+  @override
+  Future<CustomerStatement> getCustomerStatement(
+    String customerId,
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    final query = {
+      'startDate': DateFormat('yyyy-MM-dd').format(startDate),
+      'endDate': DateFormat('yyyy-MM-dd').format(endDate),
+    };
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/customers/$customerId/statement')
+            .replace(queryParameters: query),
+        headers: const {'Accept': 'application/json'},
+      );
+      final dynamic body = jsonDecode(response.body);
+      if (body is! Map<String, dynamic> ||
+          response.statusCode != 200 ||
+          body['success'] != true ||
+          body['data'] is! Map) {
+        throw Exception(
+          body is Map
+              ? body['message'] ?? 'Failed to generate customer statement'
+              : 'Invalid response from server',
+        );
+      }
+      return CustomerStatement.fromJson(
+        Map<String, dynamic>.from(body['data'] as Map),
+      );
+    } catch (error) {
+      throw Exception('Unable to generate customer statement: $error');
+    }
+  }
+
+  @override
+  Future<void> sendCustomerStatementEmail({
+    required String customerId,
+    required DateTime startDate,
+    required DateTime endDate,
+    required String recipientEmail,
+    required String subject,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/customers/$customerId/statement/email'),
+        headers: const {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'startDate': DateFormat('yyyy-MM-dd').format(startDate),
+          'endDate': DateFormat('yyyy-MM-dd').format(endDate),
+          'recipientEmail': recipientEmail,
+          'subject': subject,
+        }),
+      );
+      final dynamic body = jsonDecode(response.body);
+      if (body is! Map<String, dynamic> ||
+          response.statusCode != 200 ||
+          body['success'] != true) {
+        throw Exception(
+          body is Map
+              ? body['message'] ?? 'Failed to send customer statement email'
+              : 'Invalid response from server',
+        );
+      }
+    } catch (error) {
+      throw Exception('Unable to send customer statement email: $error');
+    }
+  }
 
   // ==========================================================
   // GET CUSTOMERS
@@ -43,28 +238,22 @@ class ApiCustomerRepository
   }) async {
     try {
       final Map<String, String> queryParams =
-          filter?.toQueryParams() ??
-              <String, String>{};
+          filter?.toQueryParams() ?? <String, String>{};
 
       final Uri uri = Uri.parse(
         '$baseUrl/customers',
       ).replace(
-        queryParameters:
-            queryParams.isEmpty
-                ? null
-                : queryParams,
+        queryParameters: queryParams.isEmpty ? null : queryParams,
       );
 
-      final http.Response response =
-          await http.get(
+      final http.Response response = await http.get(
         uri,
         headers: {
           'Accept': 'application/json',
         },
       );
 
-      final dynamic body =
-          jsonDecode(response.body);
+      final dynamic body = jsonDecode(response.body);
 
       if (body is! Map<String, dynamic>) {
         throw Exception(
@@ -72,18 +261,14 @@ class ApiCustomerRepository
         );
       }
 
-      if (response.statusCode != 200 ||
-          body['success'] != true) {
+      if (response.statusCode != 200 || body['success'] != true) {
         throw Exception(
-          body['message'] ??
-              'Failed to fetch customers',
+          body['message'] ?? 'Failed to fetch customers',
         );
       }
 
       final List<dynamic> data =
-          body['data'] is List
-              ? body['data']
-              : <dynamic>[];
+          body['data'] is List ? body['data'] : <dynamic>[];
 
       return data.map((dynamic item) {
         return CustomerModel.fromJson(
@@ -113,22 +298,18 @@ class ApiCustomerRepository
         '$baseUrl/customers',
       );
 
-      final http.Response response =
-          await http.post(
+      final http.Response response = await http.post(
         uri,
         headers: {
-          'Content-Type':
-              'application/json',
-          'Accept':
-              'application/json',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: jsonEncode(
           customer.toJson(),
         ),
       );
 
-      final dynamic body =
-          jsonDecode(response.body);
+      final dynamic body = jsonDecode(response.body);
 
       if (body is! Map<String, dynamic>) {
         throw Exception(
@@ -136,11 +317,9 @@ class ApiCustomerRepository
         );
       }
 
-      if (response.statusCode != 201 ||
-          body['success'] != true) {
+      if (response.statusCode != 201 || body['success'] != true) {
         throw Exception(
-          body['message'] ??
-              'Failed to create customer',
+          body['message'] ?? 'Failed to create customer',
         );
       }
 
@@ -176,16 +355,14 @@ class ApiCustomerRepository
         '$baseUrl/customers/$id',
       );
 
-      final http.Response response =
-          await http.delete(
+      final http.Response response = await http.delete(
         uri,
         headers: {
           'Accept': 'application/json',
         },
       );
 
-      final dynamic body =
-          jsonDecode(response.body);
+      final dynamic body = jsonDecode(response.body);
 
       if (body is! Map<String, dynamic>) {
         throw Exception(
@@ -193,11 +370,9 @@ class ApiCustomerRepository
         );
       }
 
-      if (response.statusCode != 200 ||
-          body['success'] != true) {
+      if (response.statusCode != 200 || body['success'] != true) {
         throw Exception(
-          body['message'] ??
-              'Failed to delete customer',
+          body['message'] ?? 'Failed to delete customer',
         );
       }
     } catch (error) {
@@ -210,17 +385,14 @@ class ApiCustomerRepository
   // ==========================================================
   // UPDATE CUSTOMER
   // PUT /api/customers/:id
-  //
-  // Not part of the current interface yet.
-  // Kept here because backend already supports update.
   // ==========================================================
 
+  @override
   Future<CustomerModel> updateCustomer(
     CustomerModel customer,
   ) async {
     try {
-      if (customer.id == null ||
-          customer.id!.trim().isEmpty) {
+      if (customer.id == null || customer.id!.trim().isEmpty) {
         throw Exception(
           'Customer ID is missing',
         );
@@ -230,22 +402,18 @@ class ApiCustomerRepository
         '$baseUrl/customers/${customer.id}',
       );
 
-      final http.Response response =
-          await http.put(
+      final http.Response response = await http.put(
         uri,
         headers: {
-          'Content-Type':
-              'application/json',
-          'Accept':
-              'application/json',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: jsonEncode(
           customer.toJson(),
         ),
       );
 
-      final dynamic body =
-          jsonDecode(response.body);
+      final dynamic body = jsonDecode(response.body);
 
       if (body is! Map<String, dynamic>) {
         throw Exception(
@@ -253,11 +421,9 @@ class ApiCustomerRepository
         );
       }
 
-      if (response.statusCode != 200 ||
-          body['success'] != true) {
+      if (response.statusCode != 200 || body['success'] != true) {
         throw Exception(
-          body['message'] ??
-              'Failed to update customer',
+          body['message'] ?? 'Failed to update customer',
         );
       }
 
@@ -304,6 +470,6 @@ class ApiCustomerRepository
 // ============================================================
 
 class InMemoryCustomerRepository
-    extends ApiCustomerRepository {
+ extends ApiCustomerRepository {
   InMemoryCustomerRepository();
 }

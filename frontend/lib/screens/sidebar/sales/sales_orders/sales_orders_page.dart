@@ -365,12 +365,14 @@ class CustomerOption {
   final String name;
   final String companyName;
   final String email;
+  final String phone;
 
   const CustomerOption({
     required this.id,
     required this.name,
     required this.companyName,
     required this.email,
+    this.phone = '',
   });
 }
 
@@ -398,6 +400,251 @@ class CatalogOption {
     required this.description,
     required this.rate,
   });
+}
+
+List<CustomerOption> searchSalesOrderCustomers(
+  Iterable<CustomerOption> customers,
+  String query,
+) {
+  final normalizedQuery = query.trim().toLowerCase();
+  if (normalizedQuery.isEmpty) return customers.toList();
+
+  return customers
+      .where(
+        (customer) =>
+            customer.name.toLowerCase().contains(normalizedQuery) ||
+            customer.companyName.toLowerCase().contains(normalizedQuery) ||
+            customer.email.toLowerCase().contains(normalizedQuery),
+      )
+      .toList();
+}
+
+List<CatalogOption> searchSalesOrderCatalog(
+  Iterable<CatalogOption> catalog,
+  String query,
+) {
+  final normalizedQuery = query.trim().toLowerCase();
+  if (normalizedQuery.isEmpty) return catalog.toList();
+
+  return catalog
+      .where(
+        (product) =>
+            product.name.toLowerCase().contains(normalizedQuery) ||
+            product.sku.toLowerCase().contains(normalizedQuery),
+      )
+      .toList();
+}
+
+class SalesOrderCustomerOptionsView extends StatelessWidget {
+  const SalesOrderCustomerOptionsView({
+    super.key,
+    required this.customers,
+    required this.onSelected,
+    this.showNoResults = false,
+  });
+
+  final List<CustomerOption> customers;
+  final ValueChanged<CustomerOption> onSelected;
+  final bool showNoResults;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final background = isDark ? const Color(0xFF263746) : Colors.white;
+    final primaryText = isDark ? Colors.white : const Color(0xFF1F2937);
+    final secondaryText =
+        isDark ? const Color(0xFFD1D5DB) : const Color(0xFF64748B);
+
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Material(
+        color: background,
+        surfaceTintColor: Colors.transparent,
+        elevation: 10,
+        borderRadius: BorderRadius.circular(9),
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 340, maxHeight: 260),
+          child: showNoResults
+              ? _salesOrderNoResults(secondaryText)
+              : ListView.builder(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: customers.length,
+                  itemBuilder: (_, index) {
+                    final customer = customers[index];
+                    return ListTile(
+                      tileColor: background,
+                      hoverColor: isDark
+                          ? const Color(0xFF34495E)
+                          : const Color(0xFFEAF4FC),
+                      title: Text(
+                        customer.name,
+                        style: TextStyle(color: primaryText),
+                      ),
+                      subtitle: customer.companyName.isEmpty
+                          ? null
+                          : Text(
+                              customer.companyName,
+                              style: TextStyle(color: secondaryText),
+                            ),
+                      onTap: () => onSelected(customer),
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class SalesOrderCatalogOptionsView extends StatelessWidget {
+  const SalesOrderCatalogOptionsView({
+    super.key,
+    required this.products,
+    required this.onSelected,
+    this.showNoResults = false,
+  });
+
+  final List<CatalogOption> products;
+  final ValueChanged<CatalogOption> onSelected;
+  final bool showNoResults;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final background = isDark ? const Color(0xFF263746) : Colors.white;
+    final primaryText = isDark ? Colors.white : const Color(0xFF1F2937);
+    final secondaryText =
+        isDark ? const Color(0xFFD1D5DB) : const Color(0xFF64748B);
+
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Material(
+        color: background,
+        surfaceTintColor: Colors.transparent,
+        elevation: 10,
+        borderRadius: BorderRadius.circular(9),
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460, maxHeight: 280),
+          child: showNoResults
+              ? _salesOrderNoResults(secondaryText)
+              : ListView.separated(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: products.length,
+                  separatorBuilder: (_, __) => Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF475569)
+                        : const Color(0xFFE2E8F0),
+                  ),
+                  itemBuilder: (_, index) {
+                    final product = products[index];
+                    final isItem = product.sourceType == 'Item';
+                    final details = [
+                      if (product.sku.isNotEmpty) product.sku,
+                      product.description,
+                      'INR ${product.rate.toStringAsFixed(2)}',
+                    ].join(' • ');
+
+                    return ListTile(
+                      tileColor: background,
+                      hoverColor: isDark
+                          ? const Color(0xFF34495E)
+                          : const Color(0xFFF1F5F9),
+                      leading: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isItem
+                              ? const Color(0xFFE3F2FD)
+                              : const Color(0xFFFFF3E0),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          product.sourceType,
+                          style: TextStyle(
+                            color: isItem
+                                ? const Color(0xFF1565C0)
+                                : const Color(0xFF7A4B00),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        product.name,
+                        style: TextStyle(color: primaryText),
+                      ),
+                      subtitle: Text(
+                        details,
+                        style: TextStyle(color: secondaryText),
+                      ),
+                      onTap: () => onSelected(product),
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+Widget _salesOrderNoResults(Color textColor) {
+  return SizedBox(
+    height: 56,
+    child: Center(
+      child: Text(
+        'No results found',
+        style: TextStyle(color: textColor),
+      ),
+    ),
+  );
+}
+
+class SalesOrderFormTheme extends StatelessWidget {
+  const SalesOrderFormTheme({
+    super.key,
+    required this.child,
+  });
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final inheritedTheme = Theme.of(context);
+    return Theme(
+      data: inheritedTheme.copyWith(
+        brightness: Brightness.light,
+        colorScheme: inheritedTheme.colorScheme.copyWith(
+          brightness: Brightness.light,
+          primary: const Color(0xFF1E78B7),
+          onPrimary: Colors.white,
+          surface: Colors.white,
+          onSurface: const Color(0xFF1F2937),
+        ),
+        textTheme: inheritedTheme.textTheme.apply(
+          bodyColor: const Color(0xFF1F2937),
+          displayColor: const Color(0xFF1F2937),
+        ),
+        inputDecorationTheme: inheritedTheme.inputDecorationTheme.copyWith(
+          hintStyle: const TextStyle(color: Color(0xFF64748B)),
+          labelStyle: const TextStyle(color: Color(0xFF1F2937)),
+          floatingLabelStyle: const TextStyle(color: Color(0xFF1F2937)),
+        ),
+        textSelectionTheme: const TextSelectionThemeData(
+          cursorColor: Color(0xFF1E78B7),
+          selectionColor: Color(0x553B82F6),
+          selectionHandleColor: Color(0xFF1E78B7),
+        ),
+      ),
+      child: child,
+    );
+  }
 }
 
 // ============================================================
@@ -709,9 +956,282 @@ class SalesOrderData {
 // SALES ORDERS PAGE
 // ============================================================
 
+class SalesOrderDatePickerField extends StatefulWidget {
+  const SalesOrderDatePickerField({
+    super.key,
+    required this.value,
+    required this.firstDate,
+    required this.lastDate,
+    required this.decoration,
+    required this.onChanged,
+    this.canClear = true,
+    this.calendarKey = const ValueKey('sales-order-filter-calendar'),
+    this.emptyTextStyle,
+    this.useFormActionStyles = false,
+  });
+
+  final DateTime? value;
+  final DateTime firstDate;
+  final DateTime lastDate;
+  final InputDecoration decoration;
+  final ValueChanged<DateTime?> onChanged;
+  final bool canClear;
+  final Key calendarKey;
+  final TextStyle? emptyTextStyle;
+  final bool useFormActionStyles;
+
+  @override
+  State<SalesOrderDatePickerField> createState() =>
+      _SalesOrderDatePickerFieldState();
+}
+
+class _SalesOrderDatePickerFieldState extends State<SalesOrderDatePickerField> {
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _calendarOverlay;
+  DateTime _displayedMonth = DateUtils.dateOnly(DateTime.now());
+
+  @override
+  void didUpdateWidget(covariant SalesOrderDatePickerField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != oldWidget.value && widget.value != null) {
+      _displayedMonth = DateUtils.dateOnly(widget.value!);
+    }
+  }
+
+  @override
+  void dispose() {
+    _removeCalendarOverlay();
+    super.dispose();
+  }
+
+  void _toggleCalendar() {
+    if (_calendarOverlay != null) {
+      _removeCalendarOverlay();
+      return;
+    }
+
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final targetBox = context.findRenderObject()! as RenderBox;
+    final targetLeft = targetBox.localToGlobal(Offset.zero).dx;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final availableWidth = (screenWidth - targetLeft - 8).clamp(0.0, 340.0);
+    _calendarOverlay = OverlayEntry(
+      builder: (_) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _removeCalendarOverlay,
+            ),
+          ),
+          CompositedTransformFollower(
+            link: _layerLink,
+            showWhenUnlinked: false,
+            targetAnchor: Alignment.bottomLeft,
+            followerAnchor: Alignment.topLeft,
+            offset: const Offset(0, 6),
+            child: Material(
+              key: widget.calendarKey,
+              color: Colors.white,
+              surfaceTintColor: Colors.transparent,
+              elevation: 10,
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                width: availableWidth,
+                child: _buildCalendar(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    overlay.insert(_calendarOverlay!);
+  }
+
+  Widget _buildCalendar() {
+    final firstOfMonth =
+        DateTime(_displayedMonth.year, _displayedMonth.month, 1);
+    final daysInMonth =
+        DateTime(_displayedMonth.year, _displayedMonth.month + 1, 0).day;
+    final leadingDays = firstOfMonth.weekday - DateTime.monday;
+    final today = DateUtils.dateOnly(DateTime.now());
+
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                tooltip: 'Previous month',
+                onPressed: () => setState(() {
+                  _displayedMonth =
+                      DateTime(_displayedMonth.year, _displayedMonth.month - 1);
+                  _calendarOverlay?.markNeedsBuild();
+                }),
+                icon: const Icon(Icons.chevron_left),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    DateFormat('MMMM yyyy').format(_displayedMonth),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Next month',
+                onPressed: () => setState(() {
+                  _displayedMonth =
+                      DateTime(_displayedMonth.year, _displayedMonth.month + 1);
+                  _calendarOverlay?.markNeedsBuild();
+                }),
+                icon: const Icon(Icons.chevron_right),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              for (final day in const ['M', 'T', 'W', 'T', 'F', 'S', 'S'])
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      day,
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          for (var week = 0; week < 6; week++)
+            Row(
+              children: [
+                for (var weekday = 0; weekday < 7; weekday++)
+                  Expanded(
+                    child: _buildDayButton(
+                      week * 7 + weekday - leadingDays + 1,
+                      daysInMonth,
+                    ),
+                  ),
+              ],
+            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                onPressed: widget.canClear
+                    ? () {
+                        widget.onChanged(null);
+                        _removeCalendarOverlay();
+                      }
+                    : null,
+                child: const Text('Clear'),
+              ),
+              TextButton(
+                onPressed: _isDateAllowed(today)
+                    ? () {
+                        widget.onChanged(today);
+                        _removeCalendarOverlay();
+                      }
+                    : null,
+                child: const Text('Today'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDayButton(int day, int daysInMonth) {
+    if (day < 1 || day > daysInMonth) {
+      return const SizedBox(height: 40);
+    }
+    final date = DateTime(_displayedMonth.year, _displayedMonth.month, day);
+    final selected =
+        widget.value != null && DateUtils.isSameDay(widget.value, date);
+    return SizedBox(
+      height: 40,
+      child: TextButton(
+        key: ValueKey(
+          'sales-order-calendar-day-${DateFormat('yyyy-MM-dd').format(date)}',
+        ),
+        onPressed: _isDateAllowed(date)
+            ? () {
+                widget.onChanged(date);
+                _removeCalendarOverlay();
+              }
+            : null,
+        style: TextButton.styleFrom(
+          backgroundColor: selected ? const Color(0xFF1E78B7) : null,
+          foregroundColor: selected ? Colors.white : const Color(0xFF1F2937),
+          padding: EdgeInsets.zero,
+        ),
+        child: Text('$day'),
+      ),
+    );
+  }
+
+  bool _isDateAllowed(DateTime date) {
+    final day = DateUtils.dateOnly(date);
+    return !day.isBefore(DateUtils.dateOnly(widget.firstDate)) &&
+        !day.isAfter(DateUtils.dateOnly(widget.lastDate));
+  }
+
+  void _removeCalendarOverlay() {
+    _calendarOverlay?.remove();
+    _calendarOverlay = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final valueText = widget.value == null
+        ? 'dd-mm-yyyy'
+        : DateFormat('dd-MM-yyyy').format(widget.value!);
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: InkWell(
+        onTap: _toggleCalendar,
+        child: InputDecorator(
+          decoration: widget.decoration,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  valueText,
+                  style: widget.value == null
+                      ? widget.emptyTextStyle ??
+                          const TextStyle(color: Color(0xFF64748B))
+                      : const TextStyle(color: Color(0xFF1F2937)),
+                ),
+              ),
+              Icon(
+                Icons.calendar_today_outlined,
+                color: const Color(0xFF1F2937),
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class SalesOrderPage extends StatefulWidget {
+  final VoidCallback? onOpenInvoices;
+  final VoidCallback? onOpenPurchaseOrders;
+
   const SalesOrderPage({
     super.key,
+    this.onOpenInvoices,
+    this.onOpenPurchaseOrders,
   });
 
   @override
@@ -1731,10 +2251,14 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
 
 class NewSalesOrderDialog extends StatefulWidget {
   final String nextNumber;
+  final int? initialCustomerId;
+  final String? initialCustomerName;
 
   const NewSalesOrderDialog({
     super.key,
     required this.nextNumber,
+    this.initialCustomerId,
+    this.initialCustomerName,
   });
 
   @override
@@ -1833,6 +2357,24 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
         _customers = customers;
 
         _catalog = catalog;
+
+        final initialCustomerId = widget.initialCustomerId;
+        if (initialCustomerId != null) {
+          for (final customer in customers) {
+            if (customer.id == initialCustomerId) {
+              _selectedCustomer = customer;
+              break;
+            }
+          }
+          _selectedCustomer ??= CustomerOption(
+            id: initialCustomerId,
+            name: widget.initialCustomerName ?? '',
+            companyName: '',
+            email: '',
+          );
+        }
+        customerController.text =
+            _selectedCustomer?.name ?? widget.initialCustomerName ?? '';
 
         _isLoadingData = false;
       });

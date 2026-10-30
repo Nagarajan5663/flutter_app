@@ -156,7 +156,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
   Widget _buildHomeButton() {
     return Transform.translate(
-      offset: const Offset(14, -8),
+      offset: const Offset(18, -8),
       child: Tooltip(
         message: 'Go to Home',
         child: Material(
@@ -165,8 +165,8 @@ class _SignUpPageState extends State<SignUpPage> {
             onTap: _goHome,
             borderRadius: BorderRadius.circular(18),
             child: Container(
-              width: 56,
-              height: 56,
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
@@ -177,7 +177,7 @@ class _SignUpPageState extends State<SignUpPage> {
               child: const Icon(
                 Icons.home_rounded,
                 color: Colors.white,
-                size: 22,
+                size: 19,
               ),
             ),
           ),
@@ -235,9 +235,23 @@ class _SignUpPageState extends State<SignUpPage> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Align(
-          alignment: Alignment.topRight,
-          child: _buildHomeButton(),
+        SizedBox(
+          height: 56,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Image.asset(
+                'lib/widgets/Codexia.png',
+                width: 150,
+                height: 56,
+                fit: BoxFit.contain,
+              ),
+              Align(
+                alignment: Alignment.topRight,
+                child: _buildHomeButton(),
+              ),
+            ],
+          ),
         ),
         const SizedBox(
           height: 16,
