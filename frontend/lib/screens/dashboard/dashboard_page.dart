@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../home/home_page.dart';
+import '../../utils/organization_logo_storage.dart';
 
 // ================================================================
 // DASHBOARD WIDGETS
@@ -84,11 +87,13 @@ import '../sidebar/accountant/investment/investment_page.dart';
 class DashboardPage extends StatefulWidget {
   final String? userEmail;
   final List<String> permissions;
+  final OrganizationLogoData? initialOrganizationLogo;
 
   const DashboardPage({
     super.key,
     this.userEmail,
     this.permissions = const [],
+    this.initialOrganizationLogo,
   });
 
   @override
@@ -142,6 +147,8 @@ class _DashboardPageState extends State<DashboardPage> {
   // ================================================================
 
   bool _isSidebarCollapsed = false;
+  Uint8List? _organizationLogoBytes;
+  String? _organizationLogoName;
 
   // ================================================================
   // CURRENT SELECTED MENU
@@ -152,6 +159,13 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
+    final initialLogo = widget.initialOrganizationLogo;
+    if (initialLogo == null) {
+      _loadOrganizationLogo();
+    } else {
+      _organizationLogoBytes = initialLogo.bytes;
+      _organizationLogoName = initialLogo.name;
+    }
 
     if (!_canAccessMenu(selectedMenu)) {
       selectedMenu = _menuPermissions.keys.firstWhere(
@@ -159,6 +173,37 @@ class _DashboardPageState extends State<DashboardPage> {
         orElse: () => 'help',
       );
     }
+  }
+
+  Future<void> _loadOrganizationLogo() async {
+    try {
+      final logo = await OrganizationLogoStorage.load();
+      if (logo == null) return;
+      if (!mounted || _organizationLogoBytes != null) return;
+      setState(() {
+        _organizationLogoBytes = logo.bytes;
+        _organizationLogoName = logo.name;
+      });
+    } catch (error, stackTrace) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'organization logo storage',
+          context:
+              ErrorDescription('while loading the saved organization logo'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _saveOrganizationLogo(Uint8List bytes, String name) async {
+    await OrganizationLogoStorage.save(bytes, name);
+    if (!mounted) return;
+    setState(() {
+      _organizationLogoBytes = bytes;
+      _organizationLogoName = name;
+    });
   }
 
   String get _welcomeName {
@@ -215,7 +260,11 @@ class _DashboardPageState extends State<DashboardPage> {
         fullscreenDialog: true,
         builder: (_) {
           return _withReadOnlyAccess(
-            const OrganizationPage(),
+            OrganizationPage(
+              organizationLogoBytes: _organizationLogoBytes,
+              organizationLogoName: _organizationLogoName,
+              onOrganizationLogoSelected: _saveOrganizationLogo,
+            ),
             'organization',
           );
         },
@@ -648,6 +697,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     onProfilePressed: _openOrganizationSettings,
                     welcomeName: _welcomeName,
                     canOpenProfile: true,
+                    organizationLogoBytes: _organizationLogoBytes,
                     onPowerPressed: _logout,
                   ),
                   body: Container(

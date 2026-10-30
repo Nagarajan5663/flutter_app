@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../dashboard/widgets/read_only_preview_scope.dart';
@@ -36,11 +38,18 @@ class OrganizationPage extends StatelessWidget {
   /// parent SettingsPage to switch back to the "All Settings" view.
   /// If null, falls back to Navigator.pop.
   final VoidCallback? onBack;
+  final Uint8List? organizationLogoBytes;
+  final String? organizationLogoName;
+  final Future<void> Function(Uint8List bytes, String name)?
+      onOrganizationLogoSelected;
 
   const OrganizationPage({
     super.key,
     this.organizationName = 'test',
     this.onBack,
+    this.organizationLogoBytes,
+    this.organizationLogoName,
+    this.onOrganizationLogoSelected,
   });
 
   void _openItem(BuildContext context, String label) {
@@ -60,6 +69,9 @@ class OrganizationPage extends StatelessWidget {
         MaterialPageRoute<void>(
           builder: (_) => OrganizationProfilePage(
             onBack: () => Navigator.of(context).pop(),
+            logoBytes: organizationLogoBytes,
+            logoName: organizationLogoName,
+            onLogoSelected: onOrganizationLogoSelected,
           ),
         ),
       );
