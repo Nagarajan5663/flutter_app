@@ -3,17 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/sales_glass_widgets.dart';
-import '../workflow_session.dart';
-import '../../purchase/purchase_orders/purchase_order_model.dart';
-import '../../purchase/purchase_orders/purchase_order_repository.dart';
-import '../../purchase/purchase_orders/widgets/add_purchase_order_dialog.dart';
-import '../delivery_challans/delivery_challan_repository.dart';
 
 // ============================================================
 // API
@@ -21,56 +12,6 @@ import '../delivery_challans/delivery_challan_repository.dart';
 
 class SalesOrdersApi {
   static const String baseUrl = 'http://localhost:3000/api';
-
-  static Future<SalesOrderData> approveSalesOrder(int id) async {
-    final response = await http
-        .post(Uri.parse('$baseUrl/sales-orders/$id/approve'), headers: {
-      'Accept': 'application/json',
-      ...SalesWorkflowSession.headers,
-    });
-    final body = jsonDecode(response.body);
-    if (response.statusCode != 200 || body is! Map || body['success'] != true) {
-      throw Exception(body is Map
-          ? body['message'] ?? 'Failed to approve Sales Order'
-          : 'Failed to approve Sales Order');
-    }
-    return SalesOrderData.fromJson(
-        Map<String, dynamic>.from(body['data'] as Map));
-  }
-
-  static Future<Map<String, dynamic>> createInvoiceFromSalesOrder(
-      int id) async {
-    final response = await http
-        .post(Uri.parse('$baseUrl/invoices/from-sales-order/$id'), headers: {
-      'Accept': 'application/json',
-      ...SalesWorkflowSession.headers,
-    });
-    final body = jsonDecode(response.body);
-    if ((response.statusCode != 200 && response.statusCode != 201) ||
-        body is! Map ||
-        body['success'] != true) {
-      throw Exception(body is Map
-          ? body['message'] ?? 'Failed to create Invoice'
-          : 'Failed to create Invoice');
-    }
-    return Map<String, dynamic>.from(body['data'] as Map);
-  }
-
-  static Future<SalesOrderData> getSalesOrder(int id) async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/sales-orders/$id'), headers: {
-      'Accept': 'application/json',
-      ...SalesWorkflowSession.headers,
-    });
-    final body = jsonDecode(response.body);
-    if (response.statusCode != 200 || body is! Map || body['success'] != true) {
-      throw Exception(body is Map
-          ? body['message'] ?? 'Failed to load Sales Order'
-          : 'Failed to load Sales Order');
-    }
-    return SalesOrderData.fromJson(
-        Map<String, dynamic>.from(body['data'] as Map));
-  }
 
   // ==========================================================
   // GET SALES ORDERS
@@ -212,30 +153,6 @@ class SalesOrdersApi {
         body is Map
             ? body['message'] ?? 'Failed to update status'
             : 'Failed to update status',
-      );
-    }
-  }
-
-  static Future<void> updateSalesOrder(
-    int id,
-    SalesOrderData order,
-  ) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/sales-orders/$id'),
-      headers: const {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: jsonEncode(order.toCreateJson()),
-    );
-    final dynamic body = jsonDecode(response.body);
-    if (body is! Map<String, dynamic> ||
-        response.statusCode != 200 ||
-        body['success'] != true) {
-      throw Exception(
-        body is Map
-            ? body['message'] ?? 'Failed to update sales order'
-            : 'Failed to update sales order',
       );
     }
   }
@@ -448,12 +365,14 @@ class CustomerOption {
   final String name;
   final String companyName;
   final String email;
+  final String phone;
 
   const CustomerOption({
     required this.id,
     required this.name,
     required this.companyName,
     required this.email,
+    this.phone = '',
   });
 }
 
@@ -483,34 +402,12 @@ class CatalogOption {
   });
 }
 
-class _NoSalesOrderResultsCustomer extends CustomerOption {
-  const _NoSalesOrderResultsCustomer()
-      : super(id: -1, name: '', companyName: '', email: '');
-}
-
-class _NoSalesOrderResultsCatalogOption extends CatalogOption {
-  const _NoSalesOrderResultsCatalogOption()
-      : super(
-          sourceType: '',
-          id: -1,
-          name: '',
-          sku: '',
-          description: '',
-          rate: 0,
-        );
-}
-
-const _noSalesOrderResultsCustomer = _NoSalesOrderResultsCustomer();
-const _noSalesOrderResultsCatalogOption = _NoSalesOrderResultsCatalogOption();
-
 List<CustomerOption> searchSalesOrderCustomers(
   Iterable<CustomerOption> customers,
   String query,
 ) {
   final normalizedQuery = query.trim().toLowerCase();
-  if (normalizedQuery.isEmpty) {
-    return customers.toList();
-  }
+  if (normalizedQuery.isEmpty) return customers.toList();
 
   return customers
       .where(
@@ -527,9 +424,7 @@ List<CatalogOption> searchSalesOrderCatalog(
   String query,
 ) {
   final normalizedQuery = query.trim().toLowerCase();
-  if (normalizedQuery.isEmpty) {
-    return catalog.toList();
-  }
+  if (normalizedQuery.isEmpty) return catalog.toList();
 
   return catalog
       .where(
@@ -648,6 +543,12 @@ class SalesOrderCatalogOptionsView extends StatelessWidget {
                   itemBuilder: (_, index) {
                     final product = products[index];
                     final isItem = product.sourceType == 'Item';
+                    final details = [
+                      if (product.sku.isNotEmpty) product.sku,
+                      product.description,
+                      'INR ${product.rate.toStringAsFixed(2)}',
+                    ].join(' • ');
+
                     return ListTile(
                       tileColor: background,
                       hoverColor: isDark
@@ -680,11 +581,7 @@ class SalesOrderCatalogOptionsView extends StatelessWidget {
                         style: TextStyle(color: primaryText),
                       ),
                       subtitle: Text(
-                        [
-                          if (product.sku.isNotEmpty) product.sku,
-                          product.description,
-                          'INR ${product.rate.toStringAsFixed(2)}',
-                        ].join(' • '),
+                        details,
                         style: TextStyle(color: secondaryText),
                       ),
                       onTap: () => onSelected(product),
@@ -756,23 +653,23 @@ class SalesOrderFormTheme extends StatelessWidget {
 
 enum SalesOrderStatus {
   draft,
-  approved,
-  sent,
-  rejected;
+  confirmed,
+  fulfilled,
+  cancelled;
 
   String get label {
     switch (this) {
       case SalesOrderStatus.draft:
         return 'Draft';
 
-      case SalesOrderStatus.approved:
-        return 'Approved';
+      case SalesOrderStatus.confirmed:
+        return 'Confirmed';
 
-      case SalesOrderStatus.sent:
-        return 'Sent';
+      case SalesOrderStatus.fulfilled:
+        return 'Fulfilled';
 
-      case SalesOrderStatus.rejected:
-        return 'Rejected';
+      case SalesOrderStatus.cancelled:
+        return 'Cancelled';
     }
   }
 
@@ -780,14 +677,14 @@ enum SalesOrderStatus {
     String value,
   ) {
     switch (value) {
-      case 'Approved':
-        return SalesOrderStatus.approved;
+      case 'Confirmed':
+        return SalesOrderStatus.confirmed;
 
-      case 'Sent':
-        return SalesOrderStatus.sent;
+      case 'Fulfilled':
+        return SalesOrderStatus.fulfilled;
 
-      case 'Rejected':
-        return SalesOrderStatus.rejected;
+      case 'Cancelled':
+        return SalesOrderStatus.cancelled;
 
       default:
         return SalesOrderStatus.draft;
@@ -922,10 +819,6 @@ class SalesOrderData {
 
   final String customerName;
 
-  final String customerEmail;
-
-  final String customerPhone;
-
   final int? estimateId;
 
   final String estimateNumber;
@@ -947,11 +840,6 @@ class SalesOrderData {
   SalesOrderStatus status;
 
   PurchaseStatus purchaseStatus;
-  String approvalStatus;
-  DateTime? approvedAt;
-  int? approvedBy;
-  int? invoiceId;
-  String? invoiceNumber;
 
   SalesOrderData({
     this.id,
@@ -959,8 +847,6 @@ class SalesOrderData {
     required this.orderNumber,
     required this.customerId,
     required this.customerName,
-    this.customerEmail = '',
-    this.customerPhone = '',
     this.estimateId,
     this.estimateNumber = '',
     required this.salesPerson,
@@ -972,11 +858,6 @@ class SalesOrderData {
     this.termsAndConditions = '',
     this.status = SalesOrderStatus.draft,
     this.purchaseStatus = PurchaseStatus.notStarted,
-    this.approvalStatus = 'Pending',
-    this.approvedAt,
-    this.approvedBy,
-    this.invoiceId,
-    this.invoiceNumber,
   });
 
   Map<String, dynamic> toCreateJson() {
@@ -1030,8 +911,6 @@ class SalesOrderData {
           ) ??
           0,
       customerName: json['customerName']?.toString() ?? '',
-      customerEmail: json['customerEmail']?.toString() ?? '',
-      customerPhone: json['customerPhone']?.toString() ?? '',
       estimateId: json['estimateId'] == null
           ? null
           : int.tryParse(
@@ -1069,244 +948,13 @@ class SalesOrderData {
       purchaseStatus: PurchaseStatus.fromString(
         json['purchaseStatus']?.toString() ?? 'Not Started',
       ),
-      approvalStatus: json['approvalStatus']?.toString() ?? 'Pending',
-      approvedAt: json['approvedAt'] == null
-          ? null
-          : DateTime.tryParse(json['approvedAt'].toString()),
-      approvedBy: json['approvedBy'] == null
-          ? null
-          : int.tryParse(json['approvedBy'].toString()),
-      invoiceId: json['invoiceId'] == null
-          ? null
-          : int.tryParse(json['invoiceId'].toString()),
-      invoiceNumber: json['invoiceNumber']?.toString(),
     );
   }
 }
 
-class _SalesOrderFilterCalendar extends StatefulWidget {
-  const _SalesOrderFilterCalendar({
-    required this.selectedDate,
-    required this.firstDate,
-    required this.lastDate,
-    required this.onResult,
-    this.canClear = true,
-    this.useFormActionStyles = false,
-  });
-
-  final DateTime? selectedDate;
-  final DateTime firstDate;
-  final DateTime lastDate;
-  final ValueChanged<DateTime?> onResult;
-  final bool canClear;
-  final bool useFormActionStyles;
-
-  @override
-  State<_SalesOrderFilterCalendar> createState() =>
-      _SalesOrderFilterCalendarState();
-}
-
-class _SalesOrderFilterCalendarState extends State<_SalesOrderFilterCalendar> {
-  late DateTime _displayedMonth;
-
-  static const _weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-  @override
-  void initState() {
-    super.initState();
-    final initialDate = widget.selectedDate ?? DateTime.now();
-    _displayedMonth = DateTime(initialDate.year, initialDate.month);
-  }
-
-  DateTime get _firstOfDisplayedMonth =>
-      DateTime(_displayedMonth.year, _displayedMonth.month);
-
-  bool get _canGoPrevious => !DateTime(
-        _displayedMonth.year,
-        _displayedMonth.month,
-        0,
-      ).isBefore(_salesOrderDateOnly(widget.firstDate));
-
-  bool get _canGoNext => !DateTime(
-        _displayedMonth.year,
-        _displayedMonth.month + 1,
-      ).isAfter(_salesOrderDateOnly(widget.lastDate));
-
-  bool _isSelectable(DateTime date) {
-    final day = _salesOrderDateOnly(date);
-    return !day.isBefore(_salesOrderDateOnly(widget.firstDate)) &&
-        !day.isAfter(_salesOrderDateOnly(widget.lastDate));
-  }
-
-  void _changeMonth(int amount) {
-    setState(() {
-      _displayedMonth =
-          DateTime(_displayedMonth.year, _displayedMonth.month + amount);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final today = _salesOrderDateOnly(DateTime.now());
-    final selectedDay = widget.selectedDate == null
-        ? null
-        : _salesOrderDateOnly(widget.selectedDate!);
-    final firstGridDay = _firstOfDisplayedMonth.subtract(
-      Duration(days: _firstOfDisplayedMonth.weekday % 7),
-    );
-
-    return Padding(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  DateFormat('MMMM yyyy').format(_displayedMonth),
-                  style: const TextStyle(
-                    color: Color(0xFF263746),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              IconButton(
-                tooltip: 'Previous month',
-                onPressed: _canGoPrevious ? () => _changeMonth(-1) : null,
-                icon: const Icon(Icons.chevron_left),
-                color: const Color(0xFF425466),
-                visualDensity: VisualDensity.compact,
-              ),
-              IconButton(
-                tooltip: 'Next month',
-                onPressed: _canGoNext ? () => _changeMonth(1) : null,
-                icon: const Icon(Icons.chevron_right),
-                color: const Color(0xFF425466),
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              for (final weekday in _weekdays)
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      weekday,
-                      style: const TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          for (var week = 0; week < 6; week++)
-            Row(
-              children: [
-                for (var weekday = 0; weekday < 7; weekday++)
-                  Expanded(
-                    child: _buildDay(
-                      firstGridDay.add(Duration(days: week * 7 + weekday)),
-                      selectedDay: selectedDay,
-                      today: today,
-                    ),
-                  ),
-              ],
-            ),
-          const Divider(height: 16, color: Color(0xFFE2E8F0)),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton(
-                onPressed: widget.canClear ? () => widget.onResult(null) : null,
-                style: widget.useFormActionStyles
-                    ? TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF1E78B7),
-                        disabledForegroundColor: const Color(0xFF94A3B8),
-                      )
-                    : null,
-                child: const Text('Clear'),
-              ),
-              TextButton(
-                onPressed:
-                    _isSelectable(today) ? () => widget.onResult(today) : null,
-                style: widget.useFormActionStyles
-                    ? TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF1E78B7),
-                        disabledForegroundColor: const Color(0xFF94A3B8),
-                      )
-                    : null,
-                child: const Text('Today'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDay(
-    DateTime date, {
-    required DateTime? selectedDay,
-    required DateTime today,
-  }) {
-    final day = _salesOrderDateOnly(date);
-    final isCurrentMonth = date.month == _displayedMonth.month;
-    final isSelected = selectedDay == day;
-    final isToday = today == day;
-    final isSelectable = _isSelectable(date);
-    final dayKey = DateFormat('yyyy-MM-dd').format(date);
-
-    return Padding(
-      padding: const EdgeInsets.all(1),
-      child: Semantics(
-        label: DateFormat('EEEE, d MMMM yyyy').format(date),
-        button: isSelectable,
-        selected: isSelected,
-        child: InkWell(
-          key: ValueKey('sales-order-calendar-day-$dayKey'),
-          borderRadius: BorderRadius.circular(18),
-          onTap: isSelectable ? () => widget.onResult(day) : null,
-          child: Container(
-            height: 34,
-            decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF1E78B7) : null,
-              borderRadius: BorderRadius.circular(18),
-              border: isToday && !isSelected
-                  ? Border.all(color: const Color(0xFF1E78B7))
-                  : null,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '${date.day}',
-              style: TextStyle(
-                color: isSelected
-                    ? Colors.white
-                    : !isSelectable
-                        ? const Color(0xFFCBD5E1)
-                        : isCurrentMonth
-                            ? const Color(0xFF263746)
-                            : const Color(0xFF94A3B8),
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-DateTime _salesOrderDateOnly(DateTime date) =>
-    DateTime(date.year, date.month, date.day);
+// ============================================================
+// SALES ORDERS PAGE
+// ============================================================
 
 class SalesOrderDatePickerField extends StatefulWidget {
   const SalesOrderDatePickerField({
@@ -1340,8 +988,15 @@ class SalesOrderDatePickerField extends StatefulWidget {
 class _SalesOrderDatePickerFieldState extends State<SalesOrderDatePickerField> {
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _calendarOverlay;
-  bool _alignCalendarRight = false;
-  double _calendarWidth = 340;
+  DateTime _displayedMonth = DateUtils.dateOnly(DateTime.now());
+
+  @override
+  void didUpdateWidget(covariant SalesOrderDatePickerField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != oldWidget.value && widget.value != null) {
+      _displayedMonth = DateUtils.dateOnly(widget.value!);
+    }
+  }
 
   @override
   void dispose() {
@@ -1359,15 +1014,7 @@ class _SalesOrderDatePickerFieldState extends State<SalesOrderDatePickerField> {
     final targetBox = context.findRenderObject()! as RenderBox;
     final targetLeft = targetBox.localToGlobal(Offset.zero).dx;
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final targetRight = targetLeft + targetBox.size.width;
-    final desiredWidth = screenWidth < 372 ? screenWidth - 32.0 : 340.0;
-    final availableLeft = screenWidth - targetLeft - 8;
-    final availableRight = targetRight - 8;
-    _alignCalendarRight =
-        desiredWidth > availableLeft && availableRight > availableLeft;
-    _calendarWidth = _alignCalendarRight
-        ? desiredWidth.clamp(0, availableRight)
-        : desiredWidth.clamp(0, availableLeft);
+    final availableWidth = (screenWidth - targetLeft - 8).clamp(0.0, 340.0);
     _calendarOverlay = OverlayEntry(
       builder: (_) => Stack(
         children: [
@@ -1380,35 +1027,18 @@ class _SalesOrderDatePickerFieldState extends State<SalesOrderDatePickerField> {
           CompositedTransformFollower(
             link: _layerLink,
             showWhenUnlinked: false,
-            targetAnchor: _alignCalendarRight
-                ? Alignment.bottomRight
-                : Alignment.bottomLeft,
-            followerAnchor:
-                _alignCalendarRight ? Alignment.topRight : Alignment.topLeft,
+            targetAnchor: Alignment.bottomLeft,
+            followerAnchor: Alignment.topLeft,
             offset: const Offset(0, 6),
             child: Material(
               key: widget.calendarKey,
               color: Colors.white,
               surfaceTintColor: Colors.transparent,
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: Color(0xFFE2E8F0)),
-              ),
-              clipBehavior: Clip.antiAlias,
+              elevation: 10,
+              borderRadius: BorderRadius.circular(12),
               child: SizedBox(
-                width: _calendarWidth,
-                child: _SalesOrderFilterCalendar(
-                  selectedDate: widget.value,
-                  firstDate: widget.firstDate,
-                  lastDate: widget.lastDate,
-                  canClear: widget.canClear,
-                  useFormActionStyles: widget.useFormActionStyles,
-                  onResult: (date) {
-                    widget.onChanged(date);
-                    _removeCalendarOverlay();
-                  },
-                ),
+                width: availableWidth,
+                child: _buildCalendar(),
               ),
             ),
           ),
@@ -1418,6 +1048,142 @@ class _SalesOrderDatePickerFieldState extends State<SalesOrderDatePickerField> {
     overlay.insert(_calendarOverlay!);
   }
 
+  Widget _buildCalendar() {
+    final firstOfMonth =
+        DateTime(_displayedMonth.year, _displayedMonth.month, 1);
+    final daysInMonth =
+        DateTime(_displayedMonth.year, _displayedMonth.month + 1, 0).day;
+    final leadingDays = firstOfMonth.weekday - DateTime.monday;
+    final today = DateUtils.dateOnly(DateTime.now());
+
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                tooltip: 'Previous month',
+                onPressed: () => setState(() {
+                  _displayedMonth =
+                      DateTime(_displayedMonth.year, _displayedMonth.month - 1);
+                  _calendarOverlay?.markNeedsBuild();
+                }),
+                icon: const Icon(Icons.chevron_left),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    DateFormat('MMMM yyyy').format(_displayedMonth),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Next month',
+                onPressed: () => setState(() {
+                  _displayedMonth =
+                      DateTime(_displayedMonth.year, _displayedMonth.month + 1);
+                  _calendarOverlay?.markNeedsBuild();
+                }),
+                icon: const Icon(Icons.chevron_right),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              for (final day in const ['M', 'T', 'W', 'T', 'F', 'S', 'S'])
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      day,
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          for (var week = 0; week < 6; week++)
+            Row(
+              children: [
+                for (var weekday = 0; weekday < 7; weekday++)
+                  Expanded(
+                    child: _buildDayButton(
+                      week * 7 + weekday - leadingDays + 1,
+                      daysInMonth,
+                    ),
+                  ),
+              ],
+            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                onPressed: widget.canClear
+                    ? () {
+                        widget.onChanged(null);
+                        _removeCalendarOverlay();
+                      }
+                    : null,
+                child: const Text('Clear'),
+              ),
+              TextButton(
+                onPressed: _isDateAllowed(today)
+                    ? () {
+                        widget.onChanged(today);
+                        _removeCalendarOverlay();
+                      }
+                    : null,
+                child: const Text('Today'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDayButton(int day, int daysInMonth) {
+    if (day < 1 || day > daysInMonth) {
+      return const SizedBox(height: 40);
+    }
+    final date = DateTime(_displayedMonth.year, _displayedMonth.month, day);
+    final selected =
+        widget.value != null && DateUtils.isSameDay(widget.value, date);
+    return SizedBox(
+      height: 40,
+      child: TextButton(
+        key: ValueKey(
+          'sales-order-calendar-day-${DateFormat('yyyy-MM-dd').format(date)}',
+        ),
+        onPressed: _isDateAllowed(date)
+            ? () {
+                widget.onChanged(date);
+                _removeCalendarOverlay();
+              }
+            : null,
+        style: TextButton.styleFrom(
+          backgroundColor: selected ? const Color(0xFF1E78B7) : null,
+          foregroundColor: selected ? Colors.white : const Color(0xFF1F2937),
+          padding: EdgeInsets.zero,
+        ),
+        child: Text('$day'),
+      ),
+    );
+  }
+
+  bool _isDateAllowed(DateTime date) {
+    final day = DateUtils.dateOnly(date);
+    return !day.isBefore(DateUtils.dateOnly(widget.firstDate)) &&
+        !day.isAfter(DateUtils.dateOnly(widget.lastDate));
+  }
+
   void _removeCalendarOverlay() {
     _calendarOverlay?.remove();
     _calendarOverlay = null;
@@ -1425,6 +1191,9 @@ class _SalesOrderDatePickerFieldState extends State<SalesOrderDatePickerField> {
 
   @override
   Widget build(BuildContext context) {
+    final valueText = widget.value == null
+        ? 'dd-mm-yyyy'
+        : DateFormat('dd-MM-yyyy').format(widget.value!);
     return CompositedTransformTarget(
       link: _layerLink,
       child: InkWell(
@@ -1435,15 +1204,16 @@ class _SalesOrderDatePickerFieldState extends State<SalesOrderDatePickerField> {
             children: [
               Expanded(
                 child: Text(
-                  widget.value == null
-                      ? 'dd-mm-yyyy'
-                      : DateFormat('dd-MM-yyyy').format(widget.value!),
-                  style: widget.value == null ? widget.emptyTextStyle : null,
+                  valueText,
+                  style: widget.value == null
+                      ? widget.emptyTextStyle ??
+                          const TextStyle(color: Color(0xFF64748B))
+                      : const TextStyle(color: Color(0xFF1F2937)),
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.calendar_today_outlined,
-                color: Color(0xFF1F2937),
+                color: const Color(0xFF1F2937),
                 size: 16,
               ),
             ],
@@ -1454,13 +1224,10 @@ class _SalesOrderDatePickerFieldState extends State<SalesOrderDatePickerField> {
   }
 }
 
-// ============================================================
-// SALES ORDERS PAGE
-// ============================================================
-
 class SalesOrderPage extends StatefulWidget {
   final VoidCallback? onOpenInvoices;
   final VoidCallback? onOpenPurchaseOrders;
+
   const SalesOrderPage({
     super.key,
     this.onOpenInvoices,
@@ -1472,7 +1239,6 @@ class SalesOrderPage extends StatefulWidget {
 }
 
 class _SalesOrderPageState extends State<SalesOrderPage> {
-  final Set<int> _workflowBusyIds = {};
   List<SalesOrderData> _orders = [];
 
   bool _isLoading = true;
@@ -1487,13 +1253,14 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
   DateTime? _dateFrom;
 
   DateTime? _dateTo;
+  bool _showFilters = false;
 
   final List<String> _statusOptions = const [
     'All',
     'Draft',
-    'Approved',
-    'Sent',
-    'Rejected',
+    'Confirmed',
+    'Fulfilled',
+    'Cancelled',
   ];
 
   @override
@@ -1602,7 +1369,22 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
 
       if (!mounted) return;
 
-      await _showOrderForm(nextNumber: nextNumber);
+      final bool? saved = await showDialog<bool>(
+        context: context,
+        barrierColor: const Color(
+          0x9A12202C,
+        ),
+        barrierDismissible: false,
+        builder: (_) {
+          return NewSalesOrderDialog(
+            nextNumber: nextNumber,
+          );
+        },
+      );
+
+      if (saved == true) {
+        await _loadOrders();
+      }
     } catch (error) {
       if (!mounted) return;
 
@@ -1610,73 +1392,6 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
         'Unable to open sales order: $error',
         isError: true,
       );
-    }
-  }
-
-  Future<void> _showOrderForm({
-    required String nextNumber,
-    SalesOrderData? order,
-    bool isClone = false,
-  }) async {
-    final bool? saved = await showDialog<bool>(
-      context: context,
-      barrierColor: const Color(
-        0x9A12202C,
-      ),
-      barrierDismissible: false,
-      builder: (_) {
-        return NewSalesOrderDialog(
-          nextNumber: nextNumber,
-          initialOrder: order,
-          isClone: isClone,
-        );
-      },
-    );
-
-    if (saved == true) {
-      await _loadOrders();
-    }
-  }
-
-  Future<void> _cloneOrder(SalesOrderData order) async {
-    try {
-      final detailedOrder = order.items.isEmpty && order.id != null
-          ? await SalesOrdersApi.getSalesOrder(order.id!)
-          : order;
-      final nextNumber = await SalesOrdersApi.getNextNumber();
-      if (!mounted) return;
-      await _showOrderForm(
-        nextNumber: nextNumber,
-        order: detailedOrder,
-        isClone: true,
-      );
-    } catch (error) {
-      if (mounted) {
-        _showMessage(
-          'Unable to clone sales order: $error',
-          isError: true,
-        );
-      }
-    }
-  }
-
-  Future<void> _editOrder(SalesOrderData order) async {
-    try {
-      final detailedOrder = order.items.isEmpty && order.id != null
-          ? await SalesOrdersApi.getSalesOrder(order.id!)
-          : order;
-      if (!mounted) return;
-      await _showOrderForm(
-        nextNumber: detailedOrder.orderNumber,
-        order: detailedOrder,
-      );
-    } catch (error) {
-      if (mounted) {
-        _showMessage(
-          'Unable to edit sales order: $error',
-          isError: true,
-        );
-      }
     }
   }
 
@@ -1693,11 +1408,10 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
     }
 
     try {
-      if (status == SalesOrderStatus.approved) {
-        await SalesOrdersApi.approveSalesOrder(order.id!);
-      } else {
-        await SalesOrdersApi.updateStatus(order.id!, status);
-      }
+      await SalesOrdersApi.updateStatus(
+        order.id!,
+        status,
+      );
 
       await _loadOrders();
 
@@ -1795,96 +1509,6 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
     }
   }
 
-  Future<void> _showSalesOrderPreview(SalesOrderData order) async {
-    try {
-      final detailedOrder = order.items.isEmpty && order.id != null
-          ? await SalesOrdersApi.getSalesOrder(order.id!)
-          : order;
-      if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        builder: (_) => _SalesOrderPreviewDialog(
-          order: detailedOrder,
-          onConvert: (currentOrder, target) =>
-              _convertSalesOrder(currentOrder, target),
-        ),
-      );
-    } catch (error) {
-      if (mounted)
-        _showMessage(error.toString().replaceFirst('Exception: ', ''),
-            isError: true);
-    }
-  }
-
-  Future<bool> _convertSalesOrder(SalesOrderData order, String target) async {
-    if (order.approvalStatus != 'Approved') {
-      _showMessage('Sales Order must be approved before conversion.',
-          isError: true);
-      return false;
-    }
-    if (order.id == null || !_workflowBusyIds.add(order.id!)) return false;
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    setState(() {});
-    try {
-      if (target == 'Invoice') {
-        final invoice =
-            await SalesOrdersApi.createInvoiceFromSalesOrder(order.id!);
-        await _loadOrders();
-        if (!mounted) return true;
-        _showMessage('Invoice ${invoice['invoiceNumber'] ?? ''} is ready.');
-        widget.onOpenInvoices?.call();
-      } else if (target == 'Purchase Order') {
-        final createdOrder = await showDialog<PurchaseOrderModel>(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => AddPurchaseOrderDialog(
-            initialSalesOrderId: order.id,
-            initialSalesOrderNumber: order.orderNumber,
-            initialSalesOrderDate: order.date,
-            initialItems: order.items
-                .map((item) => {
-                      'sourceType': item.sourceType,
-                      'itemId': item.itemId,
-                      'partId': item.partId,
-                      'itemName': item.itemName,
-                      'description': item.description,
-                      'qty': item.qty,
-                      'rate': item.rate,
-                    })
-                .toList(),
-          ),
-        );
-        if (createdOrder == null || !mounted) return false;
-        final purchaseOrder =
-            await ApiPurchaseOrderRepository().addPurchaseOrder(createdOrder);
-        await _loadOrders();
-        if (mounted) {
-          messenger?.showSnackBar(
-            SnackBar(
-                content:
-                    Text('Purchase Order ${purchaseOrder.poNumber} is ready.')),
-          );
-          widget.onOpenPurchaseOrders?.call();
-        }
-      } else {
-        final challan = await InMemoryDeliveryChallanRepository()
-            .createFromSalesOrder(order.id.toString());
-        await _loadOrders();
-        if (mounted)
-          _showMessage('Delivery Challan ${challan.challanNumber} is ready.');
-      }
-      return true;
-    } catch (error) {
-      if (mounted)
-        _showMessage(error.toString().replaceFirst('Exception: ', ''),
-            isError: true);
-      return false;
-    } finally {
-      _workflowBusyIds.remove(order.id);
-      if (mounted) setState(() {});
-    }
-  }
-
   // ==========================================================
   // MESSAGE
   // ==========================================================
@@ -1961,16 +1585,22 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                     ),
                   ),
                 ),
-                const SizedBox(
-                  width: 8,
+                const SizedBox(width: 8),
+                SalesFilterButton(
+                  onPressed: () {
+                    setState(() => _showFilters = !_showFilters);
+                  },
                 ),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: _openNewOrderForm,
                   icon: const Icon(
                     Icons.add,
                     size: 20,
                   ),
-                  label: const Text('New Sales Order'),
+                  label: const Text(
+                    'New Sales Order',
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(
                       0xFF17395C,
@@ -1991,93 +1621,90 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
 
             // FILTER BAR
 
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(
-                16,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(
-                  0x4FFFFFFF,
-                ),
-                borderRadius: BorderRadius.circular(
+            if (_showFilters)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(top: 20),
+                padding: const EdgeInsets.all(
                   16,
                 ),
-                border: Border.all(
+                decoration: BoxDecoration(
                   color: const Color(
-                    0xD0FFFFFF,
+                    0x4FFFFFFF,
+                  ),
+                  borderRadius: BorderRadius.circular(
+                    16,
+                  ),
+                  border: Border.all(
+                    color: const Color(
+                      0xD0FFFFFF,
+                    ),
                   ),
                 ),
-              ),
-              child: Wrap(
-                spacing: 16,
-                runSpacing: 12,
-                crossAxisAlignment: WrapCrossAlignment.end,
-                children: [
-                  SizedBox(
-                    width: 150,
-                    child: _buildStatusFilter(),
-                  ),
-                  SizedBox(
-                    width: 200,
-                    child: _buildCustomerFilter(),
-                  ),
-                  SizedBox(
-                    width: 170,
-                    child: _buildFilterDate(
-                      label: 'Date From:',
-                      value: _dateFrom,
-                      onChanged: (value) {
-                        setState(() {
-                          _dateFrom = value;
-                          if (value != null &&
-                              _dateTo != null &&
-                              _dateTo!.isBefore(value)) {
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 12,
+                  crossAxisAlignment: WrapCrossAlignment.end,
+                  children: [
+                    SizedBox(
+                      width: 150,
+                      child: _buildStatusFilter(),
+                    ),
+                    SizedBox(
+                      width: 200,
+                      child: _buildCustomerFilter(),
+                    ),
+                    SizedBox(
+                      width: 170,
+                      child: _buildFilterDate(
+                        label: 'Date From:',
+                        value: _dateFrom,
+                        onChanged: (value) {
+                          setState(() {
+                            _dateFrom = value;
+                          });
+                        },
+                      ),
+                    ),
+                    SizedBox(
+                      width: 170,
+                      child: _buildFilterDate(
+                        label: 'Date To:',
+                        value: _dateTo,
+                        onChanged: (value) {
+                          setState(() {
                             _dateTo = value;
-                          }
-                        });
-                      },
-                    ),
-                  ),
-                  SizedBox(
-                    width: 170,
-                    child: _buildFilterDate(
-                      label: 'Date To:',
-                      value: _dateTo,
-                      onChanged: (value) {
-                        setState(() {
-                          _dateTo = value;
-                        });
-                      },
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {});
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(
-                        0xFF1E78B7,
-                      ),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 22,
-                        vertical: 14,
+                          });
+                        },
                       ),
                     ),
-                    child: const Text(
-                      'Filter',
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {});
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(
+                          0xFF1E78B7,
+                        ),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 22,
+                          vertical: 14,
+                        ),
+                      ),
+                      child: const Text(
+                        'Apply',
+                      ),
                     ),
-                  ),
-                  OutlinedButton(
-                    onPressed: _clearFilters,
-                    child: const Text(
-                      'Clear',
+                    OutlinedButton(
+                      onPressed: _clearFilters,
+                      child: const Text(
+                        'Clear',
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
             const SizedBox(
               height: 20,
@@ -2150,7 +1777,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                 alignment: Alignment.topLeft,
                 fit: BoxFit.scaleDown,
                 child: SizedBox(
-                  width: 1330,
+                  width: 1260,
                   child: _isLoading
                       ? const SizedBox(
                           height: 350,
@@ -2193,7 +1820,6 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
         DropdownButtonFormField<String>(
           initialValue: _statusFilter,
           isExpanded: true,
-          dropdownColor: Colors.white,
           decoration: _inputDecoration(),
           items: _statusOptions.map(
             (status) {
@@ -2258,14 +1884,41 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
         const SizedBox(
           height: 6,
         ),
-        SalesOrderDatePickerField(
-          value: value,
-          firstDate: label == 'Date To:' && _dateFrom != null
-              ? _dateFrom!
-              : DateTime(2000),
-          lastDate: DateTime(2100),
-          decoration: _inputDecoration(),
-          onChanged: onChanged,
+        InkWell(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: value ?? DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100),
+            );
+
+            if (picked != null) {
+              onChanged(picked);
+            }
+          },
+          child: InputDecorator(
+            decoration: _inputDecoration(),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value == null
+                        ? 'dd-mm-yyyy'
+                        : DateFormat(
+                            'dd-MM-yyyy',
+                          ).format(
+                            value,
+                          ),
+                  ),
+                ),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -2368,7 +2021,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
             ),
           ),
           SizedBox(
-            width: 140,
+            width: 70,
             child: _HeaderText(
               'ACTIONS',
             ),
@@ -2440,11 +2093,6 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                         width: 130,
                         child: _StatusBadge(
                           status: order.status,
-                          onChanged: (status) {
-                            if (status != null && status != order.status) {
-                              _updateStatus(order, status);
-                            }
-                          },
                         ),
                       ),
                       SizedBox(
@@ -2466,77 +2114,74 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                         ),
                       ),
                       SizedBox(
-                        width: 140,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              tooltip: 'Preview Sales Order',
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
+                        width: 70,
+                        child: PopupMenuButton<String>(
+                          position: PopupMenuPosition.under,
+                          icon: const Icon(
+                            Icons.more_vert,
+                          ),
+                          onSelected: (value) {
+                            switch (value) {
+                              case 'confirmed':
+                                _updateStatus(
+                                  order,
+                                  SalesOrderStatus.confirmed,
+                                );
+
+                                break;
+
+                              case 'fulfilled':
+                                _updateStatus(
+                                  order,
+                                  SalesOrderStatus.fulfilled,
+                                );
+
+                                break;
+
+                              case 'cancelled':
+                                _updateStatus(
+                                  order,
+                                  SalesOrderStatus.cancelled,
+                                );
+
+                                break;
+
+                              case 'delete':
+                                _deleteOrder(
+                                  order,
+                                );
+
+                                break;
+                            }
+                          },
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(
+                              value: 'confirmed',
+                              child: Text(
+                                'Mark as Confirmed',
                               ),
-                              icon: const Icon(
-                                Icons.visibility_outlined,
-                                size: 18,
-                                color: Color(0xFF777777),
-                              ),
-                              onPressed: _workflowBusyIds.contains(order.id)
-                                  ? null
-                                  : () => _showSalesOrderPreview(order),
                             ),
-                            IconButton(
-                              tooltip: 'Edit Sales Order',
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
+                            PopupMenuItem(
+                              value: 'fulfilled',
+                              child: Text(
+                                'Mark as Fulfilled',
                               ),
-                              icon: const Icon(
-                                Icons.edit_outlined,
-                                size: 18,
-                                color: Color(0xFF777777),
-                              ),
-                              onPressed: _workflowBusyIds.contains(order.id)
-                                  ? null
-                                  : () => _editOrder(order),
                             ),
-                            IconButton(
-                              tooltip: 'Clone Sales Order',
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
+                            PopupMenuItem(
+                              value: 'cancelled',
+                              child: Text(
+                                'Mark as Cancelled',
                               ),
-                              icon: const Icon(
-                                Icons.content_copy_outlined,
-                                size: 18,
-                                color: Color(0xFF777777),
-                              ),
-                              onPressed: _workflowBusyIds.contains(order.id)
-                                  ? null
-                                  : () => _cloneOrder(order),
                             ),
-                            IconButton(
-                              tooltip: 'Delete Sales Order',
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
+                            PopupMenuDivider(),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text(
+                                'Delete',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                ),
                               ),
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                size: 18,
-                                color: Color(0xFF777777),
-                              ),
-                              onPressed: _workflowBusyIds.contains(order.id)
-                                  ? null
-                                  : () => _deleteOrder(order),
                             ),
                           ],
                         ),
@@ -2604,518 +2249,16 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
 // NEW SALES ORDER DIALOG
 // ============================================================
 
-class _SalesOrderPreviewDialog extends StatefulWidget {
-  const _SalesOrderPreviewDialog(
-      {required this.order, required this.onConvert});
-
-  final SalesOrderData order;
-  final Future<bool> Function(SalesOrderData order, String target) onConvert;
-
-  @override
-  State<_SalesOrderPreviewDialog> createState() =>
-      _SalesOrderPreviewDialogState();
-}
-
-class _SalesOrderPreviewDialogState extends State<_SalesOrderPreviewDialog> {
-  late SalesOrderData _order = widget.order;
-  bool _busy = false;
-  final _currency =
-      NumberFormat.currency(locale: 'en_IN', symbol: 'INR', decimalDigits: 2);
-
-  Future<void> _convert(String target) async {
-    if (_order.approvalStatus != 'Approved') {
-      await showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-                title: const Text('Conversion unavailable'),
-                content: const Text(
-                    'Sales Order must be approved before conversion.'),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('OK'))
-                ],
-              ));
-      return;
-    }
-    if (!mounted) return;
-    setState(() => _busy = true);
-    final converted = await widget.onConvert(_order, target);
-    if (!mounted) return;
-    if (converted) {
-      Navigator.pop(context);
-    } else {
-      setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _downloadPdf() async {
-    final pdf = pw.Document();
-    pdf.addPage(pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        build: (_) => [
-              pw.Text('SALES ORDER',
-                  style: pw.TextStyle(
-                      fontSize: 22, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 12),
-              pw.Text('Sales Order: ${_order.orderNumber}'),
-              pw.Text('Customer: ${_order.customerName}'),
-              pw.Text('Date: ${DateFormat('dd-MM-yyyy').format(_order.date)}'),
-              pw.Text(
-                  'Document Status: ${_order.status.label}  •  Approval: ${_order.approvalStatus}'),
-              pw.SizedBox(height: 18),
-              pw.Table(border: pw.TableBorder.all(), children: [
-                pw.TableRow(
-                    decoration:
-                        const pw.BoxDecoration(color: PdfColors.blueGrey100),
-                    children: [
-                      for (final title in [
-                        'Item',
-                        'Description',
-                        'Qty',
-                        'Rate',
-                        'Amount'
-                      ])
-                        pw.Padding(
-                            padding: const pw.EdgeInsets.all(6),
-                            child: pw.Text(title,
-                                style: pw.TextStyle(
-                                    fontWeight: pw.FontWeight.bold))),
-                    ]),
-                for (final item in _order.items)
-                  pw.TableRow(
-                      children: [
-                    item.itemName,
-                    item.description,
-                    item.qty.toStringAsFixed(2),
-                    item.rate.toStringAsFixed(2),
-                    item.amount.toStringAsFixed(2)
-                  ]
-                          .map((value) => pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text(value)))
-                          .toList()),
-              ]),
-              pw.SizedBox(height: 18),
-              pw.Align(
-                  alignment: pw.Alignment.centerRight,
-                  child: pw.Text(
-                      'Total: INR ${_order.total.toStringAsFixed(2)}',
-                      style: pw.TextStyle(
-                          fontSize: 16, fontWeight: pw.FontWeight.bold))),
-            ]));
-    try {
-      await Printing.sharePdf(
-          bytes: await pdf.save(), filename: '${_order.orderNumber}.pdf');
-    } catch (error) {
-      if (mounted) _showMessage('Unable to create PDF: $error');
-    }
-  }
-
-  String _salesOrderShareMessage() {
-    final money = NumberFormat.currency(
-        locale: 'en_IN', symbol: 'INR ', decimalDigits: 2);
-    final buffer = StringBuffer()
-      ..writeln('SALES ORDER')
-      ..writeln('Sales Order: ${_order.orderNumber}')
-      ..writeln('Customer: ${_order.customerName}')
-      ..writeln('Date: ${DateFormat('dd MMM yyyy').format(_order.date)}');
-
-    if (_order.estimateNumber.isNotEmpty) {
-      buffer.writeln('Estimate: ${_order.estimateNumber}');
-    }
-    if (_order.salesPerson.isNotEmpty) {
-      buffer.writeln('Sales Person: ${_order.salesPerson}');
-    }
-    if (_order.expectedShipmentDate != null) {
-      buffer.writeln(
-        'Expected Shipment: ${DateFormat('dd MMM yyyy').format(_order.expectedShipmentDate!)}',
-      );
-    }
-    buffer
-      ..writeln('Status: ${_order.status.label}')
-      ..writeln('Approval: ${_order.approvalStatus}')
-      ..writeln()
-      ..writeln('ITEMS');
-
-    for (var index = 0; index < _order.items.length; index++) {
-      final item = _order.items[index];
-      buffer
-        ..writeln('${index + 1}. ${item.itemName}')
-        ..writeln(
-            '   Description: ${item.description.isEmpty ? '-' : item.description}')
-        ..writeln('   Quantity: ${item.qty.toStringAsFixed(2)}')
-        ..writeln('   Rate: ${money.format(item.rate)}')
-        ..writeln('   Amount: ${money.format(item.amount)}');
-    }
-
-    buffer
-      ..writeln()
-      ..writeln('Subtotal: ${money.format(_order.subTotal)}')
-      ..writeln('Total: ${money.format(_order.total)}');
-    if (_order.notes.isNotEmpty) {
-      buffer
-        ..writeln()
-        ..writeln('Notes: ${_order.notes}');
-    }
-    if (_order.termsAndConditions.isNotEmpty) {
-      buffer
-        ..writeln()
-        ..writeln('Terms and Conditions: ${_order.termsAndConditions}');
-    }
-    return buffer.toString().trimRight();
-  }
-
-  Future<void> _sendEmail() async {
-    if (_order.customerEmail.trim().isEmpty) {
-      _showMessage('This customer does not have an email address.');
-      return;
-    }
-    final uri = Uri(
-        scheme: 'mailto',
-        path: _order.customerEmail.trim(),
-        queryParameters: {
-          'subject': 'Sales Order ${_order.orderNumber}',
-          'body': _salesOrderShareMessage(),
-        });
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      _showMessage('Email app could not be opened.');
-    }
-  }
-
-  Future<void> _sendWhatsApp() async {
-    final phone = _order.customerPhone.replaceAll(RegExp(r'\D'), '');
-    if (phone.isEmpty) {
-      _showMessage('This customer does not have a phone number.');
-      return;
-    }
-    final message = _salesOrderShareMessage();
-    final encoded = Uri.encodeComponent(message);
-    final whatsappUrl = Uri.parse('https://wa.me/$phone?text=$encoded');
-    final alternateUrl =
-        Uri.parse('https://api.whatsapp.com/send?phone=$phone&text=$encoded');
-
-    if (!await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication)) {
-      if (!await launchUrl(alternateUrl,
-          mode: LaunchMode.externalApplication)) {
-        _showMessage('WhatsApp could not be opened.');
-      }
-    }
-  }
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final width = (size.width * .9).clamp(0.0, 900.0).toDouble();
-    final height = (size.height - 32).clamp(260.0, 760.0).toDouble();
-    final actions = Row(mainAxisSize: MainAxisSize.min, children: [
-      OutlinedButton.icon(
-          onPressed: _busy ? null : _downloadPdf,
-          icon: const Icon(Icons.download_outlined, size: 18),
-          label: const Text('Download PDF'),
-          style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.black,
-              backgroundColor: const Color(0xFFE3E3E3),
-              side: BorderSide.none)),
-      const SizedBox(width: 8),
-      PopupMenuButton<String>(
-          enabled: !_busy,
-          tooltip: 'Send document',
-          onSelected: (value) async {
-            if (value == 'email') {
-              await _sendEmail();
-            } else if (value == 'whatsapp') {
-              await _sendWhatsApp();
-            }
-          },
-          itemBuilder: (_) => const [
-                PopupMenuItem(
-                    value: 'email',
-                    child: Row(
-                      children: [
-                        Icon(Icons.mail_outline, size: 18),
-                        SizedBox(width: 8),
-                        Text('Mail'),
-                      ],
-                    )),
-                PopupMenuItem(
-                    value: 'whatsapp',
-                    child: Row(
-                      children: [
-                        Icon(Icons.chat_bubble_outline, size: 18),
-                        SizedBox(width: 8),
-                        Text('WhatsApp'),
-                      ],
-                    )),
-              ],
-          child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              decoration: BoxDecoration(
-                  color: const Color(0xFFE3E3E3),
-                  borderRadius: BorderRadius.circular(6)),
-              child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.send_outlined, size: 18, color: Colors.black),
-                SizedBox(width: 6),
-                Text('Send', style: TextStyle(color: Colors.black)),
-              ]))),
-      const SizedBox(width: 8),
-      if (_order.approvalStatus == 'Approved')
-        PopupMenuButton<String>(
-            enabled: !_busy,
-            onSelected: _convert,
-            itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'Invoice', child: Text('Invoice')),
-                  PopupMenuItem(
-                      value: 'Purchase Order', child: Text('Purchase Order')),
-                  PopupMenuItem(
-                      value: 'Delivery Challan',
-                      child: Text('Delivery Challan')),
-                ],
-            child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                decoration: BoxDecoration(
-                    color: const Color(0xFF3498DB),
-                    borderRadius: BorderRadius.circular(6)),
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text('Convert As',
-                      style: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.w600)),
-                  SizedBox(width: 6),
-                  Icon(Icons.keyboard_arrow_down, color: Colors.black, size: 20)
-                ]))),
-      const SizedBox(width: 8),
-      OutlinedButton(
-          onPressed: null,
-          style: OutlinedButton.styleFrom(
-              disabledForegroundColor: Colors.black,
-              backgroundColor: const Color(0xFF899597),
-              side: BorderSide.none),
-          child: const Text('Void')),
-      IconButton(
-          tooltip: 'Close',
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.close, color: Colors.black)),
-    ]);
-
-    return Dialog(
-      insetPadding: const EdgeInsets.all(12),
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: SizedBox(
-          width: width,
-          height: height,
-          child: Column(children: [
-            Padding(
-                padding: const EdgeInsets.fromLTRB(22, 18, 10, 18),
-                child: LayoutBuilder(builder: (context, constraints) {
-                  final customer = Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_order.customerName,
-                            style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.black)),
-                        const SizedBox(height: 4),
-                        Text(
-                            '${_order.orderNumber} | ${DateFormat('M/d/yyyy').format(_order.date)}',
-                            style: const TextStyle(
-                                fontSize: 14, color: Colors.black)),
-                      ]);
-                  if (constraints.maxWidth < 760)
-                    return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          customer,
-                          const SizedBox(height: 8),
-                          SingleChildScrollView(
-                              scrollDirection: Axis.horizontal, child: actions)
-                        ]);
-                  if (constraints.maxWidth < 930)
-                    return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          customer,
-                          const SizedBox(height: 8),
-                          Align(
-                              alignment: Alignment.centerRight,
-                              child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: actions))
-                        ]);
-                  return Row(children: [Expanded(child: customer), actions]);
-                })),
-            const Divider(height: 1),
-            Expanded(
-                child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-                    child: LayoutBuilder(builder: (context, constraints) {
-                      final rows = Column(children: [
-                        Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 14),
-                            color: const Color(0xFFF5F6F7),
-                            child: const Row(children: [
-                              Expanded(
-                                  flex: 3,
-                                  child: Text('Item & Description',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w700))),
-                              Expanded(
-                                  flex: 1,
-                                  child: Text('Qty',
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w700))),
-                              Expanded(
-                                  flex: 2,
-                                  child: Text('Rate',
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w700))),
-                              Expanded(
-                                  flex: 2,
-                                  child: Text('Amount',
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w700))),
-                            ])),
-                        Expanded(
-                            child: ListView(
-                                children: _order.items
-                                    .map((item) => Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 12),
-                                        decoration: const BoxDecoration(
-                                          border: Border(
-                                              bottom: BorderSide(
-                                                  color: Color(0xFFE0E0E0))),
-                                        ),
-                                        child: Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Expanded(
-                                                  flex: 3,
-                                                  child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(item.itemName,
-                                                            style: const TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w700)),
-                                                        if (item.description
-                                                            .isNotEmpty)
-                                                          Text(item.description)
-                                                      ])),
-                                              Expanded(
-                                                  flex: 1,
-                                                  child: Text(
-                                                      item.qty
-                                                          .toStringAsFixed(2),
-                                                      textAlign:
-                                                          TextAlign.right)),
-                                              Expanded(
-                                                  flex: 2,
-                                                  child: Text(
-                                                      _currency
-                                                          .format(item.rate),
-                                                      textAlign:
-                                                          TextAlign.right)),
-                                              Expanded(
-                                                  flex: 2,
-                                                  child: Text(
-                                                      _currency
-                                                          .format(item.amount),
-                                                      textAlign:
-                                                          TextAlign.right)),
-                                            ])))
-                                    .toList())),
-                      ]);
-                      final summary = Padding(
-                          padding: const EdgeInsets.only(left: 16),
-                          child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Summary',
-                                    style: TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w700)),
-                                const SizedBox(height: 8),
-                                Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text('Sub Total',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.w600)),
-                                      Text(_currency.format(_order.subTotal))
-                                    ]),
-                                const SizedBox(height: 12),
-                                Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text('Total',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.w700)),
-                                      Text(_currency.format(_order.total),
-                                          style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w700))
-                                    ]),
-                              ]));
-                      if (constraints.maxWidth < 700)
-                        return Column(children: [
-                          Expanded(child: rows),
-                          const SizedBox(height: 14),
-                          ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxHeight: constraints.maxHeight * .35,
-                            ),
-                            child: SingleChildScrollView(child: summary),
-                          )
-                        ]);
-                      return Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(flex: 65, child: rows),
-                            const VerticalDivider(
-                                width: 1, color: Color(0xFFE0E0E0)),
-                            Expanded(
-                                flex: 35,
-                                child: SingleChildScrollView(child: summary))
-                          ]);
-                    }))),
-          ])),
-    );
-  }
-}
-
 class NewSalesOrderDialog extends StatefulWidget {
   final String nextNumber;
   final int? initialCustomerId;
   final String? initialCustomerName;
-  final SalesOrderData? initialOrder;
-  final bool isClone;
 
   const NewSalesOrderDialog({
     super.key,
     required this.nextNumber,
     this.initialCustomerId,
     this.initialCustomerName,
-    this.initialOrder,
-    this.isClone = false,
   });
 
   @override
@@ -3127,9 +2270,7 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
 
   late final TextEditingController orderNumberController =
       TextEditingController(
-    text: widget.initialOrder != null && !widget.isClone
-        ? widget.initialOrder!.orderNumber
-        : widget.nextNumber,
+    text: widget.nextNumber,
   );
 
   final TextEditingController customerController = TextEditingController();
@@ -3217,46 +2358,23 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
 
         _catalog = catalog;
 
-        final order = widget.initialOrder;
-        final matchingCustomers = customers
-            .where((customer) =>
-                customer.id == (order?.customerId ?? widget.initialCustomerId))
-            .toList();
-        _selectedCustomer =
-            matchingCustomers.isEmpty ? null : matchingCustomers.first;
-        customerController.text = _selectedCustomer?.name ??
-            order?.customerName ??
-            widget.initialCustomerName ??
-            '';
-        if (order != null) {
-          salesPersonController.text = order.salesPerson;
-          notesController.text = order.notes;
-          termsController.text = order.termsAndConditions;
-          selectedDate = order.date;
-          expectedShipmentDate = order.expectedShipmentDate;
-          for (final row in _itemRows) {
-            row.dispose();
+        final initialCustomerId = widget.initialCustomerId;
+        if (initialCustomerId != null) {
+          for (final customer in customers) {
+            if (customer.id == initialCustomerId) {
+              _selectedCustomer = customer;
+              break;
+            }
           }
-          _itemRows
-            ..clear()
-            ..addAll(order.items.map((item) {
-              final row = _ItemRow()..initialItem = item;
-              final matchingProducts = _catalog.where((product) =>
-                  product.sourceType == item.sourceType &&
-                  product.id ==
-                      (item.sourceType == 'Item' ? item.itemId : item.partId));
-              row.selectedProduct =
-                  matchingProducts.isEmpty ? null : matchingProducts.first;
-              row.itemController.text = item.itemName;
-              row.descriptionController.text = item.description;
-              row.qtyController.text = item.qty.toString();
-              row.rateController.text = item.rate.toStringAsFixed(2);
-              return row;
-            }));
-          if (_itemRows.isEmpty) {
-            _itemRows.add(_ItemRow());
-          }
+          _selectedCustomer ??= CustomerOption(
+            id: initialCustomerId,
+            name: widget.initialCustomerName ?? '',
+            companyName: '',
+            email: '',
+          );
         }
+        customerController.text =
+            _selectedCustomer?.name ?? widget.initialCustomerName ?? '';
 
         _isLoadingData = false;
       });
@@ -3323,6 +2441,36 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
   // DATES
   // ==========================================================
 
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      setState(() {
+        selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectShipmentDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: expectedShipmentDate ?? selectedDate,
+      firstDate: selectedDate,
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      setState(() {
+        expectedShipmentDate = picked;
+      });
+    }
+  }
+
   // ==========================================================
   // SAVE
   // ==========================================================
@@ -3351,9 +2499,7 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
         continue;
       }
 
-      if (row.selectedProduct == null &&
-          (row.initialItem == null ||
-              row.itemController.text.trim() != row.initialItem!.itemName)) {
+      if (row.selectedProduct == null) {
         _showMessage(
           'Please select an Item or Part from the saved list.',
         );
@@ -3387,23 +2533,14 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
         return;
       }
 
-      final product = row.selectedProduct;
-      final existingItem = row.initialItem;
+      final product = row.selectedProduct!;
 
       items.add(
         SalesOrderItem(
-          sourceType: product?.sourceType ?? existingItem!.sourceType,
-          itemId: product?.sourceType == 'Item'
-              ? product!.id
-              : product == null
-                  ? existingItem!.itemId
-                  : null,
-          partId: product?.sourceType == 'Part'
-              ? product!.id
-              : product == null
-                  ? existingItem!.partId
-                  : null,
-          itemName: product?.name ?? row.itemController.text.trim(),
+          sourceType: product.sourceType,
+          itemId: product.sourceType == 'Item' ? product.id : null,
+          partId: product.sourceType == 'Part' ? product.id : null,
+          itemName: product.name,
           description: row.descriptionController.text.trim(),
           qty: qty,
           rate: rate,
@@ -3425,14 +2562,10 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
 
     try {
       final order = SalesOrderData(
-        id: widget.isClone ? null : widget.initialOrder?.id,
         date: selectedDate,
         orderNumber: orderNumberController.text.trim(),
         customerId: _selectedCustomer!.id,
         customerName: _selectedCustomer!.name,
-        estimateId: widget.isClone ? null : widget.initialOrder?.estimateId,
-        estimateNumber:
-            widget.isClone ? '' : widget.initialOrder?.estimateNumber ?? '',
         salesPerson: salesPersonController.text.trim(),
         expectedShipmentDate: expectedShipmentDate,
         items: items,
@@ -3442,14 +2575,9 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
         termsAndConditions: termsController.text.trim(),
       );
 
-      if (widget.initialOrder != null && !widget.isClone) {
-        await SalesOrdersApi.updateSalesOrder(
-          widget.initialOrder!.id!,
-          order,
-        );
-      } else {
-        await SalesOrdersApi.createSalesOrder(order);
-      }
+      await SalesOrdersApi.createSalesOrder(
+        order,
+      );
 
       if (!mounted) return;
 
@@ -3491,422 +2619,406 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
   Widget build(
     BuildContext context,
   ) {
-    return SalesOrderFormTheme(
-      child: SalesGlassDialog(
-        insetPadding: const EdgeInsets.all(12),
-        backgroundColor: Colors.transparent,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: 1180,
-            maxHeight: 790,
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color(
-                0xFFE6EAED,
-              ),
-              borderRadius: BorderRadius.circular(
-                16,
-              ),
+    return SalesGlassDialog(
+      insetPadding: const EdgeInsets.all(
+        12,
+      ),
+      backgroundColor: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 1180,
+          maxHeight: 790,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(
+              0xFFE6EAED,
             ),
-            child: Column(
-              children: [
-                // HEADER
+            borderRadius: BorderRadius.circular(
+              16,
+            ),
+          ),
+          child: Column(
+            children: [
+              // HEADER
 
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  22,
+                  16,
+                  12,
+                  16,
+                ),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'New Sales Order',
+                        style: TextStyle(
+                          color: Color(
+                            0xFF17395C,
+                          ),
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _isSaving
+                          ? null
+                          : () {
+                              Navigator.pop(
+                                context,
+                              );
+                            },
+                      icon: const Icon(
+                        Icons.close,
+                        color: Color(
+                          0xFF777777,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const Divider(
+                height: 1,
+              ),
+
+              if (_isLoadingData) const LinearProgressIndicator(),
+
+              if (_loadingError != null)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    22,
-                    16,
+                  padding: const EdgeInsets.all(
                     12,
-                    16,
                   ),
                   child: Row(
                     children: [
                       Expanded(
                         child: Text(
-                          widget.initialOrder == null
-                              ? 'New Sales Order'
-                              : widget.isClone
-                                  ? 'Clone Sales Order'
-                                  : 'Edit Sales Order',
-                          style: TextStyle(
-                            color: Color(
-                              0xFF17395C,
-                            ),
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
+                          _loadingError!,
+                          style: const TextStyle(
+                            color: Colors.red,
                           ),
                         ),
                       ),
-                      IconButton(
-                        onPressed: _isSaving
-                            ? null
-                            : () {
-                                Navigator.pop(
-                                  context,
-                                );
-                              },
-                        icon: const Icon(
-                          Icons.close,
-                          color: Color(
-                            0xFF777777,
-                          ),
+                      TextButton(
+                        onPressed: _loadReferenceData,
+                        child: const Text(
+                          'Retry',
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                const Divider(
-                  height: 1,
-                ),
-
-                if (_isLoadingData) const LinearProgressIndicator(),
-
-                if (_loadingError != null)
-                  Padding(
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
                     padding: const EdgeInsets.all(
-                      12,
+                      22,
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Text(
-                            _loadingError!,
-                            style: const TextStyle(
-                              color: Colors.red,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: _buildCustomerSearch(),
+                            ),
+                            const SizedBox(
+                              width: 18,
+                            ),
+                            Expanded(
+                              child: _buildTextField(
+                                label: 'Sales Order # *',
+                                controller: orderNumberController,
+                                readOnly: true,
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 18,
+                            ),
+                            Expanded(
+                              child: _buildTextField(
+                                label: 'Sales Person Name',
+                                controller: salesPersonController,
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 18,
+                            ),
+                            Expanded(
+                              child: _buildDateField(
+                                label: 'Date *',
+                                value: selectedDate,
+                                onTap: _selectDate,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(
+                          height: 20,
+                        ),
+
+                        SizedBox(
+                          width: 330,
+                          child: _buildOptionalDateField(
+                            label: 'Expected Shipment Date',
+                            value: expectedShipmentDate,
+                            onTap: _selectShipmentDate,
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 26,
+                        ),
+
+                        // ITEMS TABLE
+
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: const Color(
+                                0xFFFFFFFF,
+                              ),
+                            ),
+                            borderRadius: BorderRadius.circular(
+                              8,
                             ),
                           ),
-                        ),
-                        TextButton(
-                          onPressed: _loadReferenceData,
-                          child: const Text(
-                            'Retry',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                Expanded(
-                  child: Form(
-                    key: _formKey,
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(
-                        22,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Column(
                             children: [
-                              Expanded(
-                                child: _buildCustomerSearch(),
-                              ),
-                              const SizedBox(
-                                width: 18,
-                              ),
-                              Expanded(
-                                child: _buildTextField(
-                                  label: 'Sales Order # *',
-                                  controller: orderNumberController,
-                                  readOnly: true,
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 16,
+                                ),
+                                decoration: const BoxDecoration(
+                                  color: Color(
+                                    0xFFF7F8FA,
+                                  ),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 5,
+                                      child: Text(
+                                        'Item Details',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 100,
+                                      child: Text(
+                                        'Qty',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 140,
+                                      child: Text(
+                                        'Rate',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 150,
+                                      child: Text(
+                                        'Amount',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 55,
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(
-                                width: 18,
-                              ),
-                              Expanded(
-                                child: _buildTextField(
-                                  label: 'Sales Person Name',
-                                  controller: salesPersonController,
-                                ),
-                              ),
-                              const SizedBox(
-                                width: 18,
-                              ),
-                              Expanded(
-                                child: _buildDateField(
-                                  label: 'Date *',
-                                  value: selectedDate,
-                                  onChanged: (date) {
-                                    if (date != null) {
-                                      setState(() {
-                                        selectedDate = date;
-                                      });
-                                    }
-                                  },
-                                ),
+                              ..._itemRows.map(
+                                (row) {
+                                  return _buildItemRow(
+                                    row,
+                                  );
+                                },
                               ),
                             ],
                           ),
+                        ),
 
-                          const SizedBox(
-                            height: 20,
+                        const SizedBox(
+                          height: 14,
+                        ),
+
+                        ElevatedButton.icon(
+                          onPressed: _isLoadingData ? null : _addRow,
+                          icon: const Icon(
+                            Icons.add,
                           ),
-
-                          SizedBox(
-                            width: 330,
-                            child: _buildOptionalDateField(
-                              label: 'Expected Shipment Date',
-                              value: expectedShipmentDate,
-                              onChanged: (date) {
-                                setState(() {
-                                  expectedShipmentDate = date;
-                                });
-                              },
+                          label: const Text(
+                            'Add Row',
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(
+                              0xFF1E78B7,
                             ),
+                            foregroundColor: Colors.white,
                           ),
+                        ),
 
-                          const SizedBox(
-                            height: 26,
-                          ),
+                        const SizedBox(
+                          height: 28,
+                        ),
 
-                          // ITEMS TABLE
-
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: const Color(
-                                  0xFFFFFFFF,
-                                ),
-                              ),
-                              borderRadius: BorderRadius.circular(
-                                8,
-                              ),
-                            ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: SizedBox(
+                            width: 390,
                             child: Column(
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 18,
-                                    vertical: 16,
-                                  ),
-                                  decoration: const BoxDecoration(
-                                    color: Color(
-                                      0xFFF7F8FA,
-                                    ),
-                                  ),
-                                  child: const Row(
-                                    children: [
-                                      Expanded(
-                                        flex: 5,
-                                        child: Text(
-                                          'Item Details',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 100,
-                                        child: Text(
-                                          'Qty',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 140,
-                                        child: Text(
-                                          'Rate',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 150,
-                                        child: Text(
-                                          'Amount',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 55,
-                                      ),
-                                    ],
-                                  ),
+                                _buildTotalRow(
+                                  'Sub Total',
+                                  subTotal,
                                 ),
-                                ..._itemRows.map(
-                                  (row) {
-                                    return _buildItemRow(
-                                      row,
-                                    );
-                                  },
+                                const SizedBox(
+                                  height: 12,
+                                ),
+                                _buildTotalRow(
+                                  'Total',
+                                  total,
+                                  isBold: true,
                                 ),
                               ],
                             ),
                           ),
+                        ),
 
-                          const SizedBox(
-                            height: 14,
-                          ),
+                        const SizedBox(
+                          height: 25,
+                        ),
 
-                          ElevatedButton.icon(
-                            onPressed: _isLoadingData ? null : _addRow,
-                            icon: const Icon(
-                              Icons.add,
-                            ),
-                            label: const Text(
-                              'Add Row',
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(
-                                0xFF1E78B7,
-                              ),
-                              foregroundColor: Colors.white,
-                            ),
+                        const Text(
+                          'Notes',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
                           ),
+                        ),
 
-                          const SizedBox(
-                            height: 28,
-                          ),
+                        const SizedBox(
+                          height: 8,
+                        ),
 
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: SizedBox(
-                              width: 390,
-                              child: Column(
-                                children: [
-                                  _buildTotalRow(
-                                    'Sub Total',
-                                    subTotal,
-                                  ),
-                                  const SizedBox(
-                                    height: 12,
-                                  ),
-                                  _buildTotalRow(
-                                    'Total',
-                                    total,
-                                    isBold: true,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                        TextFormField(
+                          controller: notesController,
+                          maxLines: 3,
+                          decoration: _inputDecoration(),
+                        ),
 
-                          const SizedBox(
-                            height: 25,
-                          ),
+                        const SizedBox(
+                          height: 18,
+                        ),
 
-                          const Text(
-                            'Notes',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
+                        const Text(
+                          'Terms & Conditions',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
                           ),
+                        ),
 
-                          const SizedBox(
-                            height: 8,
-                          ),
+                        const SizedBox(
+                          height: 8,
+                        ),
 
-                          TextFormField(
-                            controller: notesController,
-                            maxLines: 3,
-                            decoration: _inputDecoration(),
-                          ),
-
-                          const SizedBox(
-                            height: 18,
-                          ),
-
-                          const Text(
-                            'Terms & Conditions',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
-                          ),
-
-                          const SizedBox(
-                            height: 8,
-                          ),
-
-                          TextFormField(
-                            controller: termsController,
-                            maxLines: 3,
-                            decoration: _inputDecoration(),
-                          ),
-                        ],
-                      ),
+                        TextFormField(
+                          controller: termsController,
+                          maxLines: 3,
+                          decoration: _inputDecoration(),
+                        ),
+                      ],
                     ),
                   ),
                 ),
+              ),
 
-                // FOOTER
+              // FOOTER
 
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 22,
-                    vertical: 16,
-                  ),
-                  color: const Color(
-                    0xFFF8F8FA,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      ElevatedButton(
-                        onPressed: _isSaving
-                            ? null
-                            : () {
-                                Navigator.pop(
-                                  context,
-                                );
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(
-                            0xFF747B82,
-                          ),
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text(
-                          'Cancel',
-                        ),
-                      ),
-                      const SizedBox(
-                        width: 16,
-                      ),
-                      ElevatedButton(
-                        onPressed:
-                            _isSaving || _isLoadingData ? null : _saveOrder,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(
-                            0xFF1E78B7,
-                          ),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 28,
-                            vertical: 14,
-                          ),
-                        ),
-                        child: _isSaving
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Text(
-                                widget.initialOrder != null && !widget.isClone
-                                    ? 'Update Sales Order'
-                                    : 'Save Sales Order',
-                              ),
-                      ),
-                    ],
-                  ),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 22,
+                  vertical: 16,
                 ),
-              ],
-            ),
+                color: const Color(
+                  0xFFF8F8FA,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _isSaving
+                          ? null
+                          : () {
+                              Navigator.pop(
+                                context,
+                              );
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(
+                          0xFF747B82,
+                        ),
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text(
+                        'Cancel',
+                      ),
+                    ),
+                    const SizedBox(
+                      width: 16,
+                    ),
+                    ElevatedButton(
+                      onPressed:
+                          _isSaving || _isLoadingData ? null : _saveOrder,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(
+                          0xFF1E78B7,
+                        ),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 14,
+                        ),
+                      ),
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'Save Sales Order',
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -3934,23 +3046,30 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
         RawAutocomplete<CustomerOption>(
           textEditingController: customerController,
           focusNode: customerFocusNode,
-          displayStringForOption: (customer) =>
-              identical(customer, _noSalesOrderResultsCustomer)
-                  ? customerController.text
-                  : customer.name,
+          displayStringForOption: (customer) => customer.name,
           optionsBuilder: (textValue) {
-            final matches =
-                searchSalesOrderCustomers(_customers, textValue.text)
-                    .take(8)
-                    .toList();
-            return matches.isEmpty
-                ? const [_noSalesOrderResultsCustomer]
-                : matches;
+            final query = textValue.text.trim().toLowerCase();
+
+            if (query.isEmpty) {
+              return _customers.take(8);
+            }
+
+            return _customers
+                .where(
+                  (customer) =>
+                      customer.name.toLowerCase().contains(
+                            query,
+                          ) ||
+                      customer.companyName.toLowerCase().contains(
+                            query,
+                          ) ||
+                      customer.email.toLowerCase().contains(
+                            query,
+                          ),
+                )
+                .take(8);
           },
           onSelected: (customer) {
-            if (identical(customer, _noSalesOrderResultsCustomer)) {
-              return;
-            }
             setState(() {
               _selectedCustomer = customer;
 
@@ -3966,11 +3085,8 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
             return TextFormField(
               controller: controller,
               focusNode: focusNode,
-              style: const TextStyle(color: Color(0xFF1F2937)),
               decoration: _inputDecoration().copyWith(
                 hintText: 'Select or type to search...',
-                hintStyle: const TextStyle(color: Color(0xFF64748B)),
-                fillColor: const Color(0xFFF8FAFB),
               ),
               onChanged: (value) {
                 if (_selectedCustomer != null &&
@@ -3994,20 +3110,43 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
             onSelected,
             options,
           ) {
-            final availableOptions = options.toList();
-            final showNoResults = availableOptions.length == 1 &&
-                identical(
-                  availableOptions.single,
-                  _noSalesOrderResultsCustomer,
-                );
-            return SalesOrderCustomerOptionsView(
-              customers: showNoResults ? const [] : availableOptions,
-              showNoResults: showNoResults,
-              onSelected: (customer) {
-                if (!identical(customer, _noSalesOrderResultsCustomer)) {
-                  onSelected(customer);
-                }
-              },
+            final list = options.toList();
+
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 10,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: 340,
+                    maxHeight: 260,
+                  ),
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    itemCount: list.length,
+                    itemBuilder: (_, index) {
+                      final customer = list[index];
+
+                      return ListTile(
+                        title: Text(
+                          customer.name,
+                        ),
+                        subtitle: customer.companyName.isEmpty
+                            ? null
+                            : Text(
+                                customer.companyName,
+                              ),
+                        onTap: () {
+                          onSelected(
+                            customer,
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ),
             );
           },
         ),
@@ -4036,23 +3175,30 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
                 RawAutocomplete<CatalogOption>(
                   textEditingController: row.itemController,
                   focusNode: row.focusNode,
-                  displayStringForOption: (product) =>
-                      identical(product, _noSalesOrderResultsCatalogOption)
-                          ? row.itemController.text
-                          : product.name,
+                  displayStringForOption: (product) => product.name,
                   optionsBuilder: (textValue) {
-                    final matches = searchSalesOrderCatalog(
-                      _catalog,
-                      textValue.text,
-                    ).take(10).toList();
-                    return matches.isEmpty
-                        ? const [_noSalesOrderResultsCatalogOption]
-                        : matches;
+                    final query = textValue.text.trim().toLowerCase();
+
+                    if (query.isEmpty) {
+                      return _catalog.take(10);
+                    }
+
+                    return _catalog
+                        .where(
+                          (product) =>
+                              product.name.toLowerCase().contains(
+                                    query,
+                                  ) ||
+                              product.sku.toLowerCase().contains(
+                                    query,
+                                  ) ||
+                              product.sourceType.toLowerCase().contains(
+                                    query,
+                                  ),
+                        )
+                        .take(10);
                   },
                   onSelected: (product) {
-                    if (identical(product, _noSalesOrderResultsCatalogOption)) {
-                      return;
-                    }
                     setState(() {
                       row.selectedProduct = product;
 
@@ -4074,11 +3220,8 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
                     return TextFormField(
                       controller: controller,
                       focusNode: focusNode,
-                      style: const TextStyle(color: Color(0xFF1F2937)),
                       decoration: _cellDecoration().copyWith(
                         hintText: 'Select or type to search...',
-                        hintStyle: const TextStyle(color: Color(0xFF64748B)),
-                        fillColor: const Color(0xFFF8FAFB),
                       ),
                       onChanged: (value) {
                         if (row.selectedProduct != null &&
@@ -4095,23 +3238,67 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
                     onSelected,
                     options,
                   ) {
-                    final availableOptions = options.toList();
-                    final showNoResults = availableOptions.length == 1 &&
-                        identical(
-                          availableOptions.single,
-                          _noSalesOrderResultsCatalogOption,
-                        );
-                    return SalesOrderCatalogOptionsView(
-                      products: showNoResults ? const [] : availableOptions,
-                      showNoResults: showNoResults,
-                      onSelected: (product) {
-                        if (!identical(
-                          product,
-                          _noSalesOrderResultsCatalogOption,
-                        )) {
-                          onSelected(product);
-                        }
-                      },
+                    final list = options.toList();
+
+                    return Align(
+                      alignment: Alignment.topLeft,
+                      child: Material(
+                        elevation: 10,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth: 460,
+                            maxHeight: 280,
+                          ),
+                          child: ListView.builder(
+                            padding: EdgeInsets.zero,
+                            shrinkWrap: true,
+                            itemCount: list.length,
+                            itemBuilder: (_, index) {
+                              final product = list[index];
+
+                              return ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: product.sourceType == 'Item'
+                                        ? const Color(
+                                            0xFFE3F2FD,
+                                          )
+                                        : const Color(
+                                            0xFFFFF3E0,
+                                          ),
+                                    borderRadius: BorderRadius.circular(
+                                      10,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    product.sourceType,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                                title: Text(
+                                  product.name,
+                                ),
+                                subtitle: Text(
+                                  product.sku.isEmpty
+                                      ? 'INR ${product.rate.toStringAsFixed(2)}'
+                                      : '${product.sku} • INR ${product.rate.toStringAsFixed(2)}',
+                                ),
+                                onTap: () {
+                                  onSelected(
+                                    product,
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -4247,7 +3434,7 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
   Widget _buildDateField({
     required String label,
     required DateTime value,
-    required ValueChanged<DateTime?> onChanged,
+    required VoidCallback onTap,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -4262,16 +3449,28 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
         const SizedBox(
           height: 8,
         ),
-        SalesOrderDatePickerField(
-          value: value,
-          firstDate: DateTime(2000),
-          lastDate: DateTime(2100),
-          canClear: false,
-          calendarKey: const ValueKey('sales-order-form-calendar'),
-          emptyTextStyle: const TextStyle(color: Color(0xFF9AA3AD)),
-          useFormActionStyles: true,
-          decoration: _inputDecoration(),
-          onChanged: onChanged,
+        InkWell(
+          onTap: onTap,
+          child: InputDecorator(
+            decoration: _inputDecoration(),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    DateFormat(
+                      'dd-MM-yyyy',
+                    ).format(
+                      value,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -4280,7 +3479,7 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
   Widget _buildOptionalDateField({
     required String label,
     required DateTime? value,
-    required ValueChanged<DateTime?> onChanged,
+    required VoidCallback onTap,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -4295,15 +3494,37 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
         const SizedBox(
           height: 8,
         ),
-        SalesOrderDatePickerField(
-          value: value,
-          firstDate: selectedDate,
-          lastDate: DateTime(2100),
-          calendarKey: const ValueKey('sales-order-form-calendar'),
-          emptyTextStyle: const TextStyle(color: Color(0xFF9AA3AD)),
-          useFormActionStyles: true,
-          decoration: _inputDecoration(),
-          onChanged: onChanged,
+        InkWell(
+          onTap: onTap,
+          child: InputDecorator(
+            decoration: _inputDecoration(),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value == null
+                        ? 'dd-mm-yyyy'
+                        : DateFormat(
+                            'dd-MM-yyyy',
+                          ).format(
+                            value,
+                          ),
+                    style: TextStyle(
+                      color: value == null
+                          ? const Color(
+                              0xFF9AA3AD,
+                            )
+                          : Colors.black,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -4413,7 +3634,6 @@ class _NewSalesOrderDialogState extends State<NewSalesOrderDialog> {
 
 class _ItemRow {
   CatalogOption? selectedProduct;
-  SalesOrderItem? initialItem;
 
   final TextEditingController itemController = TextEditingController();
 
@@ -4445,7 +3665,6 @@ class _ItemRow {
 
   void clear() {
     selectedProduct = null;
-    initialItem = null;
 
     itemController.clear();
 
@@ -4503,11 +3722,9 @@ class _HeaderText extends StatelessWidget {
 
 class _StatusBadge extends StatelessWidget {
   final SalesOrderStatus status;
-  final ValueChanged<SalesOrderStatus?> onChanged;
 
   const _StatusBadge({
     required this.status,
-    required this.onChanged,
   });
 
   Color get background {
@@ -4517,17 +3734,17 @@ class _StatusBadge extends StatelessWidget {
           0xFFF1F1F1,
         );
 
-      case SalesOrderStatus.approved:
-        return const Color(
-          0xFFE6F7EC,
-        );
-
-      case SalesOrderStatus.sent:
+      case SalesOrderStatus.confirmed:
         return const Color(
           0xFFE3F2FD,
         );
 
-      case SalesOrderStatus.rejected:
+      case SalesOrderStatus.fulfilled:
+        return const Color(
+          0xFFE6F7EC,
+        );
+
+      case SalesOrderStatus.cancelled:
         return const Color(
           0xFFFDEAEA,
         );
@@ -4541,27 +3758,22 @@ class _StatusBadge extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        padding: const EdgeInsets.only(left: 10, right: 4),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 5,
+        ),
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(
             20,
           ),
         ),
-        child: DropdownButton<SalesOrderStatus>(
-          value: status,
-          isDense: true,
-          dropdownColor: Colors.white,
-          underline: const SizedBox.shrink(),
-          icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+        child: Text(
+          status.label,
           style: const TextStyle(
-              fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black87),
-          borderRadius: BorderRadius.circular(10),
-          items: SalesOrderStatus.values
-              .map((value) =>
-                  DropdownMenuItem(value: value, child: Text(value.label)))
-              .toList(),
-          onChanged: onChanged,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );

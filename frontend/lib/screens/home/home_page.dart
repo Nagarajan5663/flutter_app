@@ -275,11 +275,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _goToLogin() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LoginPage()));
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const LoginPage()));
   }
 
   void _goToSignUp() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SignUpPage()));
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const SignUpPage()));
   }
 
   void _goBack() {
@@ -287,12 +289,15 @@ class _HomePageState extends State<HomePage> {
       Navigator.of(context).pop();
       return;
     }
-    _scrollController.animateTo(0, duration: const Duration(milliseconds: 600), curve: Curves.easeOutCubic);
+    _scrollController.animateTo(0,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeOutCubic);
   }
 
   void _selectPlan(String plan) {
     setState(() => _selectedPlan = plan);
-    _showToast('$plan Tier Selected', 'Codexia deployment configured for $plan.');
+    _showToast(
+        '$plan Tier Selected', 'Codexia deployment configured for $plan.');
   }
 
   void _showToast(String title, String message) {
@@ -337,21 +342,26 @@ class _HomePageState extends State<HomePage> {
                           physics: const ClampingScrollPhysics(),
                           slivers: [
                             SliverToBoxAdapter(
-                              child: RepaintBoundary(child: _buildHeroSection()),
+                              child:
+                                  RepaintBoundary(child: _buildHeroSection()),
                             ),
                             SliverToBoxAdapter(
-                              child: RepaintBoundary(child: _buildStatsSection()),
+                              child:
+                                  RepaintBoundary(child: _buildStatsSection()),
                             ),
                             // SCROLL-DRIVEN, PINNED FEATURE CAROUSEL
                             ..._buildFeaturesPinnedSlivers(viewport.maxHeight),
                             SliverToBoxAdapter(
-                              child: RepaintBoundary(child: _buildShowcaseSection()),
+                              child: RepaintBoundary(
+                                  child: _buildShowcaseSection()),
                             ),
                             SliverToBoxAdapter(
-                              child: RepaintBoundary(child: _buildPricingSection()),
+                              child: RepaintBoundary(
+                                  child: _buildPricingSection()),
                             ),
                             SliverToBoxAdapter(
-                              child: RepaintBoundary(child: _buildAboutSection()),
+                              child:
+                                  RepaintBoundary(child: _buildAboutSection()),
                             ),
                             SliverToBoxAdapter(
                               child: RepaintBoundary(child: _buildFooter()),
@@ -485,7 +495,10 @@ class _HomePageState extends State<HomePage> {
     return Row(
       children: [
         _HoverScale(
-          child: IconButton(onPressed: _goBack, tooltip: 'Back', icon: const Icon(Icons.arrow_back, color: onSurface)),
+          child: IconButton(
+              onPressed: _goBack,
+              tooltip: 'Back',
+              icon: const Icon(Icons.arrow_back, color: onSurface)),
         ),
         const SizedBox(width: 6),
         _buildWordmark(),
@@ -498,7 +511,9 @@ class _HomePageState extends State<HomePage> {
         _HoverScale(
           child: TextButton(
             onPressed: _goToLogin,
-            child: const Text('Sign In', style: TextStyle(color: onSurfaceVariant, fontWeight: FontWeight.w600)),
+            child: const Text('Sign In',
+                style: TextStyle(
+                    color: onSurfaceVariant, fontWeight: FontWeight.w600)),
           ),
         ),
         const SizedBox(width: 10),
@@ -510,10 +525,13 @@ class _HomePageState extends State<HomePage> {
   Widget _buildMobileNav() {
     return Row(
       children: [
-        IconButton(onPressed: _goBack, icon: const Icon(Icons.arrow_back, color: onSurface)),
+        IconButton(
+            onPressed: _goBack,
+            icon: const Icon(Icons.arrow_back, color: onSurface)),
         _buildWordmark(),
         const Spacer(),
         PopupMenuButton<String>(
+          position: PopupMenuPosition.under,
           color: surfaceContainerHigh,
           icon: const Icon(Icons.menu, color: onSurface),
           itemBuilder: (context) => [
@@ -552,7 +570,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   PopupMenuItem<String> _mobileItem(String value, String label) {
-    return PopupMenuItem(value: value, child: Text(label, style: const TextStyle(color: onSurface)));
+    return PopupMenuItem(
+        value: value,
+        child: Text(label, style: const TextStyle(color: onSurface)));
   }
 
   Widget _buildWordmark() {
@@ -585,18 +605,27 @@ class _HomePageState extends State<HomePage> {
           constraints: const BoxConstraints(maxWidth: 1280),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final columns = constraints.maxWidth >= 900 ? 4 : (constraints.maxWidth >= 560 ? 2 : 1);
+              final columns = constraints.maxWidth >= 900
+                  ? 4
+                  : (constraints.maxWidth >= 560 ? 2 : 1);
               final cards = [
-                _statCard(Icons.corporate_fare, 'GLOBAL SCALE', 10000, '+', 'Active Corporate Entities', secondary),
-                _statCard(Icons.receipt_long, 'EXECUTION', 50000, '+', 'Orders Managed Daily', primary),
-                _statCard(Icons.verified_user, 'SLO GUARANTEE', 99, '.9%', 'Fault-Tolerant Uptime', tertiary),
-                _staticStatCard(Icons.sync_alt, 'AVAILABILITY', '24/7', 'Continuous Cloud Operation', secondary),
+                _statCard(Icons.corporate_fare, 'GLOBAL SCALE', 10000, '+',
+                    'Active Corporate Entities', secondary),
+                _statCard(Icons.receipt_long, 'EXECUTION', 50000, '+',
+                    'Orders Managed Daily', primary),
+                _statCard(Icons.verified_user, 'SLO GUARANTEE', 99, '.9%',
+                    'Fault-Tolerant Uptime', tertiary),
+                _staticStatCard(Icons.sync_alt, 'AVAILABILITY', '24/7',
+                    'Continuous Cloud Operation', secondary),
               ];
               return Wrap(
                 spacing: 16,
                 runSpacing: 16,
                 children: cards
-                    .map((c) => SizedBox(width: (constraints.maxWidth - (columns - 1) * 16) / columns, child: c))
+                    .map((c) => SizedBox(
+                        width: (constraints.maxWidth - (columns - 1) * 16) /
+                            columns,
+                        child: c))
                     .toList(),
               );
             },
@@ -606,11 +635,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _statCard(IconData icon, String tag, int target, String suffix, String label, Color accent) {
+  Widget _statCard(IconData icon, String tag, int target, String suffix,
+      String label, Color accent) {
     return _TiltCard(
       child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: surfaceContainer.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(
+            color: surfaceContainer.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(16)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -620,27 +652,38 @@ class _HomePageState extends State<HomePage> {
                 Container(
                   width: 48,
                   height: 48,
-                  decoration: BoxDecoration(color: accent.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12)),
                   child: Icon(icon, color: accent, size: 26),
                 ),
-                Text(tag, style: TextStyle(color: accent, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                Text(tag,
+                    style: TextStyle(
+                        color: accent,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2)),
               ],
             ),
             const SizedBox(height: 16),
             _CountUp(target: target, suffix: suffix, accent: accent),
             const SizedBox(height: 6),
-            Text(label, style: const TextStyle(color: onSurfaceVariant, fontSize: 13)),
+            Text(label,
+                style: const TextStyle(color: onSurfaceVariant, fontSize: 13)),
           ],
         ),
       ),
     );
   }
 
-  Widget _staticStatCard(IconData icon, String tag, String value, String label, Color accent) {
+  Widget _staticStatCard(
+      IconData icon, String tag, String value, String label, Color accent) {
     return _TiltCard(
       child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: surfaceContainer.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(
+            color: surfaceContainer.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(16)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -650,16 +693,28 @@ class _HomePageState extends State<HomePage> {
                 Container(
                   width: 48,
                   height: 48,
-                  decoration: BoxDecoration(color: accent.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12)),
                   child: Icon(icon, color: accent, size: 26),
                 ),
-                Text(tag, style: TextStyle(color: accent, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                Text(tag,
+                    style: TextStyle(
+                        color: accent,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2)),
               ],
             ),
             const SizedBox(height: 16),
-            Text(value, style: const TextStyle(color: onSurface, fontSize: 30, fontWeight: FontWeight.bold)),
+            Text(value,
+                style: const TextStyle(
+                    color: onSurface,
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
-            Text(label, style: const TextStyle(color: onSurfaceVariant, fontSize: 13)),
+            Text(label,
+                style: const TextStyle(color: onSurfaceVariant, fontSize: 13)),
           ],
         ),
       ),
@@ -799,11 +854,16 @@ class _HomePageState extends State<HomePage> {
   // now uses the Apple Invites-style spring carousel above.
   // ============================================================
 
-
   /// Shared header strip for every stacked card — this is the part
   /// that stays visible once the card has fully collapsed into the
   /// stack, so it must never depend on `progress`.
-  Widget _stackHeader({required IconData icon, required Color accent, required String title, required String tag, required int index, required int total}) {
+  Widget _stackHeader(
+      {required IconData icon,
+      required Color accent,
+      required String title,
+      required String tag,
+      required int index,
+      required int total}) {
     return Container(
       height: 62,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -812,7 +872,9 @@ class _HomePageState extends State<HomePage> {
           Container(
             width: 32,
             height: 32,
-            decoration: BoxDecoration(color: accent.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(9)),
+            decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(9)),
             child: Icon(icon, color: accent, size: 16),
           ),
           const SizedBox(width: 14),
@@ -821,17 +883,30 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(tag, style: TextStyle(color: accent, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.3)),
+                Text(tag,
+                    style: TextStyle(
+                        color: accent,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.3)),
                 Text(title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
+                    style: const TextStyle(
+                        color: onSurface,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700)),
               ],
             ),
           ),
           const SizedBox(width: 10),
-          Text('${index.toString().padLeft(2, '0')} / ${total.toString().padLeft(2, '0')}',
-              style: const TextStyle(color: onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+          Text(
+              '${index.toString().padLeft(2, '0')} / ${total.toString().padLeft(2, '0')}',
+              style: const TextStyle(
+                  color: onSurfaceVariant,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5)),
         ],
       ),
     );
@@ -863,7 +938,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
   // ============================================================
   // NORMAL SECTIONS AFTER THE FEATURE CAROUSEL
   // These sections intentionally use normal scrolling.
@@ -872,13 +946,24 @@ class _HomePageState extends State<HomePage> {
   Widget _sectionHeading(String eyebrow, String title, String sub) {
     return Column(
       children: [
-        Text(eyebrow, style: TextStyle(color: secondary, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.6)),
+        Text(eyebrow,
+            style: TextStyle(
+                color: secondary,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.6)),
         const SizedBox(height: 8),
-        Text(title, textAlign: TextAlign.center, style: const TextStyle(color: onSurface, fontSize: 32, fontWeight: FontWeight.bold)),
+        Text(title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+                color: onSurface, fontSize: 32, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 620),
-          child: Text(sub, textAlign: TextAlign.center, style: const TextStyle(color: onSurfaceVariant, fontSize: 14.5, height: 1.55)),
+          child: Text(sub,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  color: onSurfaceVariant, fontSize: 14.5, height: 1.55)),
         ),
       ],
     );
@@ -898,7 +983,8 @@ class _HomePageState extends State<HomePage> {
               final deck = _buildCommandDeck();
               final points = _buildShowcasePoints();
               if (stacked) {
-                return Column(children: [deck, const SizedBox(height: 32), points]);
+                return Column(
+                    children: [deck, const SizedBox(height: 32), points]);
               }
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -925,31 +1011,70 @@ class _HomePageState extends State<HomePage> {
           constraints: const BoxConstraints(maxWidth: 1280),
           child: Column(
             children: [
-              _sectionHeading('Transparent Economics', 'Predictable Plans For Scaling Organizations',
+              _sectionHeading(
+                  'Transparent Economics',
+                  'Predictable Plans For Scaling Organizations',
                   'No hidden implementation penalties. Switch between monthly agility or annual savings whenever your scale demands.'),
               const SizedBox(height: 44),
               LayoutBuilder(
                 builder: (context, constraints) {
                   final stacked = constraints.maxWidth < 900;
                   final starter = _pricingTile(
-                    tag: 'EARLY STAGE', plan: 'Starter Core', price: '₹0', period: '/ month',
-                    desc: 'Foundational inventory and checkout tooling for nascent operations finding market rhythm.',
-                    features: const [('Up to 250 orders/month', true), ('Single warehouse location', true), ('Basic revenue analytics', true), ('Multi-user permission matrix', false)],
-                    recommended: false, ctaLabel: 'Deploy Starter',
+                    tag: 'EARLY STAGE',
+                    plan: 'Starter Core',
+                    price: '₹0',
+                    period: '/ month',
+                    desc:
+                        'Foundational inventory and checkout tooling for nascent operations finding market rhythm.',
+                    features: const [
+                      ('Up to 250 orders/month', true),
+                      ('Single warehouse location', true),
+                      ('Basic revenue analytics', true),
+                      ('Multi-user permission matrix', false)
+                    ],
+                    recommended: false,
+                    ctaLabel: 'Deploy Starter',
                   );
                   final pro = _pricingTile(
-                    tag: 'GROWTH ENGINES', plan: 'Professional', price: '₹999', period: '/ month',
-                    desc: 'High-precision infrastructure designed for fast-expanding enterprises with multiple channels.',
-                    features: const [('Unlimited daily transactions', true), ('Multi-warehouse inventory sync', true), ('Predictive stockout alerts', true), ('Complete CRM & Vendor automation', true)],
-                    recommended: true, ctaLabel: 'Activate Professional',
+                    tag: 'GROWTH ENGINES',
+                    plan: 'Professional',
+                    price: '₹999',
+                    period: '/ month',
+                    desc:
+                        'High-precision infrastructure designed for fast-expanding enterprises with multiple channels.',
+                    features: const [
+                      ('Unlimited daily transactions', true),
+                      ('Multi-warehouse inventory sync', true),
+                      ('Predictive stockout alerts', true),
+                      ('Complete CRM & Vendor automation', true)
+                    ],
+                    recommended: true,
+                    ctaLabel: 'Activate Professional',
                   );
                   final enterprise = _pricingTile(
-                    tag: 'GLOBAL OPERATIONS', plan: 'Custom Matrix', price: 'Custom', period: '',
-                    desc: 'Bespoke SLA deployment with dedicated database instances, custom SSO, and dedicated engineering.',
-                    features: const [('Dedicated low-latency tenant cluster', true), ('Enterprise ERP bi-directional sync', true), ('Custom regulatory compliance reports', true), ('24/7 dedicated solutions engineer', true)],
-                    recommended: false, ctaLabel: 'Contact Advisory',
+                    tag: 'GLOBAL OPERATIONS',
+                    plan: 'Custom Matrix',
+                    price: 'Custom',
+                    period: '',
+                    desc:
+                        'Bespoke SLA deployment with dedicated database instances, custom SSO, and dedicated engineering.',
+                    features: const [
+                      ('Dedicated low-latency tenant cluster', true),
+                      ('Enterprise ERP bi-directional sync', true),
+                      ('Custom regulatory compliance reports', true),
+                      ('24/7 dedicated solutions engineer', true)
+                    ],
+                    recommended: false,
+                    ctaLabel: 'Contact Advisory',
                   );
-                  if (stacked) return Column(children: [starter, const SizedBox(height: 22), pro, const SizedBox(height: 22), enterprise]);
+                  if (stacked)
+                    return Column(children: [
+                      starter,
+                      const SizedBox(height: 22),
+                      pro,
+                      const SizedBox(height: 22),
+                      enterprise
+                    ]);
                   return IntrinsicHeight(
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -981,16 +1106,24 @@ class _HomePageState extends State<HomePage> {
           constraints: const BoxConstraints(maxWidth: 1280),
           child: Container(
             padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(color: surfaceContainer.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(28)),
+            decoration: BoxDecoration(
+                color: surfaceContainer.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(28)),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final stacked = constraints.maxWidth < 900;
                 final image = _buildAboutImage();
                 final content = _buildAboutContent();
-                if (stacked) return Column(children: [image, const SizedBox(height: 40), content]);
+                if (stacked)
+                  return Column(
+                      children: [image, const SizedBox(height: 40), content]);
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [Expanded(child: image), const SizedBox(width: 48), Expanded(child: content)],
+                  children: [
+                    Expanded(child: image),
+                    const SizedBox(width: 48),
+                    Expanded(child: content)
+                  ],
                 );
               },
             ),
@@ -1007,22 +1140,34 @@ class _HomePageState extends State<HomePage> {
         ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: _HoverImage(
-            imageUrl: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=900&q=75',
+            imageUrl:
+                'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=900&q=75',
             height: 400,
           ),
         ),
         Positioned(
-          bottom: -20, right: -16,
+          bottom: -20,
+          right: -16,
           child: Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: surfaceContainerHighest.withValues(alpha: 0.95), borderRadius: BorderRadius.circular(18)),
+            decoration: BoxDecoration(
+                color: surfaceContainerHighest.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(18)),
             child: Row(children: [
               Icon(Icons.military_tech, color: secondary, size: 32),
               const SizedBox(width: 10),
-              const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('ISO-27001 Certified', style: TextStyle(color: onSurface, fontWeight: FontWeight.bold, fontSize: 13)),
-                Text('Bank-Grade Data Encryption', style: TextStyle(color: onSurfaceVariant, fontSize: 11)),
-              ]),
+              const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('ISO-27001 Certified',
+                        style: TextStyle(
+                            color: onSurface,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13)),
+                    Text('Bank-Grade Data Encryption',
+                        style:
+                            TextStyle(color: onSurfaceVariant, fontSize: 11)),
+                  ]),
             ]),
           ),
         ),
@@ -1038,7 +1183,13 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _stackHeader(icon: Icons.dashboard_customize, accent: secondary, title: 'Enterprise Command Deck', tag: 'SHOWCASE', index: index, total: total),
+          _stackHeader(
+              icon: Icons.dashboard_customize,
+              accent: secondary,
+              title: 'Enterprise Command Deck',
+              tag: 'SHOWCASE',
+              index: index,
+              total: total),
           Expanded(
             child: Opacity(
               opacity: (1 - progress * 1.6).clamp(0.0, 1.0),
@@ -1053,7 +1204,12 @@ class _HomePageState extends State<HomePage> {
                         final stacked = constraints.maxWidth < 900;
                         final deck = _buildCommandDeck();
                         final points = _buildShowcasePoints();
-                        if (stacked) return Column(children: [deck, const SizedBox(height: 28), points]);
+                        if (stacked)
+                          return Column(children: [
+                            deck,
+                            const SizedBox(height: 28),
+                            points
+                          ]);
                         return Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -1077,22 +1233,34 @@ class _HomePageState extends State<HomePage> {
   Widget _buildCommandDeck() {
     return Container(
       padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(color: surfaceContainerHigh.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(22)),
+      decoration: BoxDecoration(
+          color: surfaceContainerHigh.withValues(alpha: 0.7),
+          borderRadius: BorderRadius.circular(22)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: secondary, borderRadius: BorderRadius.circular(8)),
-                child: const Text('Monthly', style: TextStyle(color: onSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                    color: secondary, borderRadius: BorderRadius.circular(8)),
+                child: const Text('Monthly',
+                    style: TextStyle(
+                        color: onSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold)),
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
-                child: const Text('Annual', style: TextStyle(color: onSurfaceVariant, fontSize: 11)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                    color: surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8)),
+                child: const Text('Annual',
+                    style: TextStyle(color: onSurfaceVariant, fontSize: 11)),
               ),
             ],
           ),
@@ -1111,16 +1279,26 @@ class _HomePageState extends State<HomePage> {
                 runSpacing: 12,
                 children: metrics
                     .map((m) => SizedBox(
-                          width: (constraints.maxWidth - (cols - 1) * 12) / cols,
+                          width:
+                              (constraints.maxWidth - (cols - 1) * 12) / cols,
                           child: Container(
                             padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(color: surfaceContainerHighest.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(12)),
+                            decoration: BoxDecoration(
+                                color: surfaceContainerHighest.withValues(
+                                    alpha: 0.6),
+                                borderRadius: BorderRadius.circular(12)),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(m.$1, style: const TextStyle(color: onSurfaceVariant, fontSize: 10)),
+                                Text(m.$1,
+                                    style: const TextStyle(
+                                        color: onSurfaceVariant, fontSize: 10)),
                                 const SizedBox(height: 4),
-                                Text(m.$2, style: TextStyle(color: m.$3, fontSize: 17, fontWeight: FontWeight.bold)),
+                                Text(m.$2,
+                                    style: TextStyle(
+                                        color: m.$3,
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ),
@@ -1130,11 +1308,14 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           const SizedBox(height: 20),
-          _progressLine('Enterprise Revenue Target (Q3)', 0.88, '88.4% Achieved', secondary),
+          _progressLine('Enterprise Revenue Target (Q3)', 0.88,
+              '88.4% Achieved', secondary),
           const SizedBox(height: 12),
-          _progressLine('Warehouse Capacity Fulfillment', 0.64, '64.2% Allocated', primary),
+          _progressLine('Warehouse Capacity Fulfillment', 0.64,
+              '64.2% Allocated', primary),
           const SizedBox(height: 12),
-          _progressLine('Direct Supplier SLA Performance', 0.96, '96.8% Compliance', tertiary),
+          _progressLine('Direct Supplier SLA Performance', 0.96,
+              '96.8% Compliance', tertiary),
         ],
       ),
     );
@@ -1147,8 +1328,11 @@ class _HomePageState extends State<HomePage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(color: onSurfaceVariant, fontSize: 12)),
-            Text(note, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
+            Text(label,
+                style: const TextStyle(color: onSurfaceVariant, fontSize: 12)),
+            Text(note,
+                style: TextStyle(
+                    color: color, fontSize: 12, fontWeight: FontWeight.bold)),
           ],
         ),
         const SizedBox(height: 6),
@@ -1163,7 +1347,8 @@ class _HomePageState extends State<HomePage> {
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  gradient: LinearGradient(colors: [color.withValues(alpha: 0.5), color]),
+                  gradient: LinearGradient(
+                      colors: [color.withValues(alpha: 0.5), color]),
                 ),
               ),
             ),
@@ -1178,38 +1363,59 @@ class _HomePageState extends State<HomePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Built For Better, Rapid Decisions',
-            style: TextStyle(color: onSurface, fontSize: 24, fontWeight: FontWeight.bold, height: 1.15)),
+            style: TextStyle(
+                color: onSurface,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                height: 1.15)),
         const SizedBox(height: 10),
         const Text(
           'Run your company on live figures rather than delayed spreadsheets. Codexia synthesizes operational noise into strategic signal.',
           style: TextStyle(color: onSurfaceVariant, fontSize: 14, height: 1.6),
         ),
         const SizedBox(height: 18),
-        _showcasePoint(Icons.visibility, 'Complete Transparency',
-            'Instant drill-down from enterprise-level cash aggregates to single invoices or inventory shelf bins.', secondary),
+        _showcasePoint(
+            Icons.visibility,
+            'Complete Transparency',
+            'Instant drill-down from enterprise-level cash aggregates to single invoices or inventory shelf bins.',
+            secondary),
         const SizedBox(height: 10),
-        _showcasePoint(Icons.bolt, 'High-Velocity Operations',
-            'Pre-built procedural triggers eliminate approval bottlenecks across multi-department handoffs.', primary),
+        _showcasePoint(
+            Icons.bolt,
+            'High-Velocity Operations',
+            'Pre-built procedural triggers eliminate approval bottlenecks across multi-department handoffs.',
+            primary),
         const SizedBox(height: 10),
-        _showcasePoint(Icons.auto_graph, 'Compounding Growth Velocity',
-            'Automated reordering calculations prevent revenue stockouts and maximize working capital efficiency.', tertiary),
+        _showcasePoint(
+            Icons.auto_graph,
+            'Compounding Growth Velocity',
+            'Automated reordering calculations prevent revenue stockouts and maximize working capital efficiency.',
+            tertiary),
         const SizedBox(height: 18),
-        _GoldButton(label: 'Explore Codexia Matrix', onPressed: () => _scrollTo(pricingKey), icon: Icons.east),
+        _GoldButton(
+            label: 'Explore Codexia Matrix',
+            onPressed: () => _scrollTo(pricingKey),
+            icon: Icons.east),
       ],
     );
   }
 
-  Widget _showcasePoint(IconData icon, String title, String copy, Color accent) {
+  Widget _showcasePoint(
+      IconData icon, String title, String copy, Color accent) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: surfaceContainerHigh.withValues(alpha: 0.35), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+          color: surfaceContainerHigh.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(16)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 38,
             height: 38,
-            decoration: BoxDecoration(color: accent.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: accent, size: 20),
           ),
           const SizedBox(width: 12),
@@ -1217,9 +1423,15 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: onSurface, fontSize: 14.5, fontWeight: FontWeight.w600)),
+                Text(title,
+                    style: const TextStyle(
+                        color: onSurface,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600)),
                 const SizedBox(height: 3),
-                Text(copy, style: const TextStyle(color: onSurfaceVariant, fontSize: 12, height: 1.5)),
+                Text(copy,
+                    style: const TextStyle(
+                        color: onSurfaceVariant, fontSize: 12, height: 1.5)),
               ],
             ),
           ),
@@ -1236,7 +1448,13 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _stackHeader(icon: Icons.payments, accent: secondary, title: 'Predictable Plans For Scaling Orgs', tag: 'PRICING', index: index, total: total),
+          _stackHeader(
+              icon: Icons.payments,
+              accent: secondary,
+              title: 'Predictable Plans For Scaling Orgs',
+              tag: 'PRICING',
+              index: index,
+              total: total),
           Expanded(
             child: Opacity(
               opacity: (1 - progress * 1.6).clamp(0.0, 1.0),
@@ -1254,8 +1472,14 @@ class _HomePageState extends State<HomePage> {
                           plan: 'Starter Core',
                           price: '₹0',
                           period: '/ month',
-                          desc: 'Foundational inventory and checkout tooling for nascent operations.',
-                          features: const [('Up to 250 orders/month', true), ('Single warehouse location', true), ('Basic revenue analytics', true), ('Multi-user permissions', false)],
+                          desc:
+                              'Foundational inventory and checkout tooling for nascent operations.',
+                          features: const [
+                            ('Up to 250 orders/month', true),
+                            ('Single warehouse location', true),
+                            ('Basic revenue analytics', true),
+                            ('Multi-user permissions', false)
+                          ],
                           recommended: false,
                           ctaLabel: 'Deploy Starter',
                         );
@@ -1264,8 +1488,14 @@ class _HomePageState extends State<HomePage> {
                           plan: 'Professional',
                           price: '₹999',
                           period: '/ month',
-                          desc: 'High-precision infrastructure for fast-expanding enterprises.',
-                          features: const [('Unlimited daily transactions', true), ('Multi-warehouse inventory sync', true), ('Predictive stockout alerts', true), ('CRM & Vendor automation', true)],
+                          desc:
+                              'High-precision infrastructure for fast-expanding enterprises.',
+                          features: const [
+                            ('Unlimited daily transactions', true),
+                            ('Multi-warehouse inventory sync', true),
+                            ('Predictive stockout alerts', true),
+                            ('CRM & Vendor automation', true)
+                          ],
                           recommended: true,
                           ctaLabel: 'Activate Professional',
                         );
@@ -1274,13 +1504,25 @@ class _HomePageState extends State<HomePage> {
                           plan: 'Custom Matrix',
                           price: 'Custom',
                           period: '',
-                          desc: 'Bespoke SLA deployment with dedicated infrastructure and engineering.',
-                          features: const [('Dedicated tenant cluster', true), ('Enterprise ERP bi-directional sync', true), ('Custom compliance reports', true), ('24/7 solutions engineer', true)],
+                          desc:
+                              'Bespoke SLA deployment with dedicated infrastructure and engineering.',
+                          features: const [
+                            ('Dedicated tenant cluster', true),
+                            ('Enterprise ERP bi-directional sync', true),
+                            ('Custom compliance reports', true),
+                            ('24/7 solutions engineer', true)
+                          ],
                           recommended: false,
                           ctaLabel: 'Contact Advisory',
                         );
                         if (stacked) {
-                          return Column(children: [starter, const SizedBox(height: 18), pro, const SizedBox(height: 18), enterprise]);
+                          return Column(children: [
+                            starter,
+                            const SizedBox(height: 18),
+                            pro,
+                            const SizedBox(height: 18),
+                            enterprise
+                          ]);
                         }
                         return IntrinsicHeight(
                           child: Row(
@@ -1320,10 +1562,17 @@ class _HomePageState extends State<HomePage> {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: (selected || recommended) ? surfaceContainerHighest.withValues(alpha: 0.92) : surfaceContainerHigh.withValues(alpha: 0.6),
+        color: (selected || recommended)
+            ? surfaceContainerHighest.withValues(alpha: 0.92)
+            : surfaceContainerHigh.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(20),
         border: recommended ? Border.all(color: secondary, width: 2) : null,
-        boxShadow: recommended ? [BoxShadow(color: secondary.withValues(alpha: 0.15), blurRadius: 26)] : null,
+        boxShadow: recommended
+            ? [
+                BoxShadow(
+                    color: secondary.withValues(alpha: 0.15), blurRadius: 26)
+              ]
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1332,32 +1581,61 @@ class _HomePageState extends State<HomePage> {
             Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-              decoration: BoxDecoration(color: secondary, borderRadius: BorderRadius.circular(20)),
-              child: const Text('RECOMMENDED', style: TextStyle(color: onSecondary, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1)),
+              decoration: BoxDecoration(
+                  color: secondary, borderRadius: BorderRadius.circular(20)),
+              child: const Text('RECOMMENDED',
+                  style: TextStyle(
+                      color: onSecondary,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1)),
             ),
-          Text(tag, style: TextStyle(color: recommended ? secondary : onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+          Text(tag,
+              style: TextStyle(
+                  color: recommended ? secondary : onSurfaceVariant,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2)),
           const SizedBox(height: 5),
-          Text(plan, style: const TextStyle(color: onSurface, fontSize: 19, fontWeight: FontWeight.bold)),
+          Text(plan,
+              style: const TextStyle(
+                  color: onSurface, fontSize: 19, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(price, style: TextStyle(color: recommended ? secondary : onSurface, fontSize: price.length > 5 ? 24 : 32, fontWeight: FontWeight.w800)),
-              if (period.isNotEmpty) ...[const SizedBox(width: 4), Text(period, style: const TextStyle(color: onSurfaceVariant, fontSize: 13))],
+              Text(price,
+                  style: TextStyle(
+                      color: recommended ? secondary : onSurface,
+                      fontSize: price.length > 5 ? 24 : 32,
+                      fontWeight: FontWeight.w800)),
+              if (period.isNotEmpty) ...[
+                const SizedBox(width: 4),
+                Text(period,
+                    style:
+                        const TextStyle(color: onSurfaceVariant, fontSize: 13))
+              ],
             ],
           ),
           const SizedBox(height: 12),
-          Text(desc, style: const TextStyle(color: onSurfaceVariant, fontSize: 12.5, height: 1.5)),
+          Text(desc,
+              style: const TextStyle(
+                  color: onSurfaceVariant, fontSize: 12.5, height: 1.5)),
           const SizedBox(height: 14),
           for (final f in features)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 5),
               child: Row(
                 children: [
-                  Icon(f.$2 ? Icons.check_circle : Icons.cancel, color: f.$2 ? secondary : outlineVariant, size: 15),
+                  Icon(f.$2 ? Icons.check_circle : Icons.cancel,
+                      color: f.$2 ? secondary : outlineVariant, size: 15),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(f.$1, style: TextStyle(color: f.$2 ? onSurface : onSurfaceVariant, fontSize: 12))),
+                  Expanded(
+                      child: Text(f.$1,
+                          style: TextStyle(
+                              color: f.$2 ? onSurface : onSurfaceVariant,
+                              fontSize: 12))),
                 ],
               ),
             ),
@@ -1365,8 +1643,12 @@ class _HomePageState extends State<HomePage> {
           SizedBox(
             width: double.infinity,
             child: recommended
-                ? _GoldButton(label: ctaLabel, onPressed: () => _selectPlan(plan), fullWidth: true)
-                : _OutlineButton(label: ctaLabel, onPressed: () => _selectPlan(plan)),
+                ? _GoldButton(
+                    label: ctaLabel,
+                    onPressed: () => _selectPlan(plan),
+                    fullWidth: true)
+                : _OutlineButton(
+                    label: ctaLabel, onPressed: () => _selectPlan(plan)),
           ),
         ],
       ),
@@ -1381,7 +1663,13 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _stackHeader(icon: Icons.military_tech, accent: tertiary, title: 'Engineered For Clarity', tag: 'ABOUT US', index: index, total: total),
+          _stackHeader(
+              icon: Icons.military_tech,
+              accent: tertiary,
+              title: 'Engineered For Clarity',
+              tag: 'ABOUT US',
+              index: index,
+              total: total),
           Expanded(
             child: Opacity(
               opacity: (1 - progress * 1.6).clamp(0.0, 1.0),
@@ -1397,12 +1685,18 @@ class _HomePageState extends State<HomePage> {
                         final image = ClipRRect(
                           borderRadius: BorderRadius.circular(20),
                           child: _HoverImage(
-                            imageUrl: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=900&q=75',
+                            imageUrl:
+                                'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=900&q=75',
                             height: stacked ? 220 : 340,
                           ),
                         );
                         final content = _buildAboutContent();
-                        if (stacked) return Column(children: [image, const SizedBox(height: 24), content]);
+                        if (stacked)
+                          return Column(children: [
+                            image,
+                            const SizedBox(height: 24),
+                            content
+                          ]);
                         return Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
@@ -1428,12 +1722,17 @@ class _HomePageState extends State<HomePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Engineered To Make Management Intuitive',
-            style: TextStyle(color: onSurface, fontSize: 24, fontWeight: FontWeight.bold, height: 1.15)),
+            style: TextStyle(
+                color: onSurface,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                height: 1.15)),
         const SizedBox(height: 10),
         const Text(
           'Codexia was founded with a singular conviction: operational friction is the silent killer of '
           'compounding enterprise value. We replace cumbersome modular ERPs with a unified command structure.',
-          style: TextStyle(color: onSurfaceVariant, fontSize: 13.5, height: 1.6),
+          style:
+              TextStyle(color: onSurfaceVariant, fontSize: 13.5, height: 1.6),
         ),
         const SizedBox(height: 18),
         Wrap(
@@ -1447,7 +1746,11 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         const SizedBox(height: 20),
-        _GoldButton(label: 'Onboard Your Enterprise', onPressed: _goToSignUp, icon: Icons.bolt, large: true),
+        _GoldButton(
+            label: 'Onboard Your Enterprise',
+            onPressed: _goToSignUp,
+            icon: Icons.bolt,
+            large: true),
       ],
     );
   }
@@ -1468,20 +1771,43 @@ class _HomePageState extends State<HomePage> {
             children: [
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final columns = constraints.maxWidth >= 900 ? 4 : (constraints.maxWidth >= 560 ? 2 : 1);
+                  final columns = constraints.maxWidth >= 900
+                      ? 4
+                      : (constraints.maxWidth >= 560 ? 2 : 1);
                   final blocks = [
                     _footerBrand(),
-                    _footerColumn('Platform', ['Enterprise Core', 'Interactive Demos', 'Workflow Matrix', 'Deployment Tiers'],
-                        [featuresKey, showcaseKey, featuresKey, pricingKey]),
-                    _footerColumn('Company', ['Our Vision', 'Security Standards', 'Executive Board', 'Careers'],
-                        [aboutKey, aboutKey, aboutKey, aboutKey]),
+                    _footerColumn('Platform', [
+                      'Enterprise Core',
+                      'Interactive Demos',
+                      'Workflow Matrix',
+                      'Deployment Tiers'
+                    ], [
+                      featuresKey,
+                      showcaseKey,
+                      featuresKey,
+                      pricingKey
+                    ]),
+                    _footerColumn('Company', [
+                      'Our Vision',
+                      'Security Standards',
+                      'Executive Board',
+                      'Careers'
+                    ], [
+                      aboutKey,
+                      aboutKey,
+                      aboutKey,
+                      aboutKey
+                    ]),
                     _footerOperations(),
                   ];
                   return Wrap(
                     spacing: 32,
                     runSpacing: 32,
                     children: blocks
-                        .map((b) => SizedBox(width: (constraints.maxWidth - (columns - 1) * 32) / columns, child: b))
+                        .map((b) => SizedBox(
+                            width: (constraints.maxWidth - (columns - 1) * 32) /
+                                columns,
+                            child: b))
                         .toList(),
                   );
                 },
@@ -1498,9 +1824,15 @@ class _HomePageState extends State<HomePage> {
                   Wrap(
                     spacing: 20,
                     children: const [
-                      Text('Terms of Service', style: TextStyle(color: onSurfaceVariant, fontSize: 12)),
-                      Text('Privacy Framework', style: TextStyle(color: onSurfaceVariant, fontSize: 12)),
-                      Text('System Status', style: TextStyle(color: onSurfaceVariant, fontSize: 12)),
+                      Text('Terms of Service',
+                          style:
+                              TextStyle(color: onSurfaceVariant, fontSize: 12)),
+                      Text('Privacy Framework',
+                          style:
+                              TextStyle(color: onSurfaceVariant, fontSize: 12)),
+                      Text('System Status',
+                          style:
+                              TextStyle(color: onSurfaceVariant, fontSize: 12)),
                     ],
                   ),
                 ],
@@ -1520,7 +1852,8 @@ class _HomePageState extends State<HomePage> {
         const SizedBox(height: 14),
         const Text(
           'The smart business management platform engineered for executive clarity, automated operations, and complete procedural command.',
-          style: TextStyle(color: onSurfaceVariant, fontSize: 12.5, height: 1.6),
+          style:
+              TextStyle(color: onSurfaceVariant, fontSize: 12.5, height: 1.6),
         ),
       ],
     );
@@ -1530,7 +1863,12 @@ class _HomePageState extends State<HomePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(color: onSurface, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.6)),
+        Text(title,
+            style: const TextStyle(
+                color: onSurface,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.6)),
         const SizedBox(height: 12),
         for (int i = 0; i < items.length; i++)
           Padding(
@@ -1539,7 +1877,9 @@ class _HomePageState extends State<HomePage> {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () => _scrollTo(keys[i]),
-                child: Text(items[i], style: const TextStyle(color: onSurfaceVariant, fontSize: 12.5)),
+                child: Text(items[i],
+                    style: const TextStyle(
+                        color: onSurfaceVariant, fontSize: 12.5)),
               ),
             ),
           ),
@@ -1551,23 +1891,33 @@ class _HomePageState extends State<HomePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Operations', style: TextStyle(color: onSurface, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.6)),
+        const Text('Operations',
+            style: TextStyle(
+                color: onSurface,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.6)),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(color: surfaceContainerHigh, borderRadius: BorderRadius.circular(20)),
+          decoration: BoxDecoration(
+              color: surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(20)),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               const _PulsingDot(color: tertiary),
               const SizedBox(width: 6),
-              const Text('All Nodes Operational', style: TextStyle(color: onSurfaceVariant, fontSize: 11)),
+              const Text('All Nodes Operational',
+                  style: TextStyle(color: onSurfaceVariant, fontSize: 11)),
             ],
           ),
         ),
         const SizedBox(height: 10),
-        const Text('Global real-time data compliance and low-latency synchronization nodes active.',
-            style: TextStyle(color: onSurfaceVariant, fontSize: 12, height: 1.5)),
+        const Text(
+            'Global real-time data compliance and low-latency synchronization nodes active.',
+            style:
+                TextStyle(color: onSurfaceVariant, fontSize: 12, height: 1.5)),
       ],
     );
   }
@@ -1592,7 +1942,9 @@ class _PinnedStageDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => height;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) => child;
+  Widget build(
+          BuildContext context, double shrinkOffset, bool overlapsContent) =>
+      child;
 
   @override
   bool shouldRebuild(covariant _PinnedStageDelegate oldDelegate) =>
@@ -1619,8 +1971,7 @@ class _FloatingCodexiaHero extends StatefulWidget {
   });
 
   @override
-  State<_FloatingCodexiaHero> createState() =>
-      _FloatingCodexiaHeroState();
+  State<_FloatingCodexiaHero> createState() => _FloatingCodexiaHeroState();
 }
 
 class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
@@ -1754,8 +2105,7 @@ class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
             final double artworkWidth =
                 math.min(maxArtworkWidth, constraints.maxWidth);
 
-            final double artworkHeight =
-                artworkWidth / _artAspectRatio;
+            final double artworkHeight = artworkWidth / _artAspectRatio;
 
             return MouseRegion(
               cursor: SystemMouseCursors.basic,
@@ -1768,26 +2118,19 @@ class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
               child: AnimatedBuilder(
                 animation: _controller,
                 builder: (context, child) {
-                  final phase =
-                      _controller.value * math.pi * 2;
+                  final phase = _controller.value * math.pi * 2;
 
-                  final floatY =
-                      math.sin(phase) * (desktop ? 12.0 : 7.0);
+                  final floatY = math.sin(phase) * (desktop ? 12.0 : 7.0);
 
-                  final floatX =
-                      math.cos(phase * 0.72) * (desktop ? 3.5 : 1.5);
+                  final floatX = math.cos(phase * 0.72) * (desktop ? 3.5 : 1.5);
 
-                  final breathe =
-                      1.04 + (math.sin(phase) * 0.0065);
+                  final breathe = 1.04 + (math.sin(phase) * 0.0065);
 
-                  final autoRotation =
-                      math.sin(phase * 0.55) * 0.0022;
+                  final autoRotation = math.sin(phase * 0.55) * 0.0022;
 
-                  final pointerX =
-                      desktop ? _mouseX * 18 : 0.0;
+                  final pointerX = desktop ? _mouseX * 18 : 0.0;
 
-                  final pointerY =
-                      desktop ? _mouseY * 10 : 0.0;
+                  final pointerY = desktop ? _mouseY * 10 : 0.0;
 
                   return Transform.translate(
                     offset: Offset(
@@ -1802,14 +2145,10 @@ class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
                         transform: Matrix4.identity()
                           ..setEntry(3, 2, 0.0012)
                           ..rotateX(
-                            desktop
-                                ? -_mouseY * 0.025
-                                : 0,
+                            desktop ? -_mouseY * 0.025 : 0,
                           )
                           ..rotateY(
-                            desktop
-                                ? _mouseX * 0.025
-                                : 0,
+                            desktop ? _mouseX * 0.025 : 0,
                           )
                           ..rotateZ(autoRotation),
                         child: child,
@@ -1837,8 +2176,7 @@ class _FloatingCodexiaHeroState extends State<_FloatingCodexiaHero>
                                 offset: const Offset(0, 18),
                               ),
                               BoxShadow(
-                                color: Colors.black
-                                    .withValues(alpha: 0.38),
+                                color: Colors.black.withValues(alpha: 0.38),
                                 blurRadius: 34,
                                 offset: const Offset(0, 22),
                               ),
@@ -2385,9 +2723,7 @@ class _AppleInvitesFeatureCarouselState
         boxShadow: [
           BoxShadow(
             color: feature.accent.withValues(
-              alpha: active
-                  ? (hovered ? 0.30 : 0.20)
-                  : (hovered ? 0.14 : 0.07),
+              alpha: active ? (hovered ? 0.30 : 0.20) : (hovered ? 0.14 : 0.07),
             ),
             blurRadius: active ? 34 : 22,
             spreadRadius: active ? 1 : 0,
@@ -2410,7 +2746,6 @@ class _AppleInvitesFeatureCarouselState
               fit: BoxFit.cover,
               requestedWidth: active ? 800 : 520,
             ),
-
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -2426,7 +2761,6 @@ class _AppleInvitesFeatureCarouselState
                 ),
               ),
             ),
-
             Positioned(
               top: mobile ? 14 : 18,
               left: mobile ? 14 : 18,
@@ -2464,7 +2798,6 @@ class _AppleInvitesFeatureCarouselState
                 ),
               ),
             ),
-
             if (active)
               Positioned(
                 top: mobile ? 14 : 18,
@@ -2487,7 +2820,6 @@ class _AppleInvitesFeatureCarouselState
                   ),
                 ),
               ),
-
             Positioned(
               left: mobile ? 18 : 24,
               right: mobile ? 18 : 24,
@@ -2575,7 +2907,6 @@ class _AppleInvitesFeatureCarouselState
                 ],
               ),
             ),
-
             Positioned.fill(
               child: IgnorePointer(
                 child: AnimatedContainer(
@@ -2621,9 +2952,7 @@ class _AppleInvitesFeatureCarouselState
               height: 8,
               margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
-                color: selected
-                    ? accent
-                    : Colors.white.withValues(alpha: 0.22),
+                color: selected ? accent : Colors.white.withValues(alpha: 0.22),
                 borderRadius: BorderRadius.circular(99),
                 boxShadow: selected
                     ? [
@@ -2670,7 +2999,6 @@ class _InviteRenderEntry {
   });
 }
 
-
 class _FeatureNetworkImage extends StatelessWidget {
   final String imageUrl;
   final BoxFit fit;
@@ -2692,9 +3020,7 @@ class _FeatureNetworkImage extends StatelessWidget {
         (match) => '${match.group(1)}w=$requestedWidth',
       );
     } else {
-      url += url.contains('?')
-          ? '&w=$requestedWidth'
-          : '?w=$requestedWidth';
+      url += url.contains('?') ? '&w=$requestedWidth' : '?w=$requestedWidth';
     }
 
     final qualityPattern = RegExp(r'([?&])q=\d+');
@@ -2755,7 +3081,6 @@ class _FeatureNetworkImage extends StatelessWidget {
   }
 }
 
-
 // ============================================================
 // AURORA BACKGROUND — approximates the animated WebGL noise
 // shader from the HTML using drifting blurred gradient blobs.
@@ -2768,13 +3093,16 @@ class _AuroraBackground extends StatefulWidget {
   State<_AuroraBackground> createState() => _AuroraBackgroundState();
 }
 
-class _AuroraBackgroundState extends State<_AuroraBackground> with SingleTickerProviderStateMixin {
+class _AuroraBackgroundState extends State<_AuroraBackground>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 40))..repeat();
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 40))
+          ..repeat();
   }
 
   @override
@@ -2810,8 +3138,10 @@ class _AuroraPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     void blob(Offset center, double radius, Color color) {
       final paint = Paint()
-        ..shader = RadialGradient(colors: [color.withValues(alpha: 0.35), color.withValues(alpha: 0.0)])
-            .createShader(Rect.fromCircle(center: center, radius: radius))
+        ..shader = RadialGradient(colors: [
+          color.withValues(alpha: 0.35),
+          color.withValues(alpha: 0.0)
+        ]).createShader(Rect.fromCircle(center: center, radius: radius))
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 60);
       canvas.drawCircle(center, radius, paint);
     }
@@ -2820,17 +3150,30 @@ class _AuroraPainter extends CustomPainter {
     final h = size.height;
     final angle = t * 2 * math.pi;
 
-    blob(Offset(w * 0.2 + math.sin(angle) * 60, h * 0.25 + math.cos(angle) * 40), w * 0.32, const Color(0xFF174064));
-    blob(Offset(w * 0.8 + math.cos(angle * 0.8) * 50, h * 0.65 + math.sin(angle * 0.8) * 50), w * 0.36,
+    blob(
+        Offset(w * 0.2 + math.sin(angle) * 60, h * 0.25 + math.cos(angle) * 40),
+        w * 0.32,
+        const Color(0xFF174064));
+    blob(
+        Offset(w * 0.8 + math.cos(angle * 0.8) * 50,
+            h * 0.65 + math.sin(angle * 0.8) * 50),
+        w * 0.36,
         const Color(0xFFD99A3E));
-    blob(Offset(w * 0.55 + math.sin(angle * 1.3) * 70, h * 0.15 + math.cos(angle * 1.3) * 30), w * 0.28,
+    blob(
+        Offset(w * 0.55 + math.sin(angle * 1.3) * 70,
+            h * 0.15 + math.cos(angle * 1.3) * 30),
+        w * 0.28,
         const Color(0xFF0D3154));
-    blob(Offset(w * 0.35 + math.cos(angle * 0.6) * 40, h * 0.85 + math.sin(angle * 0.6) * 40), w * 0.30,
+    blob(
+        Offset(w * 0.35 + math.cos(angle * 0.6) * 40,
+            h * 0.85 + math.sin(angle * 0.6) * 40),
+        w * 0.30,
         const Color(0xFF1F3A59));
   }
 
   @override
-  bool shouldRepaint(covariant _AuroraPainter oldDelegate) => oldDelegate.t != t;
+  bool shouldRepaint(covariant _AuroraPainter oldDelegate) =>
+      oldDelegate.t != t;
 }
 
 // ============================================================
@@ -2846,13 +3189,15 @@ class _ToastNotification extends StatefulWidget {
   State<_ToastNotification> createState() => _ToastNotificationState();
 }
 
-class _ToastNotificationState extends State<_ToastNotification> with SingleTickerProviderStateMixin {
+class _ToastNotificationState extends State<_ToastNotification>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 260));
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 260));
     _controller.forward();
   }
 
@@ -2870,7 +3215,8 @@ class _ToastNotificationState extends State<_ToastNotification> with SingleTicke
       child: FadeTransition(
         opacity: _controller,
         child: SlideTransition(
-          position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+              .animate(
             CurvedAnimation(parent: _controller, curve: Curves.easeOut),
           ),
           child: Material(
@@ -2880,7 +3226,12 @@ class _ToastNotificationState extends State<_ToastNotification> with SingleTicke
               decoration: BoxDecoration(
                 color: _HomePageState.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(14),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 24, offset: const Offset(0, 10))],
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10))
+                ],
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -2888,15 +3239,24 @@ class _ToastNotificationState extends State<_ToastNotification> with SingleTicke
                   Container(
                     width: 32,
                     height: 32,
-                    decoration: const BoxDecoration(color: _HomePageState.secondary, shape: BoxShape.circle),
-                    child: const Icon(Icons.verified, color: _HomePageState.onSecondary, size: 18),
+                    decoration: const BoxDecoration(
+                        color: _HomePageState.secondary,
+                        shape: BoxShape.circle),
+                    child: const Icon(Icons.verified,
+                        color: _HomePageState.onSecondary, size: 18),
                   ),
                   const SizedBox(width: 10),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(widget.title, style: const TextStyle(color: _HomePageState.onSurface, fontWeight: FontWeight.bold, fontSize: 13)),
-                      Text(widget.message, style: const TextStyle(color: _HomePageState.secondary, fontSize: 12)),
+                      Text(widget.title,
+                          style: const TextStyle(
+                              color: _HomePageState.onSurface,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13)),
+                      Text(widget.message,
+                          style: const TextStyle(
+                              color: _HomePageState.secondary, fontSize: 12)),
                     ],
                   ),
                 ],
@@ -2941,7 +3301,9 @@ class _NavLinkState extends State<_NavLink> {
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 200),
                 style: TextStyle(
-                  color: _hovered ? _HomePageState.secondary : _HomePageState.onSurfaceVariant,
+                  color: _hovered
+                      ? _HomePageState.secondary
+                      : _HomePageState.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
@@ -2952,7 +3314,9 @@ class _NavLinkState extends State<_NavLink> {
                 duration: const Duration(milliseconds: 220),
                 height: 2,
                 width: _hovered ? 20 : 0,
-                decoration: BoxDecoration(color: _HomePageState.secondary, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                    color: _HomePageState.secondary,
+                    borderRadius: BorderRadius.circular(2)),
               ),
             ],
           ),
@@ -2967,7 +3331,12 @@ class _NavLinkState extends State<_NavLink> {
 // ============================================================
 
 class _GoldButton extends StatefulWidget {
-  const _GoldButton({required this.label, required this.onPressed, this.icon, this.large = false, this.fullWidth = false});
+  const _GoldButton(
+      {required this.label,
+      required this.onPressed,
+      this.icon,
+      this.large = false,
+      this.fullWidth = false});
   final String label;
   final VoidCallback onPressed;
   final IconData? icon;
@@ -3001,7 +3370,9 @@ class _GoldButtonState extends State<_GoldButton> {
           duration: const Duration(milliseconds: 140),
           transform: Matrix4.translationValues(0, translate, 0),
           width: widget.fullWidth ? double.infinity : null,
-          padding: EdgeInsets.symmetric(horizontal: widget.large ? 26 : 20, vertical: widget.large ? 17 : 13),
+          padding: EdgeInsets.symmetric(
+              horizontal: widget.large ? 26 : 20,
+              vertical: widget.large ? 17 : 13),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               begin: Alignment.topCenter,
@@ -3010,17 +3381,26 @@ class _GoldButtonState extends State<_GoldButton> {
             ),
             borderRadius: BorderRadius.circular(10),
             boxShadow: [
-              BoxShadow(color: _HomePageState.secondaryContainer, offset: Offset(0, _pressed ? 1 : 4)),
-              if (_hovered) BoxShadow(color: _HomePageState.secondary.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8)),
+              BoxShadow(
+                  color: _HomePageState.secondaryContainer,
+                  offset: Offset(0, _pressed ? 1 : 4)),
+              if (_hovered)
+                BoxShadow(
+                    color: _HomePageState.secondary.withValues(alpha: 0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8)),
             ],
           ),
           child: Row(
-            mainAxisSize: widget.fullWidth ? MainAxisSize.max : MainAxisSize.min,
+            mainAxisSize:
+                widget.fullWidth ? MainAxisSize.max : MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(widget.label,
                   style: TextStyle(
-                      color: _HomePageState.onSecondary, fontWeight: FontWeight.bold, fontSize: widget.large ? 15 : 13.5)),
+                      color: _HomePageState.onSecondary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: widget.large ? 15 : 13.5)),
               if (widget.icon != null) ...[
                 const SizedBox(width: 8),
                 Icon(widget.icon, size: 18, color: _HomePageState.onSecondary),
@@ -3034,7 +3414,8 @@ class _GoldButtonState extends State<_GoldButton> {
 }
 
 class _GhostButton extends StatefulWidget {
-  const _GhostButton({required this.label, required this.onPressed}) : icon = null;
+  const _GhostButton({required this.label, required this.onPressed})
+      : icon = null;
   final String label;
   final VoidCallback onPressed;
   final IconData? icon;
@@ -3058,7 +3439,9 @@ class _GhostButtonState extends State<_GhostButton> {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           decoration: BoxDecoration(
-            color: _hovered ? _HomePageState.surfaceBright : _HomePageState.surfaceContainerHigh,
+            color: _hovered
+                ? _HomePageState.surfaceBright
+                : _HomePageState.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
@@ -3066,7 +3449,10 @@ class _GhostButtonState extends State<_GhostButton> {
             children: [
               Text(widget.label,
                   style: TextStyle(
-                      color: _hovered ? _HomePageState.secondary : _HomePageState.onSurface, fontWeight: FontWeight.w600)),
+                      color: _hovered
+                          ? _HomePageState.secondary
+                          : _HomePageState.onSurface,
+                      fontWeight: FontWeight.w600)),
               if (widget.icon != null) ...[
                 const SizedBox(width: 8),
                 Icon(widget.icon, size: 18, color: _HomePageState.secondary),
@@ -3105,10 +3491,15 @@ class _OutlineButtonState extends State<_OutlineButton> {
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: _hovered ? _HomePageState.surfaceBright : _HomePageState.surfaceContainerHigh,
+            color: _hovered
+                ? _HomePageState.surfaceBright
+                : _HomePageState.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Text(widget.label, style: const TextStyle(color: _HomePageState.onSurface, fontWeight: FontWeight.w600)),
+          child: Text(widget.label,
+              style: const TextStyle(
+                  color: _HomePageState.onSurface,
+                  fontWeight: FontWeight.w600)),
         ),
       ),
     );
@@ -3127,13 +3518,16 @@ class _PulsingDot extends StatefulWidget {
   State<_PulsingDot> createState() => _PulsingDotState();
 }
 
-class _PulsingDotState extends State<_PulsingDot> with SingleTickerProviderStateMixin {
+class _PulsingDotState extends State<_PulsingDot>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 1))..repeat(reverse: true);
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 1))
+          ..repeat(reverse: true);
   }
 
   @override
@@ -3146,13 +3540,18 @@ class _PulsingDotState extends State<_PulsingDot> with SingleTickerProviderState
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: Tween(begin: 0.4, end: 1.0).animate(_controller),
-      child: Container(width: 8, height: 8, decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle)),
+      child: Container(
+          width: 8,
+          height: 8,
+          decoration:
+              BoxDecoration(color: widget.color, shape: BoxShape.circle)),
     );
   }
 }
 
 class _CountUp extends StatelessWidget {
-  const _CountUp({required this.target, required this.suffix, required this.accent});
+  const _CountUp(
+      {required this.target, required this.suffix, required this.accent});
   final int target;
   final String suffix;
   final Color accent;
@@ -3169,9 +3568,17 @@ class _CountUp extends StatelessWidget {
             children: [
               TextSpan(
                 text: value.toInt().toString(),
-                style: const TextStyle(color: _HomePageState.onSurface, fontSize: 30, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                    color: _HomePageState.onSurface,
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold),
               ),
-              TextSpan(text: suffix, style: TextStyle(color: accent, fontSize: 30, fontWeight: FontWeight.bold)),
+              TextSpan(
+                  text: suffix,
+                  style: TextStyle(
+                      color: accent,
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold)),
             ],
           ),
         );
@@ -3191,7 +3598,11 @@ class _AboutCheck extends StatelessWidget {
       children: [
         const Icon(Icons.check, color: _HomePageState.secondary, size: 18),
         const SizedBox(width: 8),
-        Text(text, style: const TextStyle(color: _HomePageState.onSurface, fontSize: 13.5, fontWeight: FontWeight.w500)),
+        Text(text,
+            style: const TextStyle(
+                color: _HomePageState.onSurface,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500)),
       ],
     );
   }
@@ -3277,7 +3688,10 @@ class _HoverScaleState extends State<_HoverScale> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedScale(duration: const Duration(milliseconds: 180), scale: _hovered ? widget.scale : 1, child: widget.child),
+      child: AnimatedScale(
+          duration: const Duration(milliseconds: 180),
+          scale: _hovered ? widget.scale : 1,
+          child: widget.child),
     );
   }
 }
@@ -3394,7 +3808,11 @@ class _HeroStatusItem extends StatelessWidget {
       children: [
         Icon(icon, color: const Color(0xFFFDBA5A), size: 16),
         const SizedBox(width: 7),
-        Text(label, style: const TextStyle(color: Color(0xFFC3C6CF), fontSize: 13, fontWeight: FontWeight.w600)),
+        Text(label,
+            style: const TextStyle(
+                color: Color(0xFFC3C6CF),
+                fontSize: 13,
+                fontWeight: FontWeight.w600)),
       ],
     );
   }

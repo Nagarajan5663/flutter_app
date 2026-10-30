@@ -4,6 +4,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../shared/glass_modal_shell.dart';
+import '../shared/purchase_action_menu.dart';
+import '../shared/purchase_dropdown_style.dart';
 import 'bill_filter.dart';
 import 'bill_model.dart';
 import 'bill_repository.dart';
@@ -39,6 +41,7 @@ class _BillsPageState extends State<BillsPage> {
   DateTime? dateTo;
 
   String statusFilter = 'All';
+  bool _showFilters = false;
 
   // BillModel uses these exact statuses.
   final List<String> statusOptions = const [
@@ -638,6 +641,14 @@ class _BillsPageState extends State<BillsPage> {
                   width: 8,
                 ),
                 GlassButton(
+                  onPressed: () => setState(() => _showFilters = !_showFilters),
+                  icon: Icons.filter_alt_outlined,
+                  label: 'Filter',
+                ),
+                const SizedBox(
+                  width: 12,
+                ),
+                GlassButton(
                   onPressed: _openAddBill,
                   icon: Icons.add,
                   label: 'New Bill',
@@ -645,130 +656,135 @@ class _BillsPageState extends State<BillsPage> {
               ],
             ),
 
-            const SizedBox(
-              height: 20,
-            ),
-
-            // ==================================================
-            // FILTERS
-            // ==================================================
-
-            GlassPanel(
-              padding: const EdgeInsets.all(
-                20,
+            if (_showFilters) ...[
+              const SizedBox(
+                height: 20,
               ),
-              child: Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                crossAxisAlignment: WrapCrossAlignment.end,
-                children: [
-                  _filterField(
-                    label: 'Status',
-                    child: Container(
-                      width: 175,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(
-                          0xFFF8F9FA,
+
+              // ==================================================
+              // FILTERS
+              // ==================================================
+
+              GlassPanel(
+                padding: const EdgeInsets.all(
+                  20,
+                ),
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  crossAxisAlignment: WrapCrossAlignment.end,
+                  children: [
+                    _filterField(
+                      label: 'Status',
+                      child: Container(
+                        width: 175,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
                         ),
-                        borderRadius: BorderRadius.circular(
-                          7,
-                        ),
-                        border: Border.all(
+                        decoration: BoxDecoration(
                           color: const Color(
-                            0xFFD9DEE5,
+                            0xFFF8F9FA,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            7,
+                          ),
+                          border: Border.all(
+                            color: const Color(
+                              0xFFD9DEE5,
+                            ),
+                          ),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: statusFilter,
+                            isExpanded: true,
+                            dropdownColor: PurchaseDropdownStyle.menuColor,
+                            borderRadius: PurchaseDropdownStyle.borderRadius,
+                            menuMaxHeight: 320,
+                            items: statusOptions.map(
+                              (
+                                String status,
+                              ) {
+                                return DropdownMenuItem<String>(
+                                  value: status,
+                                  child: Text(
+                                    status,
+                                  ),
+                                );
+                              },
+                            ).toList(),
+                            onChanged: (
+                              String? value,
+                            ) {
+                              if (value == null) {
+                                return;
+                              }
+
+                              setState(() {
+                                statusFilter = value;
+                              });
+                            },
                           ),
                         ),
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: statusFilter,
-                          isExpanded: true,
-                          items: statusOptions.map(
-                            (
-                              String status,
-                            ) {
-                              return DropdownMenuItem<String>(
-                                value: status,
-                                child: Text(
-                                  status,
-                                ),
-                              );
-                            },
-                          ).toList(),
-                          onChanged: (
-                            String? value,
+                    ),
+                    _filterField(
+                      label: 'Vendor Name',
+                      child: SizedBox(
+                        width: 180,
+                        child: _filterTextField(
+                          vendorController,
+                          'Vendor name...',
+                        ),
+                      ),
+                    ),
+                    _filterField(
+                      label: 'Date From',
+                      child: SizedBox(
+                        width: 160,
+                        child: _filterDateField(
+                          dateFrom,
+                          (
+                            DateTime date,
                           ) {
-                            if (value == null) {
-                              return;
-                            }
-
                             setState(() {
-                              statusFilter = value;
+                              dateFrom = date;
                             });
                           },
                         ),
                       ),
                     ),
-                  ),
-                  _filterField(
-                    label: 'Vendor Name',
-                    child: SizedBox(
-                      width: 180,
-                      child: _filterTextField(
-                        vendorController,
-                        'Vendor name...',
+                    _filterField(
+                      label: 'Date To',
+                      child: SizedBox(
+                        width: 160,
+                        child: _filterDateField(
+                          dateTo,
+                          (
+                            DateTime date,
+                          ) {
+                            setState(() {
+                              dateTo = date;
+                            });
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                  _filterField(
-                    label: 'Date From',
-                    child: SizedBox(
-                      width: 160,
-                      child: _filterDateField(
-                        dateFrom,
-                        (
-                          DateTime date,
-                        ) {
-                          setState(() {
-                            dateFrom = date;
-                          });
-                        },
-                      ),
+                    GlassButton(
+                      onPressed: _loadBills,
+                      icon: Icons.filter_alt_outlined,
+                      label: 'Apply',
                     ),
-                  ),
-                  _filterField(
-                    label: 'Date To',
-                    child: SizedBox(
-                      width: 160,
-                      child: _filterDateField(
-                        dateTo,
-                        (
-                          DateTime date,
-                        ) {
-                          setState(() {
-                            dateTo = date;
-                          });
-                        },
-                      ),
+                    GlassButton(
+                      onPressed: _clearFilters,
+                      icon: Icons.refresh,
+                      label: 'Clear',
+                      primary: false,
                     ),
-                  ),
-                  GlassButton(
-                    onPressed: _loadBills,
-                    icon: Icons.filter_alt_outlined,
-                    label: 'Filter',
-                  ),
-                  GlassButton(
-                    onPressed: _clearFilters,
-                    icon: Icons.refresh,
-                    label: 'Clear',
-                    primary: false,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
 
             const SizedBox(
               height: 20,
@@ -827,242 +843,252 @@ class _BillsPageState extends State<BillsPage> {
             // ==================================================
 
             GlassPanel(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return FittedBox(
-                    alignment: Alignment.topLeft,
-                    fit: BoxFit.scaleDown,
-                    child: SizedBox(
-                      width: 1200,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 1200,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 18,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: 1000,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 1000,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 18,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(
+                            alpha: 0.35,
+                          ),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(
+                              14,
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(
-                                alpha: 0.35,
-                              ),
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(14),
+                          ),
+                        ),
+                        child: const Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: _HeaderText(
+                                'DATE',
                               ),
                             ),
-                            child: const Row(
+                            Expanded(
+                              flex: 2,
+                              child: _HeaderText(
+                                'BILL #',
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: _HeaderText(
+                                'VENDOR NAME',
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: _HeaderText(
+                                'DUE DATE',
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: _HeaderText(
+                                'STATUS',
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: _HeaderText(
+                                'AMOUNT DUE',
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: _HeaderText(
+                                'TOTAL',
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: _HeaderText(
+                                'ACTIONS',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(
+                        height: 1,
+                        color: Color(
+                          0xFFD9DEE5,
+                        ),
+                      ),
+                      if (_isLoading)
+                        const SizedBox(
+                          width: 1000,
+                          height: 180,
+                          child: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else if (_bills.isEmpty)
+                        Container(
+                          width: 1000,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 35,
+                          ),
+                          child: const Text(
+                            'No bills found. Click "+ New Bill" to add one!',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Color(
+                                0xFF42474D,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        ..._bills.map(
+                          (
+                            BillModel bill,
+                          ) {
+                            return Column(
                               children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: _HeaderText('DATE'),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: _HeaderText('BILL #'),
-                                ),
-                                Expanded(
-                                  flex: 3,
-                                  child: _HeaderText('VENDOR NAME'),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: _HeaderText('DUE DATE'),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: _HeaderText('STATUS'),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: _HeaderText('AMOUNT DUE'),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: _HeaderText('TOTAL'),
-                                ),
-                                Expanded(
-                                  flex: 3,
-                                  child: _HeaderText('ACTIONS'),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Divider(
-                            height: 1,
-                            color: Color(0xFFD9DEE5),
-                          ),
-                          if (_isLoading)
-                            const SizedBox(
-                              width: 1200,
-                              height: 180,
-                              child: Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            )
-                          else if (_bills.isEmpty)
-                            Container(
-                              width: 1200,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 18,
-                                vertical: 35,
-                              ),
-                              child: const Text(
-                                'No bills found. Click "+ New Bill" to add one!',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Color(0xFF42474D),
-                                ),
-                              ),
-                            )
-                          else
-                            ..._bills.map((BillModel bill) {
-                              return Column(
-                                children: [
-                                  Container(
-                                    width: 1200,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 18,
-                                      vertical: 16,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          flex: 2,
-                                          child: Text(_fmt(bill.billDate)),
-                                        ),
-                                        Expanded(
-                                          flex: 2,
-                                          child: Text(bill.billNumber),
-                                        ),
-                                        Expanded(
-                                          flex: 3,
-                                          child: Text(
-                                            bill.vendorName,
-                                            overflow: TextOverflow.ellipsis,
+                                Container(
+                                  width: 1000,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 18,
+                                    vertical: 16,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          _fmt(
+                                            bill.billDate,
                                           ),
                                         ),
-                                        Expanded(
-                                          flex: 2,
-                                          child: Text(_fmt(bill.dueDate)),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          bill.billNumber,
                                         ),
-                                        Expanded(
-                                          flex: 2,
-                                          child: Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 10,
-                                                vertical: 4,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: _statusBg(bill.status),
-                                                borderRadius:
-                                                    BorderRadius.circular(20),
-                                              ),
-                                              child: Text(
+                                      ),
+                                      Expanded(
+                                        flex: 3,
+                                        child: Text(
+                                          bill.vendorName,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          _fmt(
+                                            bill.dueDate,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: _statusBg(
                                                 bill.status,
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: _statusFg(bill.status),
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                20,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              bill.status,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: _statusFg(
+                                                  bill.status,
                                                 ),
                                               ),
                                             ),
                                           ),
                                         ),
-                                        Expanded(
-                                          flex: 2,
-                                          child: Text(
-                                            'INR ${bill.amountDue.toStringAsFixed(2)}',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          'INR ${bill.amountDue.toStringAsFixed(2)}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
-                                        Expanded(
-                                          flex: 2,
-                                          child: Text(
-                                            'INR ${bill.total.toStringAsFixed(2)}',
-                                          ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          'INR ${bill.total.toStringAsFixed(2)}',
                                         ),
-                                        Expanded(
-                                          flex: 3,
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              IconButton(
-                                                onPressed: () => _previewBill(bill),
-                                                tooltip: 'View bill',
-                                                padding: EdgeInsets.zero,
-                                                visualDensity:
-                                                    VisualDensity.compact,
-                                                constraints:
-                                                    const BoxConstraints.tightFor(
-                                                  width: 30,
-                                                  height: 30,
-                                                ),
-                                                icon: const Icon(
-                                                  Icons.visibility_outlined,
-                                                  color: Color(0xFF7A8490),
-                                                  size: 19,
-                                                ),
+                                      ),
+                                      Expanded(
+                                        flex: 3,
+                                        child: Align(
+                                          alignment: Alignment.center,
+                                          child: PurchaseActionMenu(
+                                            iconColor: const Color(0xFFAB2A2A),
+                                            iconBackgroundColor:
+                                                const Color(0xFFFFE6E6),
+                                            actions: [
+                                              PurchaseActionMenuItem(
+                                                label: 'View bill',
+                                                icon: Icons.visibility_outlined,
+                                                onPressed: () =>
+                                                    _previewBill(bill),
                                               ),
-                                              IconButton(
-                                                onPressed: bill.isVoided
-                                                    ? null
-                                                    : () => _editBill(bill),
-                                                tooltip: 'Edit bill',
-                                                padding: EdgeInsets.zero,
-                                                visualDensity:
-                                                    VisualDensity.compact,
-                                                constraints:
-                                                    const BoxConstraints.tightFor(
-                                                  width: 30,
-                                                  height: 30,
-                                                ),
-                                                icon: const Icon(
-                                                  Icons.edit_outlined,
-                                                  color: Color(0xFF7A8490),
-                                                  size: 18,
-                                                ),
+                                              PurchaseActionMenuItem(
+                                                label: 'Edit bill',
+                                                icon: Icons.edit_outlined,
+                                                enabled: !bill.isVoided,
+                                                onPressed: () =>
+                                                    _editBill(bill),
                                               ),
-                                              IconButton(
-                                                onPressed: () => _deleteBill(bill),
-                                                tooltip: 'Delete bill',
-                                                padding: EdgeInsets.zero,
-                                                visualDensity:
-                                                    VisualDensity.compact,
-                                                constraints:
-                                                    const BoxConstraints.tightFor(
-                                                  width: 30,
-                                                  height: 30,
-                                                ),
-                                                icon: const Icon(
-                                                  Icons.delete_outline,
-                                                  color: Color(0xFFAB2A2A),
-                                                  size: 19,
-                                                ),
+                                              PurchaseActionMenuItem(
+                                                label: 'Delete bill',
+                                                icon: Icons.delete_outline,
+                                                destructive: true,
+                                                onPressed: () =>
+                                                    _deleteBill(bill),
                                               ),
                                             ],
                                           ),
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
-                                  const Divider(
-                                    height: 1,
-                                    color: Color(0xFFEDEFF2),
+                                ),
+                                const Divider(
+                                  height: 1,
+                                  color: Color(
+                                    0xFFEDEFF2,
                                   ),
-                                ],
-                              );
-                            }),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],

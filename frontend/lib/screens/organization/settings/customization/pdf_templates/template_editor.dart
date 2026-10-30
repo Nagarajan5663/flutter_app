@@ -131,17 +131,14 @@ class TemplateEditor extends StatefulWidget {
   });
 
   @override
-  State<TemplateEditor> createState() =>
-      _TemplateEditorState();
+  State<TemplateEditor> createState() => _TemplateEditorState();
 }
 
-class _TemplateEditorState
-    extends State<TemplateEditor> {
+class _TemplateEditorState extends State<TemplateEditor> {
   String _font = 'System Font';
   String _fontSize = '12pt';
   String _paragraph = 'Paragraph';
-  TextSelection _savedSelection =
-      const TextSelection.collapsed(offset: 0);
+  TextSelection _savedSelection = const TextSelection.collapsed(offset: 0);
   final List<TextEditingValue> _undoStack = [];
   final List<TextEditingValue> _redoStack = [];
   late TextEditingValue _lastEditorValue;
@@ -241,9 +238,8 @@ class _TemplateEditorState
       return const TextRange(start: 0, end: 0);
     }
     final int start = selection.start < 0 ? 0 : selection.start;
-    final int end = selection.end < 0
-        ? widget.controller.text.length
-        : selection.end;
+    final int end =
+        selection.end < 0 ? widget.controller.text.length : selection.end;
     return TextRange(
       start: start <= end ? start : end,
       end: start <= end ? end : start,
@@ -254,7 +250,8 @@ class _TemplateEditorState
     final TextRange range = _selectedRange();
     if (range.isCollapsed) return;
     await Clipboard.setData(
-      ClipboardData(text: widget.controller.text.substring(range.start, range.end)),
+      ClipboardData(
+          text: widget.controller.text.substring(range.start, range.end)),
     );
   }
 
@@ -482,8 +479,7 @@ class _TemplateEditorState
     await showMenu<String>(
       context: context,
       color: Colors.white,
-      position:
-          const RelativeRect.fromLTRB(
+      position: const RelativeRect.fromLTRB(
         60,
         250,
         0,
@@ -522,8 +518,7 @@ class _TemplateEditorState
     final String? selected = await showMenu<String>(
       context: context,
       color: Colors.white,
-      position:
-          const RelativeRect.fromLTRB(
+      position: const RelativeRect.fromLTRB(
         110,
         250,
         0,
@@ -593,10 +588,8 @@ class _TemplateEditorState
   }
 
   Future<void> _openFindReplaceDialog() async {
-    final TextEditingController findController =
-        TextEditingController();
-    final TextEditingController replaceController =
-        TextEditingController();
+    final TextEditingController findController = TextEditingController();
+    final TextEditingController replaceController = TextEditingController();
     bool caseSensitive = false;
     bool wholeWords = false;
 
@@ -689,6 +682,7 @@ class _TemplateEditorState
                       Row(
                         children: [
                           PopupMenuButton<String>(
+                            position: PopupMenuPosition.under,
                             color: Colors.white,
                             tooltip: 'Options',
                             onSelected: (value) {
@@ -742,10 +736,8 @@ class _TemplateEditorState
                             style: _findButtonStyle(
                               backgroundColor: const Color(0xFF0D6EFD),
                               foregroundColor: Colors.white,
-                              disabledBackgroundColor:
-                                  const Color(0xFFE7E7E7),
-                              disabledForegroundColor:
-                                  const Color(0xFF9B9B9B),
+                              disabledBackgroundColor: const Color(0xFFE7E7E7),
+                              disabledForegroundColor: const Color(0xFF9B9B9B),
                             ),
                             child: const Text('Find'),
                           ),
@@ -762,10 +754,8 @@ class _TemplateEditorState
                             style: _findButtonStyle(
                               backgroundColor: const Color(0xFFF1F1F1),
                               foregroundColor: Colors.black,
-                              disabledBackgroundColor:
-                                  const Color(0xFFF1F1F1),
-                              disabledForegroundColor:
-                                  const Color(0xFFAAAAAA),
+                              disabledBackgroundColor: const Color(0xFFF1F1F1),
+                              disabledForegroundColor: const Color(0xFFAAAAAA),
                             ),
                             child: const Text('Replace'),
                           ),
@@ -782,10 +772,8 @@ class _TemplateEditorState
                             style: _findButtonStyle(
                               backgroundColor: const Color(0xFFF1F1F1),
                               foregroundColor: Colors.black,
-                              disabledBackgroundColor:
-                                  const Color(0xFFF1F1F1),
-                              disabledForegroundColor:
-                                  const Color(0xFFAAAAAA),
+                              disabledBackgroundColor: const Color(0xFFF1F1F1),
+                              disabledForegroundColor: const Color(0xFFAAAAAA),
                             ),
                             child: const Text('Replace all'),
                           ),
@@ -910,12 +898,10 @@ class _TemplateEditorState
         ? widget.controller.selection.start
         : content.length;
     final int endOffset = current.clamp(0, content.length).toInt();
-    final List<RegExpMatch> before = regex
-        .allMatches(content.substring(0, endOffset))
-        .toList();
-    final List<RegExpMatch> matches = before.isNotEmpty
-        ? before
-        : regex.allMatches(content).toList();
+    final List<RegExpMatch> before =
+        regex.allMatches(content.substring(0, endOffset)).toList();
+    final List<RegExpMatch> matches =
+        before.isNotEmpty ? before : regex.allMatches(content).toList();
     if (matches.isEmpty) return;
 
     final RegExpMatch match = matches.last;
@@ -997,8 +983,7 @@ class _TemplateEditorState
     final String? selected = await showMenu<String>(
       context: context,
       color: Colors.white,
-      position:
-          const RelativeRect.fromLTRB(
+      position: const RelativeRect.fromLTRB(
         160,
         250,
         0,
@@ -1180,8 +1165,7 @@ class _TemplateEditorState
     final String? selected = await showMenu<String>(
       context: context,
       color: Colors.white,
-      position:
-          const RelativeRect.fromLTRB(
+      position: const RelativeRect.fromLTRB(
         210,
         250,
         0,
@@ -1294,8 +1278,7 @@ class _TemplateEditorState
   }
 
   Future<void> _openAnchorDialog() async {
-    final TextEditingController idController =
-        TextEditingController();
+    final TextEditingController idController = TextEditingController();
 
     await showDialog<void>(
       context: context,
@@ -1450,14 +1433,10 @@ class _TemplateEditorState
   }
 
   Future<void> _openImageDialog() async {
-    final TextEditingController sourceController =
-        TextEditingController();
-    final TextEditingController altController =
-        TextEditingController();
-    final TextEditingController widthController =
-        TextEditingController();
-    final TextEditingController heightController =
-        TextEditingController();
+    final TextEditingController sourceController = TextEditingController();
+    final TextEditingController altController = TextEditingController();
+    final TextEditingController widthController = TextEditingController();
+    final TextEditingController heightController = TextEditingController();
     bool lockAspectRatio = true;
 
     await showDialog<void>(
@@ -1603,8 +1582,7 @@ class _TemplateEditorState
                                   sourceController.text.trim();
 
                               if (source.isNotEmpty) {
-                                final String alt =
-                                    altController.text.trim();
+                                final String alt = altController.text.trim();
                                 final String width =
                                     widthController.text.trim();
                                 final String height =
@@ -1622,8 +1600,7 @@ class _TemplateEditorState
                                 }
                                 imageTag += '>';
 
-                                final String current =
-                                    widget.controller.text;
+                                final String current = widget.controller.text;
                                 widget.controller.text = current.isEmpty
                                     ? imageTag
                                     : '$current\n$imageTag';
@@ -1669,9 +1646,7 @@ class _TemplateEditorState
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(5),
         borderSide: BorderSide(
-          color: focused
-              ? const Color(0xFF0D6EFD)
-              : const Color(0xFFE2E5E7),
+          color: focused ? const Color(0xFF0D6EFD) : const Color(0xFFE2E5E7),
           width: focused ? 1.2 : 1,
         ),
       ),
@@ -1728,12 +1703,9 @@ class _TemplateEditorState
   }
 
   Future<void> _openLinkDialog() async {
-    final TextEditingController urlController =
-        TextEditingController();
-    final TextEditingController textController =
-        TextEditingController();
-    final TextEditingController titleController =
-        TextEditingController();
+    final TextEditingController urlController = TextEditingController();
+    final TextEditingController textController = TextEditingController();
+    final TextEditingController titleController = TextEditingController();
     String openIn = 'Current window';
 
     await showDialog<void>(
@@ -1899,8 +1871,7 @@ class _TemplateEditorState
                           const SizedBox(width: 8),
                           ElevatedButton(
                             onPressed: () {
-                              final String url =
-                                  urlController.text.trim();
+                              final String url = urlController.text.trim();
 
                               if (url.isNotEmpty) {
                                 final String displayText =
@@ -1909,19 +1880,15 @@ class _TemplateEditorState
                                         : textController.text.trim();
                                 final String title =
                                     titleController.text.trim();
-                                final String target =
-                                    openIn == 'New window'
-                                        ? ' target="_blank"'
-                                        : '';
+                                final String target = openIn == 'New window'
+                                    ? ' target="_blank"'
+                                    : '';
                                 final String titleAttribute =
-                                    title.isNotEmpty
-                                        ? ' title="$title"'
-                                        : '';
+                                    title.isNotEmpty ? ' title="$title"' : '';
                                 final String linkTag =
                                     '<a href="$url"$titleAttribute$target>'
                                     '$displayText</a>';
-                                final String current =
-                                    widget.controller.text;
+                                final String current = widget.controller.text;
                                 widget.controller.text = current.isEmpty
                                     ? linkTag
                                     : '$current\n$linkTag';
@@ -1966,9 +1933,7 @@ class _TemplateEditorState
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(5),
         borderSide: BorderSide(
-          color: focused
-              ? const Color(0xFF0D6EFD)
-              : const Color(0xFFE2E5E7),
+          color: focused ? const Color(0xFF0D6EFD) : const Color(0xFFE2E5E7),
           width: focused ? 1.2 : 1,
         ),
       ),
@@ -1983,16 +1948,11 @@ class _TemplateEditorState
   }
 
   Future<void> _openMediaDialog() async {
-    final TextEditingController sourceController =
-        TextEditingController();
-    final TextEditingController embedController =
-        TextEditingController();
-    final TextEditingController widthController =
-        TextEditingController();
-    final TextEditingController heightController =
-        TextEditingController();
-    final TextEditingController posterController =
-        TextEditingController();
+    final TextEditingController sourceController = TextEditingController();
+    final TextEditingController embedController = TextEditingController();
+    final TextEditingController widthController = TextEditingController();
+    final TextEditingController heightController = TextEditingController();
+    final TextEditingController posterController = TextEditingController();
     final TextEditingController alternativeSourceController =
         TextEditingController();
     String selectedTab = 'General';
@@ -2059,8 +2019,7 @@ class _TemplateEditorState
                           SizedBox(
                             width: 85,
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _MediaTabButton(
                                   text: 'General',
@@ -2130,12 +2089,10 @@ class _TemplateEditorState
                             onPressed: () {
                               final String source =
                                   sourceController.text.trim();
-                              final String embed =
-                                  embedController.text.trim();
+                              final String embed = embedController.text.trim();
                               String mediaCode = '';
 
-                              if (selectedTab == 'Embed' &&
-                                  embed.isNotEmpty) {
+                              if (selectedTab == 'Embed' && embed.isNotEmpty) {
                                 mediaCode = embed;
                               } else if (source.isNotEmpty) {
                                 final String width =
@@ -2163,15 +2120,13 @@ class _TemplateEditorState
                                 final String alternative =
                                     alternativeSourceController.text.trim();
                                 if (alternative.isNotEmpty) {
-                                  mediaCode +=
-                                      '<source src="$alternative">';
+                                  mediaCode += '<source src="$alternative">';
                                 }
                                 mediaCode += '</video>';
                               }
 
                               if (mediaCode.isNotEmpty) {
-                                final String current =
-                                    widget.controller.text;
+                                final String current = widget.controller.text;
                                 widget.controller.text = current.isEmpty
                                     ? mediaCode
                                     : '$current\n$mediaCode';
@@ -2361,9 +2316,7 @@ class _TemplateEditorState
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(5),
         borderSide: BorderSide(
-          color: focused
-              ? const Color(0xFF0D6EFD)
-              : const Color(0xFFE2E5E7),
+          color: focused ? const Color(0xFF0D6EFD) : const Color(0xFFE2E5E7),
           width: focused ? 1.2 : 1,
         ),
       ),
@@ -2378,8 +2331,7 @@ class _TemplateEditorState
   }
 
   Future<void> _openCodeSampleDialog() async {
-    final TextEditingController codeController =
-        TextEditingController();
+    final TextEditingController codeController = TextEditingController();
     String selectedLanguage = 'HTML/XML';
 
     const List<String> languages = [
@@ -2572,9 +2524,7 @@ class _TemplateEditorState
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(5),
         borderSide: BorderSide(
-          color: focused
-              ? const Color(0xFF0D6EFD)
-              : const Color(0xFFE2E5E7),
+          color: focused ? const Color(0xFF0D6EFD) : const Color(0xFFE2E5E7),
           width: focused ? 1.2 : 1,
         ),
       ),
@@ -2625,40 +2575,206 @@ class _TemplateEditorState
 
     const Map<String, List<String>> characterGroups = {
       'All': [
-        '←', '↑', '→', '↓', '↔', '↵', '⇐', '⇑', '⇒', '⇓',
-        '↔', '∴', '⊂', '⊃', '⊄', '⊆', '⊇', '⊕', '⊗', '⊥',
-        '·', '⌈', '⌉', '⌊', '⌋', '〈', '〉', '◊', '♠', '♣',
-        '♥', '♦', '€', '£', '¥', '\u0024', '¢', '©', '®', '™',
-        '“', '”', '‘', '’', '«', '»', '±', '×', '÷', '≈',
+        '←',
+        '↑',
+        '→',
+        '↓',
+        '↔',
+        '↵',
+        '⇐',
+        '⇑',
+        '⇒',
+        '⇓',
+        '↔',
+        '∴',
+        '⊂',
+        '⊃',
+        '⊄',
+        '⊆',
+        '⊇',
+        '⊕',
+        '⊗',
+        '⊥',
+        '·',
+        '⌈',
+        '⌉',
+        '⌊',
+        '⌋',
+        '〈',
+        '〉',
+        '◊',
+        '♠',
+        '♣',
+        '♥',
+        '♦',
+        '€',
+        '£',
+        '¥',
+        '\u0024',
+        '¢',
+        '©',
+        '®',
+        '™',
+        '“',
+        '”',
+        '‘',
+        '’',
+        '«',
+        '»',
+        '±',
+        '×',
+        '÷',
+        '≈',
       ],
       'Currency': [
-        '\u0024', '€', '£', '¥', '¢', '₹', '₩', '₽', '₺', '₫',
+        '\u0024',
+        '€',
+        '£',
+        '¥',
+        '¢',
+        '₹',
+        '₩',
+        '₽',
+        '₺',
+        '₫',
       ],
       'Text': [
-        '©', '®', '™', '§', '¶', '•', '…', '–', '—', '№',
+        '©',
+        '®',
+        '™',
+        '§',
+        '¶',
+        '•',
+        '…',
+        '–',
+        '—',
+        '№',
       ],
       'Quotations': [
-        '"', "'", '“', '”', '‘', '’', '«', '»', '‹', '›',
+        '"',
+        "'",
+        '“',
+        '”',
+        '‘',
+        '’',
+        '«',
+        '»',
+        '‹',
+        '›',
       ],
       'Mathematical': [
-        '+', '−', '×', '÷', '=', '≠', '≈', '≤', '≥', '±',
-        '∞', '√', '∑', '∏', '∫', '∂', '∆', '∇', '∈', '∉',
-        '⊂', '⊃', '⊆', '⊇', '⊕', '⊗',
+        '+',
+        '−',
+        '×',
+        '÷',
+        '=',
+        '≠',
+        '≈',
+        '≤',
+        '≥',
+        '±',
+        '∞',
+        '√',
+        '∑',
+        '∏',
+        '∫',
+        '∂',
+        '∆',
+        '∇',
+        '∈',
+        '∉',
+        '⊂',
+        '⊃',
+        '⊆',
+        '⊇',
+        '⊕',
+        '⊗',
       ],
       'Extended Latin': [
-        'À', 'Á', 'Â', 'Ã', 'Ä', 'Å', 'Æ', 'Ç', 'È', 'É',
-        'Ê', 'Ë', 'Ì', 'Í', 'Î', 'Ï', 'Ñ', 'Ò', 'Ó', 'Ô',
-        'Õ', 'Ö', 'Ù', 'Ú', 'Û', 'Ü', 'Ý', 'ß',
+        'À',
+        'Á',
+        'Â',
+        'Ã',
+        'Ä',
+        'Å',
+        'Æ',
+        'Ç',
+        'È',
+        'É',
+        'Ê',
+        'Ë',
+        'Ì',
+        'Í',
+        'Î',
+        'Ï',
+        'Ñ',
+        'Ò',
+        'Ó',
+        'Ô',
+        'Õ',
+        'Ö',
+        'Ù',
+        'Ú',
+        'Û',
+        'Ü',
+        'Ý',
+        'ß',
       ],
       'Symbols': [
-        '©', '®', '™', '°', '†', '‡', '•', '◊', '♠', '♣',
-        '♥', '♦', '♀', '♂', '☀', '☁', '★', '☆', '✓', '✕',
+        '©',
+        '®',
+        '™',
+        '°',
+        '†',
+        '‡',
+        '•',
+        '◊',
+        '♠',
+        '♣',
+        '♥',
+        '♦',
+        '♀',
+        '♂',
+        '☀',
+        '☁',
+        '★',
+        '☆',
+        '✓',
+        '✕',
       ],
       'Arrows': [
-        '←', '↑', '→', '↓', '↔', '↵', '⇐', '⇑', '⇒', '⇓',
-        '↔', '∴', '⊂', '⊃', '⊄', '⊆', '⊇', '⊕', '⊗', '⊥',
-        '·', '⌈', '⌉', '⌊', '⌋', '〈', '〉', '◊', '♠', '♣',
-        '♥', '♦',
+        '←',
+        '↑',
+        '→',
+        '↓',
+        '↔',
+        '↵',
+        '⇐',
+        '⇑',
+        '⇒',
+        '⇓',
+        '↔',
+        '∴',
+        '⊂',
+        '⊃',
+        '⊄',
+        '⊆',
+        '⊇',
+        '⊕',
+        '⊗',
+        '⊥',
+        '·',
+        '⌈',
+        '⌉',
+        '⌊',
+        '⌋',
+        '〈',
+        '〉',
+        '◊',
+        '♠',
+        '♣',
+        '♥',
+        '♦',
       ],
     };
 
@@ -2800,13 +2916,15 @@ class _TemplateEditorState
                                                 widget.controller.selection;
                                             final String text =
                                                 widget.controller.text;
-                                            final int start = selection.start >= 0
-                                                ? selection.start
-                                                : text.length;
+                                            final int start =
+                                                selection.start >= 0
+                                                    ? selection.start
+                                                    : text.length;
                                             final int end = selection.end >= 0
                                                 ? selection.end
                                                 : text.length;
-                                            final String updated = text.replaceRange(
+                                            final String updated =
+                                                text.replaceRange(
                                               start,
                                               end,
                                               character,
@@ -2814,8 +2932,10 @@ class _TemplateEditorState
                                             widget.controller.value =
                                                 TextEditingValue(
                                               text: updated,
-                                              selection: TextSelection.collapsed(
-                                                offset: start + character.length,
+                                              selection:
+                                                  TextSelection.collapsed(
+                                                offset:
+                                                    start + character.length,
                                               ),
                                             );
                                             Navigator.pop(context);
@@ -2883,80 +3003,572 @@ class _TemplateEditorState
 
     const Map<String, List<String>> emojiGroups = {
       'All': [
-        '💯', '🔢', '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂',
-        '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗',
-        '☺️', '😚', '😙', '🥲', '😋', '😛', '😜', '🤪', '😝', '🤑',
-        '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏',
-        '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷',
-        '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '🥴', '😵', '🤯',
-        '🤠', '🥳', '😎', '🤓', '🧐', '😕', '😟', '🙁', '☹️', '😮',
-        '😯', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢',
-        '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', '🥱', '😤',
-        '😡', '😠', '🤬', '😈', '👿', '💀', '☠️', '💩', '🤡', '👹',
-        '👺', '👻', '👽', '👾', '🤖', '😺', '😸', '😹', '😻', '😼',
-        '😽', '🙀', '😿', '😾', '👍', '👎', '👌', '✌️', '🤞', '🤟',
-        '🤘', '🤙', '👈', '👉', '👆', '👇', '☝️', '✋', '🤚', '🖐️',
-        '🖖', '👋', '🤏', '💪', '🙏', '👏', '🙌', '❤️', '🧡', '💛',
-        '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '🐶', '🐱', '🐭',
-        '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷',
-        '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦄', '🍏', '🍎', '🍐',
-        '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍒', '🍑', '🥭',
-        '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '⚽', '🏀', '🏈',
-        '⚾', '🎾', '🏐', '🏉', '🥏', '🎱', '🏓', '🏸', '🥅', '🏒',
-        '🏑', '🥍', '🏏', '⛳', '🏹', '🚗', '🚕', '🚙', '🚌', '🚎',
-        '🏎️', '🚓', '🚑', '🚒', '🚐', '🚚', '🚛', '🚜', '✈️', '🚀',
-        '🚁', '🚢', '⛵', '⌚', '📱', '💻', '⌨️', '🖥️', '🖨️', '🖱️',
-        '💽', '💾', '💿', '📷', '📹', '🎥', '📞', '☎️', '📺', '📻',
-        '⏰', '🏳️', '🏴', '🏁', '🚩', '🇮🇳', '🇺🇸', '🇬🇧', '🇯🇵', '🇨🇦',
+        '💯',
+        '🔢',
+        '😀',
+        '😃',
+        '😄',
+        '😁',
+        '😆',
+        '😅',
+        '🤣',
+        '😂',
+        '🙂',
+        '🙃',
+        '😉',
+        '😊',
+        '😇',
+        '🥰',
+        '😍',
+        '🤩',
+        '😘',
+        '😗',
+        '☺️',
+        '😚',
+        '😙',
+        '🥲',
+        '😋',
+        '😛',
+        '😜',
+        '🤪',
+        '😝',
+        '🤑',
+        '🤗',
+        '🤭',
+        '🤫',
+        '🤔',
+        '🤐',
+        '🤨',
+        '😐',
+        '😑',
+        '😶',
+        '😏',
+        '😒',
+        '🙄',
+        '😬',
+        '🤥',
+        '😌',
+        '😔',
+        '😪',
+        '🤤',
+        '😴',
+        '😷',
+        '🤒',
+        '🤕',
+        '🤢',
+        '🤮',
+        '🤧',
+        '🥵',
+        '🥶',
+        '🥴',
+        '😵',
+        '🤯',
+        '🤠',
+        '🥳',
+        '😎',
+        '🤓',
+        '🧐',
+        '😕',
+        '😟',
+        '🙁',
+        '☹️',
+        '😮',
+        '😯',
+        '😲',
+        '😳',
+        '🥺',
+        '😦',
+        '😧',
+        '😨',
+        '😰',
+        '😥',
+        '😢',
+        '😭',
+        '😱',
+        '😖',
+        '😣',
+        '😞',
+        '😓',
+        '😩',
+        '😫',
+        '🥱',
+        '😤',
+        '😡',
+        '😠',
+        '🤬',
+        '😈',
+        '👿',
+        '💀',
+        '☠️',
+        '💩',
+        '🤡',
+        '👹',
+        '👺',
+        '👻',
+        '👽',
+        '👾',
+        '🤖',
+        '😺',
+        '😸',
+        '😹',
+        '😻',
+        '😼',
+        '😽',
+        '🙀',
+        '😿',
+        '😾',
+        '👍',
+        '👎',
+        '👌',
+        '✌️',
+        '🤞',
+        '🤟',
+        '🤘',
+        '🤙',
+        '👈',
+        '👉',
+        '👆',
+        '👇',
+        '☝️',
+        '✋',
+        '🤚',
+        '🖐️',
+        '🖖',
+        '👋',
+        '🤏',
+        '💪',
+        '🙏',
+        '👏',
+        '🙌',
+        '❤️',
+        '🧡',
+        '💛',
+        '💚',
+        '💙',
+        '💜',
+        '🖤',
+        '🤍',
+        '🤎',
+        '💔',
+        '🐶',
+        '🐱',
+        '🐭',
+        '🐹',
+        '🐰',
+        '🦊',
+        '🐻',
+        '🐼',
+        '🐨',
+        '🐯',
+        '🦁',
+        '🐮',
+        '🐷',
+        '🐸',
+        '🐵',
+        '🐔',
+        '🐧',
+        '🐦',
+        '🐤',
+        '🦄',
+        '🍏',
+        '🍎',
+        '🍐',
+        '🍊',
+        '🍋',
+        '🍌',
+        '🍉',
+        '🍇',
+        '🍓',
+        '🫐',
+        '🍒',
+        '🍑',
+        '🥭',
+        '🍍',
+        '🥥',
+        '🥝',
+        '🍅',
+        '🍆',
+        '🥑',
+        '🥦',
+        '⚽',
+        '🏀',
+        '🏈',
+        '⚾',
+        '🎾',
+        '🏐',
+        '🏉',
+        '🥏',
+        '🎱',
+        '🏓',
+        '🏸',
+        '🥅',
+        '🏒',
+        '🏑',
+        '🥍',
+        '🏏',
+        '⛳',
+        '🏹',
+        '🚗',
+        '🚕',
+        '🚙',
+        '🚌',
+        '🚎',
+        '🏎️',
+        '🚓',
+        '🚑',
+        '🚒',
+        '🚐',
+        '🚚',
+        '🚛',
+        '🚜',
+        '✈️',
+        '🚀',
+        '🚁',
+        '🚢',
+        '⛵',
+        '⌚',
+        '📱',
+        '💻',
+        '⌨️',
+        '🖥️',
+        '🖨️',
+        '🖱️',
+        '💽',
+        '💾',
+        '💿',
+        '📷',
+        '📹',
+        '🎥',
+        '📞',
+        '☎️',
+        '📺',
+        '📻',
+        '⏰',
+        '🏳️',
+        '🏴',
+        '🏁',
+        '🚩',
+        '🇮🇳',
+        '🇺🇸',
+        '🇬🇧',
+        '🇯🇵',
+        '🇨🇦',
         '🇦🇺',
       ],
       'Symbols': [
-        '💯', '🔢', '❤️', '💔', '❣️', '💕', '💞', '💓', '💗', '💖',
-        '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯',
-        '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒',
-        '♓', '⭕', '✅', '☑️', '✔️', '❌', '❎', '➕', '➖', '➗',
-        '✖️', '♾️', '‼️', '⁉️', '❓', '❔', '❕', '❗',
+        '💯',
+        '🔢',
+        '❤️',
+        '💔',
+        '❣️',
+        '💕',
+        '💞',
+        '💓',
+        '💗',
+        '💖',
+        '💘',
+        '💝',
+        '💟',
+        '☮️',
+        '✝️',
+        '☪️',
+        '🕉️',
+        '☸️',
+        '✡️',
+        '🔯',
+        '♈',
+        '♉',
+        '♊',
+        '♋',
+        '♌',
+        '♍',
+        '♎',
+        '♏',
+        '♐',
+        '♑',
+        '♒',
+        '♓',
+        '⭕',
+        '✅',
+        '☑️',
+        '✔️',
+        '❌',
+        '❎',
+        '➕',
+        '➖',
+        '➗',
+        '✖️',
+        '♾️',
+        '‼️',
+        '⁉️',
+        '❓',
+        '❔',
+        '❕',
+        '❗',
       ],
       'People': [
-        '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃',
-        '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '☺️', '😚',
-        '😙', '🥲', '😋', '😛', '😜', '🤪', '🤗', '🤭', '🤫', '🤔',
-        '👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '👋', '👏',
-        '🙌', '🙏', '💪',
+        '😀',
+        '😃',
+        '😄',
+        '😁',
+        '😆',
+        '😅',
+        '🤣',
+        '😂',
+        '🙂',
+        '🙃',
+        '😉',
+        '😊',
+        '😇',
+        '🥰',
+        '😍',
+        '🤩',
+        '😘',
+        '😗',
+        '☺️',
+        '😚',
+        '😙',
+        '🥲',
+        '😋',
+        '😛',
+        '😜',
+        '🤪',
+        '🤗',
+        '🤭',
+        '🤫',
+        '🤔',
+        '👍',
+        '👎',
+        '👌',
+        '✌️',
+        '🤞',
+        '🤟',
+        '🤘',
+        '🤙',
+        '👋',
+        '👏',
+        '🙌',
+        '🙏',
+        '💪',
       ],
       'Animals and Nature': [
-        '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯',
-        '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦄',
-        '🐝', '🦋', '🐌', '🐞', '🐜', '🕷️', '🌸', '🌹', '🌺', '🌻',
-        '🌼', '🌷', '🌱', '🌲', '🌳', '🌴', '🌵', '🍀', '☘️',
+        '🐶',
+        '🐱',
+        '🐭',
+        '🐹',
+        '🐰',
+        '🦊',
+        '🐻',
+        '🐼',
+        '🐨',
+        '🐯',
+        '🦁',
+        '🐮',
+        '🐷',
+        '🐸',
+        '🐵',
+        '🐔',
+        '🐧',
+        '🐦',
+        '🐤',
+        '🦄',
+        '🐝',
+        '🦋',
+        '🐌',
+        '🐞',
+        '🐜',
+        '🕷️',
+        '🌸',
+        '🌹',
+        '🌺',
+        '🌻',
+        '🌼',
+        '🌷',
+        '🌱',
+        '🌲',
+        '🌳',
+        '🌴',
+        '🌵',
+        '🍀',
+        '☘️',
       ],
       'Food and Drink': [
-        '🍏', '🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐',
-        '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦',
-        '🥕', '🌽', '🌶️', '🥐', '🍞', '🥖', '🥨', '🧀', '🍳', '🍔',
-        '🍟', '🍕', '🌭', '🥪', '🌮', '🍣', '🍜', '🍰', '🎂', '☕',
+        '🍏',
+        '🍎',
+        '🍐',
+        '🍊',
+        '🍋',
+        '🍌',
+        '🍉',
+        '🍇',
+        '🍓',
+        '🫐',
+        '🍒',
+        '🍑',
+        '🥭',
+        '🍍',
+        '🥥',
+        '🥝',
+        '🍅',
+        '🍆',
+        '🥑',
+        '🥦',
+        '🥕',
+        '🌽',
+        '🌶️',
+        '🥐',
+        '🍞',
+        '🥖',
+        '🥨',
+        '🧀',
+        '🍳',
+        '🍔',
+        '🍟',
+        '🍕',
+        '🌭',
+        '🥪',
+        '🌮',
+        '🍣',
+        '🍜',
+        '🍰',
+        '🎂',
+        '☕',
       ],
       'Activity': [
-        '⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🥏', '🎱', '🏓',
-        '🏸', '🥅', '🏒', '🏑', '🥍', '🏏', '⛳', '🏹', '🎣', '🤿',
-        '🥊', '🥋', '🎽', '🛹', '🛼', '⛸️', '🎿', '🏂', '🏋️', '🤸',
+        '⚽',
+        '🏀',
+        '🏈',
+        '⚾',
+        '🎾',
+        '🏐',
+        '🏉',
+        '🥏',
+        '🎱',
+        '🏓',
+        '🏸',
+        '🥅',
+        '🏒',
+        '🏑',
+        '🥍',
+        '🏏',
+        '⛳',
+        '🏹',
+        '🎣',
+        '🤿',
+        '🥊',
+        '🥋',
+        '🎽',
+        '🛹',
+        '🛼',
+        '⛸️',
+        '🎿',
+        '🏂',
+        '🏋️',
+        '🤸',
       ],
       'Travel and Places': [
-        '🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐',
-        '🚚', '🚛', '🚜', '🛵', '🏍️', '🚲', '✈️', '🛫', '🛬', '🚀',
-        '🚁', '🚢', '⛵', '🚤', '🏠', '🏡', '🏢', '🏥', '🏦', '🏨',
-        '🏫', '🏰', '🗼', '🗽', '⛲', '🌋', '🏔️', '🏖️', '🏝️',
+        '🚗',
+        '🚕',
+        '🚙',
+        '🚌',
+        '🚎',
+        '🏎️',
+        '🚓',
+        '🚑',
+        '🚒',
+        '🚐',
+        '🚚',
+        '🚛',
+        '🚜',
+        '🛵',
+        '🏍️',
+        '🚲',
+        '✈️',
+        '🛫',
+        '🛬',
+        '🚀',
+        '🚁',
+        '🚢',
+        '⛵',
+        '🚤',
+        '🏠',
+        '🏡',
+        '🏢',
+        '🏥',
+        '🏦',
+        '🏨',
+        '🏫',
+        '🏰',
+        '🗼',
+        '🗽',
+        '⛲',
+        '🌋',
+        '🏔️',
+        '🏖️',
+        '🏝️',
       ],
       'Objects': [
-        '⌚', '📱', '💻', '⌨️', '🖥️', '🖨️', '🖱️', '💽', '💾', '💿',
-        '📷', '📹', '🎥', '📞', '☎️', '📺', '📻', '⏰', '⌛', '🔋',
-        '🔌', '💡', '🔦', '🕯️', '📚', '📖', '📝', '✏️', '✒️', '📌',
-        '📍', '📎', '🔒', '🔓', '🔑', '🔨', '🪛', '🔧', '⚙️',
+        '⌚',
+        '📱',
+        '💻',
+        '⌨️',
+        '🖥️',
+        '🖨️',
+        '🖱️',
+        '💽',
+        '💾',
+        '💿',
+        '📷',
+        '📹',
+        '🎥',
+        '📞',
+        '☎️',
+        '📺',
+        '📻',
+        '⏰',
+        '⌛',
+        '🔋',
+        '🔌',
+        '💡',
+        '🔦',
+        '🕯️',
+        '📚',
+        '📖',
+        '📝',
+        '✏️',
+        '✒️',
+        '📌',
+        '📍',
+        '📎',
+        '🔒',
+        '🔓',
+        '🔑',
+        '🔨',
+        '🪛',
+        '🔧',
+        '⚙️',
       ],
       'Flags': [
-        '🏳️', '🏴', '🏁', '🚩', '🏳️‍🌈', '🇮🇳', '🇺🇸', '🇬🇧', '🇨🇦',
-        '🇦🇺', '🇯🇵', '🇨🇳', '🇫🇷', '🇩🇪', '🇮🇹', '🇧🇷', '🇸🇬', '🇦🇪',
-        '🇸🇦', '🇰🇷',
+        '🏳️',
+        '🏴',
+        '🏁',
+        '🚩',
+        '🏳️‍🌈',
+        '🇮🇳',
+        '🇺🇸',
+        '🇬🇧',
+        '🇨🇦',
+        '🇦🇺',
+        '🇯🇵',
+        '🇨🇳',
+        '🇫🇷',
+        '🇩🇪',
+        '🇮🇹',
+        '🇧🇷',
+        '🇸🇬',
+        '🇦🇪',
+        '🇸🇦',
+        '🇰🇷',
       ],
     };
 
@@ -2983,9 +3595,7 @@ class _TemplateEditorState
             final String query = searchText.trim();
             final List<String> filteredEmojis = query.isEmpty
                 ? emojis
-                : emojis
-                    .where((emoji) => emoji.contains(query))
-                    .toList();
+                : emojis.where((emoji) => emoji.contains(query)).toList();
 
             return Dialog(
               backgroundColor: Colors.white,
@@ -3076,7 +3686,8 @@ class _TemplateEditorState
                                     child: Scrollbar(
                                       thumbVisibility: true,
                                       child: GridView.builder(
-                                        padding: const EdgeInsets.only(right: 10),
+                                        padding:
+                                            const EdgeInsets.only(right: 10),
                                         gridDelegate:
                                             const SliverGridDelegateWithFixedCrossAxisCount(
                                           crossAxisCount: 8,
@@ -3089,7 +3700,8 @@ class _TemplateEditorState
                                           return _EmojiCell(
                                             emoji: filteredEmojis[index],
                                             onTap: () {
-                                              _insertEmoji(filteredEmojis[index]);
+                                              _insertEmoji(
+                                                  filteredEmojis[index]);
                                               Navigator.pop(context);
                                             },
                                           );
@@ -3150,12 +3762,9 @@ class _TemplateEditorState
     final TextEditingController controller = widget.controller;
     final String currentText = controller.text;
     final TextSelection selection = controller.selection;
-    final int start = selection.start >= 0
-        ? selection.start
-        : currentText.length;
-    final int end = selection.end >= 0
-        ? selection.end
-        : currentText.length;
+    final int start =
+        selection.start >= 0 ? selection.start : currentText.length;
+    final int end = selection.end >= 0 ? selection.end : currentText.length;
     final String updatedText = currentText.replaceRange(start, end, emoji);
 
     controller.value = TextEditingValue(
@@ -3170,8 +3779,7 @@ class _TemplateEditorState
     final String? selected = await showMenu<String>(
       context: context,
       color: Colors.white,
-      position:
-          const RelativeRect.fromLTRB(
+      position: const RelativeRect.fromLTRB(
         275,
         250,
         0,
@@ -3428,8 +4036,7 @@ class _TemplateEditorState
             .length;
 
     final int characters = text.length;
-    final int charactersNoSpaces =
-        text.replaceAll(RegExp(r'\s'), '').length;
+    final int charactersNoSpaces = text.replaceAll(RegExp(r'\s'), '').length;
 
     await showDialog<void>(
       context: context,
@@ -3625,8 +4232,7 @@ class _TemplateEditorState
   }
 
   Future<void> _openSourceCodeDialog() async {
-    final TextEditingController sourceController =
-        TextEditingController(
+    final TextEditingController sourceController = TextEditingController(
       text: widget.controller.text,
     );
 
@@ -3752,8 +4358,7 @@ class _TemplateEditorState
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () {
-                          widget.controller.text =
-                              sourceController.text;
+                          widget.controller.text = sourceController.text;
                           Navigator.pop(context);
                         },
                         style: ElevatedButton.styleFrom(
@@ -3900,7 +4505,8 @@ class _TemplateEditorState
             onPressed: _openCodeSampleDialog,
           ),
           _menuItem('Table'),
-          _menuItem('Special character...', onPressed: _openSpecialCharacterDialog),
+          _menuItem('Special character...',
+              onPressed: _openSpecialCharacterDialog),
           _menuItem('Emojis...', onPressed: _openEmojiDialog),
           _menuItem('Horizontal line'),
           _menuItem('Page break'),
@@ -4030,272 +4636,298 @@ class _TemplateEditorState
         ),
       ),
       child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.only(top: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4F4F4),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: Colors.white,
-          width: 1.2,
+        width: double.infinity,
+        padding: const EdgeInsets.only(top: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF4F4F4),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: Colors.white,
+            width: 1.2,
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            constraints: const BoxConstraints(minHeight: 42),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: const BoxDecoration(
-              color: Colors.white,
+        child: Column(
+          children: [
+            Container(
+              constraints: const BoxConstraints(minHeight: 42),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+              ),
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  _MenuButton(
+                    text: 'File',
+                    onTap: _showFileMenu,
+                    menuChildren: _menuChildren('File'),
+                  ),
+                  _MenuButton(
+                    text: 'Edit',
+                    onTap: _showEditMenu,
+                    menuChildren: _menuChildren('Edit'),
+                  ),
+                  _MenuButton(
+                    text: 'View',
+                    onTap: _showViewMenu,
+                    menuChildren: _menuChildren('View'),
+                  ),
+                  _MenuButton(
+                    text: 'Insert',
+                    onTap: _showInsertMenu,
+                    menuChildren: _menuChildren('Insert'),
+                  ),
+                  _MenuButton(
+                    text: 'Format',
+                    onTap: _showFormatMenu,
+                    menuChildren: _menuChildren('Format'),
+                  ),
+                  _MenuButton(
+                    text: 'Tools',
+                    onTap: _showToolsMenu,
+                    menuChildren: _menuChildren('Tools'),
+                  ),
+                  _MenuButton(
+                    text: 'Table',
+                    onTap: _showTableMenu,
+                    menuChildren: _menuChildren('Table'),
+                  ),
+                  _MenuButton(
+                    text: 'Help',
+                    onTap: _showHelpMenu,
+                    menuChildren: _menuChildren('Help'),
+                  ),
+                ],
+              ),
             ),
-            child: Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                _MenuButton(
-                  text: 'File',
-                  onTap: _showFileMenu,
-                  menuChildren: _menuChildren('File'),
-                ),
-                _MenuButton(
-                  text: 'Edit',
-                  onTap: _showEditMenu,
-                  menuChildren: _menuChildren('Edit'),
-                ),
-                _MenuButton(
-                  text: 'View',
-                  onTap: _showViewMenu,
-                  menuChildren: _menuChildren('View'),
-                ),
-                _MenuButton(
-                  text: 'Insert',
-                  onTap: _showInsertMenu,
-                  menuChildren: _menuChildren('Insert'),
-                ),
-                _MenuButton(
-                  text: 'Format',
-                  onTap: _showFormatMenu,
-                  menuChildren: _menuChildren('Format'),
-                ),
-                _MenuButton(
-                  text: 'Tools',
-                  onTap: _showToolsMenu,
-                  menuChildren: _menuChildren('Tools'),
-                ),
-                _MenuButton(
-                  text: 'Table',
-                  onTap: _showTableMenu,
-                  menuChildren: _menuChildren('Table'),
-                ),
-                _MenuButton(
-                  text: 'Help',
-                  onTap: _showHelpMenu,
-                  menuChildren: _menuChildren('Help'),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-            ),
-            child: Wrap(
-              spacing: 4,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                const Icon(Icons.undo_rounded, size: 18, color: Color(0xFF2F3032)),
-                const Icon(Icons.redo_rounded, size: 18, color: Color(0xFF2F3032)),
-                const SizedBox(width: 8),
-                const Icon(Icons.format_bold, size: 18, color: Color(0xFF2F3032)),
-                const Icon(Icons.format_italic, size: 18, color: Color(0xFF2F3032)),
-                const Icon(Icons.format_underlined, size: 18, color: Color(0xFF2F3032)),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 160,
-                  height: 34,
-                  child: Theme(
-                    data: Theme.of(context).copyWith(
-                      hoverColor: const Color(0xFF0D6EFD),
-                    ),
-                    child: DropdownButtonFormField<String>(
-                    value: _font,
-                    isExpanded: true,
-                    style: const TextStyle(color: Colors.black),
-                    icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF3A3A3A), size: 18),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(color: Color(0xFFCDD1D4)),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+              ),
+              child: Wrap(
+                spacing: 4,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  const Icon(Icons.undo_rounded,
+                      size: 18, color: Color(0xFF2F3032)),
+                  const Icon(Icons.redo_rounded,
+                      size: 18, color: Color(0xFF2F3032)),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.format_bold,
+                      size: 18, color: Color(0xFF2F3032)),
+                  const Icon(Icons.format_italic,
+                      size: 18, color: Color(0xFF2F3032)),
+                  const Icon(Icons.format_underlined,
+                      size: 18, color: Color(0xFF2F3032)),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 160,
+                    height: 34,
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        hoverColor: const Color(0xFF0D6EFD),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(color: Color(0xFFCDD1D4)),
-                      ),
-                    ),
-                    dropdownColor: Colors.white,
-                    items: _fonts
-                        .map(
-                          (item) => DropdownMenuItem<String>(
-                            value: item,
-                            child: Text(
-                              item,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: Colors.black),
-                            ),
+                      child: DropdownButtonFormField<String>(
+                        value: _font,
+                        isExpanded: true,
+                        style: const TextStyle(color: Colors.black),
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                            color: Color(0xFF3A3A3A), size: 18),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFCDD1D4)),
                           ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-                      _applySelectedFont(value);
-                    },
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 92,
-                  height: 34,
-                  child: Theme(
-                    data: Theme.of(context).copyWith(
-                      hoverColor: const Color(0xFF0D6EFD),
-                    ),
-                    child: DropdownButtonFormField<String>(
-                    value: _fontSize,
-                    style: const TextStyle(color: Colors.black),
-                    icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF3A3A3A), size: 18),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(color: Color(0xFFCDD1D4)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(color: Color(0xFFCDD1D4)),
-                      ),
-                    ),
-                    dropdownColor: Colors.white,
-                    items: _fontSizes
-                        .map(
-                          (item) => DropdownMenuItem<String>(
-                            value: item,
-                            child: Text(
-                              item,
-                              style: const TextStyle(color: Colors.black),
-                            ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFCDD1D4)),
                           ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-                      _applySelectedFontSize(value);
-                    },
+                        ),
+                        dropdownColor: Colors.white,
+                        items: _fonts
+                            .map(
+                              (item) => DropdownMenuItem<String>(
+                                value: item,
+                                child: Text(
+                                  item,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: Colors.black),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          _applySelectedFont(value);
+                        },
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(
-                  width: 140,
-                  height: 34,
-                  child: Theme(
-                    data: Theme.of(context).copyWith(
-                      hoverColor: const Color(0xFF0D6EFD),
-                    ),
-                    child: DropdownButtonFormField<String>(
-                    value: _paragraph,
-                    isExpanded: true,
-                    style: const TextStyle(color: Colors.black),
-                    icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF3A3A3A), size: 18),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(color: Color(0xFFCDD1D4)),
+                  SizedBox(
+                    width: 92,
+                    height: 34,
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        hoverColor: const Color(0xFF0D6EFD),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(color: Color(0xFFCDD1D4)),
-                      ),
-                    ),
-                    dropdownColor: Colors.white,
-                    items: _paragraphs
-                        .map(
-                          (item) => DropdownMenuItem<String>(
-                            value: item,
-                            child: Text(
-                              item,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: Colors.black),
-                            ),
+                      child: DropdownButtonFormField<String>(
+                        value: _fontSize,
+                        style: const TextStyle(color: Colors.black),
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                            color: Color(0xFF3A3A3A), size: 18),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFCDD1D4)),
                           ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-                      _applySelectedParagraph(value);
-                    },
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFCDD1D4)),
+                          ),
+                        ),
+                        dropdownColor: Colors.white,
+                        items: _fontSizes
+                            .map(
+                              (item) => DropdownMenuItem<String>(
+                                value: item,
+                                child: Text(
+                                  item,
+                                  style: const TextStyle(color: Colors.black),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          _applySelectedFontSize(value);
+                        },
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(Icons.format_align_left, size: 18, color: Color(0xFF2F3032)),
-                const Icon(Icons.format_align_center, size: 18, color: Color(0xFF2F3032)),
-                const Icon(Icons.format_align_right, size: 18, color: Color(0xFF2F3032)),
-                const Icon(Icons.format_align_justify, size: 18, color: Color(0xFF2F3032)),
-                const Icon(Icons.format_indent_decrease, size: 18, color: Color(0xFF2F3032)),
-                const Icon(Icons.format_indent_increase, size: 18, color: Color(0xFF2F3032)),
-                const Icon(Icons.format_list_numbered, size: 18, color: Color(0xFF2F3032)),
-                const Icon(Icons.format_list_bulleted, size: 18, color: Color(0xFF2F3032)),
-                const Icon(Icons.more_horiz, size: 18, color: Color(0xFF2F3032)),
-              ],
+                  SizedBox(
+                    width: 140,
+                    height: 34,
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        hoverColor: const Color(0xFF0D6EFD),
+                      ),
+                      child: DropdownButtonFormField<String>(
+                        value: _paragraph,
+                        isExpanded: true,
+                        style: const TextStyle(color: Colors.black),
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                            color: Color(0xFF3A3A3A), size: 18),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFCDD1D4)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFCDD1D4)),
+                          ),
+                        ),
+                        dropdownColor: Colors.white,
+                        items: _paragraphs
+                            .map(
+                              (item) => DropdownMenuItem<String>(
+                                value: item,
+                                child: Text(
+                                  item,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: Colors.black),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          _applySelectedParagraph(value);
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.format_align_left,
+                      size: 18, color: Color(0xFF2F3032)),
+                  const Icon(Icons.format_align_center,
+                      size: 18, color: Color(0xFF2F3032)),
+                  const Icon(Icons.format_align_right,
+                      size: 18, color: Color(0xFF2F3032)),
+                  const Icon(Icons.format_align_justify,
+                      size: 18, color: Color(0xFF2F3032)),
+                  const Icon(Icons.format_indent_decrease,
+                      size: 18, color: Color(0xFF2F3032)),
+                  const Icon(Icons.format_indent_increase,
+                      size: 18, color: Color(0xFF2F3032)),
+                  const Icon(Icons.format_list_numbered,
+                      size: 18, color: Color(0xFF2F3032)),
+                  const Icon(Icons.format_list_bulleted,
+                      size: 18, color: Color(0xFF2F3032)),
+                  const Icon(Icons.more_horiz,
+                      size: 18, color: Color(0xFF2F3032)),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-              child: TextFormField(
-                controller: _richController,
-                minLines: 24,
-                maxLines: null,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF202224),
-                  height: 1.5,
-                ),
-                decoration: const InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: EdgeInsets.all(18),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
-                    borderSide: BorderSide(color: Colors.white),
+            const SizedBox(height: 24),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                child: TextFormField(
+                  controller: _richController,
+                  minLines: 24,
+                  maxLines: null,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF202224),
+                    height: 1.5,
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
-                    borderSide: BorderSide(color: Colors.white),
+                  decoration: const InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: EdgeInsets.all(18),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -4321,13 +4953,10 @@ class _EmojiCategoryButton extends StatelessWidget {
         child: Text(
           text,
           style: TextStyle(
-            color: selected
-                ? const Color(0xFF0D6EFD)
-                : const Color(0xFF6F7478),
+            color: selected ? const Color(0xFF0D6EFD) : const Color(0xFF6F7478),
             fontSize: 13,
-            decoration: selected
-                ? TextDecoration.underline
-                : TextDecoration.none,
+            decoration:
+                selected ? TextDecoration.underline : TextDecoration.none,
             decorationColor: const Color(0xFF0D6EFD),
             decorationThickness: 2,
           ),
@@ -4373,9 +5002,7 @@ class _EmojiCellState extends State<_EmojiCell> {
           duration: const Duration(milliseconds: 100),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: _hovered
-                ? const Color(0xFFDCEBFF)
-                : Colors.transparent,
+            color: _hovered ? const Color(0xFFDCEBFF) : Colors.transparent,
             borderRadius: BorderRadius.circular(4),
           ),
           child: Text(
@@ -4410,13 +5037,10 @@ class _SpecialCharacterCategory extends StatelessWidget {
         child: Text(
           text,
           style: TextStyle(
-            color: selected
-                ? const Color(0xFF0D6EFD)
-                : const Color(0xFF6F7478),
+            color: selected ? const Color(0xFF0D6EFD) : const Color(0xFF6F7478),
             fontSize: 13,
-            decoration: selected
-                ? TextDecoration.underline
-                : TextDecoration.none,
+            decoration:
+                selected ? TextDecoration.underline : TextDecoration.none,
             decorationColor: const Color(0xFF0D6EFD),
             decorationThickness: 2,
           ),
@@ -4436,12 +5060,10 @@ class _SpecialCharacterCell extends StatefulWidget {
   });
 
   @override
-  State<_SpecialCharacterCell> createState() =>
-      _SpecialCharacterCellState();
+  State<_SpecialCharacterCell> createState() => _SpecialCharacterCellState();
 }
 
-class _SpecialCharacterCellState
-    extends State<_SpecialCharacterCell> {
+class _SpecialCharacterCellState extends State<_SpecialCharacterCell> {
   bool _hovered = false;
 
   @override
@@ -4464,9 +5086,7 @@ class _SpecialCharacterCellState
           duration: const Duration(milliseconds: 100),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: _hovered
-                ? const Color(0xFFDCEBFF)
-                : Colors.transparent,
+            color: _hovered ? const Color(0xFFDCEBFF) : Colors.transparent,
             borderRadius: BorderRadius.circular(3),
           ),
           child: Text(
@@ -4504,13 +5124,10 @@ class _MediaTabButton extends StatelessWidget {
         child: Text(
           text,
           style: TextStyle(
-            color: selected
-                ? const Color(0xFF0D6EFD)
-                : const Color(0xFF6F7478),
+            color: selected ? const Color(0xFF0D6EFD) : const Color(0xFF6F7478),
             fontSize: 13,
-            decoration: selected
-                ? TextDecoration.underline
-                : TextDecoration.none,
+            decoration:
+                selected ? TextDecoration.underline : TextDecoration.none,
             decorationColor: const Color(0xFF0D6EFD),
             decorationThickness: 2,
           ),
@@ -4547,9 +5164,7 @@ class _FindArrowButton extends StatelessWidget {
         child: Icon(
           icon,
           size: 23,
-          color: enabled
-              ? const Color(0xFF73808A)
-              : const Color(0xFFAEB5BA),
+          color: enabled ? const Color(0xFF73808A) : const Color(0xFFAEB5BA),
         ),
       ),
     );
@@ -4759,8 +5374,7 @@ class _HelpDialog extends StatefulWidget {
   const _HelpDialog();
 
   @override
-  State<_HelpDialog> createState() =>
-      _HelpDialogState();
+  State<_HelpDialog> createState() => _HelpDialogState();
 }
 
 class _HelpDialogState extends State<_HelpDialog> {
@@ -4837,8 +5451,7 @@ class _HelpDialogState extends State<_HelpDialog> {
                         12,
                       ),
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           for (final tab in _tabs)
                             _HelpTabButton(
@@ -5191,18 +5804,13 @@ class _HelpTabButton extends StatelessWidget {
         child: Text(
           text,
           style: TextStyle(
-            color: selected
-                ? const Color(0xFF1688E8)
-                : const Color(0xFF777D81),
+            color: selected ? const Color(0xFF1688E8) : const Color(0xFF777D81),
             fontSize: 13,
-            decoration: selected
-                ? TextDecoration.underline
-                : TextDecoration.none,
+            decoration:
+                selected ? TextDecoration.underline : TextDecoration.none,
             decorationColor: const Color(0xFF1688E8),
             decorationThickness: 2,
-            fontWeight: selected
-                ? FontWeight.w600
-                : FontWeight.w400,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
       ),

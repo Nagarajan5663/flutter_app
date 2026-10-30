@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../shared/glass_modal_shell.dart';
+import '../shared/purchase_action_menu.dart';
+import '../shared/purchase_dropdown_style.dart';
 import '../bills/bill_model.dart';
 import '../bills/bill_repository.dart';
 import '../bills/widgets/add_bill_dialog.dart';
@@ -32,6 +34,7 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
   final referenceController = TextEditingController();
   DateTime? dateFrom;
   DateTime? dateTo;
+  bool _showFilters = false;
 
   String statusFilter = 'All';
   final statusOptions = const [
@@ -351,92 +354,102 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                   ),
                 ),
                 GlassButton(
+                  onPressed: () => setState(() => _showFilters = !_showFilters),
+                  icon: Icons.filter_alt_outlined,
+                  label: 'Filter',
+                ),
+                const SizedBox(width: 12),
+                GlassButton(
                   onPressed: _openAddOrder,
                   icon: Icons.add,
                   label: 'New Purchase Order',
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-
-            // FILTER CARD
-            GlassPanel(
-              padding: const EdgeInsets.all(20),
-              child: Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                crossAxisAlignment: WrapCrossAlignment.end,
-                children: [
-                  _filterField(
-                    label: 'Status',
-                    child: Container(
-                      width: 150,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FA),
-                        borderRadius: BorderRadius.circular(7),
-                        border: Border.all(color: const Color(0xFFD9DEE5)),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: statusFilter,
-                          isExpanded: true,
-                          items: statusOptions
-                              .map((s) =>
-                                  DropdownMenuItem(value: s, child: Text(s)))
-                              .toList(),
-                          onChanged: (value) {
-                            if (value == null) return;
-                            setState(() => statusFilter = value);
-                          },
+            if (_showFilters) ...[
+              const SizedBox(height: 20),
+              // FILTER CARD
+              GlassPanel(
+                padding: const EdgeInsets.all(20),
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  crossAxisAlignment: WrapCrossAlignment.end,
+                  children: [
+                    _filterField(
+                      label: 'Status',
+                      child: Container(
+                        width: 150,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8F9FA),
+                          borderRadius: BorderRadius.circular(7),
+                          border: Border.all(color: const Color(0xFFD9DEE5)),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: statusFilter,
+                            isExpanded: true,
+                            dropdownColor: PurchaseDropdownStyle.menuColor,
+                            borderRadius: PurchaseDropdownStyle.borderRadius,
+                            menuMaxHeight: 320,
+                            items: statusOptions
+                                .map((s) =>
+                                    DropdownMenuItem(value: s, child: Text(s)))
+                                .toList(),
+                            onChanged: (value) {
+                              if (value == null) return;
+                              setState(() => statusFilter = value);
+                            },
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  _filterField(
-                    label: 'Vendor Name',
-                    child: SizedBox(
-                        width: 170,
-                        child: _filterTextField(
-                            vendorController, 'Vendor name...')),
-                  ),
-                  _filterField(
-                    label: 'Reference #',
-                    child: SizedBox(
+                    _filterField(
+                      label: 'Vendor Name',
+                      child: SizedBox(
+                          width: 170,
+                          child: _filterTextField(
+                              vendorController, 'Vendor name...')),
+                    ),
+                    _filterField(
+                      label: 'Reference #',
+                      child: SizedBox(
+                          width: 150,
+                          child: _filterTextField(
+                              referenceController, 'Reference...')),
+                    ),
+                    _filterField(
+                      label: 'Date From',
+                      child: SizedBox(
                         width: 150,
-                        child: _filterTextField(
-                            referenceController, 'Reference...')),
-                  ),
-                  _filterField(
-                    label: 'Date From',
-                    child: SizedBox(
-                      width: 150,
-                      child: _filterDateField(
-                          dateFrom, (d) => setState(() => dateFrom = d)),
+                        child: _filterDateField(
+                            dateFrom, (d) => setState(() => dateFrom = d)),
+                      ),
                     ),
-                  ),
-                  _filterField(
-                    label: 'Date To',
-                    child: SizedBox(
-                      width: 150,
-                      child: _filterDateField(
-                          dateTo, (d) => setState(() => dateTo = d)),
+                    _filterField(
+                      label: 'Date To',
+                      child: SizedBox(
+                        width: 150,
+                        child: _filterDateField(
+                            dateTo, (d) => setState(() => dateTo = d)),
+                      ),
                     ),
-                  ),
-                  GlassButton(
-                    onPressed: _loadOrders,
-                    icon: Icons.filter_alt_outlined,
-                    label: 'Filter',
-                  ),
-                  GlassButton(
-                    onPressed: _clearFilters,
-                    icon: Icons.refresh,
-                    label: 'Clear',
-                    primary: false,
-                  ),
-                ],
+                    GlassButton(
+                      onPressed: _loadOrders,
+                      icon: Icons.filter_alt_outlined,
+                      label: 'Apply',
+                    ),
+                    GlassButton(
+                      onPressed: _clearFilters,
+                      icon: Icons.refresh,
+                      label: 'Clear',
+                      primary: false,
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
             const SizedBox(height: 20),
 
             // TABLE CARD
@@ -477,7 +490,11 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                                   Expanded(
                                       flex: 2, child: _HeaderText('AMOUNT')),
                                   Expanded(
-                                      flex: 2, child: _HeaderText('ACTIONS')),
+                                    flex: 2,
+                                    child: Center(
+                                      child: _HeaderText('ACTIONS'),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -516,8 +533,25 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                                             ),
                                           ),
                                           Expanded(
-                                              flex: 2,
-                                              child: Text(order.poNumber)),
+                                            flex: 2,
+                                            child: Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: TextButton(
+                                                onPressed: () =>
+                                                    _editOrder(order),
+                                                style: TextButton.styleFrom(
+                                                  padding: EdgeInsets.zero,
+                                                  minimumSize: Size.zero,
+                                                  tapTargetSize:
+                                                      MaterialTapTargetSize
+                                                          .shrinkWrap,
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                ),
+                                                child: Text(order.poNumber),
+                                              ),
+                                            ),
+                                          ),
                                           Expanded(
                                               flex: 3,
                                               child: Text(order.vendorName)),
@@ -527,17 +561,27 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                                               alignment: Alignment.centerLeft,
                                               child: Container(
                                                 decoration: BoxDecoration(
-                                                  color: const Color(0xFFE7EEF6),
+                                                  color:
+                                                      const Color(0xFFE7EEF6),
                                                   borderRadius:
                                                       BorderRadius.circular(20),
                                                 ),
                                                 child: Padding(
                                                   padding: const EdgeInsets
                                                       .symmetric(horizontal: 8),
-                                                  child: DropdownButtonHideUnderline(
-                                                    child: DropdownButton<String>(
+                                                  child:
+                                                      DropdownButtonHideUnderline(
+                                                    child:
+                                                        DropdownButton<String>(
                                                       value: order.status,
                                                       isDense: true,
+                                                      dropdownColor:
+                                                          PurchaseDropdownStyle
+                                                              .menuColor,
+                                                      borderRadius:
+                                                          PurchaseDropdownStyle
+                                                              .borderRadius,
+                                                      menuMaxHeight: 320,
                                                       icon: const Icon(
                                                         Icons.arrow_drop_down,
                                                         size: 18,
@@ -572,10 +616,10 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                                                             ),
                                                           )
                                                           .toList(),
-                                                      onChanged:
-                                                          order.status ==
+                                                      onChanged: order.status ==
                                                                   'Cancelled' ||
-                                                              order.id == null ||
+                                                              order.id ==
+                                                                  null ||
                                                               _updatingStatusIds
                                                                   .contains(
                                                                 order.id,
@@ -609,92 +653,43 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
                                                   'INR ${order.total.toStringAsFixed(2)}')),
                                           Expanded(
                                             flex: 2,
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                IconButton(
-                                                  onPressed: () =>
-                                                      _previewOrder(order),
-                                                  padding: EdgeInsets.zero,
-                                                  visualDensity:
-                                                      VisualDensity.compact,
-                                                  constraints:
-                                                      const BoxConstraints
-                                                          .tightFor(
-                                                    width: 30,
-                                                    height: 32,
+                                            child: Align(
+                                              alignment: Alignment.center,
+                                              child: PurchaseActionMenu(
+                                                actions: [
+                                                  PurchaseActionMenuItem(
+                                                    label:
+                                                        'View purchase order',
+                                                    icon: Icons
+                                                        .visibility_outlined,
+                                                    onPressed: () =>
+                                                        _previewOrder(order),
                                                   ),
-                                                  icon: const Icon(
-                                                    Icons.visibility_outlined,
-                                                    color: Color(0xFF7A8490),
-                                                    size: 20,
+                                                  PurchaseActionMenuItem(
+                                                    label:
+                                                        'Edit purchase order',
+                                                    icon: Icons.edit_outlined,
+                                                    onPressed: () =>
+                                                        _editOrder(order),
                                                   ),
-                                                  tooltip:
-                                                      'View purchase order',
-                                                ),
-                                                IconButton(
-                                                  onPressed: () =>
-                                                      _editOrder(order),
-                                                  padding: EdgeInsets.zero,
-                                                  visualDensity:
-                                                      VisualDensity.compact,
-                                                  constraints:
-                                                      const BoxConstraints
-                                                          .tightFor(
-                                                    width: 30,
-                                                    height: 32,
+                                                  PurchaseActionMenuItem(
+                                                    label:
+                                                        'Duplicate purchase order',
+                                                    icon: Icons
+                                                        .content_copy_outlined,
+                                                    onPressed: () =>
+                                                        _duplicateOrder(order),
                                                   ),
-                                                  icon: const Icon(
-                                                    Icons.edit_outlined,
-                                                    color: Color(0xFF7A8490),
-                                                    size: 19,
+                                                  PurchaseActionMenuItem(
+                                                    label:
+                                                        'Delete purchase order',
+                                                    icon: Icons.delete_outline,
+                                                    destructive: true,
+                                                    onPressed: () =>
+                                                        _deleteOrder(order),
                                                   ),
-                                                  tooltip:
-                                                      'Edit purchase order',
-                                                ),
-                                                IconButton(
-                                                  onPressed: () =>
-                                                      _duplicateOrder(order),
-                                                  padding: EdgeInsets.zero,
-                                                  visualDensity:
-                                                      VisualDensity.compact,
-                                                  constraints:
-                                                      const BoxConstraints
-                                                          .tightFor(
-                                                    width: 30,
-                                                    height: 32,
-                                                  ),
-                                                  icon: const Icon(
-                                                    Icons.content_copy_outlined,
-                                                    color: Color(0xFF7A8490),
-                                                    size: 18,
-                                                  ),
-                                                  tooltip:
-                                                      'Duplicate purchase order',
-                                                ),
-                                                IconButton(
-                                                  onPressed: () =>
-                                                      _deleteOrder(order),
-                                                  padding: EdgeInsets.zero,
-                                                  visualDensity:
-                                                      VisualDensity.compact,
-                                                  constraints:
-                                                      const BoxConstraints
-                                                          .tightFor(
-                                                    width: 30,
-                                                    height: 32,
-                                                  ),
-                                                  icon: const Icon(
-                                                    Icons.delete_outline,
-                                                    color: Color(0xFFAB2A2A),
-                                                    size: 20,
-                                                  ),
-                                                  tooltip:
-                                                      'Delete purchase order',
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ],

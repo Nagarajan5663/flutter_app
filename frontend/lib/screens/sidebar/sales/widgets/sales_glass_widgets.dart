@@ -22,6 +22,53 @@ class SalesGlassPageFrame extends StatefulWidget {
   State<SalesGlassPageFrame> createState() => _SalesGlassPageFrameState();
 }
 
+class SalesFilterButton extends StatelessWidget {
+  const SalesFilterButton({
+    super.key,
+    required this.onPressed,
+  });
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF153F61), Color(0xFF2D709F)],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.filter_alt_outlined, size: 18, color: Colors.white),
+              SizedBox(width: 7),
+              Text(
+                'Filter',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SalesGlassPageFrameState extends State<SalesGlassPageFrame> {
   double _rotateX = 0;
   double _rotateY = 0;
