@@ -59,11 +59,9 @@ class _LoginPageState extends State<LoginPage> {
     PointerHoverEvent event,
     Size size,
   ) {
-    final dx =
-        ((event.localPosition.dx / size.width) - 0.5) * 2;
+    final dx = ((event.localPosition.dx / size.width) - 0.5) * 2;
 
-    final dy =
-        ((event.localPosition.dy / size.height) - 0.5) * 2;
+    final dy = ((event.localPosition.dy / size.height) - 0.5) * 2;
 
     setState(() {
       _mouseX = dx.clamp(
@@ -132,9 +130,7 @@ class _LoginPageState extends State<LoginPage> {
       if (response.statusCode != 200 ||
           decoded is! Map<String, dynamic> ||
           decoded['success'] != true) {
-        final message = decoded is Map
-            ? decoded['message']?.toString()
-            : null;
+        final message = decoded is Map ? decoded['message']?.toString() : null;
 
         throw Exception(
           message ?? 'Unable to sign in.',
@@ -150,9 +146,7 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       final permissions = user['permissions'] is List
-          ? (user['permissions'] as List)
-              .whereType<String>()
-              .toList()
+          ? (user['permissions'] as List).whereType<String>().toList()
           : <String>[];
       SalesWorkflowSession.token = user['workflowToken']?.toString();
 
@@ -163,8 +157,7 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => DashboardPage(
-            userEmail:
-                user['email']?.toString() ?? email,
+            userEmail: user['email']?.toString() ?? email,
             permissions: permissions,
           ),
         ),
@@ -174,9 +167,7 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      final message = error
-          .toString()
-          .replaceFirst(
+      final message = error.toString().replaceFirst(
             'Exception: ',
             '',
           );
@@ -420,9 +411,7 @@ class _LoginPageState extends State<LoginPage> {
                                 24 * (1 - opacity),
                               ),
                               child: Transform.scale(
-                                scale:
-                                    0.94 +
-                                    opacity * 0.06,
+                                scale: 0.94 + opacity * 0.06,
                                 child: child,
                               ),
                             ),
@@ -467,7 +456,6 @@ class _LoginPageState extends State<LoginPage> {
                   fit: BoxFit.contain,
                 ),
               ),
-
               Align(
                 alignment: Alignment.topRight,
                 child: AuthReveal(
@@ -525,8 +513,7 @@ class _LoginPageState extends State<LoginPage> {
             controller: _emailController,
             hintText: 'Email Address',
             icon: Icons.mail_outline,
-            keyboardType:
-                TextInputType.emailAddress,
+            keyboardType: TextInputType.emailAddress,
           ),
         ),
 
@@ -543,8 +530,7 @@ class _LoginPageState extends State<LoginPage> {
             obscureText: _obscurePassword,
             onToggleObscure: () {
               setState(() {
-                _obscurePassword =
-                    !_obscurePassword;
+                _obscurePassword = !_obscurePassword;
               });
             },
           ),
@@ -589,10 +575,7 @@ class _LoginPageState extends State<LoginPage> {
             child: GradientLoginButton(
               label: 'Login',
               loading: _isSubmitting,
-              onPressed:
-                  _isSubmitting
-                      ? null
-                      : _handleSignIn,
+              onPressed: _isSubmitting ? null : _handleSignIn,
             ),
           ),
         ),
@@ -604,8 +587,7 @@ class _LoginPageState extends State<LoginPage> {
         AuthReveal(
           index: 8,
           child: Row(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 "Don't have an account? ",
@@ -616,7 +598,6 @@ class _LoginPageState extends State<LoginPage> {
                   fontSize: 13,
                 ),
               ),
-
               GestureDetector(
                 onTap: _goToSignUp,
                 child: const Text(

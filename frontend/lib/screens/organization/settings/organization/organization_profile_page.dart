@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+
+import '../../../../utils/organization_logo_storage.dart';
 
 class OrganizationProfilePage extends StatefulWidget {
   final VoidCallback onBack;
+  final String organizationKey;
 
   const OrganizationProfilePage({
     super.key,
     required this.onBack,
+    this.organizationKey = 'default',
   });
 
   @override
@@ -58,11 +63,72 @@ class _OrganizationProfilePageState extends State<OrganizationProfilePage> {
   DateTime? selectedDate;
 
   String selectedLogoName = 'No file chosen';
+  OrganizationLogoData? _organizationLogo;
 
   @override
   void initState() {
     super.initState();
     dateFormatController = TextEditingController(text: dateFormat);
+    _loadOrganizationLogo();
+  }
+
+  Future<void> _loadOrganizationLogo() async {
+    try {
+      final logo = await OrganizationLogoStorage.load(
+        widget.organizationKey,
+      );
+      if (!mounted) return;
+      setState(() {
+        _organizationLogo = logo;
+        selectedLogoName = logo?.name ?? 'No file chosen';
+      });
+    } catch (error) {
+      _showLogoError('Could not load the organization logo: $error');
+    }
+  }
+
+  Future<void> _pickOrganizationLogo() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+        withData: true,
+      );
+      if (result == null) return;
+
+      final file = result.files.single;
+      final bytes = file.bytes;
+      if (bytes == null || bytes.isEmpty) {
+        throw StateError('The selected image could not be read');
+      }
+
+      await OrganizationLogoStorage.save(
+        widget.organizationKey,
+        bytes,
+        file.name,
+      );
+      if (!mounted) return;
+
+      setState(() {
+        _organizationLogo = OrganizationLogoData(
+          bytes: bytes,
+          name: file.name,
+        );
+        selectedLogoName = file.name;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Organization logo saved.')),
+      );
+    } catch (error) {
+      _showLogoError('Could not save the organization logo: $error');
+    }
+  }
+
+  void _showLogoError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -271,24 +337,28 @@ class _OrganizationProfilePageState extends State<OrganizationProfilePage> {
                                 ),
                               ),
                             ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.image_outlined,
-                                size: 28,
-                                color: Color(
-                                  0xFF8E989E,
-                                ),
-                              ),
+                            child: Center(
+                              child: _organizationLogo == null
+                                  ? const Icon(
+                                      Icons.image_outlined,
+                                      size: 28,
+                                      color: Color(0xFF8E989E),
+                                    )
+                                  : ClipRRect(
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: Image.memory(
+                                        _organizationLogo!.bytes,
+                                        width: 76,
+                                        height: 63,
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
                             ),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
                             child: OutlinedButton(
-                              onPressed: () {
-                                setState(() {
-                                  selectedLogoName = 'organization_logo.png';
-                                });
-                              },
+                              onPressed: _pickOrganizationLogo,
                               style: OutlinedButton.styleFrom(
                                 alignment: Alignment.centerLeft,
                                 foregroundColor: const Color(
@@ -572,7 +642,6 @@ class _OrganizationProfilePageState extends State<OrganizationProfilePage> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     PopupMenuButton<String>(
-                                      position: PopupMenuPosition.under,
                                       icon: const Icon(
                                         Icons.arrow_drop_down,
                                         color: Color(0xFF454B50),

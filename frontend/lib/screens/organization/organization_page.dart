@@ -31,6 +31,7 @@ class OrganizationPage extends StatelessWidget {
   /// signed-in organization name once that data is available; 'test'
   /// matches the placeholder organization used in the recording.
   final String organizationName;
+  final String organizationKey;
 
   /// Called when the user taps "Close Settings". Wired up by the
   /// parent SettingsPage to switch back to the "All Settings" view.
@@ -40,6 +41,7 @@ class OrganizationPage extends StatelessWidget {
   const OrganizationPage({
     super.key,
     this.organizationName = 'test',
+    this.organizationKey = 'default',
     this.onBack,
   });
 
@@ -60,6 +62,7 @@ class OrganizationPage extends StatelessWidget {
         MaterialPageRoute<void>(
           builder: (_) => OrganizationProfilePage(
             onBack: () => Navigator.of(context).pop(),
+            organizationKey: organizationKey,
           ),
         ),
       );

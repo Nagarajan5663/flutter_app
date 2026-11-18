@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../widgets/sales_glass_widgets.dart';
 import 'package:intl/intl.dart';
 
+import '../sales_line_item_model.dart';
+import 'widgets/add_credit_note_dialog.dart';
+
 // =====================================================================
 // CREDIT NOTES PAGE
 // =====================================================================
@@ -34,6 +37,7 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
 
   final List<String> _statusOptions = [
     'All',
+    'Draft',
     'Open',
     'Partially Applied',
     'Closed',
@@ -85,22 +89,28 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
   // NEW CREDIT NOTE
   // ================================================================
 
-  void _openNewCreditNoteForm() {
-    showDialog(
+  Future<void> _openNewCreditNoteForm() async {
+    final note = await showDialog<CreditNoteData>(
       context: context,
       barrierColor: const Color(0x9A12202C),
       barrierDismissible: false,
-      builder: (context) {
-        return NewCreditNoteDialog(
-          nextNumber: 'CN-$_creditNoteCounter',
-          onSave: (note) {
-            setState(() {
-              _creditNotes.add(note);
-              _creditNoteCounter++;
-            });
-          },
-        );
-      },
+      builder: (_) => AddCreditNoteDialog(
+        creditNoteNumber: 'CN-${_creditNoteCounter.toString().padLeft(5, '0')}',
+      ),
+    );
+    if (!mounted || note == null) return;
+    setState(() {
+      _creditNotes.add(note);
+      _creditNoteCounter++;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          note.status == CreditNoteStatus.draft
+              ? 'Credit note saved as draft'
+              : 'Credit note submitted successfully',
+        ),
+      ),
     );
   }
 
@@ -626,6 +636,9 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                           icon: const Icon(Icons.more_vert),
                           onSelected: (value) {
                             switch (value) {
+                              case 'submit':
+                                _updateStatus(note, CreditNoteStatus.open);
+                                break;
                               case 'partial':
                                 _updateStatus(
                                   note,
@@ -646,17 +659,22 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
                             }
                           },
                           itemBuilder: (context) {
-                            return const [
-                              PopupMenuItem(
+                            return [
+                              if (note.status == CreditNoteStatus.draft)
+                                const PopupMenuItem(
+                                  value: 'submit',
+                                  child: Text('Submit credit note'),
+                                ),
+                              const PopupMenuItem(
                                 value: 'partial',
                                 child: Text('Mark as Partially Applied'),
                               ),
-                              PopupMenuItem(
+                              const PopupMenuItem(
                                 value: 'closed',
                                 child: Text('Mark as Closed'),
                               ),
-                              PopupMenuDivider(),
-                              PopupMenuItem(
+                              const PopupMenuDivider(),
+                              const PopupMenuItem(
                                 value: 'delete',
                                 child: Text(
                                   'Delete',
@@ -746,6 +764,8 @@ class _StatusBadge extends StatelessWidget {
 
   Color get _backgroundColor {
     switch (status) {
+      case CreditNoteStatus.draft:
+        return const Color(0xFFE9ECEF);
       case CreditNoteStatus.open:
         return const Color(0xFFE3F2FD);
       case CreditNoteStatus.partiallyApplied:
@@ -757,6 +777,8 @@ class _StatusBadge extends StatelessWidget {
 
   Color get _textColor {
     switch (status) {
+      case CreditNoteStatus.draft:
+        return const Color(0xFF59636E);
       case CreditNoteStatus.open:
         return const Color(0xFF1E78B7);
       case CreditNoteStatus.partiallyApplied:
@@ -791,12 +813,15 @@ class _StatusBadge extends StatelessWidget {
 // ===================================================================
 
 enum CreditNoteStatus {
+  draft,
   open,
   partiallyApplied,
   closed;
 
   String get label {
     switch (this) {
+      case CreditNoteStatus.draft:
+        return 'Draft';
       case CreditNoteStatus.open:
         return 'Open';
       case CreditNoteStatus.partiallyApplied:
@@ -814,8 +839,13 @@ enum CreditNoteStatus {
 class CreditNoteData {
   final DateTime date;
   final String creditNoteNumber;
+  final String customerId;
   final String customerName;
+  final String referenceNumber;
+  final String salesperson;
   final double amount;
+  final double tax;
+  final List<SalesLineItemModel> items;
   final String reason;
   CreditNoteStatus status;
   double amountRemaining;
@@ -823,8 +853,13 @@ class CreditNoteData {
   CreditNoteData({
     required this.date,
     required this.creditNoteNumber,
+    this.customerId = '',
     required this.customerName,
+    this.referenceNumber = '',
+    this.salesperson = '',
     required this.amount,
+    this.tax = 0,
+    this.items = const [],
     this.reason = '',
     this.status = CreditNoteStatus.open,
     double? amountRemaining,

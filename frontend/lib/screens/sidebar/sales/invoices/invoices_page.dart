@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../widgets/sales_glass_widgets.dart';
 
@@ -26,6 +27,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
   final InvoiceRepository _repository = InMemoryInvoiceRepository();
 
   List<InvoiceModel> _invoices = [];
+  List<InvoiceModel> _allInvoices = [];
   bool _isLoading = true;
 
   final customerController = TextEditingController();
@@ -57,10 +59,11 @@ class _InvoicesPageState extends State<InvoicesPage> {
 
   Future<void> _loadInvoices() async {
     setState(() => _isLoading = true);
-    final result = await _repository.getInvoices(filter: _currentFilter);
+    final result = await _repository.getInvoices();
     if (!mounted) return;
     setState(() {
-      _invoices = result;
+      _allInvoices = result;
+      _invoices = result.where(_currentFilter.matches).toList();
       _isLoading = false;
     });
   }
@@ -94,26 +97,144 @@ class _InvoicesPageState extends State<InvoicesPage> {
     _loadInvoices();
   }
 
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'Paid':
-        return const Color(0xFF1E7B34);
-      case 'Partially Paid':
-        return const Color(0xFFB8860B);
-      default:
-        return const Color(0xFFAB2A2A);
+  String _currency(double amount) =>
+      '₹${NumberFormat('#,##0.00', 'en_IN').format(amount)}';
+
+  DateTime _dateOnly(DateTime value) =>
+      DateTime(value.year, value.month, value.day);
+
+  double _receivableAmount(InvoiceModel invoice) {
+    if (invoice.total > 0 &&
+        invoice.amountDue <= 0 &&
+        invoice.dueDate == null) {
+      return invoice.total;
     }
+    return invoice.amountDue;
   }
 
-  Color _statusBg(String status) {
-    switch (status) {
-      case 'Paid':
-        return const Color(0xFFE3F6E8);
-      case 'Partially Paid':
-        return const Color(0xFFFFF3D6);
-      default:
-        return const Color(0xFFF4E3E3);
+  double _balanceForDueInvoices(bool Function(DateTime dueDate) matches) {
+    return _allInvoices.fold<double>(0, (total, invoice) {
+      final dueDate = invoice.dueDate ?? invoice.date;
+      final receivableAmount = _receivableAmount(invoice);
+      if (receivableAmount <= 0 || !matches(_dateOnly(dueDate))) {
+        return total;
+      }
+      return total + receivableAmount;
+    });
+  }
+
+  String _dueStatus(InvoiceModel invoice) {
+    final effectiveAmount = _receivableAmount(invoice);
+    if (effectiveAmount <= 0) return 'PAID';
+    final dueDate = invoice.dueDate ?? invoice.date;
+
+    final daysUntilDue =
+        _dateOnly(dueDate).difference(_dateOnly(DateTime.now())).inDays;
+    if (daysUntilDue < 0) return 'OVERDUE BY ${-daysUntilDue} DAYS';
+    if (daysUntilDue == 0) return 'DUE TODAY';
+    return 'DUE IN $daysUntilDue DAYS';
+  }
+
+  Color _dueStatusColor(InvoiceModel invoice) {
+    if (invoice.amountDue <= 0) return const Color(0xFF1E7B34);
+    final dueDate = invoice.dueDate;
+    if (dueDate != null &&
+        _dateOnly(dueDate).isBefore(_dateOnly(DateTime.now()))) {
+      return const Color(0xFFAB2A2A);
     }
+    return const Color(0xFF3886A8);
+  }
+
+  Color _dueStatusBg(InvoiceModel invoice) {
+    if (invoice.amountDue <= 0) return const Color(0xFFE3F6E8);
+    final dueDate = invoice.dueDate;
+    if (dueDate != null &&
+        _dateOnly(dueDate).isBefore(_dateOnly(DateTime.now()))) {
+      return const Color(0xFFF4E3E3);
+    }
+    return const Color(0xFFE5F3F8);
+  }
+
+  Widget _paymentSummary() {
+    final today = _dateOnly(DateTime.now());
+    final endOfNext30Days = today.add(const Duration(days: 30));
+    final outstanding = _allInvoices.fold<double>(
+      0,
+      (total, invoice) => total + _receivableAmount(invoice),
+    );
+    final dueToday = _balanceForDueInvoices((date) => date == today);
+    final dueWithin30Days = _balanceForDueInvoices(
+      (date) => !date.isBefore(today) && !date.isAfter(endOfNext30Days),
+    );
+    final overdue = _balanceForDueInvoices((date) => date.isBefore(today));
+    final metrics = [
+      (
+        label: 'Total Outstanding Receivables',
+        value: _currency(outstanding),
+        color: const Color(0xFF263746),
+      ),
+      (
+        label: 'Due Today',
+        value: _currency(dueToday),
+        color: const Color(0xFFC6655B),
+      ),
+      (
+        label: 'Due Within 30 Days',
+        value: _currency(dueWithin30Days),
+        color: const Color(0xFF263746),
+      ),
+      (
+        label: 'Overdue Invoices',
+        value: _currency(overdue),
+        color: const Color(0xFF263746),
+      ),
+      (
+        label: 'Average Days to Get Paid',
+        value: '—',
+        color: const Color(0xFF263746),
+      ),
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0x4FFFFFFF),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xC7FFFFFF)),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const spacing = 12.0;
+          final columns = constraints.maxWidth >= 1100
+              ? 5
+              : constraints.maxWidth >= 700
+                  ? 3
+                  : 1;
+          final cardWidth =
+              (constraints.maxWidth - spacing * (columns - 1)) / columns;
+          return Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            children: metrics
+                .map(
+                  (metric) => SizedBox(
+                    width: cardWidth,
+                    child: _InvoiceSummaryMetric(
+                      label: metric.label,
+                      value: metric.value,
+                      valueColor: metric.color,
+                      helperText: metric.label == 'Average Days to Get Paid'
+                          ? 'Payment dates are not recorded'
+                          : null,
+                    ),
+                  ),
+                )
+                .toList(),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -152,6 +273,18 @@ class _InvoicesPageState extends State<InvoicesPage> {
                 ),
               ],
             ),
+            const SizedBox(height: 18),
+            const Text(
+              'PAYMENT SUMMARY',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF536273),
+                letterSpacing: 0.4,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _paymentSummary(),
             const SizedBox(height: 20),
             if (_showFilters)
               Container(
@@ -292,12 +425,12 @@ class _InvoicesPageState extends State<InvoicesPage> {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SizedBox(
-                  width: 1050,
+                  width: 1200,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        width: 1050,
+                        width: 1200,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 18, vertical: 18),
                         decoration: const BoxDecoration(
@@ -307,17 +440,20 @@ class _InvoicesPageState extends State<InvoicesPage> {
                         ),
                         child: const Row(
                           children: [
-                            Expanded(flex: 2, child: SalesHeaderText('DATE')),
                             Expanded(
                                 flex: 2, child: SalesHeaderText('INVOICE #')),
-                            Expanded(flex: 2, child: SalesHeaderText('SO #')),
+                            Expanded(
+                                flex: 2,
+                                child: SalesHeaderText('ORDER NUMBER')),
                             Expanded(
                                 flex: 3,
                                 child: SalesHeaderText('CUSTOMER NAME')),
+                            Expanded(flex: 2, child: SalesHeaderText('STATUS')),
                             Expanded(
                                 flex: 2, child: SalesHeaderText('DUE DATE')),
-                            Expanded(flex: 2, child: SalesHeaderText('STATUS')),
                             Expanded(flex: 2, child: SalesHeaderText('AMOUNT')),
+                            Expanded(
+                                flex: 2, child: SalesHeaderText('BALANCE DUE')),
                             Expanded(
                                 flex: 1, child: SalesHeaderText('ACTIONS')),
                           ],
@@ -331,7 +467,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
                         )
                       else if (_invoices.isEmpty)
                         Container(
-                          width: 1050,
+                          width: 1200,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 18, vertical: 24),
                           child: const Text(
@@ -345,16 +481,11 @@ class _InvoicesPageState extends State<InvoicesPage> {
                           return Column(
                             children: [
                               Container(
-                                width: 1050,
+                                width: 1200,
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 18, vertical: 16),
                                 child: Row(
                                   children: [
-                                    Expanded(
-                                      flex: 2,
-                                      child: Text(
-                                          '${invoice.date.day.toString().padLeft(2, '0')}-${invoice.date.month.toString().padLeft(2, '0')}-${invoice.date.year}'),
-                                    ),
                                     Expanded(
                                         flex: 2,
                                         child: Text(invoice.invoiceNumber)),
@@ -366,6 +497,14 @@ class _InvoicesPageState extends State<InvoicesPage> {
                                         child: Text(invoice.customerName)),
                                     Expanded(
                                       flex: 2,
+                                      child: salesStatusPill(
+                                        text: _dueStatus(invoice),
+                                        bg: _dueStatusBg(invoice),
+                                        fg: _dueStatusColor(invoice),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
                                       child: Text(
                                         invoice.dueDate == null
                                             ? '-'
@@ -373,17 +512,12 @@ class _InvoicesPageState extends State<InvoicesPage> {
                                       ),
                                     ),
                                     Expanded(
-                                      flex: 2,
-                                      child: salesStatusPill(
-                                        text: invoice.status,
-                                        bg: _statusBg(invoice.status),
-                                        fg: _statusColor(invoice.status),
-                                      ),
-                                    ),
-                                    Expanded(
                                         flex: 2,
-                                        child: Text(
-                                            'INR ${invoice.total.toStringAsFixed(2)}')),
+                                        child: Text(_currency(invoice.total))),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(_currency(invoice.amountDue)),
+                                    ),
                                     Expanded(
                                       flex: 1,
                                       child: IconButton(
@@ -409,6 +543,72 @@ class _InvoicesPageState extends State<InvoicesPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _InvoiceSummaryMetric extends StatelessWidget {
+  const _InvoiceSummaryMetric({
+    required this.label,
+    required this.value,
+    required this.valueColor,
+    this.helperText,
+  });
+
+  final String label;
+  final String value;
+  final Color valueColor;
+  final String? helperText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 90),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      decoration: BoxDecoration(
+        color: const Color(0x6EFFFFFF),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0x8FFFFFFF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFF536273),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: valueColor,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          if (helperText != null) ...[
+            const SizedBox(height: 3),
+            Text(
+              helperText!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF6D7782),
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

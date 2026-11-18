@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../utils/organization_logo_storage.dart';
+
 class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
   static const _workspaceOptions = <({
     String title,
@@ -62,11 +64,15 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onProfilePressed;
   final VoidCallback? onPowerPressed;
   final String welcomeName;
+  final bool canOpenProfile;
+  final OrganizationLogoData? organizationLogo;
 
   const DashboardAppBar({
     super.key,
     required this.onProfilePressed,
     required this.welcomeName,
+    required this.canOpenProfile,
+    this.organizationLogo,
     this.onPowerPressed,
   });
 
@@ -78,8 +84,10 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       automaticallyImplyLeading: false,
       elevation: 0,
+      scrolledUnderElevation: 0,
+      shadowColor: Colors.transparent,
       backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
@@ -92,6 +100,19 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
 
       title: Row(
         children: [
+          if (organizationLogo != null) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.memory(
+                organizationLogo!.bytes,
+                width: 40,
+                height: 40,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+
           // ========================================================
           // SEARCH BAR
           // ========================================================
@@ -150,13 +171,11 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
 
         const SizedBox(width: 12),
 
-        // ==========================================================
-        // Existing admin icon remains visible but no longer opens settings.
-        // ==========================================================
-
         IconButton(
-          tooltip: 'Organization Settings',
-          onPressed: onProfilePressed,
+          tooltip: canOpenProfile
+              ? 'Organization Settings'
+              : 'Settings are not available for your role',
+          onPressed: canOpenProfile ? onProfilePressed : null,
           icon: Image.asset(
             'assets/images/organization_settings.png',
             width: 34,
@@ -164,6 +183,10 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
             fit: BoxFit.contain,
           ),
         ),
+
+        // ==========================================================
+        // The existing admin icon opens the workspace menu.
+        // ==========================================================
 
         PopupMenuButton<String>(
           tooltip: 'Workspace options',
@@ -190,12 +213,12 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
                       height: 36,
                       decoration: BoxDecoration(
                         color: option.color,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
                         option.icon,
                         color: const Color(0xFF3C3F57),
-                        size: 23,
+                        size: 21,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -274,18 +297,6 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
         const SizedBox(width: 14),
       ],
 
-      // ============================================================
-      // BOTTOM BORDER
-      // ============================================================
-
-      bottom: const PreferredSize(
-        preferredSize: Size.fromHeight(1),
-        child: Divider(
-          height: 1,
-          thickness: 1,
-          color: Color(0xFFE5E5E5),
-        ),
-      ),
     );
   }
 }

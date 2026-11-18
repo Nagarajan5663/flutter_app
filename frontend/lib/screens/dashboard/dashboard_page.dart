@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../home/home_page.dart';
+import '../../utils/organization_logo_storage.dart';
 
 // ================================================================
 // DASHBOARD WIDGETS
@@ -142,6 +145,7 @@ class _DashboardPageState extends State<DashboardPage> {
   // ================================================================
 
   bool _isSidebarCollapsed = false;
+  OrganizationLogoData? _organizationLogo;
 
   // ================================================================
   // CURRENT SELECTED MENU
@@ -152,6 +156,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
+    unawaited(_refreshOrganizationLogo());
 
     if (!_canAccessMenu(selectedMenu)) {
       selectedMenu = _menuPermissions.keys.firstWhere(
@@ -164,6 +169,28 @@ class _DashboardPageState extends State<DashboardPage> {
   String get _welcomeName {
     final email = widget.userEmail?.trim() ?? '';
     return email.isEmpty ? 'User' : email.split('@').first;
+  }
+
+  String get _organizationKey {
+    final email = widget.userEmail?.trim().toLowerCase();
+    return email == null || email.isEmpty ? 'default' : email;
+  }
+
+  Future<void> _refreshOrganizationLogo() async {
+    try {
+      final logo = await OrganizationLogoStorage.load(_organizationKey);
+      if (!mounted) return;
+      setState(() {
+        _organizationLogo = logo;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not load the organization logo: $error'),
+        ),
+      );
+    }
   }
 
   bool _canAccessMenu(String menu) {
@@ -215,12 +242,13 @@ class _DashboardPageState extends State<DashboardPage> {
         fullscreenDialog: true,
         builder: (_) {
           return _withReadOnlyAccess(
-            const OrganizationPage(),
+            OrganizationPage(organizationKey: _organizationKey),
             'organization',
           );
         },
       ),
     );
+    await _refreshOrganizationLogo();
   }
 
   // ================================================================
@@ -647,6 +675,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   appBar: DashboardAppBar(
                     onProfilePressed: _openOrganizationSettings,
                     welcomeName: _welcomeName,
+                    canOpenProfile: true,
+                    organizationLogo: _organizationLogo,
                     onPowerPressed: _logout,
                   ),
                   body: Container(
