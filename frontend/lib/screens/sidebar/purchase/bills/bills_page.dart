@@ -51,6 +51,57 @@ class _BillsPageState extends State<BillsPage> {
     'Paid',
     'Void',
   ];
+  String? _summaryFilter;
+
+  DateTime get _today {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  DateTime? _dateOnly(DateTime? date) =>
+      date == null ? null : DateTime(date.year, date.month, date.day);
+
+  List<BillModel> get _outstandingBills => _bills
+      .where((bill) => !bill.isVoided && bill.amountDue > 0)
+      .toList(growable: false);
+
+  List<BillModel> get _dueTodayBills => _outstandingBills
+      .where((bill) => _dateOnly(bill.dueDate) == _today)
+      .toList(growable: false);
+
+  List<BillModel> get _dueSoonBills => _outstandingBills.where((bill) {
+        final dueDate = _dateOnly(bill.dueDate);
+        return dueDate != null &&
+            dueDate.isAfter(_today) &&
+            !dueDate.isAfter(_today.add(const Duration(days: 30)));
+      }).toList(growable: false);
+
+  List<BillModel> get _overdueBills => _outstandingBills.where((bill) {
+        final dueDate = _dateOnly(bill.dueDate);
+        return dueDate != null && dueDate.isBefore(_today);
+      }).toList(growable: false);
+
+  List<BillModel> get _visibleBills {
+    switch (_summaryFilter) {
+      case 'outstanding':
+        return _outstandingBills;
+      case 'dueToday':
+        return _dueTodayBills;
+      case 'dueSoon':
+        return _dueSoonBills;
+      case 'overdue':
+        return _overdueBills;
+      case 'paid':
+        return _bills
+            .where((bill) => !bill.isVoided && bill.amountPaid > 0)
+            .toList(growable: false);
+      default:
+        return _bills;
+    }
+  }
+
+  String _formatCurrency(double amount) =>
+      '₹${NumberFormat('#,##,##0.00', 'en_IN').format(amount)}';
 
   // ==========================================================
   // INIT
@@ -656,6 +707,9 @@ class _BillsPageState extends State<BillsPage> {
               ],
             ),
 
+            const SizedBox(height: 20),
+            _buildPaymentSummary(),
+
             if (_showFilters) ...[
               const SizedBox(
                 height: 20,
@@ -933,15 +987,17 @@ class _BillsPageState extends State<BillsPage> {
                             child: CircularProgressIndicator(),
                           ),
                         )
-                      else if (_bills.isEmpty)
+                      else if (_visibleBills.isEmpty)
                         Container(
                           width: 1000,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 18,
                             vertical: 35,
                           ),
-                          child: const Text(
-                            'No bills found. Click "+ New Bill" to add one!',
+                          child: Text(
+                            _summaryFilter == null
+                                ? 'No bills found. Click "+ New Bill" to add one!'
+                                : 'No bills match this payment summary. Click the selected summary again to clear it.',
                             style: TextStyle(
                               fontSize: 16,
                               color: Color(
@@ -951,7 +1007,7 @@ class _BillsPageState extends State<BillsPage> {
                           ),
                         )
                       else
-                        ..._bills.map(
+                        ..._visibleBills.map(
                           (
                             BillModel bill,
                           ) {
@@ -1092,6 +1148,201 @@ class _BillsPageState extends State<BillsPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentSummary() {
+    final paidBills = _bills
+        .where((bill) => !bill.isVoided && bill.amountPaid > 0)
+        .toList(growable: false);
+    final paidTotal =
+        paidBills.fold<double>(0, (total, bill) => total + bill.amountPaid);
+
+    final cards = [
+      _PaymentSummaryData(
+        filter: 'outstanding',
+        title: 'Outstanding Payables',
+        amount: _formatCurrency(_outstandingBills.fold<double>(
+          0,
+          (total, bill) => total + bill.amountDue,
+        )),
+        billCount: _outstandingBills.length,
+        icon: Icons.account_balance_wallet_outlined,
+        color: const Color(0xFF167D6A),
+      ),
+      _PaymentSummaryData(
+        filter: 'dueToday',
+        title: 'Due Today',
+        amount: _formatCurrency(_dueTodayBills.fold<double>(
+          0,
+          (total, bill) => total + bill.amountDue,
+        )),
+        billCount: _dueTodayBills.length,
+        icon: Icons.today_outlined,
+        color: const Color(0xFFB36B17),
+      ),
+      _PaymentSummaryData(
+        filter: 'dueSoon',
+        title: 'Due within 30 Days',
+        amount: _formatCurrency(_dueSoonBills.fold<double>(
+          0,
+          (total, bill) => total + bill.amountDue,
+        )),
+        billCount: _dueSoonBills.length,
+        icon: Icons.event_outlined,
+        color: const Color(0xFF2475A8),
+      ),
+      _PaymentSummaryData(
+        filter: 'overdue',
+        title: 'Overdue Bills',
+        amount: _formatCurrency(_overdueBills.fold<double>(
+          0,
+          (total, bill) => total + bill.amountDue,
+        )),
+        billCount: _overdueBills.length,
+        icon: Icons.warning_amber_outlined,
+        color: const Color(0xFFB83B3B),
+      ),
+      _PaymentSummaryData(
+        filter: 'paid',
+        title: 'Total Paid',
+        amount: _formatCurrency(paidTotal),
+        billCount: paidBills.length,
+        icon: Icons.check_circle_outline,
+        color: const Color(0xFF487A45),
+      ),
+    ];
+
+    return GlassPanel(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'PAYMENT SUMMARY',
+            style: TextStyle(
+              color: Color(0xFF43576C),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Amounts are based on the bills currently loaded. Select a summary to view its bills.',
+            style: TextStyle(
+              color: Color(0xFF667085),
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 14),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const spacing = 12.0;
+              final columns = constraints.maxWidth >= 1000
+                  ? 5
+                  : constraints.maxWidth >= 800
+                      ? 4
+                      : constraints.maxWidth >= 560
+                          ? 3
+                          : constraints.maxWidth >= 360
+                              ? 2
+                              : 1;
+              final cardWidth =
+                  (constraints.maxWidth - spacing * (columns - 1)) / columns;
+
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: cards
+                    .map(
+                      (card) => SizedBox(
+                        width: cardWidth,
+                        child: _paymentSummaryCard(card),
+                      ),
+                    )
+                    .toList(growable: false),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _paymentSummaryCard(_PaymentSummaryData data) {
+    final isSelected = _summaryFilter == data.filter;
+    final billLabel =
+        data.billCount == 1 ? '1 bill' : '${data.billCount} bills';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: _isLoading
+            ? null
+            : () {
+                setState(() {
+                  _summaryFilter = isSelected ? null : data.filter;
+                });
+              },
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 112),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color:
+                isSelected ? data.color.withValues(alpha: 0.10) : Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? data.color : const Color(0xFFE2E8EF),
+              width: isSelected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(data.icon, color: data.color, size: 18),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      data.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF526274),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                data.amount,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: data.color,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                billLabel,
+                style: const TextStyle(
+                  color: Color(0xFF7A8795),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1538,6 +1789,24 @@ class _BillPaymentDialogState extends State<_BillPaymentDialog> {
       ),
     );
   }
+}
+
+class _PaymentSummaryData {
+  const _PaymentSummaryData({
+    required this.filter,
+    required this.title,
+    required this.amount,
+    required this.billCount,
+    required this.icon,
+    required this.color,
+  });
+
+  final String filter;
+  final String title;
+  final String amount;
+  final int billCount;
+  final IconData icon;
+  final Color color;
 }
 
 class _BillPreviewDialog extends StatefulWidget {
